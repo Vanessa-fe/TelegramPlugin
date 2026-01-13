@@ -1,7 +1,13 @@
+import { config } from "dotenv";
+import { resolve, dirname } from "node:path";
 import { Bot, GrammyError, HttpError } from "grammy";
 import { fileURLToPath } from "node:url";
 import { argv, env as processEnv } from "node:process";
 import { z } from "zod";
+
+// Load .env from monorepo root
+const __dirname = dirname(fileURLToPath(import.meta.url));
+config({ path: resolve(__dirname, "../../../.env") });
 
 const EnvSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN requis"),
