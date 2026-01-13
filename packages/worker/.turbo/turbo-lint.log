@@ -1,0 +1,4 @@
+
+> @telegram-plugin/worker@0.1.0 lint /Users/vanessa/Sites/localhost/TelegramPlugin/packages/worker
+> eslint "src/**/*.ts"
+

@@ -1,0 +1,22 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "setupFiles": ["<rootDir>/setup-env.ts"],
+  "transform": {
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/../tsconfig.spec.json"
+      }
+    ]
+  },
+  "moduleNameMapper": {
+    "^@telegram-plugin/shared$": "<rootDir>/../../shared/src/index.ts",
+    "^@telegram-plugin/shared/(.*)$": "<rootDir>/../../shared/src/$1"
+  },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(@telegram-plugin)/)"
+  ]
+}

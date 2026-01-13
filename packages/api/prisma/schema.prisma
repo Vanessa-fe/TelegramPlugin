@@ -1,0 +1,315 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPERADMIN
+  ORG_ADMIN
+  SUPPORT
+  VIEWER
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum PlanInterval {
+  ONE_TIME
+  DAY
+  WEEK
+  MONTH
+  QUARTER
+  YEAR
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  TRIALING
+  EXPIRED
+}
+
+enum ChannelProvider {
+  TELEGRAM
+  DISCORD
+}
+
+enum AccessStatus {
+  PENDING
+  GRANTED
+  REVOKED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+}
+
+enum PaymentEventType {
+  CHECKOUT_COMPLETED
+  SUBSCRIPTION_CREATED
+  SUBSCRIPTION_UPDATED
+  SUBSCRIPTION_CANCELED
+  INVOICE_PAID
+  INVOICE_PAYMENT_FAILED
+  REFUND_CREATED
+}
+
+enum InviteStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+}
+
+model Organization {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique
+  billingEmail    String
+  stripeAccountId String?  @unique
+  timezone        String?  @default("UTC")
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  users          User[]
+  customers      Customer[]
+  products       Product[]
+  channels       Channel[]
+  subscriptions  Subscription[]
+  paymentEvents  PaymentEvent[]
+  auditLogs      AuditLog[]
+
+  @@index([slug])
+}
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String?
+  role            UserRole  @default(ORG_ADMIN)
+  firstName       String?
+  lastName        String?
+  isActive        Boolean   @default(true)
+  lastLoginAt     DateTime?
+  organizationId  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  auditLogs    AuditLog[]
+}
+
+model Customer {
+  id               String       @id @default(uuid())
+  organizationId   String
+  email            String?
+  displayName      String?
+  telegramUserId   String?
+  telegramUsername String?
+  externalId       String?      @unique
+  metadata         Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  subscriptions   Subscription[]
+  channelAccesses ChannelAccess[]
+
+  @@index([organizationId, telegramUserId])
+}
+
+model Product {
+  id             String         @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  status         ProductStatus  @default(DRAFT)
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  plans           Plan[]
+  channels        ProductChannel[]
+
+  @@index([organizationId, status])
+  @@unique([organizationId, name])
+}
+
+model Plan {
+  id               String        @id @default(uuid())
+  productId        String
+  name             String
+  description      String?
+  interval         PlanInterval
+  priceCents       Int
+  currency         String
+  trialPeriodDays  Int?
+  accessDurationDays Int?
+  isActive         Boolean       @default(true)
+  metadata         Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  product       Product       @relation(fields: [productId], references: [id])
+  subscriptions Subscription[]
+
+  @@index([productId, isActive])
+}
+
+model Channel {
+  id               String           @id @default(uuid())
+  organizationId   String
+  provider         ChannelProvider  @default(TELEGRAM)
+  externalId       String
+  title            String?
+  username         String?
+  inviteLink       String?
+  isActive         Boolean          @default(true)
+  metadata         Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  productLinks    ProductChannel[]
+  channelAccesses ChannelAccess[]
+  invites         TelegramInvite[]
+
+  @@unique([organizationId, provider, externalId])
+}
+
+model ProductChannel {
+  id        String   @id @default(uuid())
+  productId String
+  channelId String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@unique([productId, channelId])
+  @@index([channelId])
+}
+
+model Subscription {
+  id                 String              @id @default(uuid())
+  organizationId     String
+  customerId         String
+  planId             String
+  status             SubscriptionStatus  @default(ACTIVE)
+  externalId         String?             @unique
+  externalCustomerId String?
+  externalPriceId    String?
+  startedAt          DateTime            @default(now())
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  trialEndsAt        DateTime?
+  canceledAt         DateTime?
+  endedAt            DateTime?
+  metadata           Json?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  organization    Organization   @relation(fields: [organizationId], references: [id])
+  customer        Customer       @relation(fields: [customerId], references: [id])
+  plan            Plan           @relation(fields: [planId], references: [id])
+  channelAccesses ChannelAccess[]
+  paymentEvents   PaymentEvent[]
+
+  @@index([organizationId, status])
+  @@index([customerId])
+}
+
+model ChannelAccess {
+  id             String       @id @default(uuid())
+  subscriptionId String
+  channelId      String
+  customerId     String
+  inviteId       String?
+  status         AccessStatus @default(PENDING)
+  grantedAt      DateTime?
+  revokedAt      DateTime?
+  revokeReason   String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  subscription Subscription  @relation(fields: [subscriptionId], references: [id])
+  channel      Channel       @relation(fields: [channelId], references: [id])
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  invite       TelegramInvite? @relation(fields: [inviteId], references: [id])
+
+  @@unique([subscriptionId, channelId])
+  @@index([channelId, status])
+}
+
+model TelegramInvite {
+  id           String       @id @default(uuid())
+  channelId    String
+  inviteLink   String
+  inviteHash   String?
+  status       InviteStatus @default(ACTIVE)
+  expiresAt    DateTime?
+  maxUses      Int?
+  usesCount    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  revokedAt    DateTime?
+  revokedReason String?
+  lastSyncedAt DateTime?
+
+  channel        Channel        @relation(fields: [channelId], references: [id])
+  channelAccesses ChannelAccess[]
+
+  @@unique([channelId, inviteLink])
+}
+
+model PaymentEvent {
+  id             String            @id @default(uuid())
+  organizationId String
+  subscriptionId String?
+  provider       PaymentProvider
+  type           PaymentEventType
+  externalId     String
+  payload        Json
+  occurredAt     DateTime          @default(now())
+  processedAt    DateTime?
+  createdAt      DateTime          @default(now())
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@unique([provider, externalId])
+  @@index([subscriptionId])
+}
+
+model AuditLog {
+  id              String         @id @default(uuid())
+  organizationId  String
+  actorId         String?
+  actorType       AuditActorType @default(USER)
+  action          String
+  resourceType    String
+  resourceId      String?
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  actor        User?        @relation(fields: [actorId], references: [id])
+
+  @@index([organizationId, createdAt])
+}
