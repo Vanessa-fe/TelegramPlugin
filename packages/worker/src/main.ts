@@ -104,12 +104,30 @@ const env: WorkerEnv = {
   ),
 };
 
-const connection = new Redis(env.REDIS_URL);
+let connection: Redis;
 const prisma = new PrismaClient();
 const bot = new Bot(env.TELEGRAM_BOT_TOKEN);
 
 const workers: Worker[] = [];
 let isShuttingDown = false;
+
+async function initRedis(): Promise<Redis> {
+  const redis = new Redis(env.REDIS_URL, {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: true,
+  });
+
+  return new Promise((resolve, reject) => {
+    redis.on("ready", () => {
+      logger.info("Redis connection established");
+      resolve(redis);
+    });
+    redis.on("error", (err) => {
+      logger.error({ error: err }, "Redis connection error");
+      reject(err);
+    });
+  });
+}
 
 function extractInviteHash(inviteLink: string): string | null {
   const url = inviteLink.trim();
@@ -459,6 +477,9 @@ async function shutdown(signal?: NodeJS.Signals): Promise<void> {
 }
 
 export async function bootstrapWorkers(): Promise<void> {
+  // Initialize Redis connection first
+  connection = await initRedis();
+
   const me = await bot.api.getMe();
   logger.info(
     {
