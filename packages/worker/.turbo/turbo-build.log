@@ -1,0 +1,4 @@
+
+> @telegram-plugin/worker@0.1.0 build /Users/vanessa/Sites/localhost/TelegramPlugin/packages/worker
+> tsc -p tsconfig.json
+

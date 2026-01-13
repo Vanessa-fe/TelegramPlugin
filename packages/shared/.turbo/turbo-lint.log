@@ -1,0 +1,4 @@
+
+> @telegram-plugin/shared@0.1.0 lint /Users/vanessa/Sites/localhost/TelegramPlugin/packages/shared
+> eslint "src/**/*.ts"
+

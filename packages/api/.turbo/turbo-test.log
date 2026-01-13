@@ -1,0 +1,15 @@
+
+> api@0.0.1 test /Users/vanessa/Sites/localhost/TelegramPlugin/packages/api
+> jest
+
+PASS src/app.controller.spec.ts
+PASS src/modules/organizations/organizations.service.spec.ts
+PASS src/modules/channel-access/channel-access.service.spec.ts
+PASS src/modules/payments/stripe-webhook.service.spec.ts
+PASS src/modules/auth/auth.service.spec.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       54 passed, 54 total
+Snapshots:   0 total
+Time:        1.462 s
+Ran all test suites.

@@ -1,0 +1,4 @@
+
+> @telegram-plugin/bot@0.1.0 build /Users/vanessa/Sites/localhost/TelegramPlugin/packages/bot
+> tsc -p tsconfig.json
+
