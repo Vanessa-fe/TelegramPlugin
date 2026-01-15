@@ -14,6 +14,7 @@ export const createOrganizationSchema = z.object({
     })
     .transform((value) => value.toLowerCase()),
   billingEmail: z.string().email(),
+  saasActive: z.boolean().optional(),
   timezone: z.string().min(1).optional(),
   metadata: metadataSchema,
 });

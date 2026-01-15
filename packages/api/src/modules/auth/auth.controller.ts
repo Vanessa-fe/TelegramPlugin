@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseInterceptors,
+} from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 import { ZodValidationPipe } from '../../common';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -48,8 +57,17 @@ export class AuthController {
   refresh(
     @Body(new ZodValidationPipe(refreshSchema))
     body: RefreshDto,
+    @Req() req: FastifyRequest,
   ): Promise<AuthResult> {
-    return this.authService.refresh(body.refreshToken);
+    const refreshTokenFromCookie = (req as { cookies?: { refreshToken?: string } })
+      .cookies?.refreshToken;
+    const refreshToken = body.refreshToken || refreshTokenFromCookie;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token manquant');
+    }
+
+    return this.authService.refresh(refreshToken);
   }
 
   @Post('logout')

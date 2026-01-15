@@ -14,6 +14,7 @@ exports.createOrganizationSchema = zod_1.z.object({
     })
         .transform((value) => value.toLowerCase()),
     billingEmail: zod_1.z.string().email(),
+    saasActive: zod_1.z.boolean().optional(),
     timezone: zod_1.z.string().min(1).optional(),
     metadata: metadataSchema,
 });

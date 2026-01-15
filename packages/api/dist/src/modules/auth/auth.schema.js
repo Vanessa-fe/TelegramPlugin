@@ -6,9 +6,11 @@ exports.loginSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
     password: zod_1.z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
 });
-exports.refreshSchema = zod_1.z.object({
-    refreshToken: zod_1.z.string().min(1),
-});
+exports.refreshSchema = zod_1.z
+    .object({
+    refreshToken: zod_1.z.string().min(1).optional(),
+})
+    .default({});
 exports.registerSchema = zod_1.z.object({
     email: zod_1.z.string().email('Email invalide'),
     password: zod_1.z

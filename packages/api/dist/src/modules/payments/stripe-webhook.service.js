@@ -95,6 +95,10 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
                     occurredAt,
                 },
             }));
+        if (event.type === 'checkout.session.completed' &&
+            context.subscriptionId) {
+            await this.syncSubscriptionFromCheckout(event.data.object, context.subscriptionId);
+        }
         await this.applyDomainSideEffects(mappedType, context);
         await this.prisma.paymentEvent.update({
             where: { id: savedEvent.id },
@@ -111,10 +115,13 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             case 'checkout.session.completed': {
                 const session = event.data.object;
                 const subscriptionId = typeof session.subscription === 'string' ? session.subscription : undefined;
-                if (!subscriptionId) {
-                    return this.contextFromMetadata(session.metadata ?? undefined);
+                if (subscriptionId) {
+                    const context = await this.contextFromSubscription(subscriptionId);
+                    if (context) {
+                        return context;
+                    }
                 }
-                return this.contextFromSubscription(subscriptionId);
+                return this.contextFromMetadata(session.metadata ?? undefined);
             }
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
@@ -198,6 +205,22 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             organizationId: subscription.organizationId,
             subscriptionId: subscription.id,
         };
+    }
+    async syncSubscriptionFromCheckout(session, subscriptionId) {
+        const update = {};
+        if (typeof session.subscription === 'string') {
+            update.externalId = session.subscription;
+        }
+        if (typeof session.customer === 'string') {
+            update.externalCustomerId = session.customer;
+        }
+        if (Object.keys(update).length === 0) {
+            return;
+        }
+        await this.prisma.subscription.update({
+            where: { id: subscriptionId },
+            data: update,
+        });
     }
     isUuid(value) {
         return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);

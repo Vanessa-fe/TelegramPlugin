@@ -23,6 +23,7 @@ const organizationSchema = z.object({
       'Seuls les lettres minuscules, chiffres et tirets sont autorisés'
     ),
   billingEmail: z.string().email('Email valide requis'),
+  saasActive: z.boolean().optional(),
   timezone: z.string().optional(),
 });
 
@@ -47,15 +48,17 @@ export function OrganizationForm({
       ? {
           name: organization.name,
           slug: organization.slug,
-          billingEmail: organization.billingEmail,
-          timezone: organization.timezone ?? 'UTC',
-        }
-      : {
-          name: '',
-          slug: '',
-          billingEmail: '',
-          timezone: 'UTC',
-        },
+        billingEmail: organization.billingEmail,
+        saasActive: organization.saasActive ?? false,
+        timezone: organization.timezone ?? 'UTC',
+      }
+    : {
+        name: '',
+        slug: '',
+        billingEmail: '',
+        saasActive: false,
+        timezone: 'UTC',
+      },
   });
 
   return (
@@ -101,6 +104,17 @@ export function OrganizationForm({
                 {errors.billingEmail.message}
               </p>
             )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="saasActive"
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300"
+              {...register('saasActive')}
+              disabled={isSubmitting}
+            />
+            <Label htmlFor="saasActive">Abonnement SaaS actif</Label>
           </div>
 
           <div className="space-y-2">

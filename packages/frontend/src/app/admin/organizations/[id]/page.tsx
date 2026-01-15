@@ -57,7 +57,7 @@ export default function OrganizationDetailsPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">{organization.name}</h1>
-        <Link href={`/dashboard/organizations/${organization.id}/edit`}>
+        <Link href={`/admin/organizations/${organization.id}/edit`}>
           <Button>
             <Pencil className="mr-2 h-4 w-4" />
             Modifier
@@ -79,6 +79,14 @@ export default function OrganizationDetailsPage() {
               Email de facturation
             </p>
             <p className="mt-1">{organization.billingEmail}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">
+              Abonnement SaaS
+            </p>
+            <p className="mt-1">
+              {organization.saasActive ? 'Actif' : 'Inactif'}
+            </p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Fuseau horaire</p>

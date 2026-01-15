@@ -14,6 +14,7 @@ export declare class CustomersController {
             slug: string;
             stripeAccountId: string | null;
             billingEmail: string;
+            saasActive: boolean;
             timezone: string | null;
         };
         subscriptions: {
@@ -71,6 +72,7 @@ export declare class CustomersController {
             slug: string;
             stripeAccountId: string | null;
             billingEmail: string;
+            saasActive: boolean;
             timezone: string | null;
         };
         subscriptions: {

@@ -17,6 +17,7 @@ const payment_events_module_1 = require("./modules/payment-events/payment-events
 const products_module_1 = require("./modules/products/products.module");
 const subscriptions_module_1 = require("./modules/subscriptions/subscriptions.module");
 const stripe_webhook_module_1 = require("./modules/payments/stripe-webhook.module");
+const billing_module_1 = require("./modules/billing/billing.module");
 const organizations_module_1 = require("./modules/organizations/organizations.module");
 const prisma_module_1 = require("./prisma/prisma.module");
 const customers_module_1 = require("./modules/customers/customers.module");
@@ -57,6 +58,7 @@ exports.AppModule = AppModule = __decorate([
             payment_events_module_1.PaymentEventsModule,
             auth_module_1.AuthModule,
             stripe_webhook_module_1.StripeWebhookModule,
+            billing_module_1.BillingModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

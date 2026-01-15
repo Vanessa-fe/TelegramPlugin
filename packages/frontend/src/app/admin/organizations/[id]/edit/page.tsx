@@ -39,7 +39,7 @@ export default function EditOrganizationPage() {
     try {
       await organizationsApi.update(params.id as string, data);
       toast.success('Organisation mise à jour avec succès');
-      router.push(`/dashboard/organizations/${params.id}`);
+      router.push(`/admin/organizations/${params.id}`);
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(

@@ -11,5 +11,5 @@ PASS src/modules/auth/auth.service.spec.ts
 Test Suites: 5 passed, 5 total
 Tests:       54 passed, 54 total
 Snapshots:   0 total
-Time:        1.462 s
+Time:        1.253 s, estimated 2 s
 Ran all test suites.

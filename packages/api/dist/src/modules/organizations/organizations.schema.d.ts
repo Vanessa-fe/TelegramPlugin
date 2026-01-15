@@ -3,6 +3,7 @@ export declare const createOrganizationSchema: z.ZodObject<{
     name: z.ZodString;
     slug: z.ZodEffects<z.ZodString, string, string>;
     billingEmail: z.ZodString;
+    saasActive: z.ZodOptional<z.ZodBoolean>;
     timezone: z.ZodOptional<z.ZodString>;
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
 }, "strip", z.ZodTypeAny, {
@@ -10,18 +11,21 @@ export declare const createOrganizationSchema: z.ZodObject<{
     slug: string;
     billingEmail: string;
     metadata?: Record<string, any> | undefined;
+    saasActive?: boolean | undefined;
     timezone?: string | undefined;
 }, {
     name: string;
     slug: string;
     billingEmail: string;
     metadata?: Record<string, any> | undefined;
+    saasActive?: boolean | undefined;
     timezone?: string | undefined;
 }>;
 export type CreateOrganizationDto = z.infer<typeof createOrganizationSchema>;
 export declare const updateOrganizationSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
     billingEmail: z.ZodOptional<z.ZodString>;
+    saasActive: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
     timezone: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     metadata: z.ZodOptional<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>>;
 } & {
@@ -31,12 +35,14 @@ export declare const updateOrganizationSchema: z.ZodObject<{
     metadata?: Record<string, any> | undefined;
     slug?: string | undefined;
     billingEmail?: string | undefined;
+    saasActive?: boolean | undefined;
     timezone?: string | undefined;
 }, {
     name?: string | undefined;
     metadata?: Record<string, any> | undefined;
     slug?: string | undefined;
     billingEmail?: string | undefined;
+    saasActive?: boolean | undefined;
     timezone?: string | undefined;
 }>;
 export type UpdateOrganizationDto = z.infer<typeof updateOrganizationSchema>;

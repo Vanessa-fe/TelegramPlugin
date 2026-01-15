@@ -12,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User } from 'lucide-react';
+import { UserRole } from '@/types/auth';
+import { LogOut, Shield, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function Header() {
@@ -33,6 +34,12 @@ export function Header() {
       toast.error('Erreur lors de la déconnexion');
     }
   };
+
+  const handleAdmin = () => {
+    router.push('/admin');
+  };
+
+  const isSuperadmin = user?.role === UserRole.SUPERADMIN;
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
@@ -58,6 +65,12 @@ export function Header() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {isSuperadmin && (
+              <DropdownMenuItem onClick={handleAdmin}>
+                <Shield className="mr-2 h-4 w-4" />
+                Back-office
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" />
               Profil

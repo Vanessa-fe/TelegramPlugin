@@ -8,6 +8,7 @@ import { PaymentEventsModule } from './modules/payment-events/payment-events.mod
 import { ProductsModule } from './modules/products/products.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { StripeWebhookModule } from './modules/payments/stripe-webhook.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomersModule } from './modules/customers/customers.module';
@@ -46,6 +47,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
     PaymentEventsModule,
     AuthModule,
     StripeWebhookModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [

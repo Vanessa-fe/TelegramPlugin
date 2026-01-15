@@ -2,7 +2,7 @@
   "name": "telegram-monetization",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@8.15.4",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
@@ -11,7 +11,9 @@
     "dev:api": "pnpm --filter api start:dev",
     "dev:bot": "pnpm --filter bot dev",
     "dev:frontend": "pnpm --filter frontend dev",
-    "dev:worker": "pnpm --filter worker dev"
+    "dev:worker": "pnpm --filter worker dev",
+    "dev:stack": "bash scripts/dev-stack.sh",
+    "db:deploy": "bash scripts/db-deploy.sh"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

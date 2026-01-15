@@ -53,8 +53,8 @@ export default function OrganizationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Organizations</h1>
-        <Link href="/dashboard/organizations/new">
+        <h1 className="text-3xl font-bold">Organisations</h1>
+        <Link href="/admin/organizations/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle organisation
@@ -69,6 +69,8 @@ export default function OrganizationsPage() {
               <TableHead>Nom</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Email de facturation</TableHead>
+              <TableHead>SaaS</TableHead>
+              <TableHead>Stripe</TableHead>
               <TableHead>Créé le</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -76,7 +78,7 @@ export default function OrganizationsPage() {
           <TableBody>
             {organizations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-gray-500">
+                <TableCell colSpan={7} className="text-center text-gray-500">
                   Aucune organisation trouvée
                 </TableCell>
               </TableRow>
@@ -87,10 +89,20 @@ export default function OrganizationsPage() {
                   <TableCell>{org.slug}</TableCell>
                   <TableCell>{org.billingEmail}</TableCell>
                   <TableCell>
+                    {org.saasActive ? 'Actif' : 'Inactif'}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {org.stripeAccountId ? (
+                      <span className="font-mono">{org.stripeAccountId}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Non connecté</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     {new Date(org.createdAt).toLocaleDateString('fr-FR')}
                   </TableCell>
                   <TableCell>
-                    <Link href={`/dashboard/organizations/${org.id}`}>
+                    <Link href={`/admin/organizations/${org.id}`}>
                       <Button variant="ghost" size="sm">
                         Voir
                       </Button>
