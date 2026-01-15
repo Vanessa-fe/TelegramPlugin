@@ -34,8 +34,14 @@ let AuthController = class AuthController {
     login(body) {
         return this.authService.login(body.email, body.password);
     }
-    refresh(body) {
-        return this.authService.refresh(body.refreshToken);
+    refresh(body, req) {
+        const refreshTokenFromCookie = req
+            .cookies?.refreshToken;
+        const refreshToken = body.refreshToken || refreshTokenFromCookie;
+        if (!refreshToken) {
+            throw new common_1.UnauthorizedException('Refresh token manquant');
+        }
+        return this.authService.refresh(refreshToken);
     }
     logout() {
         return { message: 'Déconnexion réussie' };
@@ -68,8 +74,9 @@ __decorate([
     (0, common_1.Post)('refresh'),
     (0, set_auth_cookies_decorator_1.SetAuthCookies)(),
     __param(0, (0, common_1.Body)(new common_2.ZodValidationPipe(auth_schema_1.refreshSchema))),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refresh", null);
 __decorate([

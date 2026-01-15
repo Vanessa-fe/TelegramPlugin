@@ -24,12 +24,14 @@ async function main() {
     update: {
       name: 'Demo Agency',
       billingEmail: 'billing@demo-agency.local',
+      saasActive: true,
       timezone: 'Europe/Paris',
     },
     create: {
       name: 'Demo Agency',
       slug: 'demo-agency',
       billingEmail: 'billing@demo-agency.local',
+      saasActive: true,
       timezone: 'Europe/Paris',
       metadata: {
         onboardingChecklist: ['stripe_connected'],

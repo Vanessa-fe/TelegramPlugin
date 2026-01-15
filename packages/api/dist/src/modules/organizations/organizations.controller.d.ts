@@ -13,6 +13,7 @@ export declare class OrganizationsController {
         slug: string;
         stripeAccountId: string | null;
         billingEmail: string;
+        saasActive: boolean;
         timezone: string | null;
     }[]>;
     findOne(user: AuthUser, id: string): Promise<{
@@ -24,6 +25,7 @@ export declare class OrganizationsController {
         slug: string;
         stripeAccountId: string | null;
         billingEmail: string;
+        saasActive: boolean;
         timezone: string | null;
     }>;
     create(body: CreateOrganizationDto): Promise<{
@@ -35,6 +37,7 @@ export declare class OrganizationsController {
         slug: string;
         stripeAccountId: string | null;
         billingEmail: string;
+        saasActive: boolean;
         timezone: string | null;
     }>;
     update(user: AuthUser, id: string, body: UpdateOrganizationDto): Promise<{
@@ -46,6 +49,7 @@ export declare class OrganizationsController {
         slug: string;
         stripeAccountId: string | null;
         billingEmail: string;
+        saasActive: boolean;
         timezone: string | null;
     }>;
 }

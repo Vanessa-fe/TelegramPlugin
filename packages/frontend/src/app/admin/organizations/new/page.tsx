@@ -13,7 +13,7 @@ export default function NewOrganizationPage() {
     try {
       await organizationsApi.create(data);
       toast.success('Organisation créée avec succès');
-      router.push('/dashboard/organizations');
+      router.push('/admin/organizations');
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(

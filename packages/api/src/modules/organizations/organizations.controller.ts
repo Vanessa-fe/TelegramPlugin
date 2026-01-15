@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ParseUUIDPipe } from '@nestjs/common/pipes';
 import { UserRole } from '@prisma/client';
 import { ZodValidationPipe } from '../../common';
@@ -53,6 +61,11 @@ export class OrganizationsController {
     @Body(new ZodValidationPipe(updateOrganizationSchema))
     body: UpdateOrganizationDto,
   ) {
+    if (user.role !== UserRole.SUPERADMIN && body.saasActive !== undefined) {
+      throw new ForbiddenException(
+        "Seul un super-admin peut modifier l'abonnement SaaS",
+      );
+    }
     const scopedOrgId = resolveOrganizationScope(user, id) ?? id;
     return this.organizationsService.update(scopedOrgId, body);
   }

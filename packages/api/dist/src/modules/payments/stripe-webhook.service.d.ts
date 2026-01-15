@@ -16,6 +16,7 @@ export declare class StripeWebhookService {
     private resolveContext;
     private contextFromMetadata;
     private contextFromSubscription;
+    private syncSubscriptionFromCheckout;
     private isUuid;
     private getMetadataString;
     private mapEventType;

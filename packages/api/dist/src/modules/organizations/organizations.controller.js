@@ -38,6 +38,9 @@ let OrganizationsController = class OrganizationsController {
         return this.organizationsService.create(body);
     }
     update(user, id, body) {
+        if (user.role !== client_1.UserRole.SUPERADMIN && body.saasActive !== undefined) {
+            throw new common_1.ForbiddenException("Seul un super-admin peut modifier l'abonnement SaaS");
+        }
         const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, id) ?? id;
         return this.organizationsService.update(scopedOrgId, body);
     }

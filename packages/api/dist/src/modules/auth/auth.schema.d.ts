@@ -10,13 +10,13 @@ export declare const loginSchema: z.ZodObject<{
     password: string;
 }>;
 export type LoginDto = z.infer<typeof loginSchema>;
-export declare const refreshSchema: z.ZodObject<{
-    refreshToken: z.ZodString;
+export declare const refreshSchema: z.ZodDefault<z.ZodObject<{
+    refreshToken: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    refreshToken: string;
+    refreshToken?: string | undefined;
 }, {
-    refreshToken: string;
-}>;
+    refreshToken?: string | undefined;
+}>>;
 export type RefreshDto = z.infer<typeof refreshSchema>;
 export declare const registerSchema: z.ZodObject<{
     email: z.ZodString;

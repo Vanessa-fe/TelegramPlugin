@@ -81,6 +81,7 @@ model Organization {
   slug            String   @unique
   billingEmail    String
   stripeAccountId String?  @unique
+  saasActive      Boolean  @default(false)
   timezone        String?  @default("UTC")
   metadata        Json?
   createdAt       DateTime @default(now())

@@ -22,6 +22,7 @@ let OrganizationsService = class OrganizationsService {
             name: data.name,
             slug: data.slug,
             billingEmail: data.billingEmail,
+            saasActive: data.saasActive ?? false,
             timezone: data.timezone ?? 'UTC',
             metadata: data.metadata,
         };
@@ -42,6 +43,7 @@ let OrganizationsService = class OrganizationsService {
             ...(data.name && { name: data.name }),
             ...(data.slug && { slug: data.slug }),
             ...(data.billingEmail && { billingEmail: data.billingEmail }),
+            ...(data.saasActive !== undefined && { saasActive: data.saasActive }),
             ...(data.timezone && { timezone: data.timezone }),
             ...(data.metadata !== undefined && { metadata: data.metadata }),
         };

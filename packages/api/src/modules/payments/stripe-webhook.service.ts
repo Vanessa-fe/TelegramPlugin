@@ -109,6 +109,16 @@ export class StripeWebhookService {
         },
       }));
 
+    if (
+      event.type === 'checkout.session.completed' &&
+      context.subscriptionId
+    ) {
+      await this.syncSubscriptionFromCheckout(
+        event.data.object as Stripe.Checkout.Session,
+        context.subscriptionId,
+      );
+    }
+
     await this.applyDomainSideEffects(mappedType, context);
 
     await this.prisma.paymentEvent.update({
@@ -128,11 +138,14 @@ export class StripeWebhookService {
         const session = event.data.object as Stripe.Checkout.Session;
         const subscriptionId =
           typeof session.subscription === 'string' ? session.subscription : undefined;
-        if (!subscriptionId) {
-          return this.contextFromMetadata(session.metadata ?? undefined);
+        if (subscriptionId) {
+          const context = await this.contextFromSubscription(subscriptionId);
+          if (context) {
+            return context;
+          }
         }
 
-        return this.contextFromSubscription(subscriptionId);
+        return this.contextFromMetadata(session.metadata ?? undefined);
       }
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
@@ -242,6 +255,30 @@ export class StripeWebhookService {
       organizationId: subscription.organizationId,
       subscriptionId: subscription.id,
     };
+  }
+
+  private async syncSubscriptionFromCheckout(
+    session: Stripe.Checkout.Session,
+    subscriptionId: string,
+  ): Promise<void> {
+    const update: Prisma.SubscriptionUpdateInput = {};
+
+    if (typeof session.subscription === 'string') {
+      update.externalId = session.subscription;
+    }
+
+    if (typeof session.customer === 'string') {
+      update.externalCustomerId = session.customer;
+    }
+
+    if (Object.keys(update).length === 0) {
+      return;
+    }
+
+    await this.prisma.subscription.update({
+      where: { id: subscriptionId },
+      data: update,
+    });
   }
 
   private isUuid(value: string): boolean {
