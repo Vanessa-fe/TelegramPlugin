@@ -100,11 +100,11 @@ export default function BillingPage() {
           <CardHeader>
             <CardTitle className="text-base">Abonnement requis</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-amber-900">
-            Votre abonnement SaaS n'est pas actif. Les paiements sont desactives.
+        <CardContent className="text-sm text-amber-900">
+            Votre abonnement SaaS n&apos;est pas actif. Les paiements sont desactives.
             Contactez-nous pour reactiver votre acces.
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
       )}
 
       <Card>

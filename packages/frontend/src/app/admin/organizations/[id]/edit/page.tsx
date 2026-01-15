@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { organizationsApi } from '@/lib/api/organizations';
 import { OrganizationForm } from '@/components/organizations/organization-form';
@@ -12,17 +12,14 @@ import { toast } from 'sonner';
 
 export default function EditOrganizationPage() {
   const params = useParams();
+  const organizationId = params.id as string;
   const router = useRouter();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadOrganization();
-  }, [params.id]);
-
-  async function loadOrganization() {
+  const loadOrganization = useCallback(async () => {
     try {
-      const data = await organizationsApi.findOne(params.id as string);
+      const data = await organizationsApi.findOne(organizationId);
       setOrganization(data);
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
@@ -33,13 +30,17 @@ export default function EditOrganizationPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [organizationId]);
+
+  useEffect(() => {
+    loadOrganization();
+  }, [loadOrganization]);
 
   async function handleSubmit(data: UpdateOrganizationDto) {
     try {
-      await organizationsApi.update(params.id as string, data);
+      await organizationsApi.update(organizationId, data);
       toast.success('Organisation mise à jour avec succès');
-      router.push(`/admin/organizations/${params.id}`);
+      router.push(`/admin/organizations/${organizationId}`);
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(
