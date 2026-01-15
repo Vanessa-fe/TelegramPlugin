@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { organizationsApi } from '@/lib/api/organizations';
@@ -12,16 +12,13 @@ import { toast } from 'sonner';
 
 export default function OrganizationDetailsPage() {
   const params = useParams();
+  const organizationId = params.id as string;
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadOrganization();
-  }, [params.id]);
-
-  async function loadOrganization() {
+  const loadOrganization = useCallback(async () => {
     try {
-      const data = await organizationsApi.findOne(params.id as string);
+      const data = await organizationsApi.findOne(organizationId);
       setOrganization(data);
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
@@ -32,7 +29,11 @@ export default function OrganizationDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [organizationId]);
+
+  useEffect(() => {
+    loadOrganization();
+  }, [loadOrganization]);
 
   if (isLoading) {
     return (

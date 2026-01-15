@@ -28,7 +28,7 @@ export default function AdminPage() {
         >
           <h3 className="text-lg font-semibold">Facturation</h3>
           <p className="mt-2 text-sm text-gray-600">
-            Suivez l'etat Stripe et la configuration billing
+            Suivez l&apos;etat Stripe et la configuration billing
           </p>
         </Link>
       </div>
