@@ -5,51 +5,51 @@ export declare class OrganizationsController {
     private readonly organizationsService;
     constructor(organizationsService: OrganizationsService);
     findAll(): Promise<{
-        name: string;
         id: string;
         createdAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         updatedAt: Date;
+        name: string;
         slug: string;
-        stripeAccountId: string | null;
         billingEmail: string;
+        stripeAccountId: string | null;
         saasActive: boolean;
         timezone: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
     }[]>;
     findOne(user: AuthUser, id: string): Promise<{
-        name: string;
         id: string;
         createdAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         updatedAt: Date;
+        name: string;
         slug: string;
-        stripeAccountId: string | null;
         billingEmail: string;
+        stripeAccountId: string | null;
         saasActive: boolean;
         timezone: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     create(body: CreateOrganizationDto): Promise<{
-        name: string;
         id: string;
         createdAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         updatedAt: Date;
+        name: string;
         slug: string;
-        stripeAccountId: string | null;
         billingEmail: string;
+        stripeAccountId: string | null;
         saasActive: boolean;
         timezone: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     update(user: AuthUser, id: string, body: UpdateOrganizationDto): Promise<{
-        name: string;
         id: string;
         createdAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         updatedAt: Date;
+        name: string;
         slug: string;
-        stripeAccountId: string | null;
         billingEmail: string;
+        stripeAccountId: string | null;
         saasActive: boolean;
         timezone: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
 }

@@ -27,7 +27,6 @@ type StripeStatus = {
 @Injectable()
 export class BillingService {
   private readonly stripe: Stripe;
-  private readonly feePercent: number;
 
   constructor(
     private readonly config: ConfigService,
@@ -41,10 +40,6 @@ export class BillingService {
     this.stripe = new Stripe(apiKey, {
       apiVersion: '2024-06-20',
     });
-    this.feePercent = this.parsePercent(
-      this.config.get<string>('STRIPE_APPLICATION_FEE_PERCENT'),
-      0,
-    );
   }
 
   async getStripeStatus(organizationId: string): Promise<StripeStatus> {
@@ -316,28 +311,16 @@ export class BillingService {
     };
 
     if (plan.interval === PlanInterval.ONE_TIME) {
-      const applicationFeeAmount = this.computeApplicationFee(
-        plan.priceCents * quantity,
-      );
-
       const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData =
         {
-        transfer_data: { destination: organization.stripeAccountId },
         metadata,
       };
-      if (applicationFeeAmount) {
-        paymentIntentData.application_fee_amount = applicationFeeAmount;
-      }
       sessionParams.payment_intent_data = paymentIntentData;
     } else {
       const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData =
         {
-        transfer_data: { destination: organization.stripeAccountId },
         metadata,
       };
-      if (this.feePercent > 0) {
-        subscriptionData.application_fee_percent = this.feePercent;
-      }
       if (plan.trialPeriodDays) {
         subscriptionData.trial_period_days = plan.trialPeriodDays;
       }
@@ -346,7 +329,9 @@ export class BillingService {
 
     let session: Stripe.Checkout.Session;
     try {
-      session = await this.stripe.checkout.sessions.create(sessionParams);
+      session = await this.stripe.checkout.sessions.create(sessionParams, {
+        stripeAccount: organization.stripeAccountId,
+      });
     } catch (error) {
       await this.prisma.subscription.delete({
         where: { id: subscription.id },
@@ -378,27 +363,5 @@ export class BillingService {
       default:
         throw new BadRequestException('Intervalle de plan non supporté');
     }
-  }
-
-  private parsePercent(rawValue: string | undefined, fallback: number): number {
-    if (!rawValue) {
-      return fallback;
-    }
-
-    const parsed = Number(rawValue);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      return fallback;
-    }
-
-    return Math.min(parsed, 100);
-  }
-
-  private computeApplicationFee(amountCents: number): number | undefined {
-    if (this.feePercent <= 0) {
-      return undefined;
-    }
-
-    const fee = Math.round((amountCents * this.feePercent) / 100);
-    return fee > 0 ? fee : undefined;
   }
 }

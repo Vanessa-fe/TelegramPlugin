@@ -29,13 +29,14 @@ export class CookieResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data: AuthResult) => {
         const isProduction = process.env.NODE_ENV === 'production';
+        const sameSite = isProduction ? 'none' : 'lax';
 
         // Use Fastify's native cookie method via the 'any' type assertion
         // This is necessary because @fastify/cookie types are not properly exposed
         (reply as any).setCookie('accessToken', data.accessToken, {
           httpOnly: true,
           secure: isProduction,
-          sameSite: isProduction ? 'strict' : 'lax',
+          sameSite,
           path: '/',
           maxAge: 15 * 60, // 15 minutes in seconds
         });
@@ -43,7 +44,7 @@ export class CookieResponseInterceptor implements NestInterceptor {
         (reply as any).setCookie('refreshToken', data.refreshToken, {
           httpOnly: true,
           secure: isProduction,
-          sameSite: isProduction ? 'strict' : 'lax',
+          sameSite,
           path: '/',
           maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
         });

@@ -17,14 +17,20 @@ const payment_events_module_1 = require("./modules/payment-events/payment-events
 const products_module_1 = require("./modules/products/products.module");
 const subscriptions_module_1 = require("./modules/subscriptions/subscriptions.module");
 const stripe_webhook_module_1 = require("./modules/payments/stripe-webhook.module");
+const telegram_stars_module_1 = require("./modules/payments/telegram-stars.module");
 const billing_module_1 = require("./modules/billing/billing.module");
 const organizations_module_1 = require("./modules/organizations/organizations.module");
 const prisma_module_1 = require("./prisma/prisma.module");
 const customers_module_1 = require("./modules/customers/customers.module");
 const plans_module_1 = require("./modules/plans/plans.module");
+const channels_module_1 = require("./modules/channels/channels.module");
+const channel_access_module_1 = require("./modules/channel-access/channel-access.module");
+const entitlements_module_1 = require("./modules/entitlements/entitlements.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const jwt_auth_guard_1 = require("./modules/auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("./modules/auth/guards/roles.guard");
+const storefront_module_1 = require("./modules/storefront/storefront.module");
+const scheduler_module_1 = require("./modules/scheduler/scheduler.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -56,9 +62,15 @@ exports.AppModule = AppModule = __decorate([
             customers_module_1.CustomersModule,
             subscriptions_module_1.SubscriptionsModule,
             payment_events_module_1.PaymentEventsModule,
+            channels_module_1.ChannelsModule,
+            channel_access_module_1.ChannelAccessModule,
+            entitlements_module_1.EntitlementsModule,
             auth_module_1.AuthModule,
             stripe_webhook_module_1.StripeWebhookModule,
+            telegram_stars_module_1.TelegramStarsModule,
             billing_module_1.BillingModule,
+            storefront_module_1.StorefrontModule,
+            scheduler_module_1.SchedulerModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

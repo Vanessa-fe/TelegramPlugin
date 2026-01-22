@@ -42,6 +42,7 @@ Ce projet est un monorepo PNPM contenant l'API NestJS, le bot Telegram, le worke
    - `REDIS_URL` : utilisé par BullMQ (`packages/worker`).
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
    - `TELEGRAM_BOT_TOKEN`.
+   - `BREVO_API_KEY`, `BREVO_FROM_EMAIL`, `BREVO_FROM_NAME` (voir `docs/email-configuration.md`).
    - Adapter `CORS_ORIGIN`, `NEXT_PUBLIC_API_URL` si les ports changent.
 
 ## Services externes

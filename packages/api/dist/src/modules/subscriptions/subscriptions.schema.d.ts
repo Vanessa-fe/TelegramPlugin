@@ -22,9 +22,9 @@ export declare const createSubscriptionSchema: z.ZodObject<{
     organizationId: string;
     customerId: string;
     planId: string;
+    metadata?: Record<string, any> | undefined;
     status?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "INCOMPLETE" | "TRIALING" | "EXPIRED" | undefined;
     externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     externalCustomerId?: string | undefined;
     externalPriceId?: string | undefined;
     currentPeriodStart?: Date | undefined;
@@ -34,9 +34,9 @@ export declare const createSubscriptionSchema: z.ZodObject<{
     organizationId: string;
     customerId: string;
     planId: string;
+    metadata?: Record<string, any> | undefined;
     status?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "INCOMPLETE" | "TRIALING" | "EXPIRED" | undefined;
     externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     externalCustomerId?: string | undefined;
     externalPriceId?: string | undefined;
     currentPeriodStart?: Date | undefined;
@@ -68,11 +68,9 @@ export declare const updateSubscriptionSchema: z.ZodObject<{
     endedAt: z.ZodOptional<z.ZodDate>;
 }, "strip", z.ZodTypeAny, {
     organizationId?: string | undefined;
+    metadata?: Record<string, any> | undefined;
     status?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "INCOMPLETE" | "TRIALING" | "EXPIRED" | undefined;
     externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
-    customerId?: string | undefined;
-    planId?: string | undefined;
     externalCustomerId?: string | undefined;
     externalPriceId?: string | undefined;
     currentPeriodStart?: Date | undefined;
@@ -80,13 +78,13 @@ export declare const updateSubscriptionSchema: z.ZodObject<{
     trialEndsAt?: Date | undefined;
     canceledAt?: Date | undefined;
     endedAt?: Date | undefined;
+    customerId?: string | undefined;
+    planId?: string | undefined;
 }, {
     organizationId?: string | undefined;
+    metadata?: Record<string, any> | undefined;
     status?: "ACTIVE" | "PAST_DUE" | "CANCELED" | "INCOMPLETE" | "TRIALING" | "EXPIRED" | undefined;
     externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
-    customerId?: string | undefined;
-    planId?: string | undefined;
     externalCustomerId?: string | undefined;
     externalPriceId?: string | undefined;
     currentPeriodStart?: Date | undefined;
@@ -94,5 +92,7 @@ export declare const updateSubscriptionSchema: z.ZodObject<{
     trialEndsAt?: Date | undefined;
     canceledAt?: Date | undefined;
     endedAt?: Date | undefined;
+    customerId?: string | undefined;
+    planId?: string | undefined;
 }>;
 export type UpdateSubscriptionDto = z.infer<typeof updateSubscriptionSchema>;

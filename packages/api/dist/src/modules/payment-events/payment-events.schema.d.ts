@@ -5,6 +5,7 @@ export declare const createPaymentEventSchema: z.ZodObject<{
     provider: z.ZodNativeEnum<{
         STRIPE: "STRIPE";
         PAYPAL: "PAYPAL";
+        TELEGRAM_STARS: "TELEGRAM_STARS";
     }>;
     type: z.ZodNativeEnum<{
         CHECKOUT_COMPLETED: "CHECKOUT_COMPLETED";
@@ -20,17 +21,17 @@ export declare const createPaymentEventSchema: z.ZodObject<{
     occurredAt: z.ZodOptional<z.ZodDate>;
 }, "strip", z.ZodTypeAny, {
     organizationId: string;
-    provider: "STRIPE" | "PAYPAL";
-    type: "CHECKOUT_COMPLETED" | "SUBSCRIPTION_CREATED" | "SUBSCRIPTION_UPDATED" | "SUBSCRIPTION_CANCELED" | "INVOICE_PAID" | "INVOICE_PAYMENT_FAILED" | "REFUND_CREATED";
     externalId: string;
+    provider: "STRIPE" | "PAYPAL" | "TELEGRAM_STARS";
+    type: "CHECKOUT_COMPLETED" | "SUBSCRIPTION_CREATED" | "SUBSCRIPTION_UPDATED" | "SUBSCRIPTION_CANCELED" | "INVOICE_PAID" | "INVOICE_PAYMENT_FAILED" | "REFUND_CREATED";
     payload: Record<string, any>;
     subscriptionId?: string | undefined;
     occurredAt?: Date | undefined;
 }, {
     organizationId: string;
-    provider: "STRIPE" | "PAYPAL";
-    type: "CHECKOUT_COMPLETED" | "SUBSCRIPTION_CREATED" | "SUBSCRIPTION_UPDATED" | "SUBSCRIPTION_CANCELED" | "INVOICE_PAID" | "INVOICE_PAYMENT_FAILED" | "REFUND_CREATED";
     externalId: string;
+    provider: "STRIPE" | "PAYPAL" | "TELEGRAM_STARS";
+    type: "CHECKOUT_COMPLETED" | "SUBSCRIPTION_CREATED" | "SUBSCRIPTION_UPDATED" | "SUBSCRIPTION_CANCELED" | "INVOICE_PAID" | "INVOICE_PAYMENT_FAILED" | "REFUND_CREATED";
     payload: Record<string, any>;
     subscriptionId?: string | undefined;
     occurredAt?: Date | undefined;

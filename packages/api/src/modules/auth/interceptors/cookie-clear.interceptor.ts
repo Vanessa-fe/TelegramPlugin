@@ -29,14 +29,21 @@ export class CookieClearInterceptor implements NestInterceptor {
       map((data) => {
         // Clear cookies by setting maxAge to 0
         // Use 'any' type assertion because @fastify/cookie types are not properly exposed
+        const isProduction = process.env.NODE_ENV === 'production';
+        const sameSite = isProduction ? 'none' : 'lax';
+
         (reply as any).setCookie('accessToken', '', {
           httpOnly: true,
+          secure: isProduction,
+          sameSite,
           path: '/',
           maxAge: 0,
         });
 
         (reply as any).setCookie('refreshToken', '', {
           httpOnly: true,
+          secure: isProduction,
+          sameSite,
           path: '/',
           maxAge: 0,
         });

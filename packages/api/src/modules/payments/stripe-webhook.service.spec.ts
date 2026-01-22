@@ -61,6 +61,9 @@ describe('StripeWebhookService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
             },
+            organization: {
+              findFirst: jest.fn(),
+            },
           },
         },
         {
@@ -79,6 +82,7 @@ describe('StripeWebhookService', () => {
       ChannelAccessService,
     ) as jest.Mocked<ChannelAccessService>;
     configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
+    prisma.organization.findFirst.mockResolvedValue(null);
 
     // Mock Stripe client
     (service as any).stripe = mockStripe;
@@ -122,6 +126,7 @@ describe('StripeWebhookService', () => {
       const mockEvent: Stripe.Event = {
         id: 'evt_123',
         type: 'checkout.session.completed',
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -167,6 +172,7 @@ describe('StripeWebhookService', () => {
       const mockEvent: Stripe.Event = {
         id: 'evt_456',
         type: 'invoice.payment_succeeded',
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -202,6 +208,7 @@ describe('StripeWebhookService', () => {
       const mockEvent: Stripe.Event = {
         id: 'evt_processed',
         type: 'invoice.payment_succeeded',
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -250,6 +257,7 @@ describe('StripeWebhookService', () => {
       const mockEvent: Stripe.Event = {
         id: 'evt_checkout',
         type: 'checkout.session.completed',
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -281,6 +289,7 @@ describe('StripeWebhookService', () => {
       const mockEvent: Stripe.Event = {
         id: 'evt_subscription',
         type: 'customer.subscription.created',
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -314,10 +323,45 @@ describe('StripeWebhookService', () => {
       });
     });
 
+    it('should resolve context from event account', async () => {
+      const mockEvent: Stripe.Event = {
+        id: 'evt_account',
+        type: 'invoice.payment_succeeded',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'in_123',
+          } as Stripe.Invoice,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+      prisma.organization.findFirst.mockResolvedValue({ id: 'org-789' } as any);
+      prisma.paymentEvent.findUnique.mockResolvedValue(null);
+      prisma.paymentEvent.create.mockResolvedValue({ id: 'pe-account' } as any);
+      prisma.paymentEvent.update.mockResolvedValue({} as any);
+
+      await service.handleWebhook('sig_123', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      expect(prisma.organization.findFirst).toHaveBeenCalledWith({
+        where: { stripeAccountId: 'acct_123' },
+        select: { id: true },
+      });
+      expect(prisma.paymentEvent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          organizationId: 'org-789',
+        }),
+      });
+    });
+
     it('should skip processing if context cannot be resolved', async () => {
       const mockEvent: Stripe.Event = {
         id: 'evt_no_context',
         type: 'invoice.payment_succeeded',
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -345,6 +389,7 @@ describe('StripeWebhookService', () => {
       const mockEvent: Stripe.Event = {
         id: `evt_${eventType}`,
         type: eventType as any,
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -440,6 +485,7 @@ describe('StripeWebhookService', () => {
       const mockEvent: Stripe.Event = {
         id: 'evt_refund',
         type: 'charge.refunded',
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -481,6 +527,7 @@ describe('StripeWebhookService', () => {
       const mockEvent: Stripe.Event = {
         id: 'evt_no_sub',
         type: 'checkout.session.completed',
+        account: 'acct_123',
         created: 1234567890,
         data: {
           object: {
@@ -522,6 +569,7 @@ describe('StripeWebhookService', () => {
         const mockEvent: Stripe.Event = {
           id: `evt_${testCase.expected}`,
           type: 'checkout.session.completed',
+          account: 'acct_123',
           created: 1234567890,
           data: {
             object: {

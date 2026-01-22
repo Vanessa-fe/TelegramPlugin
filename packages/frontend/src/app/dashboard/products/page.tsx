@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus } from 'lucide-react';
+import { Plus, List } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusLabels: Record<ProductStatus, string> = {
@@ -76,12 +76,13 @@ export default function ProductsPage() {
               <TableHead>Statut</TableHead>
               <TableHead>Organisation</TableHead>
               <TableHead>Créé le</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-gray-500">
+                <TableCell colSpan={5} className="text-center text-gray-500">
                   Aucun produit trouvé
                 </TableCell>
               </TableRow>
@@ -95,6 +96,14 @@ export default function ProductsPage() {
                   </TableCell>
                   <TableCell>
                     {new Date(product.createdAt).toLocaleDateString('fr-FR')}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Link href={`/dashboard/products/${product.id}/plans`}>
+                      <Button variant="outline" size="sm">
+                        <List className="mr-2 h-4 w-4" />
+                        Plans
+                      </Button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))

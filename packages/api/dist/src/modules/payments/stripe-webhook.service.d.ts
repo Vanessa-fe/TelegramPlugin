@@ -22,4 +22,5 @@ export declare class StripeWebhookService {
     private mapEventType;
     private applyDomainSideEffects;
     private subscriptionStatusForEvent;
+    private handleAccountUpdated;
 }

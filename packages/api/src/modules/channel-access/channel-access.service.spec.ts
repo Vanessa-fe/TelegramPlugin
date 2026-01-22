@@ -4,11 +4,13 @@ import { $Enums, PaymentProvider } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessQueue } from './channel-access.queue';
 import { ChannelAccessService } from './channel-access.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('ChannelAccessService', () => {
   let service: ChannelAccessService;
   let prisma: jest.Mocked<PrismaService>;
   let queue: jest.Mocked<ChannelAccessQueue>;
+  let notifications: jest.Mocked<NotificationsService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -25,6 +27,11 @@ describe('ChannelAccessService', () => {
               update: jest.fn(),
               updateMany: jest.fn(),
             },
+            entitlement: {
+              findFirst: jest.fn(),
+              create: jest.fn(),
+              updateMany: jest.fn(),
+            },
             $transaction: jest.fn((callback) => callback(prisma)),
           },
         },
@@ -35,12 +42,22 @@ describe('ChannelAccessService', () => {
             enqueueRevokeAccess: jest.fn(),
           },
         },
+        {
+          provide: NotificationsService,
+          useValue: {
+            sendPaymentConfirmation: jest.fn(),
+            sendPaymentFailed: jest.fn(),
+            sendSubscriptionCanceled: jest.fn(),
+            sendAccessRevoked: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<ChannelAccessService>(ChannelAccessService);
     prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
     queue = module.get(ChannelAccessQueue) as jest.Mocked<ChannelAccessQueue>;
+    notifications = module.get(NotificationsService) as jest.Mocked<NotificationsService>;
 
     // Suppress logs during tests
     jest.spyOn(Logger.prototype, 'error').mockImplementation();

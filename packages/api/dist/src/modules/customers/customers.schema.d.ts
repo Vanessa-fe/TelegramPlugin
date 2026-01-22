@@ -9,36 +9,36 @@ export declare const createCustomerSchema: z.ZodEffects<z.ZodObject<{
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
 }, "strip", z.ZodTypeAny, {
     organizationId: string;
-    externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     email?: string | undefined;
+    metadata?: Record<string, any> | undefined;
     displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
+    externalId?: string | undefined;
 }, {
     organizationId: string;
-    externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     email?: string | undefined;
+    metadata?: Record<string, any> | undefined;
     displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
+    externalId?: string | undefined;
 }>, {
     organizationId: string;
-    externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     email?: string | undefined;
+    metadata?: Record<string, any> | undefined;
     displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
+    externalId?: string | undefined;
 }, {
     organizationId: string;
-    externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     email?: string | undefined;
+    metadata?: Record<string, any> | undefined;
     displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
+    externalId?: string | undefined;
 }>;
 export type CreateCustomerDto = z.infer<typeof createCustomerSchema>;
 export declare const updateCustomerSchema: z.ZodObject<{
@@ -50,20 +50,20 @@ export declare const updateCustomerSchema: z.ZodObject<{
     externalId: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     metadata: z.ZodOptional<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>>;
 }, "strip", z.ZodTypeAny, {
-    organizationId?: string | undefined;
-    externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     email?: string | undefined;
+    organizationId?: string | undefined;
+    metadata?: Record<string, any> | undefined;
     displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
+    externalId?: string | undefined;
 }, {
-    organizationId?: string | undefined;
-    externalId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     email?: string | undefined;
+    organizationId?: string | undefined;
+    metadata?: Record<string, any> | undefined;
     displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
+    externalId?: string | undefined;
 }>;
 export type UpdateCustomerDto = z.infer<typeof updateCustomerSchema>;

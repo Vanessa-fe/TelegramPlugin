@@ -18,6 +18,8 @@ import {
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './utils/app';
 import { ChannelAccessQueue } from '../src/modules/channel-access/channel-access.queue';
+import { ChannelAccessService } from '../src/modules/channel-access/channel-access.service';
+import { StripeWebhookService } from '../src/modules/payments/stripe-webhook.service';
 
 // Mock BullMQ queue to avoid Redis connections in tests
 jest.mock('../src/modules/channel-access/channel-access.queue');
@@ -164,7 +166,7 @@ describe('Stripe Webhooks (e2e)', () => {
       });
 
       // Simulate webhook processing by calling service directly
-      const channelAccessService = app.get('ChannelAccessService');
+      const channelAccessService = app.get(ChannelAccessService);
       await channelAccessService.handlePaymentSuccess(
         subscription.id,
         PaymentProvider.STRIPE,
@@ -220,7 +222,7 @@ describe('Stripe Webhooks (e2e)', () => {
       });
 
       // Process payment success
-      const channelAccessService = app.get('ChannelAccessService');
+      const channelAccessService = app.get(ChannelAccessService);
       await channelAccessService.handlePaymentSuccess(
         subscription.id,
         PaymentProvider.STRIPE,
@@ -274,7 +276,7 @@ describe('Stripe Webhooks (e2e)', () => {
       });
 
       // Process payment success
-      const channelAccessService = app.get('ChannelAccessService');
+      const channelAccessService = app.get(ChannelAccessService);
       await channelAccessService.handlePaymentSuccess(
         subscription.id,
         PaymentProvider.STRIPE,
@@ -330,7 +332,7 @@ describe('Stripe Webhooks (e2e)', () => {
       });
 
       // Process payment failure
-      const channelAccessService = app.get('ChannelAccessService');
+      const channelAccessService = app.get(ChannelAccessService);
       await channelAccessService.handlePaymentFailure(
         subscription.id,
         'payment_failed',
@@ -369,7 +371,7 @@ describe('Stripe Webhooks (e2e)', () => {
       });
 
       // Process cancellation
-      const channelAccessService = app.get('ChannelAccessService');
+      const channelAccessService = app.get(ChannelAccessService);
       await channelAccessService.handlePaymentFailure(subscription.id, 'canceled');
 
       // Verify access was revoked with correct reason
@@ -404,7 +406,7 @@ describe('Stripe Webhooks (e2e)', () => {
       });
 
       // Process refund
-      const channelAccessService = app.get('ChannelAccessService');
+      const channelAccessService = app.get(ChannelAccessService);
       await channelAccessService.handlePaymentFailure(subscription.id, 'refund');
 
       // Verify access was revoked with refund reason
@@ -462,7 +464,7 @@ describe('Stripe Webhooks (e2e)', () => {
       });
 
       // Process payment failure
-      const channelAccessService = app.get('ChannelAccessService');
+      const channelAccessService = app.get(ChannelAccessService);
       await channelAccessService.handlePaymentFailure(
         subscription.id,
         'payment_failed',
@@ -488,13 +490,13 @@ describe('Stripe Webhooks (e2e)', () => {
         status: SubscriptionStatus.PAST_DUE,
       });
 
-      const channelAccessService = app.get('ChannelAccessService');
+      const channelAccessService = app.get(ChannelAccessService);
       await channelAccessService.handlePaymentSuccess(
         subscription.id,
         PaymentProvider.STRIPE,
       );
 
-      const stripeWebhookService = app.get('StripeWebhookService');
+      const stripeWebhookService = app.get(StripeWebhookService);
       // Call private method via reflection for testing
       await (stripeWebhookService as any).applyDomainSideEffects(
         PaymentEventType.INVOICE_PAID,
@@ -518,7 +520,7 @@ describe('Stripe Webhooks (e2e)', () => {
         status: SubscriptionStatus.ACTIVE,
       });
 
-      const stripeWebhookService = app.get('StripeWebhookService');
+      const stripeWebhookService = app.get(StripeWebhookService);
       await (stripeWebhookService as any).applyDomainSideEffects(
         PaymentEventType.SUBSCRIPTION_CANCELED,
         {
@@ -541,7 +543,7 @@ describe('Stripe Webhooks (e2e)', () => {
         status: SubscriptionStatus.ACTIVE,
       });
 
-      const stripeWebhookService = app.get('StripeWebhookService');
+      const stripeWebhookService = app.get(StripeWebhookService);
       await (stripeWebhookService as any).applyDomainSideEffects(
         PaymentEventType.INVOICE_PAYMENT_FAILED,
         {
@@ -564,7 +566,7 @@ describe('Stripe Webhooks (e2e)', () => {
         status: SubscriptionStatus.ACTIVE,
       });
 
-      const stripeWebhookService = app.get('StripeWebhookService');
+      const stripeWebhookService = app.get(StripeWebhookService);
       await (stripeWebhookService as any).applyDomainSideEffects(
         PaymentEventType.REFUND_CREATED,
         {

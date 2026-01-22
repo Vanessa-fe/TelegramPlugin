@@ -5,39 +5,39 @@ export declare class PaymentEventsController {
     private readonly paymentEventsService;
     constructor(paymentEventsService: PaymentEventsService);
     findAll(user: AuthUser, organizationId?: string): Promise<{
+        id: string;
+        createdAt: Date;
         organizationId: string;
+        externalId: string;
         subscriptionId: string | null;
         provider: import("@prisma/client").$Enums.PaymentProvider;
         type: import("@prisma/client").$Enums.PaymentEventType;
-        externalId: string;
         payload: import("@prisma/client/runtime/library").JsonValue;
         occurredAt: Date;
-        id: string;
         processedAt: Date | null;
-        createdAt: Date;
     }[]>;
     findOne(user: AuthUser, id: string): Promise<{
+        id: string;
+        createdAt: Date;
         organizationId: string;
+        externalId: string;
         subscriptionId: string | null;
         provider: import("@prisma/client").$Enums.PaymentProvider;
         type: import("@prisma/client").$Enums.PaymentEventType;
-        externalId: string;
         payload: import("@prisma/client/runtime/library").JsonValue;
         occurredAt: Date;
-        id: string;
         processedAt: Date | null;
-        createdAt: Date;
     }>;
     create(user: AuthUser, body: CreatePaymentEventDto): Promise<{
+        id: string;
+        createdAt: Date;
         organizationId: string;
+        externalId: string;
         subscriptionId: string | null;
         provider: import("@prisma/client").$Enums.PaymentProvider;
         type: import("@prisma/client").$Enums.PaymentEventType;
-        externalId: string;
         payload: import("@prisma/client/runtime/library").JsonValue;
         occurredAt: Date;
-        id: string;
         processedAt: Date | null;
-        createdAt: Date;
     }>;
 }

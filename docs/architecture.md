@@ -18,6 +18,9 @@
 - **Tâches asynchrones** : BullMQ + Redis (mode worker), réessais exponentiels, déduplication via jobId déterministe.
 - **Bot** : grammY avec Webhook HTTP (piloté par le backend) ou long-polling en mode worker séparé (configurable).
 - **Paiements** : Stripe (Checkout + Billing), webhooks signés ; couche d’abstraction pour intégrer PayPal plus tard.
+  - Abonnement SaaS créateur facturé sur le compte Stripe plateforme.
+  - Ventes acheteurs traitées en direct charges sur le compte Connect du créateur.
+  - Stripe gère fonds, refunds, litiges, reçus ; la plateforme gère logs PaymentEvent et accès.
 - **Infra** : Docker Compose dev, déploiement sur Railway/Render/VPS, DB managée (Neon, Supabase ou Railway), reverse proxy (Traefik/Caddy/nginx) si nécessaire.
 - **CI/CD** : GitHub Actions (tests, lint, build, déploiement), Prisma migrate dans le pipeline.
 

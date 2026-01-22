@@ -16,6 +16,7 @@
    - `REDIS_URL` : connexion Redis pour BullMQ.
    - `TELEGRAM_BOT_TOKEN` : token BotFather **test** ou **production**.
    - `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` : clés Stripe (test par défaut).
+   - `BREVO_API_KEY`, `BREVO_FROM_EMAIL`, `BREVO_FROM_NAME` (voir `docs/email-configuration.md`).
    - `NEXT_PUBLIC_API_URL` : URL publique du backend exposée au frontend.
 3. Chargez les variables dans votre shell avant de lancer des commandes Node :
 

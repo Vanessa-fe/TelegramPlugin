@@ -8,14 +8,20 @@ import { PaymentEventsModule } from './modules/payment-events/payment-events.mod
 import { ProductsModule } from './modules/products/products.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { StripeWebhookModule } from './modules/payments/stripe-webhook.module';
+import { TelegramStarsModule } from './modules/payments/telegram-stars.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { PlansModule } from './modules/plans/plans.module';
+import { ChannelsModule } from './modules/channels/channels.module';
+import { ChannelAccessModule } from './modules/channel-access/channel-access.module';
+import { EntitlementsModule } from './modules/entitlements/entitlements.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
+import { StorefrontModule } from './modules/storefront/storefront.module';
+import { SchedulerModule } from './modules/scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -45,9 +51,15 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
     CustomersModule,
     SubscriptionsModule,
     PaymentEventsModule,
+    ChannelsModule,
+    ChannelAccessModule,
+    EntitlementsModule,
     AuthModule,
     StripeWebhookModule,
+    TelegramStarsModule,
     BillingModule,
+    StorefrontModule,
+    SchedulerModule,
   ],
   controllers: [AppController],
   providers: [

@@ -3,7 +3,7 @@ export const queueNames = {
     grantAccess: "grant-access",
     revokeAccess: "revoke-access",
 };
-export const PaymentProvider = z.enum(["stripe", "paypal"]);
+export const PaymentProvider = z.enum(["stripe", "paypal", "telegram_stars"]);
 export const AccessChannelType = z.enum(["telegram", "discord"]);
 export const SubscriptionStatus = z.enum([
     "active",
@@ -21,6 +21,6 @@ export const GrantAccessPayload = z.object({
 });
 export const RevokeAccessPayload = z.object({
     subscriptionId: z.string().uuid(),
-    reason: z.enum(["payment_failed", "canceled", "manual", "refund"]),
+    reason: z.enum(["payment_failed", "canceled", "manual", "refund", "expired"]),
 });
 //# sourceMappingURL=index.js.map

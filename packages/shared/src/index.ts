@@ -7,7 +7,7 @@ export const queueNames = {
 
 export type QueueName = (typeof queueNames)[keyof typeof queueNames];
 
-export const PaymentProvider = z.enum(["stripe", "paypal"]);
+export const PaymentProvider = z.enum(["stripe", "paypal", "telegram_stars"]);
 
 export const AccessChannelType = z.enum(["telegram", "discord"]);
 
@@ -34,7 +34,7 @@ export type GrantAccessPayload = z.infer<typeof GrantAccessPayload>;
 
 export const RevokeAccessPayload = z.object({
   subscriptionId: z.string().uuid(),
-  reason: z.enum(["payment_failed", "canceled", "manual", "refund"]),
+  reason: z.enum(["payment_failed", "canceled", "manual", "refund", "expired"]),
 });
 
 export type RevokeAccessPayload = z.infer<typeof RevokeAccessPayload>;

@@ -59,6 +59,10 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
         await this.processEvent(event);
     }
     async processEvent(event) {
+        if (event.type === 'account.updated') {
+            await this.handleAccountUpdated(event.data.object);
+            return;
+        }
         const mappedType = this.mapEventType(event.type);
         if (!mappedType) {
             this.logger.debug(`Ignoring unsupported Stripe event type: ${event.type}`);
@@ -299,6 +303,23 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
                 return client_1.SubscriptionStatus.EXPIRED;
             default:
                 return null;
+        }
+    }
+    async handleAccountUpdated(account) {
+        const organization = await this.prisma.organization.findFirst({
+            where: { stripeAccountId: account.id },
+        });
+        if (!organization) {
+            this.logger.debug(`No organization found for Stripe account ${account.id}, skipping account.updated`);
+            return;
+        }
+        const isReady = Boolean(account.charges_enabled && account.details_submitted);
+        if (organization.saasActive !== isReady) {
+            await this.prisma.organization.update({
+                where: { id: organization.id },
+                data: { saasActive: isReady },
+            });
+            this.logger.log(`Organization ${organization.id} saasActive updated to ${isReady} based on Stripe Connect status`);
         }
     }
 };

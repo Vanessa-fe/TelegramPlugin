@@ -10,16 +10,16 @@ export declare const createOrganizationSchema: z.ZodObject<{
     name: string;
     slug: string;
     billingEmail: string;
-    metadata?: Record<string, any> | undefined;
     saasActive?: boolean | undefined;
     timezone?: string | undefined;
+    metadata?: Record<string, any> | undefined;
 }, {
     name: string;
     slug: string;
     billingEmail: string;
-    metadata?: Record<string, any> | undefined;
     saasActive?: boolean | undefined;
     timezone?: string | undefined;
+    metadata?: Record<string, any> | undefined;
 }>;
 export type CreateOrganizationDto = z.infer<typeof createOrganizationSchema>;
 export declare const updateOrganizationSchema: z.ZodObject<{
@@ -32,17 +32,17 @@ export declare const updateOrganizationSchema: z.ZodObject<{
     slug: z.ZodOptional<z.ZodEffects<z.ZodString, string, string>>;
 }, "strip", z.ZodTypeAny, {
     name?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     slug?: string | undefined;
     billingEmail?: string | undefined;
     saasActive?: boolean | undefined;
     timezone?: string | undefined;
+    metadata?: Record<string, any> | undefined;
 }, {
     name?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     slug?: string | undefined;
     billingEmail?: string | undefined;
     saasActive?: boolean | undefined;
     timezone?: string | undefined;
+    metadata?: Record<string, any> | undefined;
 }>;
 export type UpdateOrganizationDto = z.infer<typeof updateOrganizationSchema>;

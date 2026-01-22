@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrganizationsService = void 0;
 const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 let OrganizationsService = class OrganizationsService {
     prisma;
@@ -33,12 +34,16 @@ let OrganizationsService = class OrganizationsService {
             orderBy: { createdAt: 'desc' },
         });
     }
-    findOne(id) {
-        return this.prisma.organization.findUniqueOrThrow({
+    async findOne(id) {
+        const organization = await this.prisma.organization.findUnique({
             where: { id },
         });
+        if (!organization) {
+            throw new common_1.NotFoundException('Organization not found');
+        }
+        return organization;
     }
-    update(id, data) {
+    async update(id, data) {
         const update = {
             ...(data.name && { name: data.name }),
             ...(data.slug && { slug: data.slug }),
@@ -47,10 +52,19 @@ let OrganizationsService = class OrganizationsService {
             ...(data.timezone && { timezone: data.timezone }),
             ...(data.metadata !== undefined && { metadata: data.metadata }),
         };
-        return this.prisma.organization.update({
-            where: { id },
-            data: update,
-        });
+        try {
+            return await this.prisma.organization.update({
+                where: { id },
+                data: update,
+            });
+        }
+        catch (error) {
+            if (error instanceof client_1.Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025') {
+                throw new common_1.NotFoundException('Organization not found');
+            }
+            throw error;
+        }
     }
 };
 exports.OrganizationsService = OrganizationsService;

@@ -26,13 +26,19 @@ let CookieClearInterceptor = class CookieClearInterceptor {
         }
         const reply = context.switchToHttp().getResponse();
         return next.handle().pipe((0, rxjs_1.map)((data) => {
+            const isProduction = process.env.NODE_ENV === 'production';
+            const sameSite = isProduction ? 'none' : 'lax';
             reply.setCookie('accessToken', '', {
                 httpOnly: true,
+                secure: isProduction,
+                sameSite,
                 path: '/',
                 maxAge: 0,
             });
             reply.setCookie('refreshToken', '', {
                 httpOnly: true,
+                secure: isProduction,
+                sameSite,
                 path: '/',
                 maxAge: 0,
             });
