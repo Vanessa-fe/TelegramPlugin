@@ -10,7 +10,7 @@ describe('OrganizationsService', () => {
     organization: {
       create: jest.fn(),
       findMany: jest.fn(),
-      findUniqueOrThrow: jest.fn(),
+      findUnique: jest.fn(),
       update: jest.fn(),
     },
   };
@@ -176,22 +176,20 @@ describe('OrganizationsService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      mockPrismaService.organization.findUniqueOrThrow.mockResolvedValue(org);
+      mockPrismaService.organization.findUnique.mockResolvedValue(org);
 
       const result = await service.findOne('1');
 
       expect(result).toEqual(org);
       expect(
-        mockPrismaService.organization.findUniqueOrThrow,
+        mockPrismaService.organization.findUnique,
       ).toHaveBeenCalledWith({
         where: { id: '1' },
       });
     });
 
     it('should throw error if organization not found', async () => {
-      mockPrismaService.organization.findUniqueOrThrow.mockRejectedValue(
-        new Error('Organization not found'),
-      );
+      mockPrismaService.organization.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne('999')).rejects.toThrow();
     });

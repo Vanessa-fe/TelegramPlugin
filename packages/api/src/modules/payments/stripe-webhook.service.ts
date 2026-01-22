@@ -64,9 +64,22 @@ export class StripeWebhookService {
   }
 
   private async processEvent(event: Stripe.Event): Promise<void> {
+    // Handle Connect account events separately (no PaymentEventType mapping)
+    if (event.type === 'account.updated') {
+      await this.handleAccountUpdated(event.data.object as Stripe.Account);
+      return;
+    }
+
     const mappedType = this.mapEventType(event.type);
     if (!mappedType) {
       this.logger.debug(`Ignoring unsupported Stripe event type: ${event.type}`);
+      return;
+    }
+
+    if (this.isConnectEventExpected(event.type) && !event.account) {
+      this.logger.warn(
+        `Stripe event ${event.id} missing account for Connect processing, ignoring`,
+      );
       return;
     }
 
@@ -133,6 +146,8 @@ export class StripeWebhookService {
   }
 
   private async resolveContext(event: Stripe.Event): Promise<EventContext | null> {
+    const accountContext = await this.contextFromStripeAccount(event.account);
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -145,13 +160,15 @@ export class StripeWebhookService {
           }
         }
 
-        return this.contextFromMetadata(session.metadata ?? undefined);
+        const metadataContext = await this.contextFromMetadata(session.metadata ?? undefined);
+        return metadataContext ?? accountContext;
       }
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        return this.contextFromSubscription(subscription.id);
+        const context = await this.contextFromSubscription(subscription.id);
+        return context ?? accountContext;
       }
       case 'invoice.payment_succeeded':
       case 'invoice.payment_failed': {
@@ -159,9 +176,11 @@ export class StripeWebhookService {
         const subscriptionId =
           typeof invoice.subscription === 'string' ? invoice.subscription : undefined;
         if (!subscriptionId) {
-          return this.contextFromMetadata(invoice.metadata ?? undefined);
+          const metadataContext = await this.contextFromMetadata(invoice.metadata ?? undefined);
+          return metadataContext ?? accountContext;
         }
-        return this.contextFromSubscription(subscriptionId);
+        const context = await this.contextFromSubscription(subscriptionId);
+        return context ?? accountContext;
       }
       case 'charge.refunded': {
         const charge = event.data.object as Stripe.Charge;
@@ -176,22 +195,27 @@ export class StripeWebhookService {
         }
 
         try {
-          const invoice = await this.stripe.invoices.retrieve(invoiceId);
+          const invoice = await this.stripe.invoices.retrieve(
+            invoiceId,
+            undefined,
+            event.account ? { stripeAccount: event.account } : undefined,
+          );
           const subscriptionId =
             typeof invoice.subscription === 'string' ? invoice.subscription : undefined;
           if (!subscriptionId) {
-            return null;
+            return accountContext;
           }
-          return this.contextFromSubscription(subscriptionId);
+          const context = await this.contextFromSubscription(subscriptionId);
+          return context ?? accountContext;
         } catch (error) {
           this.logger.warn(
             `Failed to retrieve invoice ${invoiceId} for charge ${charge.id}: ${(error as Error).message}`,
           );
-          return null;
+          return accountContext;
         }
       }
       default:
-        return null;
+        return accountContext;
     }
   }
 
@@ -257,6 +281,28 @@ export class StripeWebhookService {
     };
   }
 
+  private async contextFromStripeAccount(
+    accountId: string | null | undefined,
+  ): Promise<EventContext | null> {
+    if (!accountId) {
+      return null;
+    }
+
+    const organization = await this.prisma.organization.findFirst({
+      where: { stripeAccountId: accountId },
+      select: { id: true },
+    });
+
+    if (!organization) {
+      this.logger.warn(
+        `No organization found for Stripe account ${accountId}, skipping account context`,
+      );
+      return null;
+    }
+
+    return { organizationId: organization.id };
+  }
+
   private async syncSubscriptionFromCheckout(
     session: Stripe.Checkout.Session,
     subscriptionId: string,
@@ -314,6 +360,21 @@ export class StripeWebhookService {
         return PaymentEventType.REFUND_CREATED;
       default:
         return null;
+    }
+  }
+
+  private isConnectEventExpected(eventType: Stripe.Event.Type): boolean {
+    switch (eventType) {
+      case 'checkout.session.completed':
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+      case 'invoice.payment_succeeded':
+      case 'invoice.payment_failed':
+      case 'charge.refunded':
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -391,6 +452,34 @@ export class StripeWebhookService {
         return SubscriptionStatus.EXPIRED;
       default:
         return null;
+    }
+  }
+
+  private async handleAccountUpdated(account: Stripe.Account): Promise<void> {
+    const organization = await this.prisma.organization.findFirst({
+      where: { stripeAccountId: account.id },
+    });
+
+    if (!organization) {
+      this.logger.debug(
+        `No organization found for Stripe account ${account.id}, skipping account.updated`,
+      );
+      return;
+    }
+
+    const isReady = Boolean(
+      account.charges_enabled && account.details_submitted,
+    );
+
+    if (organization.saasActive !== isReady) {
+      await this.prisma.organization.update({
+        where: { id: organization.id },
+        data: { saasActive: isReady },
+      });
+
+      this.logger.log(
+        `Organization ${organization.id} saasActive updated to ${isReady} based on Stripe Connect status`,
+      );
     }
   }
 }

@@ -4,6 +4,7 @@ FROM node:20-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps
 WORKDIR /app
@@ -32,4 +33,4 @@ COPY --from=build /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=build /app/packages/api ./packages/api
 COPY --from=build /app/packages/shared ./packages/shared
 EXPOSE 3000
-CMD ["node", "packages/api/dist/main.js"]
+CMD ["node", "packages/api/dist/src/main.js"]

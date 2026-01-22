@@ -1,0 +1,59 @@
+{
+  "workflow_version": "1.2.0",
+  "timestamps": {
+    "started": "2026-01-20T22:15:00Z",
+    "last_updated": "2026-01-20T22:45:00Z",
+    "completed": "2026-01-20T22:45:00Z"
+  },
+  "mode": "initial_scan",
+  "scan_level": "exhaustive",
+  "project_root": "/Users/vanessa/Sites/localhost/TelegramPlugin",
+  "output_folder": "/Users/vanessa/Sites/localhost/TelegramPlugin/docs",
+  "completed_steps": [
+    {"step": "step_1", "status": "completed", "summary": "Classified as monorepo with 5 parts"},
+    {"step": "step_2", "status": "completed", "summary": "Found 5 existing docs"},
+    {"step": "step_3", "status": "completed", "summary": "Tech stack analyzed: NestJS, Next.js, grammY, BullMQ"},
+    {"step": "step_4", "status": "completed", "summary": "Critical flows mapped: purchase, revocation, notifications"},
+    {"step": "step_5", "status": "completed", "summary": "Integrations: Stripe Connect, Telegram, Brevo, Redis"},
+    {"step": "step_6", "status": "completed", "summary": "Configuration: 50+ env variables documented"},
+    {"step": "step_7", "status": "completed", "summary": "Generated docs/index.md"}
+  ],
+  "current_step": "completed",
+  "project_types": [
+    {"part_id": "api", "project_type_id": "backend", "display_name": "NestJS API"},
+    {"part_id": "frontend", "project_type_id": "web", "display_name": "Next.js Frontend"},
+    {"part_id": "bot", "project_type_id": "backend", "display_name": "Telegram Bot"},
+    {"part_id": "worker", "project_type_id": "backend", "display_name": "BullMQ Worker"},
+    {"part_id": "shared", "project_type_id": "library", "display_name": "Shared Library"}
+  ],
+  "findings": {
+    "project_classification": {
+      "repository_type": "monorepo",
+      "parts_count": 5,
+      "primary_tech": "TypeScript, NestJS, Next.js, grammY, BullMQ"
+    },
+    "existing_documentation": {
+      "count": 5,
+      "files": ["docs/architecture.md", "docs/setup.md", "docs/environment.md", "docs/email-configuration.md", "CLAUDE.md"]
+    },
+    "database": {
+      "orm": "Prisma",
+      "provider": "PostgreSQL",
+      "models_count": 13,
+      "key_models": ["Organization", "Customer", "Product", "Plan", "Subscription", "Channel", "ChannelAccess", "Entitlement", "TelegramInvite", "PaymentEvent"]
+    },
+    "integrations": {
+      "payments": ["Stripe (Connect)", "Telegram Stars"],
+      "notifications": ["Brevo (email)", "Telegram API"],
+      "infrastructure": ["PostgreSQL", "Redis (BullMQ)"]
+    },
+    "api_modules_count": 15,
+    "critical_flows": ["stripe_checkout", "telegram_stars_payment", "grant_access", "revoke_access", "notifications"],
+    "patterns": ["multi-tenant", "event-driven", "idempotent-webhooks", "job-queues"]
+  },
+  "outputs_generated": [
+    "project-scan-report.json",
+    "docs/index.md"
+  ],
+  "resume_instructions": "Scan completed successfully"
+}

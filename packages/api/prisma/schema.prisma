@@ -52,6 +52,7 @@ enum AccessStatus {
 enum PaymentProvider {
   STRIPE
   PAYPAL
+  TELEGRAM_STARS
 }
 
 enum PaymentEventType {
@@ -130,6 +131,7 @@ model Customer {
   organization    Organization @relation(fields: [organizationId], references: [id])
   subscriptions   Subscription[]
   channelAccesses ChannelAccess[]
+  entitlements    Entitlement[]
 
   @@index([organizationId, telegramUserId])
 }
@@ -222,6 +224,8 @@ model Subscription {
   trialEndsAt        DateTime?
   canceledAt         DateTime?
   endedAt            DateTime?
+  graceUntil         DateTime?
+  lastPaymentFailedAt DateTime?
   metadata           Json?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -231,9 +235,40 @@ model Subscription {
   plan            Plan           @relation(fields: [planId], references: [id])
   channelAccesses ChannelAccess[]
   paymentEvents   PaymentEvent[]
+  entitlements    Entitlement[]
 
   @@index([organizationId, status])
   @@index([customerId])
+}
+
+enum EntitlementType {
+  CHANNEL_ACCESS
+  FEATURE_FLAG
+  CONTENT_UNLOCK
+  API_QUOTA
+}
+
+model Entitlement {
+  id             String          @id @default(uuid())
+  subscriptionId String
+  customerId     String
+  entitlementKey String
+  type           EntitlementType @default(CHANNEL_ACCESS)
+  resourceId     String?
+  grantedAt      DateTime        @default(now())
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  revokeReason   String?
+  metadata       Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  customer     Customer     @relation(fields: [customerId], references: [id])
+
+  @@unique([subscriptionId, entitlementKey])
+  @@index([customerId, entitlementKey])
+  @@index([subscriptionId])
 }
 
 model ChannelAccess {

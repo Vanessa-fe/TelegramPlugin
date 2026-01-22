@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { $Enums } from '@prisma/client';
+import { $Enums, EntitlementType } from '@prisma/client';
 import type { ChannelAccess } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessQueue } from './channel-access.queue';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { GrantAccessPayload } from '@telegram-plugin/shared';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class ChannelAccessService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly queue: ChannelAccessQueue,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async handlePaymentSuccess(
@@ -111,6 +113,33 @@ export class ChannelAccessService {
             status: $Enums.AccessStatus.PENDING,
           },
         });
+
+        // Create entitlement for this channel access
+        const entitlementKey = `channel_access_${channelId}`;
+        const existingEntitlement = await tx.entitlement.findFirst({
+          where: {
+            subscriptionId: subscription.id,
+            entitlementKey,
+          },
+        });
+
+        if (!existingEntitlement) {
+          // Calculate expiry based on plan's accessDurationDays
+          const expiresAt = subscription.plan.accessDurationDays
+            ? new Date(Date.now() + subscription.plan.accessDurationDays * 24 * 60 * 60 * 1000)
+            : null;
+
+          await tx.entitlement.create({
+            data: {
+              subscriptionId: subscription.id,
+              customerId: subscription.customerId,
+              entitlementKey,
+              type: EntitlementType.CHANNEL_ACCESS,
+              resourceId: channelId,
+              expiresAt,
+            },
+          });
+        }
       }
     });
 
@@ -124,15 +153,37 @@ export class ChannelAccessService {
         );
       }
     }
+
+    // Send payment confirmation notification
+    try {
+      await this.notifications.sendPaymentConfirmation(
+        subscription.customerId,
+        subscription.id,
+        subscription.plan.priceCents,
+        subscription.plan.currency,
+        subscription.plan.name,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send payment confirmation notification for subscription ${subscriptionId}`,
+        error as Error,
+      );
+    }
   }
 
   async handlePaymentFailure(
     subscriptionId: string,
-    reason: 'payment_failed' | 'canceled' | 'refund',
+    reason: 'payment_failed' | 'canceled' | 'refund' | 'expired',
   ): Promise<void> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id: subscriptionId },
-      select: { id: true },
+      include: {
+        customer: true,
+        plan: true,
+        channelAccesses: {
+          include: { channel: true },
+        },
+      },
     });
 
     if (!subscription) {
@@ -144,18 +195,33 @@ export class ChannelAccessService {
 
     const now = new Date();
 
-    await this.prisma.channelAccess.updateMany({
-      where: {
-        subscriptionId,
-        status: {
-          in: [$Enums.AccessStatus.PENDING, $Enums.AccessStatus.GRANTED],
+    await this.prisma.$transaction(async (tx) => {
+      // Revoke channel accesses
+      await tx.channelAccess.updateMany({
+        where: {
+          subscriptionId,
+          status: {
+            in: [$Enums.AccessStatus.PENDING, $Enums.AccessStatus.GRANTED],
+          },
         },
-      },
-      data: {
-        status: $Enums.AccessStatus.REVOKED,
-        revokedAt: now,
-        revokeReason: reason,
-      },
+        data: {
+          status: $Enums.AccessStatus.REVOKED,
+          revokedAt: now,
+          revokeReason: reason,
+        },
+      });
+
+      // Revoke all entitlements for this subscription
+      await tx.entitlement.updateMany({
+        where: {
+          subscriptionId,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt: now,
+          revokeReason: reason,
+        },
+      });
     });
 
     try {
@@ -163,6 +229,45 @@ export class ChannelAccessService {
     } catch (error) {
       this.logger.error(
         `Failed to enqueue revoke access job for subscription ${subscriptionId}`,
+        error as Error,
+      );
+    }
+
+    // Send notification based on reason
+    try {
+      const reasonMessages: Record<string, string> = {
+        payment_failed: 'Échec du paiement',
+        canceled: 'Abonnement annulé',
+        refund: 'Remboursement effectué',
+        expired: 'Abonnement expiré',
+      };
+
+      if (reason === 'payment_failed') {
+        await this.notifications.sendPaymentFailed(
+          subscription.customerId,
+          subscription.id,
+          reasonMessages[reason],
+        );
+      } else if ((reason === 'canceled' || reason === 'expired') && subscription.plan) {
+        await this.notifications.sendSubscriptionCanceled(
+          subscription.customerId,
+          subscription.plan.name,
+        );
+      }
+
+      // Notify about each channel access revoked
+      for (const access of subscription.channelAccesses) {
+        if (access.channel && access.channel.title) {
+          await this.notifications.sendAccessRevoked(
+            subscription.customerId,
+            access.channel.title,
+            reasonMessages[reason],
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send revocation notification for subscription ${subscriptionId}`,
         error as Error,
       );
     }

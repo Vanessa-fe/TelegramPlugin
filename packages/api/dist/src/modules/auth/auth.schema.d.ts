@@ -27,14 +27,14 @@ export declare const registerSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     email: string;
     password: string;
-    organizationId?: string | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
+    organizationId?: string | undefined;
 }, {
     email: string;
     password: string;
-    organizationId?: string | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
+    organizationId?: string | undefined;
 }>;
 export type RegisterDto = z.infer<typeof registerSchema>;

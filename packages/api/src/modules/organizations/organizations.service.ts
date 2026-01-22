@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Organization } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -29,13 +29,19 @@ export class OrganizationsService {
     });
   }
 
-  findOne(id: string): Promise<Organization> {
-    return this.prisma.organization.findUniqueOrThrow({
+  async findOne(id: string): Promise<Organization> {
+    const organization = await this.prisma.organization.findUnique({
       where: { id },
     });
+
+    if (!organization) {
+      throw new NotFoundException('Organization not found');
+    }
+
+    return organization;
   }
 
-  update(id: string, data: UpdateOrganizationDto): Promise<Organization> {
+  async update(id: string, data: UpdateOrganizationDto): Promise<Organization> {
     const update: Prisma.OrganizationUpdateInput = {
       ...(data.name && { name: data.name }),
       ...(data.slug && { slug: data.slug }),
@@ -45,9 +51,20 @@ export class OrganizationsService {
       ...(data.metadata !== undefined && { metadata: data.metadata }),
     };
 
-    return this.prisma.organization.update({
-      where: { id },
-      data: update,
-    });
+    try {
+      return await this.prisma.organization.update({
+        where: { id },
+        data: update,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('Organization not found');
+      }
+
+      throw error;
+    }
   }
 }

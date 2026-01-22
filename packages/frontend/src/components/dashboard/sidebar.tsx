@@ -2,12 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CreditCard, LayoutDashboard, Package } from 'lucide-react';
+import {
+  CreditCard,
+  LayoutDashboard,
+  Package,
+  Users,
+  FileText,
+  DollarSign,
+  Hash,
+  Key
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Produits', href: '/dashboard/products', icon: Package },
+  { name: 'Clients', href: '/dashboard/customers', icon: Users },
+  { name: 'Abonnements', href: '/dashboard/subscriptions', icon: FileText },
+  { name: 'Paiements', href: '/dashboard/payments', icon: DollarSign },
+  { name: 'Channels', href: '/dashboard/channels', icon: Hash },
+  { name: 'Entitlements', href: '/dashboard/entitlements', icon: Key },
   { name: 'Facturation', href: '/dashboard/billing', icon: CreditCard },
 ];
 

@@ -27,17 +27,18 @@ let CookieResponseInterceptor = class CookieResponseInterceptor {
         const reply = context.switchToHttp().getResponse();
         return next.handle().pipe((0, rxjs_1.map)((data) => {
             const isProduction = process.env.NODE_ENV === 'production';
+            const sameSite = isProduction ? 'none' : 'lax';
             reply.setCookie('accessToken', data.accessToken, {
                 httpOnly: true,
                 secure: isProduction,
-                sameSite: isProduction ? 'strict' : 'lax',
+                sameSite,
                 path: '/',
                 maxAge: 15 * 60,
             });
             reply.setCookie('refreshToken', data.refreshToken, {
                 httpOnly: true,
                 secure: isProduction,
-                sameSite: isProduction ? 'strict' : 'lax',
+                sameSite,
                 path: '/',
                 maxAge: 7 * 24 * 60 * 60,
             });

@@ -191,6 +191,7 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
     include: {
       channel: true,
       invite: true,
+      customer: true,
     },
   });
 
@@ -296,6 +297,32 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
       });
     });
 
+    // Send notification with invite link to customer
+    if (channelAccess.customer.telegramUserId) {
+      const channelTitle = channelAccess.channel.title || "le channel";
+      const message =
+        `🎉 <b>Accès accordé !</b>\n\n` +
+        `Votre accès à "${channelTitle}" a été activé.\n\n` +
+        `👉 <a href="${invite.invite_link}">Rejoindre le channel</a>\n\n` +
+        `<i>Ce lien est personnel et à usage unique.</i>`;
+
+      const sent = await sendTelegramNotification(
+        channelAccess.customer.telegramUserId,
+        message
+      );
+
+      if (sent) {
+        logger.info(
+          {
+            jobId: job.id,
+            customerId: channelAccess.customerId,
+            telegramUserId: channelAccess.customer.telegramUserId,
+          },
+          "Invite link notification sent to customer"
+        );
+      }
+    }
+
     logger.info(
       {
         jobId: job.id,
@@ -340,6 +367,58 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
   }
 }
 
+async function kickMemberFromChannel(
+  chatId: string,
+  telegramUserId: string
+): Promise<boolean> {
+  try {
+    // Ban the user (this kicks them from the channel)
+    await bot.api.banChatMember(chatId, Number(telegramUserId));
+    // Immediately unban to allow them to rejoin if they purchase again
+    await bot.api.unbanChatMember(chatId, Number(telegramUserId), {
+      only_if_banned: true,
+    });
+    return true;
+  } catch (error) {
+    if (error instanceof GrammyError) {
+      // User might not be in the channel or bot doesn't have permission
+      if (
+        error.error_code === 400 ||
+        error.description.includes("USER_NOT_PARTICIPANT") ||
+        error.description.includes("CHAT_ADMIN_REQUIRED")
+      ) {
+        logger.warn(
+          { chatId, telegramUserId, description: error.description },
+          "Could not kick member (might not be in channel or no permission)"
+        );
+        return false;
+      }
+    }
+    throw error;
+  }
+}
+
+async function sendTelegramNotification(
+  telegramUserId: string,
+  message: string
+): Promise<boolean> {
+  try {
+    await bot.api.sendMessage(telegramUserId, message, {
+      parse_mode: "HTML",
+    });
+    return true;
+  } catch (error) {
+    if (error instanceof GrammyError) {
+      logger.warn(
+        { telegramUserId, description: error.description },
+        "Could not send Telegram notification"
+      );
+      return false;
+    }
+    throw error;
+  }
+}
+
 async function processRevokeAccess(
   job: Job<RevokeAccessPayload>
 ): Promise<void> {
@@ -349,6 +428,7 @@ async function processRevokeAccess(
     include: {
       channel: true,
       invite: true,
+      customer: true,
     },
   });
 
@@ -413,6 +493,38 @@ async function processRevokeAccess(
           throw error;
         }
       }
+    }
+
+    // Kick member from channel if they have a Telegram user ID
+    if (access.customer.telegramUserId) {
+      const kicked = await kickMemberFromChannel(
+        chatId,
+        access.customer.telegramUserId
+      );
+      if (kicked) {
+        logger.info(
+          {
+            jobId: job.id,
+            channelId: access.channelId,
+            telegramUserId: access.customer.telegramUserId,
+          },
+          "Member kicked from channel"
+        );
+      }
+
+      // Send notification about access revocation
+      const reasonMessages: Record<string, string> = {
+        payment_failed: "Échec du paiement",
+        canceled: "Abonnement annulé",
+        refund: "Remboursement effectué",
+      };
+      const channelTitle = access.channel.title || "le channel";
+      const message =
+        `🚫 <b>Accès révoqué</b>\n\n` +
+        `Votre accès à "${channelTitle}" a été révoqué.\n\n` +
+        `Raison : ${reasonMessages[data.reason] || data.reason}`;
+
+      await sendTelegramNotification(access.customer.telegramUserId, message);
     }
 
     await prisma.$transaction(async (tx) => {

@@ -3,6 +3,7 @@ import {
   UserRole,
   SubscriptionStatus,
   PlanInterval,
+  ProductStatus,
 } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
@@ -35,6 +36,8 @@ export async function createOrganization(data?: {
   slug?: string;
   billingEmail?: string;
   timezone?: string;
+  saasActive?: boolean;
+  stripeAccountId?: string | null;
 }) {
   const timestamp = Date.now();
   return prisma.organization.create({
@@ -43,6 +46,8 @@ export async function createOrganization(data?: {
       slug: data?.slug || `test-org-${timestamp}`,
       billingEmail: data?.billingEmail || `billing-${timestamp}@example.com`,
       timezone: data?.timezone || 'UTC',
+      saasActive: data?.saasActive ?? false,
+      stripeAccountId: data?.stripeAccountId,
     },
   });
 }
@@ -50,6 +55,8 @@ export async function createOrganization(data?: {
 export async function createProduct(data?: {
   name?: string;
   organizationId?: string;
+  status?: ProductStatus;
+  description?: string;
 }) {
   const timestamp = Date.now();
   const org =
@@ -61,6 +68,8 @@ export async function createProduct(data?: {
     data: {
       name: data?.name || `Test Product ${timestamp}`,
       organizationId: org.id,
+      status: data?.status || ProductStatus.ACTIVE,
+      description: data?.description,
     },
   });
 }
@@ -71,6 +80,11 @@ export async function createPlan(data?: {
   interval?: PlanInterval;
   productId?: string;
   organizationId?: string;
+  isActive?: boolean;
+  accessDurationDays?: number;
+  currency?: string;
+  trialPeriodDays?: number;
+  description?: string;
 }) {
   const timestamp = Date.now();
   const product = data?.productId
@@ -82,8 +96,12 @@ export async function createPlan(data?: {
       name: data?.name || `Test Plan ${timestamp}`,
       priceCents: data?.priceCents || 999,
       interval: data?.interval || PlanInterval.MONTH,
-      currency: 'USD',
+      currency: data?.currency || 'USD',
       productId: product.id,
+      isActive: data?.isActive ?? true,
+      accessDurationDays: data?.accessDurationDays,
+      trialPeriodDays: data?.trialPeriodDays,
+      description: data?.description,
     },
   });
 }
@@ -110,6 +128,8 @@ export async function createChannel(data?: {
 export async function createCustomer(data?: {
   email?: string;
   telegramUserId?: string;
+  telegramUsername?: string;
+  displayName?: string;
   organizationId?: string;
 }) {
   const timestamp = Date.now();
@@ -121,6 +141,8 @@ export async function createCustomer(data?: {
     data: {
       email: data?.email || `customer-${timestamp}@example.com`,
       telegramUserId: data?.telegramUserId || `${timestamp}`,
+      telegramUsername: data?.telegramUsername,
+      displayName: data?.displayName,
       organizationId: org.id,
     },
   });

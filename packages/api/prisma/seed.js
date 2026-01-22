@@ -265,9 +265,150 @@ async function main() {
     },
   });
 
-  console.info(
-    `🔐 Identifiants admin par défaut: admin@demo-agency.local / ${DEFAULT_ADMIN_PASSWORD}`,
-  );
+  // ========================================
+  // CREATE TEST MERCHANT ORGANIZATION
+  // ========================================
+  const merchantOrg = await prisma.organization.upsert({
+    where: { slug: 'test-merchant' },
+    update: {
+      name: 'Test Merchant Org',
+      billingEmail: 'billing@test-merchant.com',
+      saasActive: true,
+      timezone: 'Europe/Paris',
+    },
+    create: {
+      name: 'Test Merchant Org',
+      slug: 'test-merchant',
+      billingEmail: 'billing@test-merchant.com',
+      saasActive: true,
+      timezone: 'Europe/Paris',
+      metadata: {
+        description: 'Organization de test pour simuler un client merchant',
+      },
+    },
+  });
+
+  const merchantPasswordHash = await bcrypt.hash('password123', 10);
+
+  // Create merchant user (ORG_ADMIN)
+  await prisma.user.upsert({
+    where: { email: 'merchant@test.com' },
+    update: {
+      organizationId: merchantOrg.id,
+      isActive: true,
+      role: UserRole.ORG_ADMIN,
+      passwordHash: merchantPasswordHash,
+    },
+    create: {
+      email: 'merchant@test.com',
+      passwordHash: merchantPasswordHash,
+      role: UserRole.ORG_ADMIN,
+      firstName: 'Merchant',
+      lastName: 'Test',
+      organization: {
+        connect: { id: merchantOrg.id },
+      },
+    },
+  });
+
+  // Create sample products for merchant
+  const merchantProduct = await prisma.product.upsert({
+    where: {
+      organizationId_name: {
+        organizationId: merchantOrg.id,
+        name: 'VIP Telegram Access',
+      },
+    },
+    update: {
+      status: ProductStatus.ACTIVE,
+      description: 'Accès exclusif au channel VIP avec contenu premium',
+    },
+    create: {
+      organizationId: merchantOrg.id,
+      name: 'VIP Telegram Access',
+      description: 'Accès exclusif au channel VIP avec contenu premium',
+      status: ProductStatus.ACTIVE,
+      metadata: {
+        features: ['Accès au channel VIP', 'Support prioritaire', 'Contenu exclusif'],
+      },
+    },
+  });
+
+  // Create sample plans for merchant product
+  let merchantPlanMonthly = await prisma.plan.findFirst({
+    where: {
+      productId: merchantProduct.id,
+      name: 'Mensuel',
+    },
+  });
+
+  if (!merchantPlanMonthly) {
+    merchantPlanMonthly = await prisma.plan.create({
+      data: {
+        productId: merchantProduct.id,
+        name: 'Mensuel',
+        description: 'Abonnement mensuel au channel VIP',
+        interval: PlanInterval.MONTH,
+        priceCents: 2900,
+        currency: 'EUR',
+        isActive: true,
+      },
+    });
+  }
+
+  let merchantPlanAnnual = await prisma.plan.findFirst({
+    where: {
+      productId: merchantProduct.id,
+      name: 'Annuel',
+    },
+  });
+
+  if (!merchantPlanAnnual) {
+    await prisma.plan.create({
+      data: {
+        productId: merchantProduct.id,
+        name: 'Annuel',
+        description: 'Abonnement annuel (2 mois offerts)',
+        interval: PlanInterval.YEAR,
+        priceCents: 29000,
+        currency: 'EUR',
+        trialPeriodDays: 7,
+        isActive: true,
+      },
+    });
+  }
+
+  // Create sample customers for merchant
+  await prisma.customer.upsert({
+    where: { externalId: 'merchant_cust_1' },
+    update: {
+      email: 'customer1@example.com',
+      displayName: 'Jean Dupont',
+      organizationId: merchantOrg.id,
+    },
+    create: {
+      externalId: 'merchant_cust_1',
+      organizationId: merchantOrg.id,
+      email: 'customer1@example.com',
+      displayName: 'Jean Dupont',
+      telegramUserId: '123456789',
+      telegramUsername: 'jeandupont',
+    },
+  });
+
+  console.info('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.info('📋 TEST ACCOUNTS SUMMARY');
+  console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  console.info('🔑 ADMIN ACCOUNT (SUPERADMIN)');
+  console.info(`   Email:    admin@demo-agency.local`);
+  console.info(`   Password: ${DEFAULT_ADMIN_PASSWORD}`);
+  console.info('   Access:   /admin (full access to all organizations)\n');
+  console.info('🔑 MERCHANT ACCOUNT (ORG_ADMIN)');
+  console.info('   Email:    merchant@test.com');
+  console.info('   Password: password123');
+  console.info('   Access:   /dashboard (manage own organization)');
+  console.info('   Org:      Test Merchant Org\n');
+  console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.info('✅ Seed Prisma appliqué avec succès.');
 }
 
