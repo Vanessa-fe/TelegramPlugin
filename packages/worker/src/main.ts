@@ -1,4 +1,4 @@
-import { Worker, type Job } from "bullmq";
+import { Queue, Worker, type Job } from "bullmq";
 import { Bot, GrammyError, HttpError } from "grammy";
 import { Redis } from "ioredis";
 import dotenv from "dotenv";
@@ -9,6 +9,7 @@ import { $Enums, PrismaClient } from "@prisma/client";
 import {
   GrantAccessPayload as GrantAccessPayloadSchema,
   RevokeAccessPayload as RevokeAccessPayloadSchema,
+  computeJobLatencyMs,
   queueNames,
 } from "@telegram-plugin/shared";
 import type {
@@ -24,12 +25,15 @@ const logger = pino({
   level: processEnv.LOG_LEVEL ?? "info",
 });
 
+const DEFAULT_ACCESS_LATENCY_ALERT_MS = 2000;
+
 const BaseEnvSchema = z.object({
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   DATABASE_URL: z.string().min(1),
   TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN requis"),
   TELEGRAM_INVITE_TTL_SECONDS: z.string().optional(),
   TELEGRAM_INVITE_MAX_USES: z.string().optional(),
+  ACCESS_LATENCY_ALERT_MS: z.string().optional(),
 });
 
 type BaseEnv = z.infer<typeof BaseEnvSchema>;
@@ -40,6 +44,7 @@ type WorkerEnv = Omit<
 > & {
   TELEGRAM_INVITE_TTL_SECONDS?: number;
   TELEGRAM_INVITE_MAX_USES?: number;
+  ACCESS_LATENCY_ALERT_MS?: number;
 };
 
 function parseOptionalInteger(
@@ -102,6 +107,12 @@ const env: WorkerEnv = {
       max: 100_000,
     }
   ),
+  ACCESS_LATENCY_ALERT_MS:
+    parseOptionalInteger(baseEnv.ACCESS_LATENCY_ALERT_MS, {
+      varName: "ACCESS_LATENCY_ALERT_MS",
+      min: 100,
+      max: 60 * 60 * 1000,
+    }) ?? DEFAULT_ACCESS_LATENCY_ALERT_MS,
 };
 
 let connection: Redis;
@@ -109,6 +120,8 @@ const prisma = new PrismaClient();
 const bot = new Bot(env.TELEGRAM_BOT_TOKEN);
 
 const workers: Worker[] = [];
+let grantDlq: Queue | null = null;
+let revokeDlq: Queue | null = null;
 let isShuttingDown = false;
 
 async function initRedis(): Promise<Redis> {
@@ -576,7 +589,11 @@ async function shutdown(signal?: NodeJS.Signals): Promise<void> {
 
   logger.info({ signal }, "Shutting down workers");
 
-  await Promise.allSettled(workers.map((worker) => worker.close()));
+  await Promise.allSettled([
+    ...workers.map((worker) => worker.close()),
+    grantDlq?.close(),
+    revokeDlq?.close(),
+  ]);
   await prisma.$disconnect().catch((error: unknown) => {
     logger.error({ error: error as Error }, "Failed to disconnect Prisma client");
   });
@@ -588,9 +605,51 @@ async function shutdown(signal?: NodeJS.Signals): Promise<void> {
   logger.info("Worker shutdown complete");
 }
 
+async function moveToDlq<T>(
+  job: Job<T> | undefined,
+  error: Error,
+  dlq: Queue | null,
+  queueName: string
+): Promise<void> {
+  if (!job || !dlq) {
+    return;
+  }
+
+  const attempts = job.opts.attempts ?? 1;
+  if (job.attemptsMade < attempts) {
+    return;
+  }
+
+  const jobId = job.id ? String(job.id) : `${queueName}:${Date.now()}`;
+
+  await dlq.add(
+    queueName,
+    {
+      originalJobId: jobId,
+      payload: job.data,
+      failedReason: error.message,
+      attemptsMade: job.attemptsMade,
+      stacktrace: job.stacktrace,
+      failedAt: new Date().toISOString(),
+    },
+    {
+      jobId,
+    }
+  );
+
+  await job.remove().catch((removeError: unknown) => {
+    logger.error(
+      { error: removeError as Error, jobId, queue: queueName },
+      "Failed to remove job after moving to DLQ"
+    );
+  });
+}
+
 export async function bootstrapWorkers(): Promise<void> {
   // Initialize Redis connection first
   connection = await initRedis();
+  grantDlq = new Queue(queueNames.grantAccessDlq, { connection });
+  revokeDlq = new Queue(queueNames.revokeAccessDlq, { connection });
 
   const me = await bot.api.getMe();
   logger.info(
@@ -623,10 +682,25 @@ export async function bootstrapWorkers(): Promise<void> {
   await Promise.all(workers.map((worker) => worker.waitUntilReady()));
 
   grantWorker.on("completed", (job) => {
+    const latencyMs = computeJobLatencyMs(job.timestamp, job.finishedOn);
+    const payload = {
+      jobId: job.id,
+      queue: queueNames.grantAccess,
+      latencyMs,
+      metric: "access_grant_latency_ms",
+    };
+
     logger.info(
-      { jobId: job.id, queue: queueNames.grantAccess },
+      payload,
       "Grant access job completed"
     );
+
+    if (latencyMs !== null && latencyMs > env.ACCESS_LATENCY_ALERT_MS) {
+      logger.warn(
+        payload,
+        "Grant access latency threshold exceeded"
+      );
+    }
   });
 
   grantWorker.on("failed", (job, error) => {
@@ -634,19 +708,58 @@ export async function bootstrapWorkers(): Promise<void> {
       { jobId: job?.id, queue: queueNames.grantAccess, error: error as Error },
       "Grant access job failed"
     );
+    moveToDlq(job, error as Error, grantDlq, queueNames.grantAccessDlq).catch(
+      (dlqError: unknown) => {
+        logger.error(
+          {
+            error: dlqError as Error,
+            jobId: job?.id,
+            queue: queueNames.grantAccessDlq,
+          },
+          "Failed to move grant access job to DLQ"
+        );
+      }
+    );
   });
 
   revokeWorker.on("completed", (job) => {
+    const latencyMs = computeJobLatencyMs(job.timestamp, job.finishedOn);
+    const payload = {
+      jobId: job.id,
+      queue: queueNames.revokeAccess,
+      latencyMs,
+      metric: "access_revoke_latency_ms",
+    };
+
     logger.info(
-      { jobId: job.id, queue: queueNames.revokeAccess },
+      payload,
       "Revoke access job completed"
     );
+
+    if (latencyMs !== null && latencyMs > env.ACCESS_LATENCY_ALERT_MS) {
+      logger.warn(
+        payload,
+        "Revoke access latency threshold exceeded"
+      );
+    }
   });
 
   revokeWorker.on("failed", (job, error) => {
     logger.error(
       { jobId: job?.id, queue: queueNames.revokeAccess, error: error as Error },
       "Revoke access job failed"
+    );
+    moveToDlq(job, error as Error, revokeDlq, queueNames.revokeAccessDlq).catch(
+      (dlqError: unknown) => {
+        logger.error(
+          {
+            error: dlqError as Error,
+            jobId: job?.id,
+            queue: queueNames.revokeAccessDlq,
+          },
+          "Failed to move revoke access job to DLQ"
+        );
+      }
     );
   });
 

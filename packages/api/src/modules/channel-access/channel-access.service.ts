@@ -1,10 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { $Enums, EntitlementType } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { $Enums, AuditActorType, EntitlementType } from '@prisma/client';
 import type { ChannelAccess } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessQueue } from './channel-access.queue';
 import { NotificationsService } from '../notifications/notifications.service';
 import type { GrantAccessPayload } from '@telegram-plugin/shared';
+import { AuditLogService } from '../audit-log/audit-log.service';
+
+const DEFAULT_GRACE_PERIOD_DAYS = 5;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class ChannelAccessService {
@@ -14,7 +19,23 @@ export class ChannelAccessService {
     private readonly prisma: PrismaService,
     private readonly queue: ChannelAccessQueue,
     private readonly notifications: NotificationsService,
+    private readonly config: ConfigService,
+    private readonly auditLogService: AuditLogService,
   ) {}
+
+  private getGracePeriodDays(): number {
+    const rawValue = this.config.get<string>('PAYMENT_GRACE_PERIOD_DAYS');
+    if (!rawValue) {
+      return DEFAULT_GRACE_PERIOD_DAYS;
+    }
+
+    const parsed = Number.parseInt(rawValue, 10);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      return DEFAULT_GRACE_PERIOD_DAYS;
+    }
+
+    return parsed;
+  }
 
   async handlePaymentSuccess(
     subscriptionId: string,
@@ -79,6 +100,18 @@ export class ChannelAccessService {
           this.logger.debug(
             `Channel ${channelId} already granted for subscription ${subscriptionId}, skipping`,
           );
+          continue;
+        }
+
+        if (currentAccess?.status === $Enums.AccessStatus.REVOKE_PENDING) {
+          await tx.channelAccess.update({
+            where: { id: currentAccess.id },
+            data: {
+              status: $Enums.AccessStatus.GRANTED,
+              revokedAt: null,
+              revokeReason: null,
+            },
+          });
           continue;
         }
 
@@ -154,6 +187,26 @@ export class ChannelAccessService {
       }
     }
 
+    try {
+      await this.auditLogService.create({
+        organizationId: subscription.organizationId,
+        actorType: AuditActorType.SYSTEM,
+        action: 'access.grant',
+        resourceType: 'subscription',
+        resourceId: subscription.id,
+        metadata: {
+          provider,
+          channels: productChannels.length,
+          jobs: jobs.length,
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to write audit log for access grant on subscription ${subscriptionId}`,
+        error as Error,
+      );
+    }
+
     // Send payment confirmation notification
     try {
       await this.notifications.sendPaymentConfirmation(
@@ -194,6 +247,73 @@ export class ChannelAccessService {
     }
 
     const now = new Date();
+    const activeAccesses = subscription.channelAccesses.filter((access) =>
+      [
+        $Enums.AccessStatus.PENDING,
+        $Enums.AccessStatus.GRANTED,
+        $Enums.AccessStatus.REVOKE_PENDING,
+      ].includes(access.status),
+    );
+    const shouldNotifyPaymentFailed =
+      reason === 'payment_failed' && !subscription.lastPaymentFailedAt;
+
+    if (reason === 'payment_failed') {
+      const gracePeriodDays = this.getGracePeriodDays();
+      const gracePeriodMs = gracePeriodDays * DAY_IN_MS;
+      const graceUntil =
+        subscription.graceUntil && subscription.graceUntil > now
+          ? subscription.graceUntil
+          : new Date(now.getTime() + gracePeriodMs);
+      const graceExpired = subscription.graceUntil
+        ? subscription.graceUntil <= now
+        : false;
+
+      if (!graceExpired) {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.channelAccess.updateMany({
+            where: {
+              subscriptionId,
+              status: {
+                in: [
+                  $Enums.AccessStatus.PENDING,
+                  $Enums.AccessStatus.GRANTED,
+                ],
+              },
+            },
+            data: {
+              status: $Enums.AccessStatus.REVOKE_PENDING,
+              revokedAt: null,
+              revokeReason: null,
+            },
+          });
+
+          await tx.subscription.update({
+            where: { id: subscriptionId },
+            data: {
+              graceUntil,
+              lastPaymentFailedAt: now,
+            },
+          });
+        });
+
+        try {
+          if (shouldNotifyPaymentFailed) {
+            await this.notifications.sendPaymentFailed(
+              subscription.customerId,
+              subscription.id,
+              'Échec du paiement',
+            );
+          }
+        } catch (error) {
+          this.logger.error(
+            `Failed to send payment failed notification for subscription ${subscriptionId}`,
+            error as Error,
+          );
+        }
+
+        return;
+      }
+    }
 
     await this.prisma.$transaction(async (tx) => {
       // Revoke channel accesses
@@ -201,7 +321,11 @@ export class ChannelAccessService {
         where: {
           subscriptionId,
           status: {
-            in: [$Enums.AccessStatus.PENDING, $Enums.AccessStatus.GRANTED],
+            in: [
+              $Enums.AccessStatus.PENDING,
+              $Enums.AccessStatus.GRANTED,
+              $Enums.AccessStatus.REVOKE_PENDING,
+            ],
           },
         },
         data: {
@@ -222,6 +346,13 @@ export class ChannelAccessService {
           revokeReason: reason,
         },
       });
+
+      await tx.subscription.update({
+        where: { id: subscriptionId },
+        data: {
+          graceUntil: null,
+        },
+      });
     });
 
     try {
@@ -229,6 +360,22 @@ export class ChannelAccessService {
     } catch (error) {
       this.logger.error(
         `Failed to enqueue revoke access job for subscription ${subscriptionId}`,
+        error as Error,
+      );
+    }
+
+    try {
+      await this.auditLogService.create({
+        organizationId: subscription.organizationId,
+        actorType: AuditActorType.SYSTEM,
+        action: 'access.revoke',
+        resourceType: 'subscription',
+        resourceId: subscription.id,
+        metadata: { reason },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to write audit log for access revoke on subscription ${subscriptionId}`,
         error as Error,
       );
     }
@@ -242,7 +389,7 @@ export class ChannelAccessService {
         expired: 'Abonnement expiré',
       };
 
-      if (reason === 'payment_failed') {
+      if (shouldNotifyPaymentFailed) {
         await this.notifications.sendPaymentFailed(
           subscription.customerId,
           subscription.id,
@@ -256,7 +403,7 @@ export class ChannelAccessService {
       }
 
       // Notify about each channel access revoked
-      for (const access of subscription.channelAccesses) {
+      for (const access of activeAccesses) {
         if (access.channel && access.channel.title) {
           await this.notifications.sendAccessRevoked(
             subscription.customerId,

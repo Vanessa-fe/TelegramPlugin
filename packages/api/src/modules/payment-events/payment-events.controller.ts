@@ -15,7 +15,7 @@ export class PaymentEventsController {
   constructor(private readonly paymentEventsService: PaymentEventsService) {}
 
   @Get()
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT)
+  @Roles(UserRole.SUPERADMIN, UserRole.SUPPORT)
   findAll(
     @CurrentUser() user: AuthUser,
     @Query('organizationId') organizationId?: string,
@@ -25,7 +25,7 @@ export class PaymentEventsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT)
+  @Roles(UserRole.SUPERADMIN, UserRole.SUPPORT)
   async findOne(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,

@@ -22,6 +22,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { StorefrontModule } from './modules/storefront/storefront.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
+import { DataExportsModule } from './modules/data-exports/data-exports.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { SchedulerModule } from './modules/scheduler/scheduler.module';
     BillingModule,
     StorefrontModule,
     SchedulerModule,
+    DataExportsModule,
   ],
   controllers: [AppController],
   providers: [

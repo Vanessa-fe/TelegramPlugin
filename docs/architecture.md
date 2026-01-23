@@ -21,8 +21,18 @@
   - Abonnement SaaS créateur facturé sur le compte Stripe plateforme.
   - Ventes acheteurs traitées en direct charges sur le compte Connect du créateur.
   - Stripe gère fonds, refunds, litiges, reçus ; la plateforme gère logs PaymentEvent et accès.
+  - Checkout acheteur sur compte Connect via header stripeAccount, sans transfer_data ni application_fee.
+  - Webhooks paiements acheteurs = events Connect (event.account). Decision: non-MoR (voir `docs/adr/ADR-001-stripe-connect-direct-charges.md`).
 - **Infra** : Docker Compose dev, déploiement sur Railway/Render/VPS, DB managée (Neon, Supabase ou Railway), reverse proxy (Traefik/Caddy/nginx) si nécessaire.
 - **CI/CD** : GitHub Actions (tests, lint, build, déploiement), Prisma migrate dans le pipeline.
+
+## Residence des donnees (UE)
+
+- **Objectif** : data residency UE, Frankfurt (eu-central-1) par defaut si incertain.
+- **PostgreSQL (Neon)** : EU - Frankfurt (eu-central-1).
+- **Redis/BullMQ (Upstash)** : EU - Frankfurt (eu-central-1).
+- **API (Fly.io)** : primary_region = fra (Paris).
+- **Frontend (Netlify)** : edge global (CDN) ; donnees sensibles reste cote API/DB/Redis en UE.
 
 ## Domaines fonctionnels
 
@@ -45,6 +55,20 @@
 - `ChannelAccess` : trace de l’accès octroyé (invitation, date expiration, statut).
 - `TelegramInvite` : lien généré, nombre d’utilisations restant, date d’expiration.
 - `AuditLog` : actions critiques (ajout/retrait membre, remboursement, suppression).
+- `DataExport` : job d'export RGPD (statut, SLA, archive).
+
+## Audit log (schema + usage)
+
+- Champs: `organizationId`, `actorId`, `actorType`, `action`, `resourceType`, `resourceId`, `correlationId`, `metadata`, `createdAt`.
+- `correlationId`: `x-correlation-id` ou `x-request-id` pour les actions manuelles; `event.id` pour Stripe.
+- `metadata`: objet JSON, enrichi selon l’action (ex: `reason`, `queue`, `jobId`, `subscriptionId`, `eventType`).
+- Actions sensibles: support/admin manual, replay DLQ, webhooks paiement, revoke/grant system.
+
+## Etat d'acces (ChannelAccess)
+
+- Source de verite: `ChannelAccess.status`.
+- Etats: `PENDING` -> `GRANTED` -> `REVOKE_PENDING` -> `REVOKED`.
+- `payment_failed`: passe en `REVOKE_PENDING` pendant la grace, puis `REVOKED` a expiration.
 
 ## Flux critiques
 
@@ -55,8 +79,8 @@
 
 1. **Achat client final**
    - Client arrive sur la page de vente (`/client/{slug}`), choisit un plan.
-   - Redirection vers Stripe Checkout.
-   - Webhook Stripe (payment_intent.succeeded / checkout.session.completed) réceptionné par l’API.
+   - Redirection vers Stripe Checkout (compte Connect via stripeAccount).
+   - Webhook Stripe Connect (payment_intent.succeeded / checkout.session.completed, event.account) réceptionné par l’API.
    - Création ou mise à jour du `Customer`, du `Subscription`.
    - Envoi d’un job asynchrone `GrantAccessJob` avec `subscriptionId`.
    - Worker appelle le Bot API pour générer (ou récupérer) un `TelegramInvite`, puis l’envoie au client (email/Telegram bot) ou retourne via portail.
@@ -66,6 +90,12 @@
    - Traitement backend : mise à jour `Subscription` au statut `past_due` ou `canceled`.
    - Job asynchrone `RevokeAccessJob` : bot supprime l’utilisateur du canal ou invalide l’invitation.
    - Notifications au client/organisation.
+
+1. **Export RGPD**
+   - Admin déclenche un export (API `data-exports`).
+   - Job `DataExport` créé (SLA 30 jours).
+   - Scheduler traite les exports en attente et génère un archive JSON.
+   - Completion loggée dans `AuditLog`.
 
 1. **Renouvellement / upgrade**
    - Stripe gère la facturation récurrente.

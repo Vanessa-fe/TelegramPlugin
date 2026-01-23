@@ -298,7 +298,7 @@ describe('Stripe Webhooks (e2e)', () => {
   });
 
   describe('Payment Failure Flow', () => {
-    it('should revoke channel access on invoice.payment_failed', async () => {
+    it('should set grace period on invoice.payment_failed', async () => {
       const org = await createOrganization();
       const product = await createProduct({ organizationId: org.id });
       const channel = await createChannel({ organizationId: org.id });
@@ -333,19 +333,29 @@ describe('Stripe Webhooks (e2e)', () => {
 
       // Process payment failure
       const channelAccessService = app.get(ChannelAccessService);
+      const before = new Date();
       await channelAccessService.handlePaymentFailure(
         subscription.id,
         'payment_failed',
       );
 
-      // Verify access was revoked
+      const updatedSubscription = await prisma.subscription.findUnique({
+        where: { id: subscription.id },
+      });
+
+      // Verify grace was applied and access kept
       const channelAccess = await prisma.channelAccess.findFirst({
         where: { subscriptionId: subscription.id },
       });
 
-      expect(channelAccess?.status).toBe(AccessStatus.REVOKED);
-      expect(channelAccess?.revokedAt).toBeDefined();
-      expect(channelAccess?.revokeReason).toBe('payment_failed');
+      expect(updatedSubscription?.graceUntil).toBeDefined();
+      expect(updatedSubscription?.lastPaymentFailedAt).toBeDefined();
+      expect(updatedSubscription?.graceUntil?.getTime()).toBeGreaterThan(
+        before.getTime(),
+      );
+      expect(channelAccess?.status).toBe(AccessStatus.REVOKE_PENDING);
+      expect(channelAccess?.revokedAt).toBeNull();
+      expect(channelAccess?.revokeReason).toBeNull();
     });
 
     it('should revoke access on subscription canceled', async () => {
@@ -418,7 +428,7 @@ describe('Stripe Webhooks (e2e)', () => {
       expect(channelAccess?.revokeReason).toBe('refund');
     });
 
-    it('should revoke multiple channel accesses', async () => {
+    it('should keep multiple channel accesses during grace period', async () => {
       const org = await createOrganization();
       const product = await createProduct({ organizationId: org.id });
       const channel1 = await createChannel({ organizationId: org.id });
@@ -470,15 +480,15 @@ describe('Stripe Webhooks (e2e)', () => {
         'payment_failed',
       );
 
-      // Verify all accesses were revoked
+      // Verify all accesses were kept
       const channelAccesses = await prisma.channelAccess.findMany({
         where: { subscriptionId: subscription.id },
       });
 
       expect(channelAccesses).toHaveLength(2);
-      expect(channelAccesses.every((a) => a.status === AccessStatus.REVOKED)).toBe(
-        true,
-      );
+      expect(
+        channelAccesses.every((a) => a.status === AccessStatus.REVOKE_PENDING),
+      ).toBe(true);
     });
   });
 

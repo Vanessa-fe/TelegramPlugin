@@ -46,6 +46,7 @@ enum ChannelProvider {
 enum AccessStatus {
   PENDING
   GRANTED
+  REVOKE_PENDING
   REVOKED
 }
 
@@ -76,6 +77,13 @@ enum AuditActorType {
   SYSTEM
 }
 
+enum DataExportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Organization {
   id              String   @id @default(uuid())
   name            String
@@ -95,6 +103,7 @@ model Organization {
   subscriptions  Subscription[]
   paymentEvents  PaymentEvent[]
   auditLogs      AuditLog[]
+  dataExports    DataExport[]
 
   @@index([slug])
 }
@@ -114,6 +123,7 @@ model User {
 
   organization Organization? @relation(fields: [organizationId], references: [id])
   auditLogs    AuditLog[]
+  dataExports  DataExport[]
 }
 
 model Customer {
@@ -341,6 +351,7 @@ model AuditLog {
   action          String
   resourceType    String
   resourceId      String?
+  correlationId   String?
   metadata        Json?
   createdAt       DateTime       @default(now())
 
@@ -348,4 +359,28 @@ model AuditLog {
   actor        User?        @relation(fields: [actorId], references: [id])
 
   @@index([organizationId, createdAt])
+  @@index([correlationId])
+}
+
+model DataExport {
+  id             String           @id @default(uuid())
+  organizationId String
+  requestedById  String?
+  status         DataExportStatus @default(PENDING)
+  requestedAt    DateTime         @default(now())
+  startedAt      DateTime?
+  completedAt    DateTime?
+  slaDueAt       DateTime
+  slaMet         Boolean?
+  archivePath    String?
+  errorMessage   String?
+  metadata       Json?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  requestedBy  User?        @relation(fields: [requestedById], references: [id])
+
+  @@index([organizationId, status])
+  @@index([slaDueAt])
 }

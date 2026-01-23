@@ -10,12 +10,14 @@ import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { StripeWebhookService } from './stripe-webhook.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 describe('StripeWebhookService', () => {
   let service: StripeWebhookService;
   let prisma: jest.Mocked<PrismaService>;
   let channelAccessService: jest.Mocked<ChannelAccessService>;
   let configService: jest.Mocked<ConfigService>;
+  let auditLogService: jest.Mocked<AuditLogService>;
 
   const mockStripe = {
     webhooks: {
@@ -53,8 +55,7 @@ describe('StripeWebhookService', () => {
           provide: PrismaService,
           useValue: {
             paymentEvent: {
-              findUnique: jest.fn(),
-              create: jest.fn(),
+              upsert: jest.fn(),
               update: jest.fn(),
             },
             subscription: {
@@ -73,6 +74,12 @@ describe('StripeWebhookService', () => {
             handlePaymentFailure: jest.fn(),
           },
         },
+        {
+          provide: AuditLogService,
+          useValue: {
+            create: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -82,6 +89,7 @@ describe('StripeWebhookService', () => {
       ChannelAccessService,
     ) as jest.Mocked<ChannelAccessService>;
     configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
+    auditLogService = module.get(AuditLogService) as jest.Mocked<AuditLogService>;
     prisma.organization.findFirst.mockResolvedValue(null);
 
     // Mock Stripe client
@@ -139,8 +147,7 @@ describe('StripeWebhookService', () => {
       } as Stripe.Event;
 
       mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
-      prisma.paymentEvent.findUnique.mockResolvedValue(null);
-      prisma.paymentEvent.create.mockResolvedValue({
+      prisma.paymentEvent.upsert.mockResolvedValue({
         id: 'pe-123',
         organizationId: 'org-123',
         subscriptionId: null,
@@ -164,7 +171,7 @@ describe('StripeWebhookService', () => {
         'sig_123',
         'whsec_123',
       );
-      expect(prisma.paymentEvent.create).toHaveBeenCalled();
+      expect(prisma.paymentEvent.upsert).toHaveBeenCalled();
       expect(prisma.paymentEvent.update).toHaveBeenCalled();
     });
 
@@ -187,9 +194,9 @@ describe('StripeWebhookService', () => {
         id: 'sub-uuid-123',
         organizationId: 'org-123',
       } as any);
-      prisma.paymentEvent.findUnique.mockResolvedValue(null);
-      prisma.paymentEvent.create.mockResolvedValue({
+      prisma.paymentEvent.upsert.mockResolvedValue({
         id: 'pe-456',
+        processedAt: null,
       } as any);
       prisma.paymentEvent.update.mockResolvedValue({} as any);
 
@@ -219,7 +226,7 @@ describe('StripeWebhookService', () => {
       } as Stripe.Event;
 
       mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
-      prisma.paymentEvent.findUnique.mockResolvedValue({
+      prisma.paymentEvent.upsert.mockResolvedValue({
         id: 'pe-already-processed',
         processedAt: new Date(),
       } as any);
@@ -228,7 +235,8 @@ describe('StripeWebhookService', () => {
         rawBody: Buffer.from(JSON.stringify(mockEvent)),
       });
 
-      expect(prisma.paymentEvent.create).not.toHaveBeenCalled();
+      expect(prisma.paymentEvent.upsert).toHaveBeenCalled();
+      expect(prisma.paymentEvent.update).not.toHaveBeenCalled();
       expect(channelAccessService.handlePaymentSuccess).not.toHaveBeenCalled();
     });
   });
@@ -248,7 +256,7 @@ describe('StripeWebhookService', () => {
         rawBody: Buffer.from(JSON.stringify(mockEvent)),
       });
 
-      expect(prisma.paymentEvent.create).not.toHaveBeenCalled();
+      expect(prisma.paymentEvent.upsert).not.toHaveBeenCalled();
     });
   });
 
@@ -270,18 +278,19 @@ describe('StripeWebhookService', () => {
       } as Stripe.Event;
 
       mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
-      prisma.paymentEvent.findUnique.mockResolvedValue(null);
-      prisma.paymentEvent.create.mockResolvedValue({ id: 'pe-123' } as any);
+      prisma.paymentEvent.upsert.mockResolvedValue({ id: 'pe-123' } as any);
       prisma.paymentEvent.update.mockResolvedValue({} as any);
 
       await service.handleWebhook('sig_123', {
         rawBody: Buffer.from(JSON.stringify(mockEvent)),
       });
 
-      expect(prisma.paymentEvent.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(prisma.paymentEvent.upsert).toHaveBeenCalledWith({
+        create: expect.objectContaining({
           organizationId: 'org-123',
         }),
+        where: expect.any(Object),
+        update: expect.any(Object),
       });
     });
 
@@ -303,8 +312,7 @@ describe('StripeWebhookService', () => {
         id: 'sub-uuid-123',
         organizationId: 'org-456',
       } as any);
-      prisma.paymentEvent.findUnique.mockResolvedValue(null);
-      prisma.paymentEvent.create.mockResolvedValue({ id: 'pe-sub' } as any);
+      prisma.paymentEvent.upsert.mockResolvedValue({ id: 'pe-sub' } as any);
       prisma.paymentEvent.update.mockResolvedValue({} as any);
 
       await service.handleWebhook('sig_sub', {
@@ -315,11 +323,13 @@ describe('StripeWebhookService', () => {
         where: { externalId: 'sub_stripe_123' },
         select: { id: true, organizationId: true },
       });
-      expect(prisma.paymentEvent.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(prisma.paymentEvent.upsert).toHaveBeenCalledWith({
+        create: expect.objectContaining({
           organizationId: 'org-456',
           subscriptionId: 'sub-uuid-123',
         }),
+        where: expect.any(Object),
+        update: expect.any(Object),
       });
     });
 
@@ -338,8 +348,7 @@ describe('StripeWebhookService', () => {
 
       mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
       prisma.organization.findFirst.mockResolvedValue({ id: 'org-789' } as any);
-      prisma.paymentEvent.findUnique.mockResolvedValue(null);
-      prisma.paymentEvent.create.mockResolvedValue({ id: 'pe-account' } as any);
+      prisma.paymentEvent.upsert.mockResolvedValue({ id: 'pe-account' } as any);
       prisma.paymentEvent.update.mockResolvedValue({} as any);
 
       await service.handleWebhook('sig_123', {
@@ -350,10 +359,12 @@ describe('StripeWebhookService', () => {
         where: { stripeAccountId: 'acct_123' },
         select: { id: true },
       });
-      expect(prisma.paymentEvent.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(prisma.paymentEvent.upsert).toHaveBeenCalledWith({
+        create: expect.objectContaining({
           organizationId: 'org-789',
         }),
+        where: expect.any(Object),
+        update: expect.any(Object),
       });
     });
 
@@ -377,7 +388,7 @@ describe('StripeWebhookService', () => {
         rawBody: Buffer.from(JSON.stringify(mockEvent)),
       });
 
-      expect(prisma.paymentEvent.create).not.toHaveBeenCalled();
+      expect(prisma.paymentEvent.upsert).not.toHaveBeenCalled();
     });
   });
 
@@ -404,9 +415,9 @@ describe('StripeWebhookService', () => {
         id: subscriptionId,
         organizationId: 'org-123',
       } as any);
-      prisma.paymentEvent.findUnique.mockResolvedValue(null);
-      prisma.paymentEvent.create.mockResolvedValue({
+      prisma.paymentEvent.upsert.mockResolvedValue({
         id: 'pe-123',
+        processedAt: null,
       } as any);
       prisma.paymentEvent.update.mockResolvedValue({} as any);
       prisma.subscription.update.mockResolvedValue({} as any);
@@ -427,6 +438,20 @@ describe('StripeWebhookService', () => {
         where: { id: 'sub-uuid-123' },
         data: { status: SubscriptionStatus.ACTIVE },
       });
+      expect(auditLogService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'webhook.stripe.processed',
+          resourceType: 'payment_event',
+          resourceId: 'pe-123',
+          correlationId: 'evt_checkout.session.completed',
+          metadata: expect.objectContaining({
+            eventId: 'evt_checkout.session.completed',
+            eventType: 'checkout.session.completed',
+            mappedType: PaymentEventType.CHECKOUT_COMPLETED,
+            subscriptionId: 'sub-uuid-123',
+          }),
+        }),
+      );
     });
 
     it('should grant access on customer.subscription.created', async () => {
@@ -504,8 +529,10 @@ describe('StripeWebhookService', () => {
         id: 'sub-uuid-123',
         organizationId: 'org-123',
       } as any);
-      prisma.paymentEvent.findUnique.mockResolvedValue(null);
-      prisma.paymentEvent.create.mockResolvedValue({ id: 'pe-refund' } as any);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-refund',
+        processedAt: null,
+      } as any);
       prisma.paymentEvent.update.mockResolvedValue({} as any);
       prisma.subscription.update.mockResolvedValue({} as any);
 
@@ -541,8 +568,10 @@ describe('StripeWebhookService', () => {
       } as Stripe.Event;
 
       mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
-      prisma.paymentEvent.findUnique.mockResolvedValue(null);
-      prisma.paymentEvent.create.mockResolvedValue({ id: 'pe-123' } as any);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-123',
+        processedAt: null,
+      } as any);
       prisma.paymentEvent.update.mockResolvedValue({} as any);
 
       await service.handleWebhook('sig_123', {
@@ -580,18 +609,19 @@ describe('StripeWebhookService', () => {
         } as Stripe.Event;
 
         mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
-        prisma.paymentEvent.findUnique.mockResolvedValue(null);
-        prisma.paymentEvent.create.mockResolvedValue({ id: 'pe-123' } as any);
+        prisma.paymentEvent.upsert.mockResolvedValue({ id: 'pe-123' } as any);
         prisma.paymentEvent.update.mockResolvedValue({} as any);
 
         await service.handleWebhook('sig_123', {
           rawBody: Buffer.from(JSON.stringify(mockEvent)),
         });
 
-        expect(prisma.paymentEvent.create).toHaveBeenCalledWith({
-          data: expect.objectContaining({
+        expect(prisma.paymentEvent.upsert).toHaveBeenCalledWith({
+          create: expect.objectContaining({
             organizationId: testCase.expected,
           }),
+          where: expect.any(Object),
+          update: expect.any(Object),
         });
       }
     });

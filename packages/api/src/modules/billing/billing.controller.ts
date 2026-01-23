@@ -34,7 +34,7 @@ export class BillingController {
   }
 
   @Post('stripe/connect')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT)
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   createStripeConnectLink(
     @CurrentUser() user: AuthUser,
     @Query('organizationId') organizationId?: string,
@@ -47,7 +47,7 @@ export class BillingController {
   }
 
   @Post('stripe/login')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT)
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   createStripeLoginLink(
     @CurrentUser() user: AuthUser,
     @Query('organizationId') organizationId?: string,

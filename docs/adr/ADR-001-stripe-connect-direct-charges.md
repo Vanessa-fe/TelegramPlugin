@@ -15,6 +15,10 @@ Date: 2026-01-22
 - Remove transfer_data and application_fee for buyer payments
 - SaaS billing for creators stays on platform account in a separate flow
 
+## Rationale
+- Aligns with non-MoR posture for buyer payments
+- Keeps funds, refunds, and disputes on the creator account
+
 ## Consequences
 - Funds, refunds, disputes, receipts belong to creator account
 - Platform keeps PaymentEvent logs and access grant or revoke

@@ -47,7 +47,7 @@ export class SubscriptionsController {
   }
 
   @Post()
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT)
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   create(
     @CurrentUser() user: AuthUser,
     @Body(new ZodValidationPipe(createSubscriptionSchema))
@@ -58,7 +58,7 @@ export class SubscriptionsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT)
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   async update(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
