@@ -1,16 +1,19 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { $Enums, PaymentProvider } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessQueue } from './channel-access.queue';
 import { ChannelAccessService } from './channel-access.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 describe('ChannelAccessService', () => {
   let service: ChannelAccessService;
   let prisma: jest.Mocked<PrismaService>;
   let queue: jest.Mocked<ChannelAccessQueue>;
   let notifications: jest.Mocked<NotificationsService>;
+  let config: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -21,6 +24,7 @@ describe('ChannelAccessService', () => {
           useValue: {
             subscription: {
               findUnique: jest.fn(),
+              update: jest.fn(),
             },
             channelAccess: {
               create: jest.fn(),
@@ -51,6 +55,18 @@ describe('ChannelAccessService', () => {
             sendAccessRevoked: jest.fn(),
           },
         },
+        {
+          provide: AuditLogService,
+          useValue: {
+            create: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -58,6 +74,8 @@ describe('ChannelAccessService', () => {
     prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
     queue = module.get(ChannelAccessQueue) as jest.Mocked<ChannelAccessQueue>;
     notifications = module.get(NotificationsService) as jest.Mocked<NotificationsService>;
+    config = module.get(ConfigService) as jest.Mocked<ConfigService>;
+    config.get.mockReturnValue(5);
 
     // Suppress logs during tests
     jest.spyOn(Logger.prototype, 'error').mockImplementation();
@@ -208,6 +226,45 @@ describe('ChannelAccessService', () => {
       expect(queue.enqueueGrantAccess).toHaveBeenCalledTimes(1);
     });
 
+    it('should restore REVOKE_PENDING access to GRANTED without enqueue', async () => {
+      const mockSubscription = {
+        id: 'sub-123',
+        customerId: 'cust-123',
+        planId: 'plan-123',
+        organizationId: 'org-123',
+        customer: { id: 'cust-123' },
+        plan: {
+          id: 'plan-123',
+          product: {
+            id: 'prod-123',
+            channels: [{ channelId: 'ch-1', channel: { id: 'ch-1' } }],
+          },
+        },
+        channelAccesses: [
+          {
+            id: 'access-1',
+            channelId: 'ch-1',
+            status: $Enums.AccessStatus.REVOKE_PENDING,
+          },
+        ],
+      };
+
+      prisma.subscription.findUnique.mockResolvedValue(mockSubscription as any);
+      prisma.channelAccess.update.mockResolvedValue({} as any);
+
+      await service.handlePaymentSuccess('sub-123', PaymentProvider.STRIPE);
+
+      expect(prisma.channelAccess.update).toHaveBeenCalledWith({
+        where: { id: 'access-1' },
+        data: {
+          status: $Enums.AccessStatus.GRANTED,
+          revokedAt: null,
+          revokeReason: null,
+        },
+      });
+      expect(queue.enqueueGrantAccess).not.toHaveBeenCalled();
+    });
+
     it('should warn if subscription not found', async () => {
       prisma.subscription.findUnique.mockResolvedValue(null);
 
@@ -295,12 +352,18 @@ describe('ChannelAccessService', () => {
   });
 
   describe('handlePaymentFailure', () => {
-    it('should revoke all PENDING and GRANTED accesses', async () => {
+    it('should set grace period and skip revoke on payment_failed', async () => {
+      const now = new Date('2026-01-01T00:00:00Z');
+      jest.useFakeTimers().setSystemTime(now);
+
       prisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-123',
+        customerId: 'cust-123',
+        graceUntil: null,
+        channelAccesses: [],
+        plan: null,
       } as any);
-      prisma.channelAccess.updateMany.mockResolvedValue({ count: 2 } as any);
-      queue.enqueueRevokeAccess.mockResolvedValue(undefined);
+      prisma.subscription.update.mockResolvedValue({} as any);
 
       await service.handlePaymentFailure('sub-123', 'payment_failed');
 
@@ -312,21 +375,76 @@ describe('ChannelAccessService', () => {
           },
         },
         data: {
+          status: $Enums.AccessStatus.REVOKE_PENDING,
+          revokedAt: null,
+          revokeReason: null,
+        },
+      });
+      expect(prisma.subscription.update).toHaveBeenCalledWith({
+        where: { id: 'sub-123' },
+        data: {
+          graceUntil: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000),
+          lastPaymentFailedAt: now,
+        },
+      });
+      expect(prisma.entitlement.updateMany).not.toHaveBeenCalled();
+      expect(queue.enqueueRevokeAccess).not.toHaveBeenCalled();
+      expect(notifications.sendPaymentFailed).toHaveBeenCalledWith(
+        'cust-123',
+        'sub-123',
+        'Échec du paiement',
+      );
+      expect(notifications.sendAccessRevoked).not.toHaveBeenCalled();
+
+      jest.useRealTimers();
+    });
+
+    it('should revoke when grace period already expired on payment_failed', async () => {
+      const now = new Date('2026-01-01T00:00:00Z');
+      jest.useFakeTimers().setSystemTime(now);
+
+      prisma.subscription.findUnique.mockResolvedValue({
+        id: 'sub-123',
+        customerId: 'cust-123',
+        graceUntil: new Date('2025-12-31T00:00:00Z'),
+        channelAccesses: [],
+        plan: null,
+      } as any);
+      prisma.channelAccess.updateMany.mockResolvedValue({ count: 2 } as any);
+      prisma.entitlement.updateMany.mockResolvedValue({ count: 1 } as any);
+      queue.enqueueRevokeAccess.mockResolvedValue(undefined);
+
+      await service.handlePaymentFailure('sub-123', 'payment_failed');
+
+      expect(prisma.channelAccess.updateMany).toHaveBeenCalledWith({
+        where: {
+          subscriptionId: 'sub-123',
+          status: {
+            in: [
+              $Enums.AccessStatus.PENDING,
+              $Enums.AccessStatus.GRANTED,
+              $Enums.AccessStatus.REVOKE_PENDING,
+            ],
+          },
+        },
+        data: {
           status: $Enums.AccessStatus.REVOKED,
           revokedAt: expect.any(Date),
           revokeReason: 'payment_failed',
         },
       });
-
       expect(queue.enqueueRevokeAccess).toHaveBeenCalledWith({
         subscriptionId: 'sub-123',
         reason: 'payment_failed',
       });
+
+      jest.useRealTimers();
     });
 
     it('should handle canceled reason', async () => {
       prisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-123',
+        channelAccesses: [],
       } as any);
       prisma.channelAccess.updateMany.mockResolvedValue({ count: 1 } as any);
       queue.enqueueRevokeAccess.mockResolvedValue(undefined);
@@ -344,6 +462,7 @@ describe('ChannelAccessService', () => {
     it('should handle refund reason', async () => {
       prisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-123',
+        channelAccesses: [],
       } as any);
       prisma.channelAccess.updateMany.mockResolvedValue({ count: 1 } as any);
       queue.enqueueRevokeAccess.mockResolvedValue(undefined);
@@ -370,13 +489,14 @@ describe('ChannelAccessService', () => {
     it('should continue even if queue enqueue fails', async () => {
       prisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-123',
+        channelAccesses: [],
       } as any);
       prisma.channelAccess.updateMany.mockResolvedValue({ count: 1 } as any);
       queue.enqueueRevokeAccess.mockRejectedValue(new Error('Queue error'));
 
       // Should not throw
       await expect(
-        service.handlePaymentFailure('sub-123', 'payment_failed'),
+        service.handlePaymentFailure('sub-123', 'canceled'),
       ).resolves.not.toThrow();
 
       expect(prisma.channelAccess.updateMany).toHaveBeenCalled();

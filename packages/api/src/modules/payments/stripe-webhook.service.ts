@@ -4,11 +4,13 @@ import Stripe from 'stripe';
 import {
   PaymentEventType,
   PaymentProvider,
+  AuditActorType,
   Prisma,
   SubscriptionStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 export type StripeRawBodyRequest = {
   rawBody?: Buffer | string;
@@ -28,6 +30,7 @@ export class StripeWebhookService {
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly channelAccessService: ChannelAccessService,
+    private readonly auditLogService: AuditLogService,
   ) {
     const apiKey = this.config.get<string>('STRIPE_SECRET_KEY');
     if (!apiKey) {
@@ -94,33 +97,34 @@ export class StripeWebhookService {
     const occurredAt = new Date((event.created ?? Math.floor(Date.now() / 1000)) * 1000);
     const payload = JSON.parse(JSON.stringify(event)) as Prisma.JsonObject;
 
-    const existing = await this.prisma.paymentEvent.findUnique({
+    const savedEvent = await this.prisma.paymentEvent.upsert({
       where: {
         provider_externalId: {
           provider: PaymentProvider.STRIPE,
           externalId: event.id,
         },
       },
+      create: {
+        organizationId: context.organizationId,
+        subscriptionId: context.subscriptionId,
+        provider: PaymentProvider.STRIPE,
+        type: mappedType,
+        externalId: event.id,
+        payload,
+        occurredAt,
+      },
+      update: {
+        payload,
+        occurredAt,
+        subscriptionId: context.subscriptionId ?? undefined,
+        type: mappedType,
+      },
     });
 
-    if (existing?.processedAt) {
+    if (savedEvent.processedAt) {
       this.logger.debug(`Stripe event ${event.id} already processed, skipping domain side-effects`);
       return;
     }
-
-    const savedEvent =
-      existing ??
-      (await this.prisma.paymentEvent.create({
-        data: {
-          organizationId: context.organizationId,
-          subscriptionId: context.subscriptionId,
-          provider: PaymentProvider.STRIPE,
-          type: mappedType,
-          externalId: event.id,
-          payload,
-          occurredAt,
-        },
-      }));
 
     if (
       event.type === 'checkout.session.completed' &&
@@ -133,6 +137,30 @@ export class StripeWebhookService {
     }
 
     await this.applyDomainSideEffects(mappedType, context);
+
+    try {
+      await this.auditLogService.create({
+        organizationId: context.organizationId,
+        actorType: AuditActorType.SYSTEM,
+        action: 'webhook.stripe.processed',
+        resourceType: 'payment_event',
+        resourceId: savedEvent.id,
+        correlationId: event.id,
+        metadata: {
+          provider: PaymentProvider.STRIPE,
+          eventId: event.id,
+          eventType: event.type,
+          mappedType,
+          subscriptionId: context.subscriptionId ?? null,
+          requestId: event.request?.id ?? null,
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to write audit log for Stripe webhook ${event.id}`,
+        error as Error,
+      );
+    }
 
     await this.prisma.paymentEvent.update({
       where: { id: savedEvent.id },

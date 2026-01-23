@@ -148,11 +148,16 @@ packages/
 | Validation PRD | ✅ | Rapport valide (Pass) (_bmad-output/planning-artifacts/prd-validation-report.md) |
 | Audit architecture | ✅ | Audit vs PRD + architecture cible + flux critiques |
 | Backlog | ✅ | Backlog execution cree (docs/backlog.md) |
+| Stripe non MoR | ✅ | Direct charges Connect + guardrail webhook + ADR |
+| Tests API | ✅ | pnpm -C packages/api test (55 tests) |
+| Commit | ✅ | MVP clos |
 
 ### Points cles
 - Gaps P0 identifies : grace period, retries >= 24h, DLQ + replay manuel, audit log, RGPD export/delete, support replay
 - Architecture cible conserve le monorepo (api/bot/worker/shared)
-- Plan execution propose sur 10-12 jours
+- Stripe non MoR: direct charges Connect, guardrail event.account, doc architecture
+- Tests API verts: 55 tests
+- Commit: MVP clos
 
 ### Fichiers importants
 

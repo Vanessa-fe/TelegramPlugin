@@ -3,6 +3,8 @@ import { z } from "zod";
 export const queueNames = {
   grantAccess: "grant-access",
   revokeAccess: "revoke-access",
+  grantAccessDlq: "grant-access-dlq",
+  revokeAccessDlq: "revoke-access-dlq",
 } as const;
 
 export type QueueName = (typeof queueNames)[keyof typeof queueNames];
@@ -19,6 +21,19 @@ export const SubscriptionStatus = z.enum([
   "trialing",
   "expired",
 ]);
+
+export const computeJobLatencyMs = (
+  timestamp?: number | null,
+  finishedOn?: number | null,
+  now: number = Date.now()
+): number | null => {
+  if (timestamp === undefined || timestamp === null) {
+    return null;
+  }
+
+  const end = finishedOn ?? now;
+  return Math.max(0, end - timestamp);
+};
 
 export const GrantAccessPayload = z.object({
   subscriptionId: z.string().uuid(),

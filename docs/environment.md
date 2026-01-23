@@ -41,6 +41,11 @@ Ce projet est un monorepo PNPM contenant l'API NestJS, le bot Telegram, le worke
    - `DATABASE_URL` : connexion PostgreSQL (utilisée par Prisma dans `packages/api`).
    - `REDIS_URL` : utilisé par BullMQ (`packages/worker`).
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
+   - `PAYMENT_GRACE_PERIOD_DAYS` : grace period par defaut en jours (defaut 5, recommande 3-7).
+   - `AUDIT_LOG_RETENTION_DAYS` : retention audit logs en jours (defaut 400).
+   - `PAYMENT_EVENT_RETENTION_DAYS` : retention payment events en jours (defaut 730).
+   - `ACCESS_LATENCY_ALERT_MS` : seuil d'alerte latence grant/revoke en ms (defaut 2000).
+   - `DATA_EXPORT_DIR` : dossier de sortie pour les archives RGPD (defaut `./exports`).
    - `TELEGRAM_BOT_TOKEN`.
    - `BREVO_API_KEY`, `BREVO_FROM_EMAIL`, `BREVO_FROM_NAME` (voir `docs/email-configuration.md`).
    - Adapter `CORS_ORIGIN`, `NEXT_PUBLIC_API_URL` si les ports changent.

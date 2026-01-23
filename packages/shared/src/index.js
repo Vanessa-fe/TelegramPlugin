@@ -2,6 +2,8 @@ import { z } from "zod";
 export const queueNames = {
     grantAccess: "grant-access",
     revokeAccess: "revoke-access",
+    grantAccessDlq: "grant-access-dlq",
+    revokeAccessDlq: "revoke-access-dlq",
 };
 export const PaymentProvider = z.enum(["stripe", "paypal"]);
 export const AccessChannelType = z.enum(["telegram", "discord"]);
@@ -13,6 +15,13 @@ export const SubscriptionStatus = z.enum([
     "trialing",
     "expired",
 ]);
+export const computeJobLatencyMs = (timestamp, finishedOn, now = Date.now()) => {
+    if (timestamp === undefined || timestamp === null) {
+        return null;
+    }
+    const end = finishedOn ?? now;
+    return Math.max(0, end - timestamp);
+};
 export const GrantAccessPayload = z.object({
     subscriptionId: z.string().uuid(),
     channelId: z.string().uuid(),

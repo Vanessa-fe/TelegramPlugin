@@ -1,8 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { AccessStatus } from '@prisma/client';
+import { AccessStatus, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
+import { DataExportsService } from '../data-exports/data-exports.service';
+
+const DEFAULT_AUDIT_LOG_RETENTION_DAYS = 400;
+const DEFAULT_PAYMENT_EVENT_RETENTION_DAYS = 730;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class SchedulerService {
@@ -11,6 +17,8 @@ export class SchedulerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly channelAccessService: ChannelAccessService,
+    private readonly config: ConfigService,
+    private readonly dataExportsService: DataExportsService,
   ) {}
 
   /**
@@ -82,6 +90,52 @@ export class SchedulerService {
     this.logger.log(
       `Expired entitlements check complete: ${revokedCount} revoked, ${errorCount} errors`,
     );
+  }
+
+  /**
+   * Revoke access after grace period expiration
+   * Runs every 15 minutes
+   */
+  @Cron('*/15 * * * *')
+  async handleExpiredGracePeriods(): Promise<void> {
+    this.logger.log('Starting grace period expiration check...');
+
+    const now = new Date();
+
+    const expiredGraceSubscriptions = await this.prisma.subscription.findMany({
+      where: {
+        graceUntil: {
+          lte: now,
+        },
+        status: SubscriptionStatus.PAST_DUE,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (expiredGraceSubscriptions.length === 0) {
+      this.logger.debug('No expired grace periods found');
+      return;
+    }
+
+    for (const subscription of expiredGraceSubscriptions) {
+      try {
+        await this.channelAccessService.handlePaymentFailure(
+          subscription.id,
+          'payment_failed',
+        );
+        this.logger.debug(
+          `Revoked access after grace period for subscription ${subscription.id}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to revoke access after grace period for subscription ${subscription.id}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    this.logger.log('Grace period expiration check complete');
   }
 
   /**
@@ -273,5 +327,80 @@ export class SchedulerService {
     }
 
     this.logger.log('Expiration reminders check complete');
+  }
+
+  /**
+   * Clean up audit logs and payment events based on retention settings
+   * Runs daily at 2:30 AM
+   */
+  @Cron('30 2 * * *')
+  async cleanupRetentionData(): Promise<void> {
+    this.logger.log('Starting retention cleanup...');
+
+    const auditRetentionDays = this.getRetentionDays(
+      'AUDIT_LOG_RETENTION_DAYS',
+      DEFAULT_AUDIT_LOG_RETENTION_DAYS,
+    );
+    const paymentRetentionDays = this.getRetentionDays(
+      'PAYMENT_EVENT_RETENTION_DAYS',
+      DEFAULT_PAYMENT_EVENT_RETENTION_DAYS,
+    );
+
+    const auditCutoff = new Date(Date.now() - auditRetentionDays * DAY_IN_MS);
+    const paymentCutoff = new Date(
+      Date.now() - paymentRetentionDays * DAY_IN_MS,
+    );
+
+    const [auditResult, paymentResult] = await Promise.all([
+      this.prisma.auditLog.deleteMany({
+        where: {
+          createdAt: {
+            lt: auditCutoff,
+          },
+        },
+      }),
+      this.prisma.paymentEvent.deleteMany({
+        where: {
+          createdAt: {
+            lt: paymentCutoff,
+          },
+        },
+      }),
+    ]);
+
+    this.logger.log(
+      `Retention cleanup complete: auditLogs=${auditResult.count}, paymentEvents=${paymentResult.count}`,
+    );
+  }
+
+  /**
+   * Process pending RGPD exports
+   * Runs every hour
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async handlePendingDataExports(): Promise<void> {
+    this.logger.log('Starting data export processing...');
+
+    try {
+      await this.dataExportsService.processPendingExports();
+    } catch (error) {
+      this.logger.error(
+        `Failed to process data exports: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private getRetentionDays(key: string, fallback: number): number {
+    const rawValue = this.config.get<string>(key);
+    if (!rawValue) {
+      return fallback;
+    }
+
+    const parsed = Number.parseInt(rawValue, 10);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      return fallback;
+    }
+
+    return parsed;
   }
 }

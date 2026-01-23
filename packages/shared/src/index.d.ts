@@ -2,11 +2,14 @@ import { z } from "zod";
 export declare const queueNames: {
     readonly grantAccess: "grant-access";
     readonly revokeAccess: "revoke-access";
+    readonly grantAccessDlq: "grant-access-dlq";
+    readonly revokeAccessDlq: "revoke-access-dlq";
 };
 export type QueueName = (typeof queueNames)[keyof typeof queueNames];
 export declare const PaymentProvider: z.ZodEnum<["stripe", "paypal"]>;
 export declare const AccessChannelType: z.ZodEnum<["telegram", "discord"]>;
 export declare const SubscriptionStatus: z.ZodEnum<["active", "past_due", "canceled", "incomplete", "trialing", "expired"]>;
+export declare const computeJobLatencyMs: (timestamp?: number | null, finishedOn?: number | null, now?: number) => number | null;
 export declare const GrantAccessPayload: z.ZodObject<{
     subscriptionId: z.ZodString;
     channelId: z.ZodString;
