@@ -22,10 +22,13 @@ const organizations_service_1 = require("./organizations.service");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 const organization_scope_1 = require("../auth/utils/organization-scope");
+const data_deletions_service_1 = require("../data-deletions/data-deletions.service");
 let OrganizationsController = class OrganizationsController {
     organizationsService;
-    constructor(organizationsService) {
+    dataDeletionsService;
+    constructor(organizationsService, dataDeletionsService) {
         this.organizationsService = organizationsService;
+        this.dataDeletionsService = dataDeletionsService;
     }
     findAll() {
         return this.organizationsService.findAll();
@@ -43,6 +46,33 @@ let OrganizationsController = class OrganizationsController {
         }
         const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, id) ?? id;
         return this.organizationsService.update(scopedOrgId, body);
+    }
+    async deleteOrganization(user, id, correlationId, requestId) {
+        const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, id) ?? id;
+        await this.dataDeletionsService.deleteOrganization({
+            organizationId: scopedOrgId,
+            actorId: user.userId,
+            actorRole: user.role,
+            correlationId,
+            requestId,
+        });
+        return {
+            message: 'Organization deletion completed',
+        };
+    }
+    async deleteCustomer(user, orgId, customerId, correlationId, requestId) {
+        const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, orgId) ?? orgId;
+        await this.dataDeletionsService.deleteCustomer({
+            organizationId: scopedOrgId,
+            customerId,
+            actorId: user.userId,
+            actorRole: user.role,
+            correlationId,
+            requestId,
+        });
+        return {
+            message: 'Customer deletion completed',
+        };
     }
 };
 exports.OrganizationsController = OrganizationsController;
@@ -80,8 +110,32 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", void 0)
 ], OrganizationsController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Headers)('x-correlation-id')),
+    __param(3, (0, common_1.Headers)('x-request-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, String]),
+    __metadata("design:returntype", Promise)
+], OrganizationsController.prototype, "deleteOrganization", null);
+__decorate([
+    (0, common_1.Delete)(':orgId/customers/:customerId'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('orgId', new pipes_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Param)('customerId', new pipes_1.ParseUUIDPipe())),
+    __param(3, (0, common_1.Headers)('x-correlation-id')),
+    __param(4, (0, common_1.Headers)('x-request-id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], OrganizationsController.prototype, "deleteCustomer", null);
 exports.OrganizationsController = OrganizationsController = __decorate([
     (0, common_1.Controller)('organizations'),
-    __metadata("design:paramtypes", [organizations_service_1.OrganizationsService])
+    __metadata("design:paramtypes", [organizations_service_1.OrganizationsService,
+        data_deletions_service_1.DataDeletionsService])
 ], OrganizationsController);
 //# sourceMappingURL=organizations.controller.js.map

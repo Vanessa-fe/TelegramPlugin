@@ -13,7 +13,6 @@ export declare class BillingService {
     private readonly config;
     private readonly prisma;
     private readonly stripe;
-    private readonly feePercent;
     constructor(config: ConfigService, prisma: PrismaService);
     getStripeStatus(organizationId: string): Promise<StripeStatus>;
     createStripeConnectLink(organizationId: string): Promise<{
@@ -27,7 +26,5 @@ export declare class BillingService {
         subscriptionId: string;
     }>;
     private mapRecurring;
-    private parsePercent;
-    private computeApplicationFee;
 }
 export {};

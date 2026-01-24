@@ -64,7 +64,7 @@ __decorate([
 ], BillingController.prototype, "getStripeStatus", null);
 __decorate([
     (0, common_1.Post)('stripe/connect'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)('organizationId')),
     __metadata("design:type", Function),
@@ -73,7 +73,7 @@ __decorate([
 ], BillingController.prototype, "createStripeConnectLink", null);
 __decorate([
     (0, common_1.Post)('stripe/login'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)('organizationId')),
     __metadata("design:type", Function),

@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -23,10 +25,14 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/auth.types';
 import { resolveOrganizationScope } from '../auth/utils/organization-scope';
+import { DataDeletionsService } from '../data-deletions/data-deletions.service';
 
 @Controller('organizations')
 export class OrganizationsController {
-  constructor(private readonly organizationsService: OrganizationsService) {}
+  constructor(
+    private readonly organizationsService: OrganizationsService,
+    private readonly dataDeletionsService: DataDeletionsService,
+  ) {}
 
   @Get()
   @Roles(UserRole.SUPERADMIN)
@@ -68,5 +74,51 @@ export class OrganizationsController {
     }
     const scopedOrgId = resolveOrganizationScope(user, id) ?? id;
     return this.organizationsService.update(scopedOrgId, body);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
+  async deleteOrganization(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Headers('x-correlation-id') correlationId?: string,
+    @Headers('x-request-id') requestId?: string,
+  ) {
+    const scopedOrgId = resolveOrganizationScope(user, id) ?? id;
+    await this.dataDeletionsService.deleteOrganization({
+      organizationId: scopedOrgId,
+      actorId: user.userId,
+      actorRole: user.role,
+      correlationId,
+      requestId,
+    });
+
+    return {
+      message: 'Organization deletion completed',
+    };
+  }
+
+  @Delete(':orgId/customers/:customerId')
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
+  async deleteCustomer(
+    @CurrentUser() user: AuthUser,
+    @Param('orgId', new ParseUUIDPipe()) orgId: string,
+    @Param('customerId', new ParseUUIDPipe()) customerId: string,
+    @Headers('x-correlation-id') correlationId?: string,
+    @Headers('x-request-id') requestId?: string,
+  ) {
+    const scopedOrgId = resolveOrganizationScope(user, orgId) ?? orgId;
+    await this.dataDeletionsService.deleteCustomer({
+      organizationId: scopedOrgId,
+      customerId,
+      actorId: user.userId,
+      actorRole: user.role,
+      correlationId,
+      requestId,
+    });
+
+    return {
+      message: 'Customer deletion completed',
+    };
   }
 }

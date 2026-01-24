@@ -21,6 +21,8 @@ export declare class PlansController {
             trialEndsAt: Date | null;
             canceledAt: Date | null;
             endedAt: Date | null;
+            graceUntil: Date | null;
+            lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
         }[];
@@ -66,6 +68,8 @@ export declare class PlansController {
             trialEndsAt: Date | null;
             canceledAt: Date | null;
             endedAt: Date | null;
+            graceUntil: Date | null;
+            lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
         }[];

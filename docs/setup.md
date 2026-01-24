@@ -86,11 +86,36 @@ Prisma désactive la connexion en `NODE_ENV=test`, ce qui permet d'exécuter les
 
 Documentez chaque test (capture d'écran, logs) pour faciliter la recette fonctionnelle.
 
+## Monitoring et observabilité
+
+### Endpoints de santé
+
+- `GET /healthz` - Healthcheck basique (API running)
+- `GET /readyz` - Readiness check (DB + Redis connectés)
+- `GET /metrics` - Métriques Prometheus (public, pas d'auth)
+
+### Métriques disponibles
+
+```bash
+# Vérifier les métriques localement
+curl http://localhost:3001/metrics | grep -E "^(webhook|queue)"
+```
+
+Métriques clés:
+- `webhook_requests_total{status="success|error"}` - Succès/échecs webhooks
+- `queue_waiting_jobs{queue="..."}` - Jobs en attente
+- `queue_waiting_jobs{queue="...-dlq"}` - Jobs en DLQ (alerte si > 0)
+
+### Runbook opérationnel
+
+Pour les procédures de diagnostic et replay des jobs en échec:
+- **[Runbook DLQ et Replay](./runbook-dlq-replay.md)** - Guide complet des opérations
+
 ## Préparer la commercialisation
 
 - Basculez vos clés Stripe et Telegram en mode production et stockez-les dans un gestionnaire de secrets (Railway/Render/AWS SSM, etc.).
 - Déployez PostgreSQL géré (Neon, Supabase…) et Redis (Upstash, Valkey) puis mettez à jour `DATABASE_URL` / `REDIS_URL`.
 - Activez HTTPS sur le backend et configurez l'utilisation d'un webhook Telegram (plutôt que le long polling) pour une meilleure fiabilité.
-- Ajoutez de la supervision : Sentry, métriques Prometheus, alerting uptime.
+- Configurez le scraping Prometheus vers `/metrics` et les alertes recommandées (voir [architecture.md](./architecture.md#seuils-dalerte-recommandés)).
 - Passez en revue les obligations légales (CGV/CGU, politique de confidentialité, DPA) et préparez l'onboarding Stripe Connect si vous encaissez pour vos clients.
 - Exécutez la checklist déploiement : `pnpm build`, migrations Prisma en CI/CD, sauvegardes, rotation des tokens.

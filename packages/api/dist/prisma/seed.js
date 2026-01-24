@@ -42,7 +42,12 @@ async function main() {
     await prisma.user.deleteMany({
         where: {
             email: {
-                in: ['admin@test.com', 'merchant@test.com'],
+                in: [
+                    'admin@test.com',
+                    'merchant@test.com',
+                    'alexcreateur@test.com',
+                    'sophiefollower@test.com',
+                ],
             },
         },
     });
@@ -54,6 +59,8 @@ async function main() {
         },
     });
     const hashedPassword = await bcrypt.hash('password123', 10);
+    const alexPasswordHash = await bcrypt.hash('alexcreateur123', 10);
+    const sophiePasswordHash = await bcrypt.hash('sophiefollower123', 10);
     console.log('👤 Creating SUPERADMIN account...');
     const adminUser = await prisma.user.create({
         data: {
@@ -95,6 +102,34 @@ async function main() {
     });
     console.log(`✅ Merchant user created: ${merchantUser.email} (role: ${merchantUser.role})`);
     console.log(`   → Login at /dashboard with: merchant@test.com / password123\n`);
+    console.log('👤 Creating Alex ORG_ADMIN account...');
+    const alexUser = await prisma.user.create({
+        data: {
+            email: 'alexcreateur@test.com',
+            passwordHash: alexPasswordHash,
+            role: client_1.UserRole.ORG_ADMIN,
+            firstName: 'Alex',
+            lastName: 'Createur',
+            isActive: true,
+            organizationId: merchantOrg.id,
+        },
+    });
+    console.log(`✅ Alex user created: ${alexUser.email} (role: ${alexUser.role})`);
+    console.log(`   → Login at /dashboard with: alexcreateur@test.com / alexcreateur123\n`);
+    console.log('👤 Creating Sophie VIEWER account...');
+    const sophieUser = await prisma.user.create({
+        data: {
+            email: 'sophiefollower@test.com',
+            passwordHash: sophiePasswordHash,
+            role: client_1.UserRole.VIEWER,
+            firstName: 'Sophie',
+            lastName: 'Follower',
+            isActive: true,
+            organizationId: merchantOrg.id,
+        },
+    });
+    console.log(`✅ Sophie user created: ${sophieUser.email} (role: ${sophieUser.role})`);
+    console.log(`   → Login at /dashboard with: sophiefollower@test.com / sophiefollower123\n`);
     console.log('📦 Creating sample products...');
     const product1 = await prisma.product.create({
         data: {
@@ -103,7 +138,11 @@ async function main() {
             description: 'Accès exclusif au channel VIP avec contenu premium',
             status: client_1.ProductStatus.ACTIVE,
             metadata: {
-                features: ['Accès au channel VIP', 'Support prioritaire', 'Contenu exclusif'],
+                features: [
+                    'Accès au channel VIP',
+                    'Support prioritaire',
+                    'Contenu exclusif',
+                ],
             },
         },
     });
@@ -195,6 +234,15 @@ async function main() {
                 telegramUsername: 'mariemartin',
             },
         }),
+        prisma.customer.create({
+            data: {
+                organizationId: merchantOrg.id,
+                email: 'sophiefollower@test.com',
+                displayName: 'Sophie Follower',
+                telegramUserId: '555666777',
+                telegramUsername: 'sophiefollower',
+            },
+        }),
     ]);
     console.log(`✅ Customers created: ${customers.length} customers`);
     customers.forEach((customer) => {
@@ -225,9 +273,21 @@ async function main() {
             startedAt: now,
         },
     });
-    console.log(`✅ Subscriptions created: 2 subscriptions`);
+    const subscription3 = await prisma.subscription.create({
+        data: {
+            organizationId: merchantOrg.id,
+            customerId: customers[2].id,
+            planId: plans[0].id,
+            status: 'ACTIVE',
+            startedAt: now,
+            currentPeriodStart: now,
+            currentPeriodEnd: oneMonthLater,
+        },
+    });
+    console.log(`✅ Subscriptions created: 3 subscriptions`);
     console.log(`   - Customer 1: Active monthly subscription`);
-    console.log(`   - Customer 2: Active lifetime access\n`);
+    console.log(`   - Customer 2: Active lifetime access`);
+    console.log(`   - Customer 3: Active monthly subscription\n`);
     console.log('🎉 Seed completed successfully!\n');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📋 TEST ACCOUNTS SUMMARY');
@@ -244,11 +304,23 @@ async function main() {
     console.log('   Access:   /dashboard (manage own organization)');
     console.log('   Org:      Test Merchant Organization');
     console.log('');
+    console.log('🔑 ALEX ACCOUNT (ORG_ADMIN)');
+    console.log('   Email:    alexcreateur@test.com');
+    console.log('   Password: alexcreateur123');
+    console.log('   Access:   /dashboard (manage own organization)');
+    console.log('   Org:      Test Merchant Organization');
+    console.log('');
+    console.log('🔑 SOPHIE ACCOUNT (VIEWER)');
+    console.log('   Email:    sophiefollower@test.com');
+    console.log('   Password: sophiefollower123');
+    console.log('   Access:   /dashboard (read-only)');
+    console.log('   Org:      Test Merchant Organization');
+    console.log('');
     console.log('📊 SAMPLE DATA CREATED:');
     console.log(`   - 2 Products`);
     console.log(`   - 4 Plans (monthly, yearly, lifetime, 30-day)`);
-    console.log(`   - 2 Customers`);
-    console.log(`   - 2 Active subscriptions`);
+    console.log(`   - 3 Customers`);
+    console.log(`   - 3 Active subscriptions`);
     console.log('');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }

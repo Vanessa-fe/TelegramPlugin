@@ -66,9 +66,61 @@
 
 ## Etat d'acces (ChannelAccess)
 
-- Source de verite: `ChannelAccess.status`.
-- Etats: `PENDING` -> `GRANTED` -> `REVOKE_PENDING` -> `REVOKED`.
-- `payment_failed`: passe en `REVOKE_PENDING` pendant la grace, puis `REVOKED` a expiration.
+### Source de vérité
+
+`ChannelAccess.status` est la source unique de vérité pour l'état d'accès d'un client à un channel.
+
+### State Machine
+
+```
+                    ┌─────────────────────────────────────────────────┐
+                    │                                                 │
+                    ▼                                                 │
+┌─────────┐    ┌─────────┐    ┌────────────────┐    ┌─────────┐      │
+│ PENDING │───▶│ GRANTED │───▶│ REVOKE_PENDING │───▶│ REVOKED │      │
+└─────────┘    └─────────┘    └────────────────┘    └─────────┘      │
+     │              │                  │                  │           │
+     │              │                  │                  │           │
+     │              ▼                  ▼                  │           │
+     │         [Bot génère       [Grace period          │           │
+     │          invite link]      en cours]              │           │
+     │                                                   │           │
+     └───────────────────────────────────────────────────┴───────────┘
+                         (Échec définitif)
+```
+
+### Transitions
+
+| De | Vers | Trigger | Action |
+|----|------|---------|--------|
+| - | `PENDING` | Payment success | Création ChannelAccess + job grant-access |
+| `PENDING` | `GRANTED` | Worker success | Bot génère invite, notifie client |
+| `PENDING` | `REVOKED` | Échec après retries | Job en DLQ, accès non accordé |
+| `GRANTED` | `REVOKE_PENDING` | Payment failed | Grace period démarre (graceUntil) |
+| `GRANTED` | `REVOKED` | Cancellation/Refund | Révocation immédiate |
+| `REVOKE_PENDING` | `GRANTED` | Payment recovered | Grace annulée, accès maintenu |
+| `REVOKE_PENDING` | `REVOKED` | Grace expired | Scheduler révoque accès |
+
+### Grace Period
+
+- **Durée par défaut**: 5 jours (configurable via `GRACE_PERIOD_DAYS`)
+- **Déclencheur**: `invoice.payment_failed` webhook
+- **Stockage**: `Subscription.graceUntil` timestamp
+- **Scheduler**: `handleExpiredGracePeriods()` toutes les 15 minutes
+- **Notification**: Client notifié à l'échec et à la révocation
+
+### Queues et Retries
+
+| Queue | Retries | Backoff | Fenêtre totale |
+|-------|---------|---------|----------------|
+| `grant-access` | 10 | Expo 5min | ~42 heures |
+| `revoke-access` | 10 | Expo 5min | ~42 heures |
+
+Après épuisement des retries, les jobs sont déplacés vers les DLQ:
+- `grant-access-dlq`
+- `revoke-access-dlq`
+
+Voir [Runbook DLQ](./runbook-dlq-replay.md) pour les procédures de replay.
 
 ## Flux critiques
 
@@ -85,17 +137,32 @@
    - Envoi d’un job asynchrone `GrantAccessJob` avec `subscriptionId`.
    - Worker appelle le Bot API pour générer (ou récupérer) un `TelegramInvite`, puis l’envoie au client (email/Telegram bot) ou retourne via portail.
 
-1. **Échec paiement / annulation**
-   - Webhook Stripe (invoice.payment_failed, customer.subscription.deleted).
-   - Traitement backend : mise à jour `Subscription` au statut `past_due` ou `canceled`.
-   - Job asynchrone `RevokeAccessJob` : bot supprime l’utilisateur du canal ou invalide l’invitation.
-   - Notifications au client/organisation.
+1. **Échec paiement avec grace period**
+   - Webhook Stripe `invoice.payment_failed` réceptionné.
+   - `Subscription.status` → `PAST_DUE`, `graceUntil` = now + 5 jours.
+   - `ChannelAccess.status` → `REVOKE_PENDING` (accès maintenu pendant grace).
+   - Notification client: "Paiement échoué, vous avez 5 jours pour régulariser".
+   - **Si paiement récupéré**: `Subscription` → `ACTIVE`, `ChannelAccess` → `GRANTED`.
+   - **Si grace expire**: Scheduler détecte `graceUntil < now`, job `RevokeAccessJob` envoyé.
+
+1. **Annulation / Refund**
+   - Webhook Stripe `customer.subscription.deleted` ou `charge.refunded`.
+   - `Subscription.status` → `CANCELED`.
+   - Job `RevokeAccessJob` envoyé immédiatement (pas de grace).
+   - Bot supprime l'utilisateur du canal ou invalide l'invitation.
+   - Notification au client: "Votre accès a été révoqué".
 
 1. **Export RGPD**
    - Admin déclenche un export (API `data-exports`).
    - Job `DataExport` créé (SLA 30 jours).
    - Scheduler traite les exports en attente et génère un archive JSON.
    - Completion loggée dans `AuditLog`.
+
+1. **Suppression RGPD**
+   - Admin supprime un customer ou une organization via l'API.
+   - Donnees personnelles anonymisees (soft delete).
+   - Acces revoques et jobs associes enregistres.
+   - Action loggee dans `AuditLog`.
 
 1. **Renouvellement / upgrade**
    - Stripe gère la facturation récurrente.
@@ -129,8 +196,58 @@ docs/
 
 - Logs JSON via Pino (corrélation par `requestId`).
 - Sentry pour backend/bot/frontend.
-- Healthchecks : `/healthz`, `/readyz`, exposition Prometheus (metrics de jobs, API).
-- Dashboard d’alerte simple (uptime robot ou statuspage).
+- Healthchecks : `/healthz`, `/readyz`.
+- Métriques Prometheus : `/metrics`.
+- Dashboard d'alerte simple (uptime robot ou statuspage).
+
+### Métriques Prometheus
+
+Endpoint: `GET /metrics` (public, pas d'auth pour scraping).
+
+| Métrique | Type | Labels | Description |
+|----------|------|--------|-------------|
+| `webhook_requests_total` | Counter | `provider`, `event_type`, `status` | Total webhooks reçus (success/error) |
+| `webhook_duration_seconds` | Histogram | `provider`, `event_type` | Durée traitement webhook |
+| `queue_jobs_total` | Counter | `queue`, `status` | Total jobs (completed/failed) |
+| `queue_job_duration_seconds` | Histogram | `queue` | Durée traitement job |
+| `queue_waiting_jobs` | Gauge | `queue` | Jobs en attente (waiting + active) |
+
+Labels `provider`: `stripe`, `telegram_stars`.
+Labels `queue`: `grant-access`, `revoke-access`, `grant-access-dlq`, `revoke-access-dlq`.
+
+### Seuils d'alerte recommandés
+
+| Alerte | PromQL | Seuil | Severité |
+|--------|--------|-------|----------|
+| WebhookHighFailureRate | `rate(webhook_requests_total{status="error"}[5m]) / rate(webhook_requests_total[5m])` | > 5% | critical |
+| WebhookHighLatency | `histogram_quantile(0.95, rate(webhook_duration_seconds_bucket[5m]))` | > 2s | warning |
+| QueueHighBacklog | `queue_waiting_jobs` | > 100 | warning |
+| DLQNonEmpty | `queue_waiting_jobs{queue=~".*-dlq"}` | > 0 | critical |
+
+### Logs métriques (Worker)
+
+Le worker émet des logs structurés pour le monitoring:
+
+```json
+{
+  "metric": "access_grant_latency_ms",
+  "latencyMs": 1234,
+  "queue": "grant-access",
+  "jobId": "..."
+}
+```
+
+Alertes côté logs (Datadog/Grafana Loki):
+- `metric:access_grant_latency_ms latencyMs:>2000` → latence excessive
+- `level:error queue:*` → échec job
+
+### Opérations et runbooks
+
+- **Runbook DLQ et replay**: [docs/runbook-dlq-replay.md](./runbook-dlq-replay.md)
+  - Diagnostic des jobs en échec
+  - Procédures de replay via API
+  - Actions support manuelles (force grant/revoke)
+  - Troubleshooting guide
 
 ## Roadmap MVP (résumé)
 

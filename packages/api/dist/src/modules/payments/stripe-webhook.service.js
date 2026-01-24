@@ -20,16 +20,22 @@ const stripe_1 = __importDefault(require("stripe"));
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const channel_access_service_1 = require("../channel-access/channel-access.service");
+const audit_log_service_1 = require("../audit-log/audit-log.service");
+const metrics_service_1 = require("../metrics/metrics.service");
 let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
     config;
     prisma;
     channelAccessService;
+    auditLogService;
+    metricsService;
     logger = new common_1.Logger(StripeWebhookService_1.name);
     stripe;
-    constructor(config, prisma, channelAccessService) {
+    constructor(config, prisma, channelAccessService, auditLogService, metricsService) {
         this.config = config;
         this.prisma = prisma;
         this.channelAccessService = channelAccessService;
+        this.auditLogService = auditLogService;
+        this.metricsService = metricsService;
         const apiKey = this.config.get('STRIPE_SECRET_KEY');
         if (!apiKey) {
             throw new Error('STRIPE_SECRET_KEY is not configured');
@@ -39,12 +45,15 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
         });
     }
     async handleWebhook(signature, request) {
+        const startTime = process.hrtime.bigint();
         const webhookSecret = this.config.get('STRIPE_WEBHOOK_SECRET');
         if (!webhookSecret) {
+            this.metricsService.recordWebhookRequest('stripe', 'unknown', 'error');
             throw new common_1.BadRequestException('Stripe webhook secret is not configured');
         }
         const rawBody = request.rawBody;
         if (!rawBody) {
+            this.metricsService.recordWebhookRequest('stripe', 'unknown', 'error');
             throw new common_1.BadRequestException('Missing raw body for Stripe signature verification');
         }
         let event;
@@ -54,9 +63,23 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
         }
         catch (error) {
             this.logger.error('Stripe signature verification failed', error);
+            this.metricsService.recordWebhookRequest('stripe', 'unknown', 'error');
             throw new common_1.BadRequestException('Invalid Stripe signature');
         }
-        await this.processEvent(event);
+        try {
+            await this.processEvent(event);
+            const durationNs = process.hrtime.bigint() - startTime;
+            const durationSeconds = Number(durationNs) / 1e9;
+            this.metricsService.recordWebhookRequest('stripe', event.type, 'success');
+            this.metricsService.recordWebhookDuration('stripe', event.type, durationSeconds);
+        }
+        catch (error) {
+            const durationNs = process.hrtime.bigint() - startTime;
+            const durationSeconds = Number(durationNs) / 1e9;
+            this.metricsService.recordWebhookRequest('stripe', event.type, 'error');
+            this.metricsService.recordWebhookDuration('stripe', event.type, durationSeconds);
+            throw error;
+        }
     }
     async processEvent(event) {
         if (event.type === 'account.updated') {
@@ -68,6 +91,10 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             this.logger.debug(`Ignoring unsupported Stripe event type: ${event.type}`);
             return;
         }
+        if (this.isConnectEventExpected(event.type) && !event.account) {
+            this.logger.warn(`Stripe event ${event.id} missing account for Connect processing, ignoring`);
+            return;
+        }
         const context = await this.resolveContext(event);
         if (!context) {
             this.logger.warn(`Unable to resolve context for event ${event.id} (type ${event.type}), skipping processing`);
@@ -75,35 +102,59 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
         }
         const occurredAt = new Date((event.created ?? Math.floor(Date.now() / 1000)) * 1000);
         const payload = JSON.parse(JSON.stringify(event));
-        const existing = await this.prisma.paymentEvent.findUnique({
+        const savedEvent = await this.prisma.paymentEvent.upsert({
             where: {
                 provider_externalId: {
                     provider: client_1.PaymentProvider.STRIPE,
                     externalId: event.id,
                 },
             },
+            create: {
+                organizationId: context.organizationId,
+                subscriptionId: context.subscriptionId,
+                provider: client_1.PaymentProvider.STRIPE,
+                type: mappedType,
+                externalId: event.id,
+                payload,
+                occurredAt,
+            },
+            update: {
+                payload,
+                occurredAt,
+                subscriptionId: context.subscriptionId ?? undefined,
+                type: mappedType,
+            },
         });
-        if (existing?.processedAt) {
+        if (savedEvent.processedAt) {
             this.logger.debug(`Stripe event ${event.id} already processed, skipping domain side-effects`);
             return;
         }
-        const savedEvent = existing ??
-            (await this.prisma.paymentEvent.create({
-                data: {
-                    organizationId: context.organizationId,
-                    subscriptionId: context.subscriptionId,
-                    provider: client_1.PaymentProvider.STRIPE,
-                    type: mappedType,
-                    externalId: event.id,
-                    payload,
-                    occurredAt,
-                },
-            }));
         if (event.type === 'checkout.session.completed' &&
             context.subscriptionId) {
             await this.syncSubscriptionFromCheckout(event.data.object, context.subscriptionId);
         }
         await this.applyDomainSideEffects(mappedType, context);
+        try {
+            await this.auditLogService.create({
+                organizationId: context.organizationId,
+                actorType: client_1.AuditActorType.SYSTEM,
+                action: 'webhook.stripe.processed',
+                resourceType: 'payment_event',
+                resourceId: savedEvent.id,
+                correlationId: event.id,
+                metadata: {
+                    provider: client_1.PaymentProvider.STRIPE,
+                    eventId: event.id,
+                    eventType: event.type,
+                    mappedType,
+                    subscriptionId: context.subscriptionId ?? null,
+                    requestId: event.request?.id ?? null,
+                },
+            });
+        }
+        catch (error) {
+            this.logger.error(`Failed to write audit log for Stripe webhook ${event.id}`, error);
+        }
         await this.prisma.paymentEvent.update({
             where: { id: savedEvent.id },
             data: {
@@ -115,6 +166,7 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
         });
     }
     async resolveContext(event) {
+        const accountContext = await this.contextFromStripeAccount(event.account);
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
@@ -125,22 +177,26 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
                         return context;
                     }
                 }
-                return this.contextFromMetadata(session.metadata ?? undefined);
+                const metadataContext = await this.contextFromMetadata(session.metadata ?? undefined);
+                return metadataContext ?? accountContext;
             }
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object;
-                return this.contextFromSubscription(subscription.id);
+                const context = await this.contextFromSubscription(subscription.id);
+                return context ?? accountContext;
             }
             case 'invoice.payment_succeeded':
             case 'invoice.payment_failed': {
                 const invoice = event.data.object;
                 const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : undefined;
                 if (!subscriptionId) {
-                    return this.contextFromMetadata(invoice.metadata ?? undefined);
+                    const metadataContext = await this.contextFromMetadata(invoice.metadata ?? undefined);
+                    return metadataContext ?? accountContext;
                 }
-                return this.contextFromSubscription(subscriptionId);
+                const context = await this.contextFromSubscription(subscriptionId);
+                return context ?? accountContext;
             }
             case 'charge.refunded': {
                 const charge = event.data.object;
@@ -153,20 +209,21 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
                     return null;
                 }
                 try {
-                    const invoice = await this.stripe.invoices.retrieve(invoiceId);
+                    const invoice = await this.stripe.invoices.retrieve(invoiceId, undefined, event.account ? { stripeAccount: event.account } : undefined);
                     const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : undefined;
                     if (!subscriptionId) {
-                        return null;
+                        return accountContext;
                     }
-                    return this.contextFromSubscription(subscriptionId);
+                    const context = await this.contextFromSubscription(subscriptionId);
+                    return context ?? accountContext;
                 }
                 catch (error) {
                     this.logger.warn(`Failed to retrieve invoice ${invoiceId} for charge ${charge.id}: ${error.message}`);
-                    return null;
+                    return accountContext;
                 }
             }
             default:
-                return null;
+                return accountContext;
         }
     }
     async contextFromMetadata(metadata) {
@@ -209,6 +266,20 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             organizationId: subscription.organizationId,
             subscriptionId: subscription.id,
         };
+    }
+    async contextFromStripeAccount(accountId) {
+        if (!accountId) {
+            return null;
+        }
+        const organization = await this.prisma.organization.findFirst({
+            where: { stripeAccountId: accountId },
+            select: { id: true },
+        });
+        if (!organization) {
+            this.logger.warn(`No organization found for Stripe account ${accountId}, skipping account context`);
+            return null;
+        }
+        return { organizationId: organization.id };
     }
     async syncSubscriptionFromCheckout(session, subscriptionId) {
         const update = {};
@@ -254,6 +325,20 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
                 return client_1.PaymentEventType.REFUND_CREATED;
             default:
                 return null;
+        }
+    }
+    isConnectEventExpected(eventType) {
+        switch (eventType) {
+            case 'checkout.session.completed':
+            case 'customer.subscription.created':
+            case 'customer.subscription.updated':
+            case 'customer.subscription.deleted':
+            case 'invoice.payment_succeeded':
+            case 'invoice.payment_failed':
+            case 'charge.refunded':
+                return true;
+            default:
+                return false;
         }
     }
     async applyDomainSideEffects(eventType, context) {
@@ -328,6 +413,8 @@ exports.StripeWebhookService = StripeWebhookService = StripeWebhookService_1 = _
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [config_1.ConfigService,
         prisma_service_1.PrismaService,
-        channel_access_service_1.ChannelAccessService])
+        channel_access_service_1.ChannelAccessService,
+        audit_log_service_1.AuditLogService,
+        metrics_service_1.MetricsService])
 ], StripeWebhookService);
 //# sourceMappingURL=stripe-webhook.service.js.map

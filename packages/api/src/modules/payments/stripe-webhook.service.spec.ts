@@ -11,6 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { StripeWebhookService } from './stripe-webhook.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 describe('StripeWebhookService', () => {
   let service: StripeWebhookService;
@@ -78,6 +79,13 @@ describe('StripeWebhookService', () => {
           provide: AuditLogService,
           useValue: {
             create: jest.fn(),
+          },
+        },
+        {
+          provide: MetricsService,
+          useValue: {
+            recordWebhookRequest: jest.fn(),
+            recordWebhookDuration: jest.fn(),
           },
         },
       ],

@@ -1,0 +1,62 @@
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../prisma/prisma.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+export declare class DataExportsService {
+    private readonly prisma;
+    private readonly auditLog;
+    private readonly config;
+    private readonly logger;
+    constructor(prisma: PrismaService, auditLog: AuditLogService, config: ConfigService);
+    requestExport(organizationId: string, requestedById?: string | null): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        status: import("@prisma/client").$Enums.DataExportStatus;
+        startedAt: Date | null;
+        requestedAt: Date;
+        completedAt: Date | null;
+        slaDueAt: Date;
+        slaMet: boolean | null;
+        archivePath: string | null;
+        errorMessage: string | null;
+        requestedById: string | null;
+    }>;
+    findAll(organizationId?: string): import("@prisma/client").Prisma.PrismaPromise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        status: import("@prisma/client").$Enums.DataExportStatus;
+        startedAt: Date | null;
+        requestedAt: Date;
+        completedAt: Date | null;
+        slaDueAt: Date;
+        slaMet: boolean | null;
+        archivePath: string | null;
+        errorMessage: string | null;
+        requestedById: string | null;
+    }[]>;
+    findOne(id: string): import("@prisma/client").Prisma.Prisma__DataExportClient<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        status: import("@prisma/client").$Enums.DataExportStatus;
+        startedAt: Date | null;
+        requestedAt: Date;
+        completedAt: Date | null;
+        slaDueAt: Date;
+        slaMet: boolean | null;
+        archivePath: string | null;
+        errorMessage: string | null;
+        requestedById: string | null;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs, import("@prisma/client").Prisma.PrismaClientOptions>;
+    processPendingExports(): Promise<void>;
+    processExport(exportId: string): Promise<void>;
+    private writeArchive;
+    private resolveExportDirectory;
+}

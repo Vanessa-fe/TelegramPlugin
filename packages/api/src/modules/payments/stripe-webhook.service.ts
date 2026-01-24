@@ -11,6 +11,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 export type StripeRawBodyRequest = {
   rawBody?: Buffer | string;
@@ -31,6 +32,7 @@ export class StripeWebhookService {
     private readonly prisma: PrismaService,
     private readonly channelAccessService: ChannelAccessService,
     private readonly auditLogService: AuditLogService,
+    private readonly metricsService: MetricsService,
   ) {
     const apiKey = this.config.get<string>('STRIPE_SECRET_KEY');
     if (!apiKey) {
@@ -43,13 +45,16 @@ export class StripeWebhookService {
   }
 
   async handleWebhook(signature: string, request: StripeRawBodyRequest): Promise<void> {
+    const startTime = process.hrtime.bigint();
     const webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET');
     if (!webhookSecret) {
+      this.metricsService.recordWebhookRequest('stripe', 'unknown', 'error');
       throw new BadRequestException('Stripe webhook secret is not configured');
     }
 
     const rawBody = request.rawBody;
     if (!rawBody) {
+      this.metricsService.recordWebhookRequest('stripe', 'unknown', 'error');
       throw new BadRequestException('Missing raw body for Stripe signature verification');
     }
 
@@ -60,10 +65,23 @@ export class StripeWebhookService {
       event = this.stripe.webhooks.constructEvent(bodyToVerify, signature, webhookSecret);
     } catch (error) {
       this.logger.error('Stripe signature verification failed', error as Error);
+      this.metricsService.recordWebhookRequest('stripe', 'unknown', 'error');
       throw new BadRequestException('Invalid Stripe signature');
     }
 
-    await this.processEvent(event);
+    try {
+      await this.processEvent(event);
+      const durationNs = process.hrtime.bigint() - startTime;
+      const durationSeconds = Number(durationNs) / 1e9;
+      this.metricsService.recordWebhookRequest('stripe', event.type, 'success');
+      this.metricsService.recordWebhookDuration('stripe', event.type, durationSeconds);
+    } catch (error) {
+      const durationNs = process.hrtime.bigint() - startTime;
+      const durationSeconds = Number(durationNs) / 1e9;
+      this.metricsService.recordWebhookRequest('stripe', event.type, 'error');
+      this.metricsService.recordWebhookDuration('stripe', event.type, durationSeconds);
+      throw error;
+    }
   }
 
   private async processEvent(event: Stripe.Event): Promise<void> {
