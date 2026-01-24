@@ -289,6 +289,8 @@ async function main() {
   });
 
   const merchantPasswordHash = await bcrypt.hash('password123', 10);
+  const alexPasswordHash = await bcrypt.hash('alexcreateur123', 10);
+  const sophiePasswordHash = await bcrypt.hash('sophiefollower123', 10);
 
   // Create merchant user (ORG_ADMIN)
   await prisma.user.upsert({
@@ -305,6 +307,52 @@ async function main() {
       role: UserRole.ORG_ADMIN,
       firstName: 'Merchant',
       lastName: 'Test',
+      organization: {
+        connect: { id: merchantOrg.id },
+      },
+    },
+  });
+
+  // Create Alex user (ORG_ADMIN)
+  await prisma.user.upsert({
+    where: { email: 'alexcreateur@test.com' },
+    update: {
+      organizationId: merchantOrg.id,
+      isActive: true,
+      role: UserRole.ORG_ADMIN,
+      firstName: 'Alex',
+      lastName: 'Createur',
+      passwordHash: alexPasswordHash,
+    },
+    create: {
+      email: 'alexcreateur@test.com',
+      passwordHash: alexPasswordHash,
+      role: UserRole.ORG_ADMIN,
+      firstName: 'Alex',
+      lastName: 'Createur',
+      organization: {
+        connect: { id: merchantOrg.id },
+      },
+    },
+  });
+
+  // Create Sophie user (VIEWER)
+  await prisma.user.upsert({
+    where: { email: 'sophiefollower@test.com' },
+    update: {
+      organizationId: merchantOrg.id,
+      isActive: true,
+      role: UserRole.VIEWER,
+      firstName: 'Sophie',
+      lastName: 'Follower',
+      passwordHash: sophiePasswordHash,
+    },
+    create: {
+      email: 'sophiefollower@test.com',
+      passwordHash: sophiePasswordHash,
+      role: UserRole.VIEWER,
+      firstName: 'Sophie',
+      lastName: 'Follower',
       organization: {
         connect: { id: merchantOrg.id },
       },
@@ -396,6 +444,23 @@ async function main() {
     },
   });
 
+  await prisma.customer.upsert({
+    where: { externalId: 'merchant_cust_sophie' },
+    update: {
+      email: 'sophiefollower@test.com',
+      displayName: 'Sophie Follower',
+      telegramUsername: 'sophiefollower',
+      organizationId: merchantOrg.id,
+    },
+    create: {
+      externalId: 'merchant_cust_sophie',
+      organizationId: merchantOrg.id,
+      email: 'sophiefollower@test.com',
+      displayName: 'Sophie Follower',
+      telegramUsername: 'sophiefollower',
+    },
+  });
+
   console.info('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.info('📋 TEST ACCOUNTS SUMMARY');
   console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
@@ -407,6 +472,16 @@ async function main() {
   console.info('   Email:    merchant@test.com');
   console.info('   Password: password123');
   console.info('   Access:   /dashboard (manage own organization)');
+  console.info('   Org:      Test Merchant Org\n');
+  console.info('🔑 ALEX ACCOUNT (ORG_ADMIN)');
+  console.info('   Email:    alexcreateur@test.com');
+  console.info('   Password: alexcreateur123');
+  console.info('   Access:   /dashboard (manage own organization)');
+  console.info('   Org:      Test Merchant Org\n');
+  console.info('🔑 SOPHIE ACCOUNT (VIEWER)');
+  console.info('   Email:    sophiefollower@test.com');
+  console.info('   Password: sophiefollower123');
+  console.info('   Access:   /dashboard (read-only)');
   console.info('   Org:      Test Merchant Org\n');
   console.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.info('✅ Seed Prisma appliqué avec succès.');
