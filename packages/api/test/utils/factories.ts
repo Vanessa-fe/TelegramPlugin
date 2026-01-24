@@ -9,6 +9,12 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+// Counter for unique IDs to avoid timestamp collisions
+let factoryCounter = 0;
+function uniqueId(): string {
+  return `${Date.now()}-${++factoryCounter}`;
+}
+
 export async function createUser(data?: {
   email?: string;
   password?: string;
@@ -111,15 +117,15 @@ export async function createChannel(data?: {
   externalId?: string;
   organizationId?: string;
 }) {
-  const timestamp = Date.now();
+  const uid = uniqueId();
   const org = data?.organizationId
     ? { id: data.organizationId }
     : await createOrganization();
 
   return prisma.channel.create({
     data: {
-      title: data?.title || `Test Channel ${timestamp}`,
-      externalId: data?.externalId || `${-1000000000000 - timestamp}`,
+      title: data?.title || `Test Channel ${uid}`,
+      externalId: data?.externalId || `-${uid.replace('-', '')}`,
       organizationId: org.id,
     },
   });
