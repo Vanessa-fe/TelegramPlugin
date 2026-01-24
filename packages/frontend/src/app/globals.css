@@ -2,25 +2,39 @@
 
 @layer base {
   :root {
+    /* Brand - Prune Élégant */
+    --brand-50: 289 100% 95%;
+    --brand-100: 287 100% 92%;
+    --brand-500: 271 81% 56%;
+    --brand-600: 271 91% 56%;
+    --brand-700: 272 91% 47%;
+
+    /* Neutrals - Prune-tinted */
+    --text-primary: #1A1523;
+    --text-secondary: #6F6E77;
+    --surface: #FDFAFF;
+    --border-custom: #E9E3EF;
+
+    /* shadcn/ui tokens */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 270 22% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 270 22% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --popover-foreground: 270 22% 11%;
+    --primary: 271 91% 56%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 270 20% 98%;
+    --secondary-foreground: 270 22% 11%;
+    --muted: 270 20% 96%;
+    --muted-foreground: 270 5% 45%;
+    --accent: 270 20% 96%;
+    --accent-foreground: 270 22% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 270 20% 91%;
+    --input: 270 20% 91%;
+    --ring: 271 91% 56%;
     --radius: 0.5rem;
   }
 
@@ -50,12 +64,24 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Brand colors */
+  --color-brand-50: oklch(from hsl(var(--brand-50)) l c h);
+  --color-brand-100: oklch(from hsl(var(--brand-100)) l c h);
+  --color-brand-500: #A855F7;
+  --color-brand-600: #9333EA;
+  --color-brand-700: #7E22CE;
+
+  /* Custom surface */
+  --color-surface: #FDFAFF;
+  --color-border-custom: #E9E3EF;
 }
 
 * {
-  border-color: #e5e7eb;
-} /* ou ta couleur */
+  border-color: var(--color-border-custom);
+}
+
 body {
   background: #fff;
-  color: #111;
+  color: var(--text-primary);
 }

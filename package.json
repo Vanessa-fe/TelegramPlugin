@@ -12,6 +12,7 @@
     "dev:bot": "pnpm --filter bot dev",
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:worker": "pnpm --filter worker dev",
+    "dev:dev": "ENV_FILE=packages/api/.env bash scripts/dev-stack.sh",
     "dev:stack": "bash scripts/dev-stack.sh",
     "db:deploy": "bash scripts/db-deploy.sh"
   },
