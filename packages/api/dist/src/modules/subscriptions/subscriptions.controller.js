@@ -70,7 +70,7 @@ __decorate([
 ], SubscriptionsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)(new common_2.ZodValidationPipe(subscriptions_schema_1.createSubscriptionSchema))),
     __metadata("design:type", Function),
@@ -79,7 +79,7 @@ __decorate([
 ], SubscriptionsController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
     __param(2, (0, common_1.Body)(new common_2.ZodValidationPipe(subscriptions_schema_1.updateSubscriptionSchema))),

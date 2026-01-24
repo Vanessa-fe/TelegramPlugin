@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
@@ -11,21 +11,27 @@ import type {
   GrantAccessPayload,
   RevokeAccessPayload,
 } from '@telegram-plugin/shared';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
-export class ChannelAccessQueue implements OnModuleDestroy {
+export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
   private readonly logger = new Logger(ChannelAccessQueue.name);
   private readonly connection: IORedis;
   private readonly grantQueue: Queue<GrantAccessPayload>;
   private readonly revokeQueue: Queue<RevokeAccessPayload>;
   private readonly grantDlq: Queue;
   private readonly revokeDlq: Queue;
+  private metricsInterval: ReturnType<typeof setInterval> | null = null;
 
   // 10 attempts with 5m exponential backoff ~= 42h retry window.
   private static readonly RETRY_ATTEMPTS = 10;
   private static readonly RETRY_BACKOFF_DELAY_MS = 5 * 60 * 1000;
+  private static readonly METRICS_INTERVAL_MS = 15_000;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly metricsService: MetricsService,
+  ) {
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
       throw new Error('REDIS_URL is not configured');
@@ -62,7 +68,24 @@ export class ChannelAccessQueue implements OnModuleDestroy {
     });
   }
 
+  onModuleInit(): void {
+    this.metricsInterval = setInterval(() => {
+      this.updateQueueMetrics().catch((error) => {
+        this.logger.error('Failed to update queue metrics', error as Error);
+      });
+    }, ChannelAccessQueue.METRICS_INTERVAL_MS);
+
+    this.updateQueueMetrics().catch((error) => {
+      this.logger.error('Failed to update initial queue metrics', error as Error);
+    });
+  }
+
   async onModuleDestroy(): Promise<void> {
+    if (this.metricsInterval) {
+      clearInterval(this.metricsInterval);
+      this.metricsInterval = null;
+    }
+
     await Promise.all([
       this.grantQueue.close(),
       this.revokeQueue.close(),
@@ -72,6 +95,32 @@ export class ChannelAccessQueue implements OnModuleDestroy {
     ]).catch((error) => {
       this.logger.error('Error shutting down ChannelAccessQueue', error as Error);
     });
+  }
+
+  private async updateQueueMetrics(): Promise<void> {
+    const [grantCounts, revokeCounts, grantDlqCounts, revokeDlqCounts] = await Promise.all([
+      this.grantQueue.getJobCounts('waiting', 'active', 'completed', 'failed'),
+      this.revokeQueue.getJobCounts('waiting', 'active', 'completed', 'failed'),
+      this.grantDlq.getJobCounts('waiting'),
+      this.revokeDlq.getJobCounts('waiting'),
+    ]);
+
+    this.metricsService.setQueueWaitingJobs(
+      queueNames.grantAccess,
+      grantCounts.waiting + grantCounts.active,
+    );
+    this.metricsService.setQueueWaitingJobs(
+      queueNames.revokeAccess,
+      revokeCounts.waiting + revokeCounts.active,
+    );
+    this.metricsService.setQueueWaitingJobs(
+      queueNames.grantAccessDlq,
+      grantDlqCounts.waiting,
+    );
+    this.metricsService.setQueueWaitingJobs(
+      queueNames.revokeAccessDlq,
+      revokeDlqCounts.waiting,
+    );
   }
 
   async enqueueGrantAccess(payload: GrantAccessPayload): Promise<void> {

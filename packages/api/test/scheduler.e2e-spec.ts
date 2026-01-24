@@ -160,6 +160,151 @@ describe('Scheduler Service (e2e)', () => {
     });
   });
 
+  describe('handleExpiredGracePeriods', () => {
+    it('should revoke access after grace period expiry', async () => {
+      const org = await createOrganization();
+      const customer = await createCustomer({ organizationId: org.id });
+      const product = await createProduct({ organizationId: org.id });
+      const channel = await createChannel({ organizationId: org.id });
+
+      const plan = await createPlan({
+        productId: product.id,
+        organizationId: org.id,
+      });
+
+      // Grace period expired 1 hour ago
+      const graceUntil = new Date();
+      graceUntil.setHours(graceUntil.getHours() - 1);
+
+      const subscription = await prisma.subscription.create({
+        data: {
+          organizationId: org.id,
+          customerId: customer.id,
+          planId: plan.id,
+          status: SubscriptionStatus.PAST_DUE,
+          graceUntil,
+          lastPaymentFailedAt: new Date(graceUntil.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 days before grace end
+        },
+      });
+
+      // Create access in REVOKE_PENDING state (set during payment failure)
+      await prisma.channelAccess.create({
+        data: {
+          subscriptionId: subscription.id,
+          channelId: channel.id,
+          customerId: customer.id,
+          status: AccessStatus.REVOKE_PENDING,
+          grantedAt: new Date(graceUntil.getTime() - 30 * 24 * 60 * 60 * 1000), // granted 30 days ago
+        },
+      });
+
+      // Run scheduler
+      await schedulerService.handleExpiredGracePeriods();
+
+      // Verify channel access was revoked
+      const channelAccess = await prisma.channelAccess.findFirst({
+        where: { subscriptionId: subscription.id },
+      });
+
+      expect(channelAccess?.status).toBe(AccessStatus.REVOKED);
+      expect(channelAccess?.revokeReason).toBe('payment_failed');
+    });
+
+    it('should not revoke access if grace period not yet expired', async () => {
+      const org = await createOrganization();
+      const customer = await createCustomer({ organizationId: org.id });
+      const product = await createProduct({ organizationId: org.id });
+      const channel = await createChannel({ organizationId: org.id });
+
+      const plan = await createPlan({
+        productId: product.id,
+        organizationId: org.id,
+      });
+
+      // Grace period expires in 2 days
+      const graceUntil = new Date();
+      graceUntil.setDate(graceUntil.getDate() + 2);
+
+      const subscription = await prisma.subscription.create({
+        data: {
+          organizationId: org.id,
+          customerId: customer.id,
+          planId: plan.id,
+          status: SubscriptionStatus.PAST_DUE,
+          graceUntil,
+          lastPaymentFailedAt: new Date(),
+        },
+      });
+
+      await prisma.channelAccess.create({
+        data: {
+          subscriptionId: subscription.id,
+          channelId: channel.id,
+          customerId: customer.id,
+          status: AccessStatus.REVOKE_PENDING,
+          grantedAt: new Date(),
+        },
+      });
+
+      // Run scheduler
+      await schedulerService.handleExpiredGracePeriods();
+
+      // Verify channel access was NOT revoked
+      const channelAccess = await prisma.channelAccess.findFirst({
+        where: { subscriptionId: subscription.id },
+      });
+
+      expect(channelAccess?.status).toBe(AccessStatus.REVOKE_PENDING);
+      expect(channelAccess?.revokedAt).toBeNull();
+    });
+
+    it('should not process subscriptions that are not PAST_DUE', async () => {
+      const org = await createOrganization();
+      const customer = await createCustomer({ organizationId: org.id });
+      const product = await createProduct({ organizationId: org.id });
+      const channel = await createChannel({ organizationId: org.id });
+
+      const plan = await createPlan({
+        productId: product.id,
+        organizationId: org.id,
+      });
+
+      // Grace period expired but subscription is ACTIVE (payment recovered)
+      const graceUntil = new Date();
+      graceUntil.setHours(graceUntil.getHours() - 1);
+
+      const subscription = await prisma.subscription.create({
+        data: {
+          organizationId: org.id,
+          customerId: customer.id,
+          planId: plan.id,
+          status: SubscriptionStatus.ACTIVE,
+          graceUntil,
+        },
+      });
+
+      await prisma.channelAccess.create({
+        data: {
+          subscriptionId: subscription.id,
+          channelId: channel.id,
+          customerId: customer.id,
+          status: AccessStatus.GRANTED,
+          grantedAt: new Date(),
+        },
+      });
+
+      // Run scheduler
+      await schedulerService.handleExpiredGracePeriods();
+
+      // Verify channel access was NOT revoked
+      const channelAccess = await prisma.channelAccess.findFirst({
+        where: { subscriptionId: subscription.id },
+      });
+
+      expect(channelAccess?.status).toBe(AccessStatus.GRANTED);
+    });
+  });
+
   describe('handleExpiredChannelAccesses', () => {
     it('should revoke channel access for canceled subscriptions with past period', async () => {
       const org = await createOrganization();

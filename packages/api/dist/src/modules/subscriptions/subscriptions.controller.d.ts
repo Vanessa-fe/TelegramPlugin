@@ -41,6 +41,7 @@ export declare class SubscriptionsController {
             updatedAt: Date;
             organizationId: string;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            deletedAt: Date | null;
             displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
@@ -62,6 +63,8 @@ export declare class SubscriptionsController {
         trialEndsAt: Date | null;
         canceledAt: Date | null;
         endedAt: Date | null;
+        graceUntil: Date | null;
+        lastPaymentFailedAt: Date | null;
         customerId: string;
         planId: string;
     })[]>;
@@ -102,6 +105,7 @@ export declare class SubscriptionsController {
             updatedAt: Date;
             organizationId: string;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            deletedAt: Date | null;
             displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
@@ -123,6 +127,8 @@ export declare class SubscriptionsController {
         trialEndsAt: Date | null;
         canceledAt: Date | null;
         endedAt: Date | null;
+        graceUntil: Date | null;
+        lastPaymentFailedAt: Date | null;
         customerId: string;
         planId: string;
     }>;
@@ -142,6 +148,8 @@ export declare class SubscriptionsController {
         trialEndsAt: Date | null;
         canceledAt: Date | null;
         endedAt: Date | null;
+        graceUntil: Date | null;
+        lastPaymentFailedAt: Date | null;
         customerId: string;
         planId: string;
     }>;
@@ -161,6 +169,8 @@ export declare class SubscriptionsController {
         trialEndsAt: Date | null;
         canceledAt: Date | null;
         endedAt: Date | null;
+        graceUntil: Date | null;
+        lastPaymentFailedAt: Date | null;
         customerId: string;
         planId: string;
     }>;

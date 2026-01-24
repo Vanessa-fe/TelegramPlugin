@@ -95,6 +95,7 @@ model Organization {
   metadata        Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
 
   users          User[]
   customers      Customer[]
@@ -137,6 +138,7 @@ model Customer {
   metadata         Json?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+  deletedAt        DateTime?
 
   organization    Organization @relation(fields: [organizationId], references: [id])
   subscriptions   Subscription[]

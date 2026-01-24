@@ -14,12 +14,13 @@ const channel_access_queue_1 = require("./channel-access.queue");
 const channel_access_service_1 = require("./channel-access.service");
 const channel_access_controller_1 = require("./channel-access.controller");
 const notifications_module_1 = require("../notifications/notifications.module");
+const audit_log_module_1 = require("../audit-log/audit-log.module");
 let ChannelAccessModule = class ChannelAccessModule {
 };
 exports.ChannelAccessModule = ChannelAccessModule;
 exports.ChannelAccessModule = ChannelAccessModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, config_1.ConfigModule, notifications_module_1.NotificationsModule],
+        imports: [prisma_module_1.PrismaModule, config_1.ConfigModule, notifications_module_1.NotificationsModule, audit_log_module_1.AuditLogModule],
         controllers: [channel_access_controller_1.ChannelAccessController],
         providers: [channel_access_service_1.ChannelAccessService, channel_access_queue_1.ChannelAccessQueue],
         exports: [channel_access_service_1.ChannelAccessService],

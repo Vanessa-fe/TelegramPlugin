@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const schedule_1 = require("@nestjs/schedule");
 const scheduler_service_1 = require("./scheduler.service");
 const channel_access_module_1 = require("../channel-access/channel-access.module");
+const data_exports_module_1 = require("../data-exports/data-exports.module");
 let SchedulerModule = class SchedulerModule {
 };
 exports.SchedulerModule = SchedulerModule;
@@ -19,6 +20,7 @@ exports.SchedulerModule = SchedulerModule = __decorate([
         imports: [
             schedule_1.ScheduleModule.forRoot(),
             channel_access_module_1.ChannelAccessModule,
+            data_exports_module_1.DataExportsModule,
         ],
         providers: [scheduler_service_1.SchedulerService],
         exports: [scheduler_service_1.SchedulerService],

@@ -12,12 +12,13 @@ const config_1 = require("@nestjs/config");
 const stripe_webhook_controller_1 = require("./stripe-webhook.controller");
 const stripe_webhook_service_1 = require("./stripe-webhook.service");
 const channel_access_module_1 = require("../channel-access/channel-access.module");
+const audit_log_module_1 = require("../audit-log/audit-log.module");
 let StripeWebhookModule = class StripeWebhookModule {
 };
 exports.StripeWebhookModule = StripeWebhookModule;
 exports.StripeWebhookModule = StripeWebhookModule = __decorate([
     (0, common_1.Module)({
-        imports: [config_1.ConfigModule, channel_access_module_1.ChannelAccessModule],
+        imports: [config_1.ConfigModule, channel_access_module_1.ChannelAccessModule, audit_log_module_1.AuditLogModule],
         controllers: [stripe_webhook_controller_1.StripeWebhookController],
         providers: [stripe_webhook_service_1.StripeWebhookService],
     })

@@ -1,20 +1,32 @@
 # Session de travail - TelegramPlugin
 
-**Derniere mise a jour :** 2026-01-22
+**Derniere mise a jour :** 2026-01-24
 **Utilisateur :** Vanessa
 
 ---
 
 ## Pour reprendre demain
 
-### Prochaine etape : Executer le backlog MVP (P0/P1)
+### MVP Backlog TERMINE + Tests E2E OK
+
+Toutes les phases du backlog MVP sont terminées:
+- Phase 0: Decisions and setup ✅
+- Phase 1: Reliability and access ✅
+- Phase 2: Compliance and support ✅
+- Phase 3: Observability and tests ✅
+- Phase 4: Docs and polish ✅
+- Tests E2E: 77/77 ✅
 
 ```bash
-# Voir le backlog technique et demarrer Phase 0/1
-docs/backlog.md
+# Lancer les tests E2E
+docker compose -f infra/docker/docker-compose.dev.yml up -d
+pnpm -C packages/api test:e2e
 ```
 
-Priorite absolue : fiabilite paiement -> acces (grace period, retries 24h, DLQ, audit log).
+Prochaines étapes possibles:
+- Corriger les erreurs de build TypeScript préexistantes
+- Frontend dashboard
+- Intégration Discord (Phase 2 produit)
 
 ---
 
@@ -191,3 +203,87 @@ Phase 4 - Implementation
 ```
 
 *Session sauvegardee le 2026-01-22*
+
+---
+
+## Resume de la session du 2026-01-23
+
+### Ce qui a ete accompli
+
+| Etape | Statut | Detail |
+|-------|--------|--------|
+| P1-01 Audit log enrichment | ✅ | correlationId + metadata + tests |
+| P1-02 RBAC support | ✅ | roles durcis sur endpoints payments + tests |
+| P1-03 RGPD export | ✅ | DataExport + API + scheduler + DATA_EXPORT_DIR |
+| P1-04 RGPD delete | ✅ | anonymisation + soft delete org/customer + endpoints |
+| P1-10 Metrics and alerting | ✅ | Prometheus /metrics, webhooks + queue instrumented |
+| P1-11 E2E tests payment flows | ✅ | Grace period expiry + Telegram Stars tests |
+| P1-12 Runbook replay | ✅ | Runbook DLQ complet + diagnostic + troubleshooting |
+| P2-01 Architecture doc | ✅ | State machine + flows grace period |
+| P2-02 Ops checklist | ✅ | setup.md MAJ monitoring + runbook link |
+
+### Tests et migrations
+- pnpm -C packages/api test (95 tests OK)
+- pnpm -C packages/api prisma:migrate (OK)
+- pnpm -C packages/api prisma:deploy (OK)
+- Tests E2E: nécessite `docker compose up -d` pour DB
+
+### Fichiers importants
+
+| Fichier | Description |
+|---------|-------------|
+| `docs/stories/P1-01-audit-log-enrichment.md` | Story P1-01 avec Dev Agent Record |
+| `docs/stories/P1-02-rbac-support.md` | Story P1-02 avec Dev Agent Record |
+| `docs/stories/P1-03-rgpd-export.md` | Story P1-03 avec Dev Agent Record |
+| `docs/stories/P1-04-rgpd-delete.md` | Story P1-04 avec Dev Agent Record |
+| `docs/stories/P1-10-metrics-alerting.md` | Story P1-10 avec Dev Agent Record |
+| `docs/stories/P1-11-e2e-payment-flows.md` | Story P1-11 avec Dev Agent Record |
+| `docs/stories/P1-12-runbook-replay.md` | Story P1-12 avec Dev Agent Record |
+| `docs/stories/P2-01-architecture-doc-update.md` | Story P2-01 avec Dev Agent Record |
+| `docs/stories/P2-02-ops-checklist-update.md` | Story P2-02 avec Dev Agent Record |
+| `docs/runbook-dlq-replay.md` | Runbook opérationnel DLQ (NEW) |
+| `docs/architecture.md` | MAJ state machine + flows + runbook link |
+| `docs/setup.md` | MAJ monitoring + runbook link |
+| `packages/api/test/telegram-stars.e2e-spec.ts` | Tests E2E Telegram Stars (NEW) |
+| `packages/api/test/scheduler.e2e-spec.ts` | Tests grace period expiry (MAJ) |
+
+*Session sauvegardee le 2026-01-23*
+
+---
+
+## Resume de la session du 2026-01-24
+
+### Ce qui a ete accompli
+
+| Etape | Statut | Detail |
+|-------|--------|--------|
+| Deploy staging E2E | ✅ | Docker up + migrations + tests E2E |
+| Fix factory uniqueId | ✅ | Correction collision externalId Channel |
+| Commit | ✅ | `94c1df3` fix(test): prevent channel externalId collision |
+
+### Tests E2E
+
+```bash
+# Commandes exécutées
+docker compose -f infra/docker/docker-compose.dev.yml up -d
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/telegram_plugin_test" pnpm -C packages/api prisma:migrate
+pnpm -C packages/api test:e2e
+
+# Résultats
+Test Suites: 7 passed, 7 total
+Tests:       77 passed, 77 total
+```
+
+### Fichiers modifies
+
+| Fichier | Description |
+|---------|-------------|
+| `packages/api/test/utils/factories.ts` | Fix: uniqueId() pour éviter collisions |
+
+### Prochaines étapes possibles
+
+- Corriger les erreurs de build TypeScript préexistantes
+- Frontend dashboard
+- Intégration Discord (Phase 2 produit)
+
+*Session sauvegardee le 2026-01-24 — Bonne soiree Vanessa !*

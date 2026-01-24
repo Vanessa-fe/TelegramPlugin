@@ -31,6 +31,8 @@ const jwt_auth_guard_1 = require("./modules/auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("./modules/auth/guards/roles.guard");
 const storefront_module_1 = require("./modules/storefront/storefront.module");
 const scheduler_module_1 = require("./modules/scheduler/scheduler.module");
+const data_exports_module_1 = require("./modules/data-exports/data-exports.module");
+const metrics_module_1 = require("./modules/metrics/metrics.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -71,6 +73,8 @@ exports.AppModule = AppModule = __decorate([
             billing_module_1.BillingModule,
             storefront_module_1.StorefrontModule,
             scheduler_module_1.SchedulerModule,
+            data_exports_module_1.DataExportsModule,
+            metrics_module_1.MetricsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

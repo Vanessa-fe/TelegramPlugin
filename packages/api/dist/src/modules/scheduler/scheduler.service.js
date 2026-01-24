@@ -12,17 +12,26 @@ var SchedulerService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SchedulerService = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const schedule_1 = require("@nestjs/schedule");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const channel_access_service_1 = require("../channel-access/channel-access.service");
+const data_exports_service_1 = require("../data-exports/data-exports.service");
+const DEFAULT_AUDIT_LOG_RETENTION_DAYS = 400;
+const DEFAULT_PAYMENT_EVENT_RETENTION_DAYS = 730;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 let SchedulerService = SchedulerService_1 = class SchedulerService {
     prisma;
     channelAccessService;
+    config;
+    dataExportsService;
     logger = new common_1.Logger(SchedulerService_1.name);
-    constructor(prisma, channelAccessService) {
+    constructor(prisma, channelAccessService, config, dataExportsService) {
         this.prisma = prisma;
         this.channelAccessService = channelAccessService;
+        this.config = config;
+        this.dataExportsService = dataExportsService;
     }
     async handleExpiredEntitlements() {
         this.logger.log('Starting expired entitlements check...');
@@ -73,6 +82,35 @@ let SchedulerService = SchedulerService_1 = class SchedulerService {
             }
         }
         this.logger.log(`Expired entitlements check complete: ${revokedCount} revoked, ${errorCount} errors`);
+    }
+    async handleExpiredGracePeriods() {
+        this.logger.log('Starting grace period expiration check...');
+        const now = new Date();
+        const expiredGraceSubscriptions = await this.prisma.subscription.findMany({
+            where: {
+                graceUntil: {
+                    lte: now,
+                },
+                status: client_1.SubscriptionStatus.PAST_DUE,
+            },
+            select: {
+                id: true,
+            },
+        });
+        if (expiredGraceSubscriptions.length === 0) {
+            this.logger.debug('No expired grace periods found');
+            return;
+        }
+        for (const subscription of expiredGraceSubscriptions) {
+            try {
+                await this.channelAccessService.handlePaymentFailure(subscription.id, 'payment_failed');
+                this.logger.debug(`Revoked access after grace period for subscription ${subscription.id}`);
+            }
+            catch (error) {
+                this.logger.error(`Failed to revoke access after grace period for subscription ${subscription.id}: ${error.message}`);
+            }
+        }
+        this.logger.log('Grace period expiration check complete');
     }
     async handleExpiredChannelAccesses() {
         this.logger.log('Starting expired channel accesses check...');
@@ -207,6 +245,50 @@ let SchedulerService = SchedulerService_1 = class SchedulerService {
         }
         this.logger.log('Expiration reminders check complete');
     }
+    async cleanupRetentionData() {
+        this.logger.log('Starting retention cleanup...');
+        const auditRetentionDays = this.getRetentionDays('AUDIT_LOG_RETENTION_DAYS', DEFAULT_AUDIT_LOG_RETENTION_DAYS);
+        const paymentRetentionDays = this.getRetentionDays('PAYMENT_EVENT_RETENTION_DAYS', DEFAULT_PAYMENT_EVENT_RETENTION_DAYS);
+        const auditCutoff = new Date(Date.now() - auditRetentionDays * DAY_IN_MS);
+        const paymentCutoff = new Date(Date.now() - paymentRetentionDays * DAY_IN_MS);
+        const [auditResult, paymentResult] = await Promise.all([
+            this.prisma.auditLog.deleteMany({
+                where: {
+                    createdAt: {
+                        lt: auditCutoff,
+                    },
+                },
+            }),
+            this.prisma.paymentEvent.deleteMany({
+                where: {
+                    createdAt: {
+                        lt: paymentCutoff,
+                    },
+                },
+            }),
+        ]);
+        this.logger.log(`Retention cleanup complete: auditLogs=${auditResult.count}, paymentEvents=${paymentResult.count}`);
+    }
+    async handlePendingDataExports() {
+        this.logger.log('Starting data export processing...');
+        try {
+            await this.dataExportsService.processPendingExports();
+        }
+        catch (error) {
+            this.logger.error(`Failed to process data exports: ${error.message}`);
+        }
+    }
+    getRetentionDays(key, fallback) {
+        const rawValue = this.config.get(key);
+        if (!rawValue) {
+            return fallback;
+        }
+        const parsed = Number.parseInt(rawValue, 10);
+        if (Number.isNaN(parsed) || parsed <= 0) {
+            return fallback;
+        }
+        return parsed;
+    }
 };
 exports.SchedulerService = SchedulerService;
 __decorate([
@@ -215,6 +297,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], SchedulerService.prototype, "handleExpiredEntitlements", null);
+__decorate([
+    (0, schedule_1.Cron)('*/15 * * * *'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SchedulerService.prototype, "handleExpiredGracePeriods", null);
 __decorate([
     (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_HOUR),
     __metadata("design:type", Function),
@@ -233,9 +321,23 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], SchedulerService.prototype, "sendExpirationReminders", null);
+__decorate([
+    (0, schedule_1.Cron)('30 2 * * *'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SchedulerService.prototype, "cleanupRetentionData", null);
+__decorate([
+    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_HOUR),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SchedulerService.prototype, "handlePendingDataExports", null);
 exports.SchedulerService = SchedulerService = SchedulerService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        channel_access_service_1.ChannelAccessService])
+        channel_access_service_1.ChannelAccessService,
+        config_1.ConfigService,
+        data_exports_service_1.DataExportsService])
 ], SchedulerService);
 //# sourceMappingURL=scheduler.service.js.map

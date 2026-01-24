@@ -23,6 +23,7 @@ import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { StorefrontModule } from './modules/storefront/storefront.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { DataExportsModule } from './modules/data-exports/data-exports.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { DataExportsModule } from './modules/data-exports/data-exports.module';
     StorefrontModule,
     SchedulerModule,
     DataExportsModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [

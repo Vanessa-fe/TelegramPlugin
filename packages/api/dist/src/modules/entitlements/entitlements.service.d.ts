@@ -16,6 +16,7 @@ export declare class EntitlementsService {
             updatedAt: Date;
             organizationId: string;
             metadata: Prisma.JsonValue | null;
+            deletedAt: Date | null;
             displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
@@ -37,6 +38,8 @@ export declare class EntitlementsService {
             trialEndsAt: Date | null;
             canceledAt: Date | null;
             endedAt: Date | null;
+            graceUntil: Date | null;
+            lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
         };
@@ -51,8 +54,8 @@ export declare class EntitlementsService {
         grantedAt: Date;
         revokedAt: Date | null;
         revokeReason: string | null;
-        entitlementKey: string;
         resourceId: string | null;
+        entitlementKey: string;
         expiresAt: Date | null;
     })[]>;
     findOne(id: string): Promise<{
@@ -63,6 +66,7 @@ export declare class EntitlementsService {
             updatedAt: Date;
             organizationId: string;
             metadata: Prisma.JsonValue | null;
+            deletedAt: Date | null;
             displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
@@ -84,6 +88,8 @@ export declare class EntitlementsService {
             trialEndsAt: Date | null;
             canceledAt: Date | null;
             endedAt: Date | null;
+            graceUntil: Date | null;
+            lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
         };
@@ -98,8 +104,8 @@ export declare class EntitlementsService {
         grantedAt: Date;
         revokedAt: Date | null;
         revokeReason: string | null;
-        entitlementKey: string;
         resourceId: string | null;
+        entitlementKey: string;
         expiresAt: Date | null;
     }>;
     create(dto: CreateEntitlementDto): Promise<{
@@ -110,6 +116,7 @@ export declare class EntitlementsService {
             updatedAt: Date;
             organizationId: string;
             metadata: Prisma.JsonValue | null;
+            deletedAt: Date | null;
             displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
@@ -131,6 +138,8 @@ export declare class EntitlementsService {
             trialEndsAt: Date | null;
             canceledAt: Date | null;
             endedAt: Date | null;
+            graceUntil: Date | null;
+            lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
         };
@@ -145,8 +154,8 @@ export declare class EntitlementsService {
         grantedAt: Date;
         revokedAt: Date | null;
         revokeReason: string | null;
-        entitlementKey: string;
         resourceId: string | null;
+        entitlementKey: string;
         expiresAt: Date | null;
     }>;
     update(id: string, dto: UpdateEntitlementDto): Promise<{
@@ -157,6 +166,7 @@ export declare class EntitlementsService {
             updatedAt: Date;
             organizationId: string;
             metadata: Prisma.JsonValue | null;
+            deletedAt: Date | null;
             displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
@@ -178,6 +188,8 @@ export declare class EntitlementsService {
             trialEndsAt: Date | null;
             canceledAt: Date | null;
             endedAt: Date | null;
+            graceUntil: Date | null;
+            lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
         };
@@ -192,8 +204,8 @@ export declare class EntitlementsService {
         grantedAt: Date;
         revokedAt: Date | null;
         revokeReason: string | null;
-        entitlementKey: string;
         resourceId: string | null;
+        entitlementKey: string;
         expiresAt: Date | null;
     }>;
     revoke(id: string, reason: string): Promise<{
@@ -207,8 +219,8 @@ export declare class EntitlementsService {
         grantedAt: Date;
         revokedAt: Date | null;
         revokeReason: string | null;
-        entitlementKey: string;
         resourceId: string | null;
+        entitlementKey: string;
         expiresAt: Date | null;
     }>;
     checkEntitlement(customerId: string, entitlementKey: string): Promise<boolean>;
@@ -229,6 +241,8 @@ export declare class EntitlementsService {
             trialEndsAt: Date | null;
             canceledAt: Date | null;
             endedAt: Date | null;
+            graceUntil: Date | null;
+            lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
         };
@@ -243,8 +257,8 @@ export declare class EntitlementsService {
         grantedAt: Date;
         revokedAt: Date | null;
         revokeReason: string | null;
-        entitlementKey: string;
         resourceId: string | null;
+        entitlementKey: string;
         expiresAt: Date | null;
     })[]>;
 }

@@ -22,7 +22,6 @@ let BillingService = class BillingService {
     config;
     prisma;
     stripe;
-    feePercent;
     constructor(config, prisma) {
         this.config = config;
         this.prisma = prisma;
@@ -33,7 +32,6 @@ let BillingService = class BillingService {
         this.stripe = new stripe_1.default(apiKey, {
             apiVersion: '2024-06-20',
         });
-        this.feePercent = this.parsePercent(this.config.get('STRIPE_APPLICATION_FEE_PERCENT'), 0);
     }
     async getStripeStatus(organizationId) {
         const organization = await this.prisma.organization.findUnique({
@@ -244,24 +242,15 @@ let BillingService = class BillingService {
             metadata,
         };
         if (plan.interval === client_1.PlanInterval.ONE_TIME) {
-            const applicationFeeAmount = this.computeApplicationFee(plan.priceCents * quantity);
             const paymentIntentData = {
-                transfer_data: { destination: organization.stripeAccountId },
                 metadata,
             };
-            if (applicationFeeAmount) {
-                paymentIntentData.application_fee_amount = applicationFeeAmount;
-            }
             sessionParams.payment_intent_data = paymentIntentData;
         }
         else {
             const subscriptionData = {
-                transfer_data: { destination: organization.stripeAccountId },
                 metadata,
             };
-            if (this.feePercent > 0) {
-                subscriptionData.application_fee_percent = this.feePercent;
-            }
             if (plan.trialPeriodDays) {
                 subscriptionData.trial_period_days = plan.trialPeriodDays;
             }
@@ -269,7 +258,9 @@ let BillingService = class BillingService {
         }
         let session;
         try {
-            session = await this.stripe.checkout.sessions.create(sessionParams);
+            session = await this.stripe.checkout.sessions.create(sessionParams, {
+                stripeAccount: organization.stripeAccountId,
+            });
         }
         catch (error) {
             await this.prisma.subscription.delete({
@@ -297,23 +288,6 @@ let BillingService = class BillingService {
             default:
                 throw new common_1.BadRequestException('Intervalle de plan non supporté');
         }
-    }
-    parsePercent(rawValue, fallback) {
-        if (!rawValue) {
-            return fallback;
-        }
-        const parsed = Number(rawValue);
-        if (!Number.isFinite(parsed) || parsed < 0) {
-            return fallback;
-        }
-        return Math.min(parsed, 100);
-    }
-    computeApplicationFee(amountCents) {
-        if (this.feePercent <= 0) {
-            return undefined;
-        }
-        const fee = Math.round((amountCents * this.feePercent) / 100);
-        return fee > 0 ? fee : undefined;
     }
 };
 exports.BillingService = BillingService;
