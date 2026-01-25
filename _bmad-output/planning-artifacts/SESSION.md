@@ -335,3 +335,79 @@ EU-based. GDPR-compliant. Zero commission.
 - Lien vers FAQ
 
 *Pages About & Contact complètes — Build OK*
+
+---
+
+## Commit & Push (25 jan)
+
+**Commit:** `b06c4bf`
+**Message:** `feat(frontend): refonte UI complète avec design system Prune`
+
+### Statistiques
+- 28 fichiers modifiés
+- +3155 lignes / -419 lignes
+- 16 nouveaux fichiers créés
+
+### Fichiers créés
+- `src/app/about/page.tsx`
+- `src/app/contact/page.tsx`
+- `src/app/forgot-password/page.tsx`
+- `src/app/gdpr/page.tsx`
+- `src/app/pricing/page.tsx`
+- `src/app/privacy/page.tsx`
+- `src/app/register/page.tsx`
+- `src/app/terms/page.tsx`
+- `src/components/marketing/differentiators.tsx`
+- `src/components/marketing/features.tsx`
+- `src/components/marketing/final-cta.tsx`
+- `src/components/marketing/footer.tsx`
+- `src/components/marketing/how-it-works.tsx`
+- `src/components/marketing/legal-layout.tsx`
+- `src/components/marketing/pricing-teaser.tsx`
+- `src/components/marketing/social-proof.tsx`
+
+*Pushed to origin/master — OK*
+
+---
+
+## Résumé Session UX/UI (24-25 jan 2025)
+
+### Pages Marketing (6)
+| Page | Route | Status |
+|------|-------|--------|
+| Landing | `/` | ✅ |
+| Pricing | `/pricing` | ✅ |
+| About | `/about` | ✅ |
+| Contact | `/contact` | ✅ |
+| Privacy | `/privacy` | ✅ |
+| Terms | `/terms` | ✅ |
+| GDPR | `/gdpr` | ✅ |
+
+### Pages Auth (3)
+| Page | Route | Status |
+|------|-------|--------|
+| Login | `/login` | ✅ |
+| Register | `/register` | ✅ |
+| Forgot Password | `/forgot-password` | ✅ |
+
+### Dashboard (5)
+| Page | Route | Status |
+|------|-------|--------|
+| Homepage | `/dashboard` | ✅ |
+| Products | `/dashboard/products` | ✅ |
+| Billing | `/dashboard/billing` | ✅ |
+| Customers | `/dashboard/customers` | ✅ |
+| Channels | `/dashboard/channels` | ✅ |
+
+### Composants Marketing (9)
+- Navbar, Hero, Social Proof, How it Works, Features
+- Differentiators, Pricing Teaser, Final CTA, Footer
+- Legal Layout
+
+### Composants Dashboard (2)
+- Sidebar (refait)
+- Header (refait)
+
+---
+
+**Session terminée — Refonte UI complète**
