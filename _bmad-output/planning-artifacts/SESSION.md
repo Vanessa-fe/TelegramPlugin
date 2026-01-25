@@ -116,13 +116,13 @@ EU-based. GDPR-compliant. Zero commission.
 4. [x] Config Tailwind (tokens prune)
 5. [x] Implémentation Navbar (sticky + responsive)
 6. [x] Implémentation Hero
-7. [ ] Social Proof
-8. [ ] How it Works
-9. [ ] Features
-10. [ ] Differentiators
-11. [ ] Pricing Teaser
-12. [ ] Final CTA
-13. [ ] Footer
+7. [x] Social Proof
+8. [x] How it Works
+9. [x] Features
+10. [x] Differentiators
+11. [x] Pricing Teaser
+12. [x] Final CTA
+13. [x] Footer
 
 ---
 
@@ -149,4 +149,189 @@ EU-based. GDPR-compliant. Zero commission.
 
 ---
 
-*Session terminée — Reprendre avec Social Proof + sections suivantes*
+## Fichiers implémentés (25 jan)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/components/marketing/social-proof.tsx` | Stats (€250K+, 500+ creators, 0% commission) |
+| `src/components/marketing/how-it-works.tsx` | 4 étapes (Create → Connect → Sell → Access) |
+| `src/components/marketing/features.tsx` | Grid 2×2 (Subscriptions, One-time, Auto-access, Multi-platform) |
+| `src/components/marketing/differentiators.tsx` | 3 colonnes (0% commission, Direct payments, EU & GDPR) |
+| `src/components/marketing/pricing-teaser.tsx` | Card €39/mois + features + CTA |
+| `src/components/marketing/final-cta.tsx` | Fond purple + CTA "Start free today" |
+| `src/components/marketing/footer.tsx` | Navigation + légal + "Made in Europe 🇪🇺" |
+| `src/components/marketing/index.ts` | Exports mis à jour |
+| `src/app/page.tsx` | Homepage complète avec toutes les sections |
+
+---
+
+*Landing page complète — Build OK*
+
+---
+
+## Page Pricing (25 jan)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/app/pricing/page.tsx` | Page pricing complète |
+
+### Sections implémentées
+- **Hero** — Titre + sous-titre
+- **Pricing Card** — Plan Pro €39/mois, badge "Most popular", 10 features
+- **Comparison** — Stats 0%, €39, EU + exemple calcul économies
+- **FAQ** — 6 questions/réponses (commission, trial, cancel, Stripe, platforms, GDPR)
+- **Final CTA** — Fond purple + "Start your free trial"
+
+*Page pricing complète — Build OK*
+
+---
+
+## Pages Auth (25 jan)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/app/login/page.tsx` | Page login refaite avec design Prune |
+| `src/app/register/page.tsx` | Page register créée |
+
+### Login
+- Header avec logo linkant vers /
+- Card centrée avec titre "Welcome back"
+- Champs email + password
+- Lien "Forgot password?"
+- Lien vers /register
+- Footer légal (Terms, Privacy)
+
+### Register
+- Même structure que login
+- Champs: firstName, lastName, email, password
+- Badge "14-day free trial • No credit card required"
+- Lien vers /login
+
+*Pages auth complètes — Build OK*
+
+---
+
+## Dashboard UI Refonte (25 jan)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/app/dashboard/layout.tsx` | Layout avec bg Prune (#FDFAFF) |
+| `src/components/dashboard/sidebar.tsx` | Sidebar refait + trial badge |
+| `src/components/dashboard/header.tsx` | Header + menu mobile responsive |
+| `src/app/dashboard/page.tsx` | Homepage avec KPIs + Quick Actions + Checklist |
+
+### Layout
+- Fond `#FDFAFF` (surface Prune)
+- Sidebar caché sur mobile (lg:flex)
+- Header avec menu hamburger mobile
+
+### Sidebar
+- Logo linkant vers /
+- 8 items navigation (anglais)
+- Item actif = purple-600
+- Footer avec trial badge + "Upgrade now"
+
+### Header
+- Mobile: hamburger + logo + avatar
+- Desktop: avatar seul
+- Dropdown: nom, email, Admin panel (superadmin), Profile, Log out
+
+### Dashboard Homepage
+- 4 KPIs cards (Revenue, Subscriptions, Customers, Conversion)
+- Quick Actions (Create Product, Connect Channel, Setup Billing)
+- Getting Started checklist (5 items avec états completed/pending)
+
+*Dashboard refonte complète — Build OK*
+
+---
+
+## Pages Légales (25 jan)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/components/marketing/legal-layout.tsx` | Layout partagé pour pages légales |
+| `src/app/privacy/page.tsx` | Privacy Policy |
+| `src/app/terms/page.tsx` | Terms of Service |
+| `src/app/gdpr/page.tsx` | GDPR Compliance |
+
+### Contenu
+- **Privacy:** 9 sections (Introduction, Data Collection, Usage, Sharing, Retention, Rights, Security, Changes, Contact)
+- **Terms:** 13 sections (Acceptance, Service, Registration, Fees, Acceptable Use, Responsibilities, IP, Liability, Availability, Termination, Changes, Law, Contact)
+- **GDPR:** Droits détaillés, tableau de rétention, sub-processors, boutons Quick Actions
+
+*Pages légales complètes — Build OK*
+
+---
+
+## Page Forgot Password (25 jan)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/app/forgot-password/page.tsx` | Forgot Password avec 2 états |
+
+### Fonctionnalités
+- **État 1:** Formulaire email + bouton "Send reset link"
+- **État 2:** Confirmation "Check your email" + lien "try again"
+- Lien "Back to login" en haut
+- Icônes Mail et Check
+- TODO: connecter à l'API /auth/forgot-password
+
+*Page Forgot Password complète — Build OK*
+
+---
+
+## Dashboard Pages Refonte (25 jan)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/app/dashboard/products/page.tsx` | Liste produits refaite |
+| `src/app/dashboard/billing/page.tsx` | Page Stripe Connect refaite |
+| `src/app/dashboard/customers/page.tsx` | Liste clients + recherche |
+| `src/app/dashboard/channels/page.tsx` | Liste channels refaite |
+
+### Products
+- Table avec colonnes Product, Status, Created, Actions
+- Empty state avec icône + CTA
+- Badges status (Draft/Active/Archived)
+- Dropdown menu (Edit, Duplicate, Archive)
+
+### Billing
+- Card Stripe Connect avec status checklist
+- Warning "Subscription required" si inactif
+- Info box "How payments work"
+- Boutons Connect/Update/Open Dashboard
+
+### Customers
+- Table avec avatar, nom, email, Telegram tag
+- Search bar (nom, email, Telegram)
+- Compteur "X customers total"
+
+### Channels
+- Cards par channel avec provider badges
+- Stats row (Provider, External ID, Created)
+- Support multi-provider (Telegram, Discord, WhatsApp)
+
+*4 pages dashboard refondues — Build OK*
+
+---
+
+## Pages About & Contact (25 jan)
+
+| Fichier | Description |
+|---------|-------------|
+| `src/app/about/page.tsx` | Page About |
+| `src/app/contact/page.tsx` | Page Contact avec formulaire |
+
+### About
+- Hero avec titre + story
+- Stats grid (500+ Creators, €250K+, 0%, EU)
+- Values section (Privacy First, Creator-Focused, Simple & Transparent)
+- CTA final
+
+### Contact
+- Formulaire (name, email, subject, message)
+- État confirmation après envoi
+- Contact options cards (Email Support, Sales, Response Time)
+- Lien vers FAQ
+
+*Pages About & Contact complètes — Build OK*
