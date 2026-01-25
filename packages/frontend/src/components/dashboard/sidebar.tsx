@@ -10,42 +10,48 @@ import {
   FileText,
   DollarSign,
   Hash,
-  Key
+  Key,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Produits', href: '/dashboard/products', icon: Package },
-  { name: 'Clients', href: '/dashboard/customers', icon: Users },
-  { name: 'Abonnements', href: '/dashboard/subscriptions', icon: FileText },
-  { name: 'Paiements', href: '/dashboard/payments', icon: DollarSign },
+  { name: 'Products', href: '/dashboard/products', icon: Package },
+  { name: 'Customers', href: '/dashboard/customers', icon: Users },
+  { name: 'Subscriptions', href: '/dashboard/subscriptions', icon: FileText },
+  { name: 'Payments', href: '/dashboard/payments', icon: DollarSign },
   { name: 'Channels', href: '/dashboard/channels', icon: Hash },
   { name: 'Entitlements', href: '/dashboard/entitlements', icon: Key },
-  { name: 'Facturation', href: '/dashboard/billing', icon: CreditCard },
+  { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-gray-50">
-      <div className="flex h-16 items-center border-b px-6">
-        <h1 className="text-xl font-bold text-primary">Telegram Admin</h1>
+    <div className="hidden lg:flex h-full w-64 flex-col border-r border-[#E9E3EF] bg-white">
+      {/* Logo */}
+      <div className="flex h-16 items-center border-b border-[#E9E3EF] px-6">
+        <Link href="/" className="text-xl font-bold text-[#1A1523]">
+          TelegramPlugin
+        </Link>
       </div>
+
+      {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
           const isActive =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+            pathname === item.href ||
+            (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-[#6F6E77] hover:bg-purple-50 hover:text-purple-600'
               )}
             >
               <item.icon className="h-5 w-5" />
@@ -54,6 +60,20 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Footer */}
+      <div className="border-t border-[#E9E3EF] p-4">
+        <div className="rounded-lg bg-purple-50 p-4">
+          <p className="text-sm font-medium text-purple-600">Pro Plan</p>
+          <p className="mt-1 text-xs text-[#6F6E77]">14 days left in trial</p>
+          <Link
+            href="/dashboard/billing"
+            className="mt-3 block text-center text-sm font-medium text-purple-600 hover:text-purple-700"
+          >
+            Upgrade now →
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
