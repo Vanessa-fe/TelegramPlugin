@@ -247,12 +247,11 @@ export class ChannelAccessService {
     }
 
     const now = new Date();
-    const activeAccesses = subscription.channelAccesses.filter((access) =>
-      [
-        $Enums.AccessStatus.PENDING,
-        $Enums.AccessStatus.GRANTED,
-        $Enums.AccessStatus.REVOKE_PENDING,
-      ].includes(access.status),
+    const activeAccesses = subscription.channelAccesses.filter(
+      (access) =>
+        access.status === $Enums.AccessStatus.PENDING ||
+        access.status === $Enums.AccessStatus.GRANTED ||
+        access.status === $Enums.AccessStatus.REVOKE_PENDING,
     );
     const shouldNotifyPaymentFailed =
       reason === 'payment_failed' && !subscription.lastPaymentFailedAt;

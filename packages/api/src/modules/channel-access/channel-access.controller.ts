@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Headers, Post } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/auth.types';
@@ -253,7 +253,7 @@ export class ChannelAccessController {
     actorRole: UserRole,
     requestId?: string,
     extra?: Record<string, unknown>,
-  ): Record<string, unknown> {
+  ): Prisma.JsonValue {
     const metadata: Record<string, unknown> = {
       actorRole,
     };
@@ -266,6 +266,6 @@ export class ChannelAccessController {
       Object.assign(metadata, extra);
     }
 
-    return metadata;
+    return metadata as Prisma.JsonValue;
   }
 }

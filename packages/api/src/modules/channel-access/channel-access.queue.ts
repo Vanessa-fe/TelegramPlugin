@@ -197,7 +197,7 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
       await existing.remove();
     }
 
-    await target.add(jobName, parsed, {
+    await (target as Queue).add(jobName, parsed, {
       jobId: originalJobId,
       removeOnFail: false,
     });

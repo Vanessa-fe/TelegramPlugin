@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SubscriptionStatus, UserRole } from '@prisma/client';
+import { Prisma, SubscriptionStatus, UserRole } from '@prisma/client';
 import { DataDeletionsService } from './data-deletions.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
@@ -125,7 +125,7 @@ describe('DataDeletionsService', () => {
           telegramUserId: null,
           telegramUsername: null,
           externalId: null,
-          metadata: null,
+          metadata: Prisma.DbNull,
           deletedAt: new Date('2026-04-01T00:00:00Z'),
         }),
       });
