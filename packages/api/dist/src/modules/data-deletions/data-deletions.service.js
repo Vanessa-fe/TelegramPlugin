@@ -69,7 +69,7 @@ let DataDeletionsService = DataDeletionsService_1 = class DataDeletionsService {
                 telegramUserId: null,
                 telegramUsername: null,
                 externalId: null,
-                metadata: null,
+                metadata: client_1.Prisma.DbNull,
                 deletedAt: now,
             },
         });
@@ -158,7 +158,7 @@ let DataDeletionsService = DataDeletionsService_1 = class DataDeletionsService {
                 billingEmail: this.buildDeletedEmail('deleted-org', input.organizationId),
                 stripeAccountId: null,
                 saasActive: false,
-                metadata: null,
+                metadata: client_1.Prisma.DbNull,
                 deletedAt: now,
             },
         });
@@ -194,7 +194,9 @@ let DataDeletionsService = DataDeletionsService_1 = class DataDeletionsService {
         if (extra) {
             Object.assign(metadata, extra);
         }
-        return Object.keys(metadata).length > 0 ? metadata : undefined;
+        return Object.keys(metadata).length > 0
+            ? metadata
+            : undefined;
     }
 };
 exports.DataDeletionsService = DataDeletionsService;
