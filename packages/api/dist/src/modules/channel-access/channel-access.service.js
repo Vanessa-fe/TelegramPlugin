@@ -200,11 +200,9 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
             return;
         }
         const now = new Date();
-        const activeAccesses = subscription.channelAccesses.filter((access) => [
-            client_1.$Enums.AccessStatus.PENDING,
-            client_1.$Enums.AccessStatus.GRANTED,
-            client_1.$Enums.AccessStatus.REVOKE_PENDING,
-        ].includes(access.status));
+        const activeAccesses = subscription.channelAccesses.filter((access) => access.status === client_1.$Enums.AccessStatus.PENDING ||
+            access.status === client_1.$Enums.AccessStatus.GRANTED ||
+            access.status === client_1.$Enums.AccessStatus.REVOKE_PENDING);
         const shouldNotifyPaymentFailed = reason === 'payment_failed' && !subscription.lastPaymentFailedAt;
         if (reason === 'payment_failed') {
             const gracePeriodDays = this.getGracePeriodDays();
