@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   AuditActorType,
+  Prisma,
   ProductStatus,
   SubscriptionStatus,
   UserRole,
@@ -90,7 +91,7 @@ export class DataDeletionsService {
         telegramUserId: null,
         telegramUsername: null,
         externalId: null,
-        metadata: null,
+        metadata: Prisma.DbNull,
         deletedAt: now,
       },
     });
@@ -195,7 +196,7 @@ export class DataDeletionsService {
         billingEmail: this.buildDeletedEmail('deleted-org', input.organizationId),
         stripeAccountId: null,
         saasActive: false,
-        metadata: null,
+        metadata: Prisma.DbNull,
         deletedAt: now,
       },
     });
@@ -235,7 +236,7 @@ export class DataDeletionsService {
     actorRole?: UserRole,
     requestId?: string | null,
     extra?: Record<string, unknown>,
-  ): Record<string, unknown> | undefined {
+  ): Prisma.JsonValue | undefined {
     const metadata: Record<string, unknown> = {};
 
     if (actorRole) {
@@ -250,6 +251,8 @@ export class DataDeletionsService {
       Object.assign(metadata, extra);
     }
 
-    return Object.keys(metadata).length > 0 ? metadata : undefined;
+    return Object.keys(metadata).length > 0
+      ? (metadata as Prisma.JsonValue)
+      : undefined;
   }
 }

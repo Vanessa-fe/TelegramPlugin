@@ -287,3 +287,184 @@ Tests:       77 passed, 77 total
 - Intégration Discord (Phase 2 produit)
 
 *Session sauvegardee le 2026-01-24 — Bonne soiree Vanessa !*
+
+---
+
+## Audit de fin de sprint — 2026-01-26
+
+### MVP Readiness Check
+
+#### ✅ DONE — Backend (19/19 stories)
+
+| Phase | Stories | Statut |
+|-------|---------|--------|
+| Phase 0 - Decisions | P0-02, P0-03, P0-04 | ✅ 3/3 |
+| Phase 1 - Reliability | P0-10, P0-11, P0-12, P0-13, P0-14, P0-15, P0-16 | ✅ 7/7 |
+| Phase 2 - Compliance | P1-01, P1-02, P1-03, P1-04 | ✅ 4/4 |
+| Phase 3 - Observability | P1-10, P1-11, P1-12 | ✅ 3/3 |
+| Phase 4 - Docs | P2-01, P2-02 | ✅ 2/2 |
+
+**Tests E2E:** 77/77 ✅
+
+#### ✅ DONE — UX/UI Refonte
+
+| Élément | Fichier | Statut |
+|---------|---------|--------|
+| Design Tokens | `_bmad-output/planning-artifacts/design-tokens.md` | ✅ Validé |
+| Wireframe Homepage | `_bmad-output/planning-artifacts/homepage-wireframe.excalidraw` | ✅ Validé |
+| globals.css | `packages/frontend/src/app/globals.css` | ✅ Prune Élégant |
+| Composants Marketing | navbar, hero, features, pricing-teaser, etc. | ✅ 10 composants |
+
+#### ⚠️ BLOCKERS — À corriger avant livraison
+
+| ID | Blocker | Impact | Effort |
+|----|---------|--------|--------|
+| B-01 | **API Build: 10 erreurs TypeScript** | Build cassé, pas de déploiement | 2-4h |
+| B-02 | Type `Record<string, unknown>` → `Prisma.JsonValue` | channel-access.controller.ts, data-deletions.service.ts | 1-2h |
+| B-03 | Type `AccessStatus` incompatible includes() | channel-access.service.ts:255 | 30min |
+
+---
+
+### Checklist Priorisée
+
+#### P0 — Launch Blockers (avant mise en prod)
+
+| # | Item | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 1 | Fix 10 erreurs TypeScript API build | Dev | 🔴 TODO | Blocker déploiement |
+| 2 | Vérifier EU data residency (Neon, Upstash, Fly) | Ops | 🟡 À vérifier | Mentionné P0-01, pas de story |
+| 3 | Tester webhook Stripe en staging | Dev | 🟡 À faire | Avec vraies clés Stripe test |
+| 4 | Tester Telegram Stars en staging | Dev | 🟡 À faire | Avec bot de test |
+| 5 | Smoke test grant/revoke flow complet | QA | 🟡 À faire | E2E manuel sur staging |
+
+#### P1 — Post-Launch (J+7)
+
+| # | Item | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 1 | Frontend warnings ESLint (11 warnings) | Dev | 🟡 TODO | Non bloquant mais bruyant |
+| 2 | Dashboard Grafana pour métriques Prometheus | Ops | 🟡 TODO | P1-10 prêt, backend manquant |
+| 3 | Alertmanager config (PagerDuty/Slack) | Ops | 🟡 TODO | Seuils définis dans P1-10 |
+| 4 | BullMQ Dashboard UI | Dev | 🟡 TODO | Pour monitoring DLQ |
+| 5 | Onboarding createur flow UX | UX | 🟡 TODO | Screens à designer |
+
+#### P2 — Later (J+30)
+
+| # | Item | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 1 | Pentest externe | Security | ⏳ Phase 2 | Requis par compliance matrix |
+| 2 | WCAG 2.1 AA audit | UX | ⏳ Phase 2 | Pages publiques + dashboard |
+| 3 | Archive download endpoint RGPD | Dev | ⏳ TODO | Export OK, download manquant |
+| 4 | Multi-organisation par createur | Dev | ⏳ Phase 2 | PRD FR5 |
+| 5 | PayPal integration | Dev | ⏳ Phase 2 | PRD FR20 |
+
+---
+
+### Dépendances et Risques
+
+#### Dépendances Techniques
+
+| Dépendance | Statut | Risque |
+|------------|--------|--------|
+| Stripe Connect (EU) | ✅ Configuré | Faible — API stable |
+| Telegram Bot API | ✅ Configuré | Faible — grammY mature |
+| Telegram Stars | ✅ Implémenté | Moyen — API récente, peu documentée |
+| Neon (PostgreSQL) | ✅ EU region | Faible — vérifié |
+| Upstash (Redis) | 🟡 À vérifier EU | Moyen — confirmer région |
+| Fly.io | 🟡 À vérifier EU | Moyen — confirmer région |
+| Brevo (Email) | ✅ EU | Faible |
+
+#### Risques Identifiés
+
+| Risque | Probabilité | Impact | Mitigation |
+|--------|-------------|--------|------------|
+| **Build cassé bloque déploiement** | Haute | Critique | Fix erreurs TS immédiat |
+| Webhook Stripe rate limit | Faible | Haut | Retry 24h + DLQ implémentés |
+| Telegram Stars instabilité | Moyenne | Moyen | Fallback Stripe disponible |
+| RGPD plainte avant audit externe | Faible | Haut | Workflows export/delete OK |
+| Grace period mal configurée | Faible | Moyen | Default 5 jours, configurable |
+
+#### Risques Légaux
+
+| Item | Statut | Notes |
+|------|--------|-------|
+| Non-MoR documenté | ✅ ADR-001 | Createur = vendeur |
+| RGPD workflows | ✅ P1-03, P1-04 | Export + Delete OK |
+| TVA SaaS | 🟡 À valider | Stripe Tax configuré? |
+| Audit log retention | ✅ ADR-002 | 400j AuditLog, 730j PaymentEvent |
+
+#### Risques Paiement
+
+| Item | Statut | Notes |
+|------|--------|-------|
+| Idempotence webhooks | ✅ P0-11 | Testé E2E |
+| Grace period | ✅ P0-03, P0-13 | 5 jours default |
+| DLQ + Replay | ✅ P0-14, P0-15 | Runbook prêt |
+| Latence < 2s | ✅ P0-12 | Métriques en place |
+
+#### Risques Onboarding
+
+| Item | Statut | Notes |
+|------|--------|-------|
+| Setup < 10min | 🟡 Non mesuré | Flow à tester |
+| Bot Telegram permissions | ✅ Vérifié | Guide pas-à-pas nécessaire |
+| Stripe Connect onboarding | ✅ Implémenté | OAuth flow OK |
+
+---
+
+### Next 7 Days Plan
+
+| Jour | Tâche | Owner | Priorité |
+|------|-------|-------|----------|
+| J+0 (26 jan) | Fix 10 erreurs TypeScript API | Dev | 🔴 P0 |
+| J+1 (27 jan) | Vérifier EU data residency (Upstash, Fly) | Ops | 🔴 P0 |
+| J+1 (27 jan) | Smoke test Stripe webhooks staging | Dev | 🔴 P0 |
+| J+2 (28 jan) | Smoke test Telegram Stars staging | Dev | 🔴 P0 |
+| J+2 (28 jan) | Smoke test grant/revoke flow complet | QA | 🔴 P0 |
+| J+3 (29 jan) | Fix Frontend warnings ESLint | Dev | 🟡 P1 |
+| J+4 (30 jan) | Deploy staging complet | Ops | 🔴 P0 |
+| J+5 (31 jan) | User acceptance test avec 1-2 beta createurs | Product | 🟡 P1 |
+| J+6 (1 fev) | Go/No-Go decision | Team | 🔴 P0 |
+| J+7 (2 fev) | Prod deploy si Go | Ops | 🔴 P0 |
+
+---
+
+### État Actuel — Résumé
+
+```
+Backend:     ████████████████████ 100% (19/19 stories)
+Tests E2E:   ████████████████████ 100% (77/77)
+UX/UI:       ████████████████████ 100% (design system + composants)
+Build API:   ██████████░░░░░░░░░░ 50% (10 erreurs TS)
+Build FE:    ██████████████████░░ 90% (warnings only)
+Infra EU:    ████████████████░░░░ 80% (à vérifier Upstash/Fly)
+```
+
+**Verdict: MVP fonctionnellement READY, blockers techniques à résoudre (2-4h)**
+
+*Audit réalisé le 2026-01-26 par John (PM)*
+
+---
+
+## Corrections TypeScript — 2026-01-26
+
+### Erreurs corrigées (10/10)
+
+| Fichier | Erreur | Correction |
+|---------|--------|------------|
+| `channel-access.controller.ts` | 4× `Record<string, unknown>` → `Prisma.JsonValue` | Type de retour `buildAuditMetadata` + import Prisma |
+| `channel-access.queue.ts` | 1× `string` incompatible jobName | Cast `target as Queue` |
+| `channel-access.service.ts` | 1× `includes()` avec `AccessStatus` | Comparaison explicite `===` |
+| `data-deletions.service.ts` | 2× `metadata: null` | `Prisma.DbNull` |
+| `data-deletions.service.ts` | 2× `Record<string, unknown>` → `JsonValue` | Type de retour `buildMetadata` |
+| `data-deletions.service.spec.ts` | 1× test assertion | `Prisma.DbNull` au lieu de `null` |
+
+### Validation
+
+```bash
+pnpm -C packages/api build    # ✅ OK
+pnpm -C packages/api test     # ✅ 95/95 tests OK
+```
+
+**Build API: FIXED ✅**
+
+*Corrections effectuées le 2026-01-26*
