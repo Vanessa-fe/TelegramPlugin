@@ -20,7 +20,8 @@ export class StorefrontController {
   @Get('organizations/:slug')
   @Public()
   async getOrganizationBySlug(@Param('slug') slug: string) {
-    const organization = await this.storefrontService.getPublicOrganization(slug);
+    const organization =
+      await this.storefrontService.getPublicOrganization(slug);
     if (!organization) {
       throw new NotFoundException('Organisation introuvable');
     }

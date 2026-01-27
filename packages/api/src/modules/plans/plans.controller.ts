@@ -24,7 +24,12 @@ export class PlansController {
   constructor(private readonly plansService: PlansService) {}
 
   @Get()
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   findAll(
     @CurrentUser() user: AuthUser,
     @Query('productId') productId?: string,
@@ -40,7 +45,12 @@ export class PlansController {
   }
 
   @Get(':id')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   async findOne(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -57,7 +67,9 @@ export class PlansController {
     @Body(new ZodValidationPipe(createPlanSchema))
     body: CreatePlanDto,
   ) {
-    const organizationId = await this.plansService.getProductOrganization(body.productId);
+    const organizationId = await this.plansService.getProductOrganization(
+      body.productId,
+    );
     if (!organizationId) {
       throw new NotFoundException('Produit introuvable pour ce plan');
     }
@@ -76,7 +88,9 @@ export class PlansController {
     const plan = await this.plansService.findOne(id);
     resolveOrganizationScope(user, plan.product.organizationId);
     if (body.productId) {
-      const organizationId = await this.plansService.getProductOrganization(body.productId);
+      const organizationId = await this.plansService.getProductOrganization(
+        body.productId,
+      );
       if (!organizationId) {
         throw new NotFoundException('Produit cible introuvable');
       }

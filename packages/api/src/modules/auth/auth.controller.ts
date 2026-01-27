@@ -59,8 +59,9 @@ export class AuthController {
     body: RefreshDto,
     @Req() req: FastifyRequest,
   ): Promise<AuthResult> {
-    const refreshTokenFromCookie = (req as { cookies?: { refreshToken?: string } })
-      .cookies?.refreshToken;
+    const refreshTokenFromCookie = (
+      req as { cookies?: { refreshToken?: string } }
+    ).cookies?.refreshToken;
     const refreshToken = body.refreshToken || refreshTokenFromCookie;
 
     if (!refreshToken) {

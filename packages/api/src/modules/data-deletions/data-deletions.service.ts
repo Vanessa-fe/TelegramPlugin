@@ -58,7 +58,9 @@ export class DataDeletionsService {
       where: { customerId: input.customerId },
       select: { id: true },
     });
-    const subscriptionIds = subscriptions.map((subscription) => subscription.id);
+    const subscriptionIds = subscriptions.map(
+      (subscription) => subscription.id,
+    );
 
     for (const subscriptionId of subscriptionIds) {
       await this.channelAccessService.handlePaymentFailure(
@@ -193,7 +195,10 @@ export class DataDeletionsService {
       data: {
         name: `Deleted Organization ${input.organizationId.slice(0, 8)}`,
         slug: `deleted-${input.organizationId}`,
-        billingEmail: this.buildDeletedEmail('deleted-org', input.organizationId),
+        billingEmail: this.buildDeletedEmail(
+          'deleted-org',
+          input.organizationId,
+        ),
         stripeAccountId: null,
         saasActive: false,
         metadata: Prisma.DbNull,

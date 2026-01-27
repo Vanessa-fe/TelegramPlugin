@@ -19,10 +19,7 @@ export class DataExportsService {
     private readonly config: ConfigService,
   ) {}
 
-  async requestExport(
-    organizationId: string,
-    requestedById?: string | null,
-  ) {
+  async requestExport(organizationId: string, requestedById?: string | null) {
     const now = new Date();
     const slaDueAt = new Date(now.getTime() + SLA_DAYS * DAY_IN_MS);
 
@@ -163,8 +160,9 @@ export class DataExportsService {
         organization,
       };
       const archivePath = await this.writeArchive(exportId, payload);
-      const slaMet =
-        exportJob.slaDueAt ? exportedAt <= exportJob.slaDueAt : null;
+      const slaMet = exportJob.slaDueAt
+        ? exportedAt <= exportJob.slaDueAt
+        : null;
 
       await this.prisma.dataExport.update({
         where: { id: exportId },
@@ -202,7 +200,10 @@ export class DataExportsService {
     }
   }
 
-  private async writeArchive(exportId: string, payload: unknown): Promise<string> {
+  private async writeArchive(
+    exportId: string,
+    payload: unknown,
+  ): Promise<string> {
     const exportDir = this.resolveExportDirectory();
     await mkdir(exportDir, { recursive: true });
     const archivePath = path.join(exportDir, `rgpd-export-${exportId}.json`);

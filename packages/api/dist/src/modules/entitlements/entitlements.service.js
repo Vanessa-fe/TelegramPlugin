@@ -91,10 +91,7 @@ let EntitlementsService = class EntitlementsService {
                 customerId,
                 entitlementKey,
                 revokedAt: null,
-                OR: [
-                    { expiresAt: null },
-                    { expiresAt: { gt: new Date() } },
-                ],
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
         });
         return !!entitlement;
@@ -104,10 +101,7 @@ let EntitlementsService = class EntitlementsService {
             where: {
                 customerId,
                 revokedAt: null,
-                OR: [
-                    { expiresAt: null },
-                    { expiresAt: { gt: new Date() } },
-                ],
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
             },
             include: {
                 subscription: true,

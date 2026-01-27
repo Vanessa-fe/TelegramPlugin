@@ -53,9 +53,9 @@ describe('ChannelAccessController', () => {
     }).compile();
 
     controller = module.get(ChannelAccessController);
-    queue = module.get(ChannelAccessQueue) as jest.Mocked<ChannelAccessQueue>;
-    service = module.get(ChannelAccessService) as jest.Mocked<ChannelAccessService>;
-    auditLog = module.get(AuditLogService) as jest.Mocked<AuditLogService>;
+    queue = module.get(ChannelAccessQueue);
+    service = module.get(ChannelAccessService);
+    auditLog = module.get(AuditLogService);
   });
 
   afterEach(() => {

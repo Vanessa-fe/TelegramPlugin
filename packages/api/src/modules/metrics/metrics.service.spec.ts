@@ -45,36 +45,66 @@ describe('MetricsService', () => {
 
   describe('recordWebhookRequest', () => {
     it('should increment webhook counter for success', async () => {
-      service.recordWebhookRequest('stripe', 'checkout.session.completed', 'success');
+      service.recordWebhookRequest(
+        'stripe',
+        'checkout.session.completed',
+        'success',
+      );
 
       const metrics = await service.getMetrics();
-      expect(metrics).toContain('webhook_requests_total{provider="stripe",event_type="checkout.session.completed",status="success"} 1');
+      expect(metrics).toContain(
+        'webhook_requests_total{provider="stripe",event_type="checkout.session.completed",status="success"} 1',
+      );
     });
 
     it('should increment webhook counter for error', async () => {
       service.recordWebhookRequest('stripe', 'invoice.payment_failed', 'error');
 
       const metrics = await service.getMetrics();
-      expect(metrics).toContain('webhook_requests_total{provider="stripe",event_type="invoice.payment_failed",status="error"} 1');
+      expect(metrics).toContain(
+        'webhook_requests_total{provider="stripe",event_type="invoice.payment_failed",status="error"} 1',
+      );
     });
 
     it('should accumulate multiple requests', async () => {
-      service.recordWebhookRequest('stripe', 'checkout.session.completed', 'success');
-      service.recordWebhookRequest('stripe', 'checkout.session.completed', 'success');
-      service.recordWebhookRequest('stripe', 'checkout.session.completed', 'success');
+      service.recordWebhookRequest(
+        'stripe',
+        'checkout.session.completed',
+        'success',
+      );
+      service.recordWebhookRequest(
+        'stripe',
+        'checkout.session.completed',
+        'success',
+      );
+      service.recordWebhookRequest(
+        'stripe',
+        'checkout.session.completed',
+        'success',
+      );
 
       const metrics = await service.getMetrics();
-      expect(metrics).toContain('webhook_requests_total{provider="stripe",event_type="checkout.session.completed",status="success"} 3');
+      expect(metrics).toContain(
+        'webhook_requests_total{provider="stripe",event_type="checkout.session.completed",status="success"} 3',
+      );
     });
   });
 
   describe('recordWebhookDuration', () => {
     it('should record webhook duration in histogram', async () => {
-      service.recordWebhookDuration('stripe', 'checkout.session.completed', 0.5);
+      service.recordWebhookDuration(
+        'stripe',
+        'checkout.session.completed',
+        0.5,
+      );
 
       const metrics = await service.getMetrics();
-      expect(metrics).toContain('webhook_duration_seconds_bucket{le="0.5",provider="stripe",event_type="checkout.session.completed"}');
-      expect(metrics).toContain('webhook_duration_seconds_count{provider="stripe",event_type="checkout.session.completed"} 1');
+      expect(metrics).toContain(
+        'webhook_duration_seconds_bucket{le="0.5",provider="stripe",event_type="checkout.session.completed"}',
+      );
+      expect(metrics).toContain(
+        'webhook_duration_seconds_count{provider="stripe",event_type="checkout.session.completed"} 1',
+      );
     });
   });
 
@@ -83,14 +113,18 @@ describe('MetricsService', () => {
       service.recordQueueJob('grant-access', 'completed');
 
       const metrics = await service.getMetrics();
-      expect(metrics).toContain('queue_jobs_total{queue="grant-access",status="completed"} 1');
+      expect(metrics).toContain(
+        'queue_jobs_total{queue="grant-access",status="completed"} 1',
+      );
     });
 
     it('should increment queue job counter for failed', async () => {
       service.recordQueueJob('revoke-access', 'failed');
 
       const metrics = await service.getMetrics();
-      expect(metrics).toContain('queue_jobs_total{queue="revoke-access",status="failed"} 1');
+      expect(metrics).toContain(
+        'queue_jobs_total{queue="revoke-access",status="failed"} 1',
+      );
     });
   });
 
@@ -99,8 +133,12 @@ describe('MetricsService', () => {
       service.recordQueueJobDuration('grant-access', 1.5);
 
       const metrics = await service.getMetrics();
-      expect(metrics).toContain('queue_job_duration_seconds_bucket{le="2",queue="grant-access"}');
-      expect(metrics).toContain('queue_job_duration_seconds_count{queue="grant-access"} 1');
+      expect(metrics).toContain(
+        'queue_job_duration_seconds_bucket{le="2",queue="grant-access"}',
+      );
+      expect(metrics).toContain(
+        'queue_job_duration_seconds_count{queue="grant-access"} 1',
+      );
     });
   });
 

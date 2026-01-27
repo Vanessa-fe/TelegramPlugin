@@ -92,12 +92,10 @@ describe('StripeWebhookService', () => {
     }).compile();
 
     service = module.get<StripeWebhookService>(StripeWebhookService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
-    channelAccessService = module.get(
-      ChannelAccessService,
-    ) as jest.Mocked<ChannelAccessService>;
-    configService = module.get(ConfigService) as jest.Mocked<ConfigService>;
-    auditLogService = module.get(AuditLogService) as jest.Mocked<AuditLogService>;
+    prisma = module.get(PrismaService);
+    channelAccessService = module.get(ChannelAccessService);
+    configService = module.get(ConfigService);
+    auditLogService = module.get(AuditLogService);
     prisma.organization.findFirst.mockResolvedValue(null);
 
     // Mock Stripe client

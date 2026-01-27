@@ -181,9 +181,7 @@ describe('OrganizationsService', () => {
       const result = await service.findOne('1');
 
       expect(result).toEqual(org);
-      expect(
-        mockPrismaService.organization.findUnique,
-      ).toHaveBeenCalledWith({
+      expect(mockPrismaService.organization.findUnique).toHaveBeenCalledWith({
         where: { id: '1' },
       });
     });

@@ -198,7 +198,9 @@ let BillingService = class BillingService {
                 planId: plan.id,
                 status: client_1.SubscriptionStatus.INCOMPLETE,
                 metadata: {
-                    checkoutMode: plan.interval === client_1.PlanInterval.ONE_TIME ? 'payment' : 'subscription',
+                    checkoutMode: plan.interval === client_1.PlanInterval.ONE_TIME
+                        ? 'payment'
+                        : 'subscription',
                 },
             },
         });

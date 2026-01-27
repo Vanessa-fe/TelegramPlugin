@@ -14,11 +14,11 @@ export declare class StorefrontController {
         plans: {
             id: string;
             name: string;
-            description: string | null;
-            interval: import("@prisma/client").$Enums.PlanInterval;
             priceCents: number;
             currency: string;
+            interval: import("@prisma/client").$Enums.PlanInterval;
             trialPeriodDays: number | null;
+            description: string | null;
             accessDurationDays: number | null;
         }[];
         channels: {
@@ -39,10 +39,10 @@ export declare class StorefrontController {
         plans: {
             id: string;
             name: string;
-            description: string | null;
-            interval: import("@prisma/client").$Enums.PlanInterval;
             priceCents: number;
             currency: string;
+            interval: import("@prisma/client").$Enums.PlanInterval;
+            description: string | null;
         }[];
     }[]>;
 }

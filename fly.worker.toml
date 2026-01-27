@@ -1,0 +1,15 @@
+# BullMQ Worker - Processes grant-access and revoke-access jobs
+app = 'telegram-plugin-worker'
+primary_region = 'fra'
+
+[build]
+  dockerfile = 'packages/worker/Dockerfile'
+
+[env]
+  NODE_ENV = 'production'
+
+# No HTTP service needed - worker processes queue jobs
+
+[[vm]]
+  memory = '256mb'
+  cpus = 1

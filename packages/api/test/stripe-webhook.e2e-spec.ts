@@ -36,7 +36,7 @@ describe('Stripe Webhooks (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
-    mockQueue = app.get(ChannelAccessQueue) as jest.Mocked<ChannelAccessQueue>;
+    mockQueue = app.get(ChannelAccessQueue);
 
     // Setup queue mocks
     mockQueue.enqueueGrantAccess = jest.fn().mockResolvedValue(undefined);
@@ -382,7 +382,10 @@ describe('Stripe Webhooks (e2e)', () => {
 
       // Process cancellation
       const channelAccessService = app.get(ChannelAccessService);
-      await channelAccessService.handlePaymentFailure(subscription.id, 'canceled');
+      await channelAccessService.handlePaymentFailure(
+        subscription.id,
+        'canceled',
+      );
 
       // Verify access was revoked with correct reason
       const channelAccess = await prisma.channelAccess.findFirst({
@@ -417,7 +420,10 @@ describe('Stripe Webhooks (e2e)', () => {
 
       // Process refund
       const channelAccessService = app.get(ChannelAccessService);
-      await channelAccessService.handlePaymentFailure(subscription.id, 'refund');
+      await channelAccessService.handlePaymentFailure(
+        subscription.id,
+        'refund',
+      );
 
       // Verify access was revoked with refund reason
       const channelAccess = await prisma.channelAccess.findFirst({

@@ -10,17 +10,17 @@ export declare const createProductSchema: z.ZodObject<{
     }>>;
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
 }, "strip", z.ZodTypeAny, {
-    organizationId: string;
     name: string;
-    metadata?: Record<string, any> | undefined;
+    organizationId: string;
     description?: string | undefined;
-    status?: "DRAFT" | "ACTIVE" | "ARCHIVED" | undefined;
+    metadata?: Record<string, any> | undefined;
+    status?: "ACTIVE" | "DRAFT" | "ARCHIVED" | undefined;
 }, {
-    organizationId: string;
     name: string;
-    metadata?: Record<string, any> | undefined;
+    organizationId: string;
     description?: string | undefined;
-    status?: "DRAFT" | "ACTIVE" | "ARCHIVED" | undefined;
+    metadata?: Record<string, any> | undefined;
+    status?: "ACTIVE" | "DRAFT" | "ARCHIVED" | undefined;
 }>;
 export type CreateProductDto = z.infer<typeof createProductSchema>;
 export declare const updateProductSchema: z.ZodObject<{
@@ -34,16 +34,16 @@ export declare const updateProductSchema: z.ZodObject<{
     }>>>;
     metadata: z.ZodOptional<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>>;
 }, "strip", z.ZodTypeAny, {
-    organizationId?: string | undefined;
     name?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     description?: string | undefined;
-    status?: "DRAFT" | "ACTIVE" | "ARCHIVED" | undefined;
+    organizationId?: string | undefined;
+    metadata?: Record<string, any> | undefined;
+    status?: "ACTIVE" | "DRAFT" | "ARCHIVED" | undefined;
 }, {
-    organizationId?: string | undefined;
     name?: string | undefined;
-    metadata?: Record<string, any> | undefined;
     description?: string | undefined;
-    status?: "DRAFT" | "ACTIVE" | "ARCHIVED" | undefined;
+    organizationId?: string | undefined;
+    metadata?: Record<string, any> | undefined;
+    status?: "ACTIVE" | "DRAFT" | "ARCHIVED" | undefined;
 }>;
 export type UpdateProductDto = z.infer<typeof updateProductSchema>;

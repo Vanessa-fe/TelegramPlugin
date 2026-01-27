@@ -137,7 +137,8 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
                 });
                 if (!existingEntitlement) {
                     const expiresAt = subscription.plan.accessDurationDays
-                        ? new Date(Date.now() + subscription.plan.accessDurationDays * 24 * 60 * 60 * 1000)
+                        ? new Date(Date.now() +
+                            subscription.plan.accessDurationDays * 24 * 60 * 60 * 1000)
                         : null;
                     await tx.entitlement.create({
                         data: {
@@ -219,10 +220,7 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
                         where: {
                             subscriptionId,
                             status: {
-                                in: [
-                                    client_1.$Enums.AccessStatus.PENDING,
-                                    client_1.$Enums.AccessStatus.GRANTED,
-                                ],
+                                in: [client_1.$Enums.AccessStatus.PENDING, client_1.$Enums.AccessStatus.GRANTED],
                             },
                         },
                         data: {
@@ -314,7 +312,8 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
             if (shouldNotifyPaymentFailed) {
                 await this.notifications.sendPaymentFailed(subscription.customerId, subscription.id, reasonMessages[reason]);
             }
-            else if ((reason === 'canceled' || reason === 'expired') && subscription.plan) {
+            else if ((reason === 'canceled' || reason === 'expired') &&
+                subscription.plan) {
                 await this.notifications.sendSubscriptionCanceled(subscription.customerId, subscription.plan.name);
             }
             for (const access of activeAccesses) {

@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import type { CreateEntitlementDto, UpdateEntitlementDto } from './entitlements.schema';
+import type {
+  CreateEntitlementDto,
+  UpdateEntitlementDto,
+} from './entitlements.schema';
 
 @Injectable()
 export class EntitlementsService {
@@ -95,10 +98,7 @@ export class EntitlementsService {
         customerId,
         entitlementKey,
         revokedAt: null,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
     });
 
@@ -110,10 +110,7 @@ export class EntitlementsService {
       where: {
         customerId,
         revokedAt: null,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
       include: {
         subscription: true,

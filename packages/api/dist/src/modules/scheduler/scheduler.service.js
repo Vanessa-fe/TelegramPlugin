@@ -169,7 +169,9 @@ let SchedulerService = SchedulerService_1 = class SchedulerService {
             return;
         }
         this.logger.log(`Found ${actuallyExpired.length} expired channel accesses`);
-        const subscriptionIds = [...new Set(actuallyExpired.map((a) => a.subscriptionId))];
+        const subscriptionIds = [
+            ...new Set(actuallyExpired.map((a) => a.subscriptionId)),
+        ];
         for (const subscriptionId of subscriptionIds) {
             try {
                 await this.channelAccessService.handlePaymentFailure(subscriptionId, 'expired');

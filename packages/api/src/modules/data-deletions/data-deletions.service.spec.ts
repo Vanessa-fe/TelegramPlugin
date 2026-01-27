@@ -65,9 +65,9 @@ describe('DataDeletionsService', () => {
     }).compile();
 
     service = module.get(DataDeletionsService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
-    channelAccess = module.get(ChannelAccessService) as jest.Mocked<ChannelAccessService>;
-    auditLog = module.get(AuditLogService) as jest.Mocked<AuditLogService>;
+    prisma = module.get(PrismaService);
+    channelAccess = module.get(ChannelAccessService);
+    auditLog = module.get(AuditLogService);
   });
 
   afterEach(() => {

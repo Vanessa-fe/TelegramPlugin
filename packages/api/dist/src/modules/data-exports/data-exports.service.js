@@ -162,7 +162,9 @@ let DataExportsService = DataExportsService_1 = class DataExportsService {
                 organization,
             };
             const archivePath = await this.writeArchive(exportId, payload);
-            const slaMet = exportJob.slaDueAt ? exportedAt <= exportJob.slaDueAt : null;
+            const slaMet = exportJob.slaDueAt
+                ? exportedAt <= exportJob.slaDueAt
+                : null;
             await this.prisma.dataExport.update({
                 where: { id: exportId },
                 data: {

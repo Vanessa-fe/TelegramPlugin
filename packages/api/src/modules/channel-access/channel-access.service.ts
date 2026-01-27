@@ -159,7 +159,10 @@ export class ChannelAccessService {
         if (!existingEntitlement) {
           // Calculate expiry based on plan's accessDurationDays
           const expiresAt = subscription.plan.accessDurationDays
-            ? new Date(Date.now() + subscription.plan.accessDurationDays * 24 * 60 * 60 * 1000)
+            ? new Date(
+                Date.now() +
+                  subscription.plan.accessDurationDays * 24 * 60 * 60 * 1000,
+              )
             : null;
 
           await tx.entitlement.create({
@@ -273,10 +276,7 @@ export class ChannelAccessService {
             where: {
               subscriptionId,
               status: {
-                in: [
-                  $Enums.AccessStatus.PENDING,
-                  $Enums.AccessStatus.GRANTED,
-                ],
+                in: [$Enums.AccessStatus.PENDING, $Enums.AccessStatus.GRANTED],
               },
             },
             data: {
@@ -394,7 +394,10 @@ export class ChannelAccessService {
           subscription.id,
           reasonMessages[reason],
         );
-      } else if ((reason === 'canceled' || reason === 'expired') && subscription.plan) {
+      } else if (
+        (reason === 'canceled' || reason === 'expired') &&
+        subscription.plan
+      ) {
         await this.notifications.sendSubscriptionCanceled(
           subscription.customerId,
           subscription.plan.name,

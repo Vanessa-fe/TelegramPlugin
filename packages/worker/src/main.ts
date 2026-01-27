@@ -40,11 +40,11 @@ type BaseEnv = z.infer<typeof BaseEnvSchema>;
 
 type WorkerEnv = Omit<
   BaseEnv,
-  "TELEGRAM_INVITE_TTL_SECONDS" | "TELEGRAM_INVITE_MAX_USES"
+  "TELEGRAM_INVITE_TTL_SECONDS" | "TELEGRAM_INVITE_MAX_USES" | "ACCESS_LATENCY_ALERT_MS"
 > & {
   TELEGRAM_INVITE_TTL_SECONDS?: number;
   TELEGRAM_INVITE_MAX_USES?: number;
-  ACCESS_LATENCY_ALERT_MS?: number;
+  ACCESS_LATENCY_ALERT_MS: number;
 };
 
 function parseOptionalInteger(

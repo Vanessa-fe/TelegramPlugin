@@ -22,20 +22,23 @@ const prisma_service_1 = require("../../prisma/prisma.service");
 const channel_access_service_1 = require("../channel-access/channel-access.service");
 const audit_log_service_1 = require("../audit-log/audit-log.service");
 const metrics_service_1 = require("../metrics/metrics.service");
+const platform_subscription_service_1 = require("../platform-subscription/platform-subscription.service");
 let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
     config;
     prisma;
     channelAccessService;
     auditLogService;
     metricsService;
+    platformSubscriptionService;
     logger = new common_1.Logger(StripeWebhookService_1.name);
     stripe;
-    constructor(config, prisma, channelAccessService, auditLogService, metricsService) {
+    constructor(config, prisma, channelAccessService, auditLogService, metricsService, platformSubscriptionService) {
         this.config = config;
         this.prisma = prisma;
         this.channelAccessService = channelAccessService;
         this.auditLogService = auditLogService;
         this.metricsService = metricsService;
+        this.platformSubscriptionService = platformSubscriptionService;
         const apiKey = this.config.get('STRIPE_SECRET_KEY');
         if (!apiKey) {
             throw new Error('STRIPE_SECRET_KEY is not configured');
@@ -86,6 +89,11 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             await this.handleAccountUpdated(event.data.object);
             return;
         }
+        if (!event.account && this.isPlatformEvent(event)) {
+            this.logger.debug(`Routing platform event to PlatformSubscriptionService: ${event.type}`);
+            await this.platformSubscriptionService.handleWebhookEvent(event);
+            return;
+        }
         const mappedType = this.mapEventType(event.type);
         if (!mappedType) {
             this.logger.debug(`Ignoring unsupported Stripe event type: ${event.type}`);
@@ -129,8 +137,7 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             this.logger.debug(`Stripe event ${event.id} already processed, skipping domain side-effects`);
             return;
         }
-        if (event.type === 'checkout.session.completed' &&
-            context.subscriptionId) {
+        if (event.type === 'checkout.session.completed' && context.subscriptionId) {
             await this.syncSubscriptionFromCheckout(event.data.object, context.subscriptionId);
         }
         await this.applyDomainSideEffects(mappedType, context);
@@ -170,7 +177,9 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object;
-                const subscriptionId = typeof session.subscription === 'string' ? session.subscription : undefined;
+                const subscriptionId = typeof session.subscription === 'string'
+                    ? session.subscription
+                    : undefined;
                 if (subscriptionId) {
                     const context = await this.contextFromSubscription(subscriptionId);
                     if (context) {
@@ -190,7 +199,9 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             case 'invoice.payment_succeeded':
             case 'invoice.payment_failed': {
                 const invoice = event.data.object;
-                const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : undefined;
+                const subscriptionId = typeof invoice.subscription === 'string'
+                    ? invoice.subscription
+                    : undefined;
                 if (!subscriptionId) {
                     const metadataContext = await this.contextFromMetadata(invoice.metadata ?? undefined);
                     return metadataContext ?? accountContext;
@@ -210,7 +221,9 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
                 }
                 try {
                     const invoice = await this.stripe.invoices.retrieve(invoiceId, undefined, event.account ? { stripeAccount: event.account } : undefined);
-                    const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : undefined;
+                    const subscriptionId = typeof invoice.subscription === 'string'
+                        ? invoice.subscription
+                        : undefined;
                     if (!subscriptionId) {
                         return accountContext;
                     }
@@ -398,13 +411,35 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             this.logger.debug(`No organization found for Stripe account ${account.id}, skipping account.updated`);
             return;
         }
-        const isReady = Boolean(account.charges_enabled && account.details_submitted);
-        if (organization.saasActive !== isReady) {
-            await this.prisma.organization.update({
-                where: { id: organization.id },
-                data: { saasActive: isReady },
-            });
-            this.logger.log(`Organization ${organization.id} saasActive updated to ${isReady} based on Stripe Connect status`);
+        await this.platformSubscriptionService.updateSaasActive(organization.id);
+    }
+    isPlatformEvent(event) {
+        const metadata = this.extractMetadataFromEvent(event);
+        return metadata?.type === 'platform';
+    }
+    extractMetadataFromEvent(event) {
+        switch (event.type) {
+            case 'checkout.session.completed': {
+                const session = event.data.object;
+                return session.metadata ?? null;
+            }
+            case 'customer.subscription.created':
+            case 'customer.subscription.updated':
+            case 'customer.subscription.deleted': {
+                const subscription = event.data.object;
+                return subscription.metadata ?? null;
+            }
+            case 'invoice.payment_succeeded':
+            case 'invoice.payment_failed': {
+                const invoice = event.data.object;
+                if (typeof invoice.subscription === 'object' &&
+                    invoice.subscription?.metadata) {
+                    return invoice.subscription.metadata;
+                }
+                return invoice.metadata ?? null;
+            }
+            default:
+                return null;
         }
     }
 };
@@ -415,6 +450,7 @@ exports.StripeWebhookService = StripeWebhookService = StripeWebhookService_1 = _
         prisma_service_1.PrismaService,
         channel_access_service_1.ChannelAccessService,
         audit_log_service_1.AuditLogService,
-        metrics_service_1.MetricsService])
+        metrics_service_1.MetricsService,
+        platform_subscription_service_1.PlatformSubscriptionService])
 ], StripeWebhookService);
 //# sourceMappingURL=stripe-webhook.service.js.map

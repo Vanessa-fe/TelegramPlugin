@@ -168,7 +168,10 @@ export class AuthService {
 
   private async signTokens(payload: JwtPayload): Promise<AuthTokens> {
     const accessExpiresIn = this.getTtlSeconds('JWT_ACCESS_TTL', 900);
-    const refreshExpiresIn = this.getTtlSeconds('JWT_REFRESH_TTL', 7 * 24 * 60 * 60);
+    const refreshExpiresIn = this.getTtlSeconds(
+      'JWT_REFRESH_TTL',
+      7 * 24 * 60 * 60,
+    );
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

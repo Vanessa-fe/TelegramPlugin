@@ -8,6 +8,7 @@ const {
   PaymentEventType,
   PaymentProvider,
   PlanInterval,
+  PlatformSubscriptionStatus,
   ProductStatus,
   SubscriptionStatus,
   UserRole,
@@ -19,6 +20,117 @@ const prisma = new PrismaClient();
 const DEFAULT_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe42!';
 
 async function main() {
+  // ========================================
+  // SEED PLATFORM PLANS
+  // ========================================
+  console.info('🏷️  Seeding Platform Plans...');
+
+  const grandfatheredPlan = await prisma.platformPlan.upsert({
+    where: { name: 'grandfathered' },
+    update: {
+      displayName: 'Grandfathered',
+      priceCents: 0,
+      currency: 'eur',
+      interval: PlanInterval.MONTH,
+      trialPeriodDays: null,
+      stripePriceId: null,
+      features: {
+        maxProducts: -1,
+        maxChannels: -1,
+        description: 'Plan gratuit pour les early adopters',
+      },
+      isActive: false,
+      sortOrder: 0,
+    },
+    create: {
+      name: 'grandfathered',
+      displayName: 'Grandfathered',
+      priceCents: 0,
+      currency: 'eur',
+      interval: PlanInterval.MONTH,
+      trialPeriodDays: null,
+      stripePriceId: null,
+      features: {
+        maxProducts: -1,
+        maxChannels: -1,
+        description: 'Plan gratuit pour les early adopters',
+      },
+      isActive: false,
+      sortOrder: 0,
+    },
+  });
+
+  await prisma.platformPlan.upsert({
+    where: { name: 'early-adopter' },
+    update: {
+      displayName: 'Early Adopter',
+      priceCents: 1900,
+      currency: 'eur',
+      interval: PlanInterval.MONTH,
+      trialPeriodDays: 14,
+      features: {
+        maxProducts: 10,
+        maxChannels: 5,
+        description: 'Parfait pour démarrer',
+      },
+      isActive: true,
+      sortOrder: 1,
+    },
+    create: {
+      name: 'early-adopter',
+      displayName: 'Early Adopter',
+      priceCents: 1900,
+      currency: 'eur',
+      interval: PlanInterval.MONTH,
+      trialPeriodDays: 14,
+      features: {
+        maxProducts: 10,
+        maxChannels: 5,
+        description: 'Parfait pour démarrer',
+      },
+      isActive: true,
+      sortOrder: 1,
+    },
+  });
+
+  await prisma.platformPlan.upsert({
+    where: { name: 'pro' },
+    update: {
+      displayName: 'Pro',
+      priceCents: 2900,
+      currency: 'eur',
+      interval: PlanInterval.MONTH,
+      trialPeriodDays: 14,
+      features: {
+        maxProducts: -1,
+        maxChannels: -1,
+        description: 'Pour les créateurs établis',
+      },
+      isActive: true,
+      sortOrder: 2,
+    },
+    create: {
+      name: 'pro',
+      displayName: 'Pro',
+      priceCents: 2900,
+      currency: 'eur',
+      interval: PlanInterval.MONTH,
+      trialPeriodDays: 14,
+      features: {
+        maxProducts: -1,
+        maxChannels: -1,
+        description: 'Pour les créateurs établis',
+      },
+      isActive: true,
+      sortOrder: 2,
+    },
+  });
+
+  console.info('✅ Platform Plans seeded (grandfathered, early-adopter, pro)\n');
+
+  // ========================================
+  // SEED DEMO AGENCY ORGANIZATION
+  // ========================================
   const organization = await prisma.organization.upsert({
     where: { slug: 'demo-agency' },
     update: {
@@ -35,6 +147,38 @@ async function main() {
       timezone: 'Europe/Paris',
       metadata: {
         onboardingChecklist: ['stripe_connected'],
+      },
+    },
+  });
+
+  // Create grandfathered platform subscription for demo-agency
+  await prisma.platformSubscription.upsert({
+    where: { organizationId: organization.id },
+    update: {
+      platformPlanId: grandfatheredPlan.id,
+      status: PlatformSubscriptionStatus.ACTIVE,
+      metadata: {
+        grandfathered: true,
+        migratedAt: new Date().toISOString(),
+        reason: 'Early adopter before platform subscription launch',
+      },
+    },
+    create: {
+      organizationId: organization.id,
+      platformPlanId: grandfatheredPlan.id,
+      status: PlatformSubscriptionStatus.ACTIVE,
+      stripeSubscriptionId: null,
+      stripeCustomerId: null,
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+      canceledAt: null,
+      cancelAtPeriodEnd: false,
+      graceUntil: null,
+      metadata: {
+        grandfathered: true,
+        migratedAt: new Date().toISOString(),
+        reason: 'Early adopter before platform subscription launch',
       },
     },
   });
@@ -284,6 +428,38 @@ async function main() {
       timezone: 'Europe/Paris',
       metadata: {
         description: 'Organization de test pour simuler un client merchant',
+      },
+    },
+  });
+
+  // Create grandfathered platform subscription for test-merchant
+  await prisma.platformSubscription.upsert({
+    where: { organizationId: merchantOrg.id },
+    update: {
+      platformPlanId: grandfatheredPlan.id,
+      status: PlatformSubscriptionStatus.ACTIVE,
+      metadata: {
+        grandfathered: true,
+        migratedAt: new Date().toISOString(),
+        reason: 'Early adopter before platform subscription launch',
+      },
+    },
+    create: {
+      organizationId: merchantOrg.id,
+      platformPlanId: grandfatheredPlan.id,
+      status: PlatformSubscriptionStatus.ACTIVE,
+      stripeSubscriptionId: null,
+      stripeCustomerId: null,
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: null,
+      trialEndsAt: null,
+      canceledAt: null,
+      cancelAtPeriodEnd: false,
+      graceUntil: null,
+      metadata: {
+        grandfathered: true,
+        migratedAt: new Date().toISOString(),
+        reason: 'Early adopter before platform subscription launch',
       },
     },
   });

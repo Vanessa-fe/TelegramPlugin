@@ -102,19 +102,19 @@ export class TelegramStarsService {
     });
 
     if (!subscription) {
-      throw new BadRequestException(
-        `Subscription ${subscriptionId} not found`,
-      );
+      throw new BadRequestException(`Subscription ${subscriptionId} not found`);
     }
 
     // Verify payment amount matches expected price
-    const expectedStars = this.convertCentsToStars(subscription.plan.priceCents);
+    const expectedStars = this.convertCentsToStars(
+      subscription.plan.priceCents,
+    );
     const tolerance = 1; // Allow 1 star tolerance for rounding
 
     if (Math.abs(payload.totalAmount - expectedStars) > tolerance) {
       this.logger.error(
         `Payment amount mismatch for subscription ${subscriptionId}: ` +
-        `expected ${expectedStars} stars, got ${payload.totalAmount} stars`,
+          `expected ${expectedStars} stars, got ${payload.totalAmount} stars`,
       );
       throw new BadRequestException(
         `Payment amount mismatch: expected ${expectedStars} stars, received ${payload.totalAmount}`,
@@ -315,7 +315,8 @@ export class TelegramStarsService {
     return {
       subscriptionId: subscription.id,
       title: plan.name,
-      description: plan.description || plan.product.description || 'Accès premium',
+      description:
+        plan.description || plan.product.description || 'Accès premium',
       payload: invoicePayload,
       currency: 'XTR', // Telegram Stars currency code
       prices: [
@@ -383,7 +384,7 @@ export class TelegramStarsService {
       if (expectedStars && expectedStars !== currentExpectedStars) {
         this.logger.warn(
           `Price changed since invoice creation for subscription ${subscriptionId}: ` +
-          `invoice has ${expectedStars} stars, current price is ${currentExpectedStars} stars`,
+            `invoice has ${expectedStars} stars, current price is ${currentExpectedStars} stars`,
         );
         // Allow payment to proceed - they'll pay the original quoted price
       }

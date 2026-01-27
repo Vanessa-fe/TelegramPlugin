@@ -28,7 +28,9 @@ export const telegramStarsWebhookSchema = z.object({
   providerPaymentChargeId: z.string().optional(),
 });
 
-export type TelegramStarsWebhookDto = z.infer<typeof telegramStarsWebhookSchema>;
+export type TelegramStarsWebhookDto = z.infer<
+  typeof telegramStarsWebhookSchema
+>;
 
 export const validatePreCheckoutSchema = z.object({
   invoicePayload: z.string().min(1),

@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
@@ -76,7 +81,10 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
     }, ChannelAccessQueue.METRICS_INTERVAL_MS);
 
     this.updateQueueMetrics().catch((error) => {
-      this.logger.error('Failed to update initial queue metrics', error as Error);
+      this.logger.error(
+        'Failed to update initial queue metrics',
+        error as Error,
+      );
     });
   }
 
@@ -93,17 +101,31 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
       this.revokeDlq.close(),
       this.connection.quit(),
     ]).catch((error) => {
-      this.logger.error('Error shutting down ChannelAccessQueue', error as Error);
+      this.logger.error(
+        'Error shutting down ChannelAccessQueue',
+        error as Error,
+      );
     });
   }
 
   private async updateQueueMetrics(): Promise<void> {
-    const [grantCounts, revokeCounts, grantDlqCounts, revokeDlqCounts] = await Promise.all([
-      this.grantQueue.getJobCounts('waiting', 'active', 'completed', 'failed'),
-      this.revokeQueue.getJobCounts('waiting', 'active', 'completed', 'failed'),
-      this.grantDlq.getJobCounts('waiting'),
-      this.revokeDlq.getJobCounts('waiting'),
-    ]);
+    const [grantCounts, revokeCounts, grantDlqCounts, revokeDlqCounts] =
+      await Promise.all([
+        this.grantQueue.getJobCounts(
+          'waiting',
+          'active',
+          'completed',
+          'failed',
+        ),
+        this.revokeQueue.getJobCounts(
+          'waiting',
+          'active',
+          'completed',
+          'failed',
+        ),
+        this.grantDlq.getJobCounts('waiting'),
+        this.revokeDlq.getJobCounts('waiting'),
+      ]);
 
     this.metricsService.setQueueWaitingJobs(
       queueNames.grantAccess,
@@ -190,7 +212,8 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
     };
     const payload = payloadContainer.payload ?? job.data;
     const parsed = schema.parse(payload);
-    const originalJobId = payloadContainer.originalJobId ?? String(job.id ?? jobId);
+    const originalJobId =
+      payloadContainer.originalJobId ?? String(job.id ?? jobId);
 
     const existing = await target.getJob(originalJobId);
     if (existing) {

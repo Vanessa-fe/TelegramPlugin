@@ -65,10 +65,9 @@ export async function createProduct(data?: {
   description?: string;
 }) {
   const timestamp = Date.now();
-  const org =
-    data?.organizationId
-      ? { id: data.organizationId }
-      : await createOrganization();
+  const org = data?.organizationId
+    ? { id: data.organizationId }
+    : await createOrganization();
 
   return prisma.product.create({
     data: {

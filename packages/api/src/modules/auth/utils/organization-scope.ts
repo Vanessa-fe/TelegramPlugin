@@ -16,8 +16,13 @@ export function resolveOrganizationScope(
     );
   }
 
-  if (requestedOrganizationId && requestedOrganizationId !== user.organizationId) {
-    throw new ForbiddenException('Organisation non accessible pour cet utilisateur');
+  if (
+    requestedOrganizationId &&
+    requestedOrganizationId !== user.organizationId
+  ) {
+    throw new ForbiddenException(
+      'Organisation non accessible pour cet utilisateur',
+    );
   }
 
   return user.organizationId;

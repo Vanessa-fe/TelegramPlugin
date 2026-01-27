@@ -72,7 +72,9 @@ export class BillingService {
     };
   }
 
-  async createStripeConnectLink(organizationId: string): Promise<{ url: string }> {
+  async createStripeConnectLink(
+    organizationId: string,
+  ): Promise<{ url: string }> {
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
     });
@@ -108,9 +110,7 @@ export class BillingService {
     const returnUrl = this.config.get<string>('STRIPE_CONNECT_RETURN_URL');
 
     if (!refreshUrl || !returnUrl) {
-      throw new BadRequestException(
-        'Stripe Connect URLs are not configured',
-      );
+      throw new BadRequestException('Stripe Connect URLs are not configured');
     }
 
     const link = await this.stripe.accountLinks.create({
@@ -123,7 +123,9 @@ export class BillingService {
     return { url: link.url };
   }
 
-  async createStripeLoginLink(organizationId: string): Promise<{ url: string }> {
+  async createStripeLoginLink(
+    organizationId: string,
+  ): Promise<{ url: string }> {
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
     });
@@ -259,7 +261,9 @@ export class BillingService {
         status: SubscriptionStatus.INCOMPLETE,
         metadata: {
           checkoutMode:
-            plan.interval === PlanInterval.ONE_TIME ? 'payment' : 'subscription',
+            plan.interval === PlanInterval.ONE_TIME
+              ? 'payment'
+              : 'subscription',
         },
       },
     });
@@ -271,7 +275,8 @@ export class BillingService {
         currency: plan.currency.toLowerCase(),
         product_data: {
           name: plan.name,
-          description: plan.description ?? plan.product.description ?? undefined,
+          description:
+            plan.description ?? plan.product.description ?? undefined,
           metadata: {
             organizationId: organization.id,
             planId: plan.id,
@@ -288,9 +293,7 @@ export class BillingService {
     const cancelUrl = this.config.get<string>('STRIPE_CHECKOUT_CANCEL_URL');
 
     if (!successUrl || !cancelUrl) {
-      throw new BadRequestException(
-        'Stripe checkout URLs are not configured',
-      );
+      throw new BadRequestException('Stripe checkout URLs are not configured');
     }
 
     const metadata = {
@@ -301,7 +304,8 @@ export class BillingService {
     };
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: plan.interval === PlanInterval.ONE_TIME ? 'payment' : 'subscription',
+      mode:
+        plan.interval === PlanInterval.ONE_TIME ? 'payment' : 'subscription',
       line_items: [lineItem],
       success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
@@ -313,14 +317,14 @@ export class BillingService {
     if (plan.interval === PlanInterval.ONE_TIME) {
       const paymentIntentData: Stripe.Checkout.SessionCreateParams.PaymentIntentData =
         {
-        metadata,
-      };
+          metadata,
+        };
       sessionParams.payment_intent_data = paymentIntentData;
     } else {
       const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData =
         {
-        metadata,
-      };
+          metadata,
+        };
       if (plan.trialPeriodDays) {
         subscriptionData.trial_period_days = plan.trialPeriodDays;
       }

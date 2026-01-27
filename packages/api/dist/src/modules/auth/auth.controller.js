@@ -35,8 +35,7 @@ let AuthController = class AuthController {
         return this.authService.login(body.email, body.password);
     }
     refresh(body, req) {
-        const refreshTokenFromCookie = req
-            .cookies?.refreshToken;
+        const refreshTokenFromCookie = req.cookies?.refreshToken;
         const refreshToken = body.refreshToken || refreshTokenFromCookie;
         if (!refreshToken) {
             throw new common_1.UnauthorizedException('Refresh token manquant');

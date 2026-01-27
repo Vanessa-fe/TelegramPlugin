@@ -53,14 +53,10 @@ describe('SchedulerService', () => {
     }).compile();
 
     service = module.get(SchedulerService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
-    channelAccessService = module.get(
-      ChannelAccessService,
-    ) as jest.Mocked<ChannelAccessService>;
-    config = module.get(ConfigService) as jest.Mocked<ConfigService>;
-    dataExportsService = module.get(
-      DataExportsService,
-    ) as jest.Mocked<DataExportsService>;
+    prisma = module.get(PrismaService);
+    channelAccessService = module.get(ChannelAccessService);
+    config = module.get(ConfigService);
+    dataExportsService = module.get(DataExportsService);
 
     jest.spyOn(Logger.prototype, 'error').mockImplementation();
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -81,7 +77,9 @@ describe('SchedulerService', () => {
 
       await service.handleExpiredGracePeriods();
 
-      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledTimes(2);
+      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledTimes(
+        2,
+      );
       expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledWith(
         'sub-1',
         'payment_failed',
