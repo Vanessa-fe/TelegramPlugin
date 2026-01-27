@@ -71,10 +71,10 @@ describe('ChannelAccessService', () => {
     }).compile();
 
     service = module.get<ChannelAccessService>(ChannelAccessService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
-    queue = module.get(ChannelAccessQueue) as jest.Mocked<ChannelAccessQueue>;
-    notifications = module.get(NotificationsService) as jest.Mocked<NotificationsService>;
-    config = module.get(ConfigService) as jest.Mocked<ConfigService>;
+    prisma = module.get(PrismaService);
+    queue = module.get(ChannelAccessQueue);
+    notifications = module.get(NotificationsService);
+    config = module.get(ConfigService);
     config.get.mockReturnValue(5);
 
     // Suppress logs during tests

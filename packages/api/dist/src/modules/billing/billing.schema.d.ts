@@ -8,30 +8,30 @@ export declare const createCheckoutSchema: z.ZodObject<{
         telegramUsername: z.ZodOptional<z.ZodString>;
         displayName: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        email?: string | undefined;
         displayName?: string | undefined;
+        email?: string | undefined;
         telegramUserId?: string | undefined;
         telegramUsername?: string | undefined;
     }, {
-        email?: string | undefined;
         displayName?: string | undefined;
+        email?: string | undefined;
         telegramUserId?: string | undefined;
         telegramUsername?: string | undefined;
     }>, {
-        email?: string | undefined;
         displayName?: string | undefined;
+        email?: string | undefined;
         telegramUserId?: string | undefined;
         telegramUsername?: string | undefined;
     }, {
-        email?: string | undefined;
         displayName?: string | undefined;
+        email?: string | undefined;
         telegramUserId?: string | undefined;
         telegramUsername?: string | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
     customer: {
-        email?: string | undefined;
         displayName?: string | undefined;
+        email?: string | undefined;
         telegramUserId?: string | undefined;
         telegramUsername?: string | undefined;
     };
@@ -39,8 +39,8 @@ export declare const createCheckoutSchema: z.ZodObject<{
     quantity?: number | undefined;
 }, {
     customer: {
-        email?: string | undefined;
         displayName?: string | undefined;
+        email?: string | undefined;
         telegramUserId?: string | undefined;
         telegramUsername?: string | undefined;
     };

@@ -72,6 +72,15 @@ enum InviteStatus {
   EXPIRED
 }
 
+enum PlatformSubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  EXPIRED
+}
+
 enum AuditActorType {
   USER
   SYSTEM
@@ -97,14 +106,15 @@ model Organization {
   updatedAt       DateTime @updatedAt
   deletedAt       DateTime?
 
-  users          User[]
-  customers      Customer[]
-  products       Product[]
-  channels       Channel[]
-  subscriptions  Subscription[]
-  paymentEvents  PaymentEvent[]
-  auditLogs      AuditLog[]
-  dataExports    DataExport[]
+  users                User[]
+  customers            Customer[]
+  products             Product[]
+  channels             Channel[]
+  subscriptions        Subscription[]
+  paymentEvents        PaymentEvent[]
+  auditLogs            AuditLog[]
+  dataExports          DataExport[]
+  platformSubscription PlatformSubscription?
 
   @@index([slug])
 }
@@ -385,4 +395,45 @@ model DataExport {
 
   @@index([organizationId, status])
   @@index([slaDueAt])
+}
+
+model PlatformPlan {
+  id              String       @id @default(uuid())
+  name            String       @unique
+  displayName     String
+  priceCents      Int
+  currency        String       @default("eur")
+  interval        PlanInterval @default(MONTH)
+  trialPeriodDays Int?         @default(14)
+  stripePriceId   String?      @unique
+  features        Json?
+  isActive        Boolean      @default(true)
+  sortOrder       Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  subscriptions PlatformSubscription[]
+}
+
+model PlatformSubscription {
+  id                   String                     @id @default(uuid())
+  organizationId       String                     @unique
+  platformPlanId       String
+  status               PlatformSubscriptionStatus @default(INCOMPLETE)
+  stripeSubscriptionId String?                    @unique
+  stripeCustomerId     String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  trialEndsAt          DateTime?
+  canceledAt           DateTime?
+  cancelAtPeriodEnd    Boolean                    @default(false)
+  graceUntil           DateTime?
+  metadata             Json?
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  platformPlan PlatformPlan @relation(fields: [platformPlanId], references: [id])
+
+  @@index([status])
 }

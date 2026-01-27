@@ -17,11 +17,7 @@ let SchedulerModule = class SchedulerModule {
 exports.SchedulerModule = SchedulerModule;
 exports.SchedulerModule = SchedulerModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            schedule_1.ScheduleModule.forRoot(),
-            channel_access_module_1.ChannelAccessModule,
-            data_exports_module_1.DataExportsModule,
-        ],
+        imports: [schedule_1.ScheduleModule.forRoot(), channel_access_module_1.ChannelAccessModule, data_exports_module_1.DataExportsModule],
         providers: [scheduler_service_1.SchedulerService],
         exports: [scheduler_service_1.SchedulerService],
     })

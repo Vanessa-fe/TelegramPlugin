@@ -5,11 +5,32 @@ export declare class CustomersController {
     private readonly customersService;
     constructor(customersService: CustomersService);
     findAll(user: AuthUser, organizationId?: string): Promise<({
-        organization: {
+        subscriptions: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            organizationId: string;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
+            currentPeriodStart: Date | null;
+            currentPeriodEnd: Date | null;
+            trialEndsAt: Date | null;
+            canceledAt: Date | null;
+            graceUntil: Date | null;
+            externalId: string | null;
+            externalCustomerId: string | null;
+            externalPriceId: string | null;
+            startedAt: Date;
+            endedAt: Date | null;
+            lastPaymentFailedAt: Date | null;
+            customerId: string;
+            planId: string;
+        }[];
+        organization: {
+            id: string;
             name: string;
+            createdAt: Date;
+            updatedAt: Date;
             slug: string;
             billingEmail: string;
             stripeAccountId: string | null;
@@ -18,27 +39,6 @@ export declare class CustomersController {
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
             deletedAt: Date | null;
         };
-        subscriptions: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            organizationId: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            status: import("@prisma/client").$Enums.SubscriptionStatus;
-            externalId: string | null;
-            externalCustomerId: string | null;
-            externalPriceId: string | null;
-            startedAt: Date;
-            currentPeriodStart: Date | null;
-            currentPeriodEnd: Date | null;
-            trialEndsAt: Date | null;
-            canceledAt: Date | null;
-            endedAt: Date | null;
-            graceUntil: Date | null;
-            lastPaymentFailedAt: Date | null;
-            customerId: string;
-            planId: string;
-        }[];
         channelAccesses: {
             id: string;
             createdAt: Date;
@@ -55,23 +55,44 @@ export declare class CustomersController {
         }[];
     } & {
         id: string;
-        email: string | null;
+        displayName: string | null;
         createdAt: Date;
         updatedAt: Date;
+        email: string | null;
         organizationId: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         deletedAt: Date | null;
-        displayName: string | null;
         telegramUserId: string | null;
         telegramUsername: string | null;
         externalId: string | null;
     })[]>;
     findOne(user: AuthUser, id: string): Promise<{
-        organization: {
+        subscriptions: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            organizationId: string;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
+            currentPeriodStart: Date | null;
+            currentPeriodEnd: Date | null;
+            trialEndsAt: Date | null;
+            canceledAt: Date | null;
+            graceUntil: Date | null;
+            externalId: string | null;
+            externalCustomerId: string | null;
+            externalPriceId: string | null;
+            startedAt: Date;
+            endedAt: Date | null;
+            lastPaymentFailedAt: Date | null;
+            customerId: string;
+            planId: string;
+        }[];
+        organization: {
+            id: string;
             name: string;
+            createdAt: Date;
+            updatedAt: Date;
             slug: string;
             billingEmail: string;
             stripeAccountId: string | null;
@@ -80,27 +101,6 @@ export declare class CustomersController {
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
             deletedAt: Date | null;
         };
-        subscriptions: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            organizationId: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            status: import("@prisma/client").$Enums.SubscriptionStatus;
-            externalId: string | null;
-            externalCustomerId: string | null;
-            externalPriceId: string | null;
-            startedAt: Date;
-            currentPeriodStart: Date | null;
-            currentPeriodEnd: Date | null;
-            trialEndsAt: Date | null;
-            canceledAt: Date | null;
-            endedAt: Date | null;
-            graceUntil: Date | null;
-            lastPaymentFailedAt: Date | null;
-            customerId: string;
-            planId: string;
-        }[];
         channelAccesses: {
             id: string;
             createdAt: Date;
@@ -117,39 +117,39 @@ export declare class CustomersController {
         }[];
     } & {
         id: string;
-        email: string | null;
+        displayName: string | null;
         createdAt: Date;
         updatedAt: Date;
+        email: string | null;
         organizationId: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         deletedAt: Date | null;
-        displayName: string | null;
         telegramUserId: string | null;
         telegramUsername: string | null;
         externalId: string | null;
     }>;
     create(user: AuthUser, body: CreateCustomerDto): Promise<{
         id: string;
-        email: string | null;
+        displayName: string | null;
         createdAt: Date;
         updatedAt: Date;
+        email: string | null;
         organizationId: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         deletedAt: Date | null;
-        displayName: string | null;
         telegramUserId: string | null;
         telegramUsername: string | null;
         externalId: string | null;
     }>;
     update(user: AuthUser, id: string, body: UpdateCustomerDto): Promise<{
         id: string;
-        email: string | null;
+        displayName: string | null;
         createdAt: Date;
         updatedAt: Date;
+        email: string | null;
         organizationId: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         deletedAt: Date | null;
-        displayName: string | null;
         telegramUserId: string | null;
         telegramUsername: string | null;
         externalId: string | null;

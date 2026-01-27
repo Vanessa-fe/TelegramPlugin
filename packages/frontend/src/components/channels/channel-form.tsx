@@ -1,26 +1,30 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ChannelProvider, type CreateChannelDto, type Channel } from '@/types/channel';
+} from "@/components/ui/select";
+import {
+  ChannelProvider,
+  type Channel,
+  type CreateChannelDto,
+} from "@/types/channel";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 const channelFormSchema = z.object({
   provider: z.nativeEnum(ChannelProvider),
-  externalId: z.string().min(1, 'L\'ID externe est requis'),
+  externalId: z.string().min(1, "L'ID externe est requis"),
   title: z.string().optional(),
   username: z.string().optional(),
-  inviteLink: z.string().url('URL invalide').optional().or(z.literal('')),
+  inviteLink: z.string().url("URL invalide").optional().or(z.literal("")),
   isActive: z.boolean().optional(),
 });
 
@@ -33,11 +37,15 @@ interface ChannelFormProps {
 }
 
 const providerOptions = [
-  { value: ChannelProvider.TELEGRAM, label: 'Telegram' },
-  { value: ChannelProvider.DISCORD, label: 'Discord' },
+  { value: ChannelProvider.TELEGRAM, label: "Telegram" },
+  { value: ChannelProvider.DISCORD, label: "Discord" },
 ];
 
-export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormProps) {
+export function ChannelForm({
+  organizationId,
+  channel,
+  onSubmit,
+}: ChannelFormProps) {
   const {
     register,
     handleSubmit,
@@ -50,9 +58,9 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
       ? {
           provider: channel.provider,
           externalId: channel.externalId,
-          title: channel.title || '',
-          username: channel.username || '',
-          inviteLink: channel.inviteLink || '',
+          title: channel.title || "",
+          username: channel.username || "",
+          inviteLink: channel.inviteLink || "",
           isActive: channel.isActive,
         }
       : {
@@ -61,7 +69,7 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
         },
   });
 
-  const selectedProvider = watch('provider');
+  const selectedProvider = watch("provider");
 
   async function onSubmitForm(data: ChannelFormData) {
     const payload: CreateChannelDto = {
@@ -87,7 +95,7 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
           <Select
             value={selectedProvider}
             onValueChange={(value: string) =>
-              setValue('provider', value as ChannelProvider)
+              setValue("provider", value as ChannelProvider)
             }
           >
             <SelectTrigger>
@@ -115,8 +123,8 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
           <Label htmlFor="externalId">ID externe du channel *</Label>
           <Input
             id="externalId"
-            {...register('externalId')}
-            placeholder="-1001234567890"
+            {...register("externalId")}
+            placeholder="-1003487441463"
           />
           {errors.externalId && (
             <p className="mt-1 text-sm text-red-600">
@@ -132,7 +140,7 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
           <Label htmlFor="title">Titre du channel</Label>
           <Input
             id="title"
-            {...register('title')}
+            {...register("title")}
             placeholder="Mon Channel VIP"
           />
           {errors.title && (
@@ -144,7 +152,7 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
           <Label htmlFor="username">Username</Label>
           <Input
             id="username"
-            {...register('username')}
+            {...register("username")}
             placeholder="mon_channel_vip"
           />
           {errors.username && (
@@ -161,7 +169,7 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
           <Label htmlFor="inviteLink">Lien d&apos;invitation</Label>
           <Input
             id="inviteLink"
-            {...register('inviteLink')}
+            {...register("inviteLink")}
             placeholder="https://t.me/+AbcDefGhiJkl"
           />
           {errors.inviteLink && (
@@ -178,7 +186,7 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
           <input
             type="checkbox"
             id="isActive"
-            {...register('isActive')}
+            {...register("isActive")}
             className="h-4 w-4 rounded border-gray-300"
           />
           <Label htmlFor="isActive" className="cursor-pointer">
@@ -197,8 +205,16 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
             <div className="bg-white/50 rounded p-3 space-y-2">
               <p className="font-medium">Méthode 1: Via un bot (Recommandé)</p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Transférez un message de votre channel à <span className="font-mono bg-white px-1 rounded">@userinfobot</span></li>
-                <li>Le bot vous répondra avec l&apos;ID du channel (commence par -100)</li>
+                <li>
+                  Transférez un message de votre channel à{" "}
+                  <span className="font-mono bg-white px-1 rounded">
+                    @userinfobot
+                  </span>
+                </li>
+                <li>
+                  Le bot vous répondra avec l&apos;ID du channel (commence par
+                  -100)
+                </li>
                 <li>Copiez cet ID dans le champ ci-dessus</li>
               </ol>
             </div>
@@ -206,17 +222,29 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
             <div className="bg-white/50 rounded p-3 space-y-2">
               <p className="font-medium">Méthode 2: Via l&apos;API Telegram</p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Ajoutez le bot <span className="font-mono bg-white px-1 rounded">@getidsbot</span> à votre channel</li>
+                <li>
+                  Ajoutez le bot{" "}
+                  <span className="font-mono bg-white px-1 rounded">
+                    @getidsbot
+                  </span>{" "}
+                  à votre channel
+                </li>
                 <li>Le bot enverra automatiquement l&apos;ID du channel</li>
                 <li>Supprimez le bot après avoir récupéré l&apos;ID</li>
               </ol>
             </div>
 
             <div className="bg-white/50 rounded p-3 space-y-2">
-              <p className="font-medium">Méthode 3: Via le lien d&apos;invitation</p>
+              <p className="font-medium">
+                Méthode 3: Via le lien d&apos;invitation
+              </p>
               <p className="ml-2">
-                Si votre lien est <span className="font-mono bg-white px-1 rounded">https://t.me/joinchat/XXXXXX</span>,
-                vous devez d&apos;abord convertir ce lien en ID numérique avec un bot.
+                Si votre lien est{" "}
+                <span className="font-mono bg-white px-1 rounded">
+                  https://t.me/joinchat/XXXXXX
+                </span>
+                , vous devez d&apos;abord convertir ce lien en ID numérique avec
+                un bot.
               </p>
             </div>
           </div>
@@ -224,15 +252,21 @@ export function ChannelForm({ organizationId, channel, onSubmit }: ChannelFormPr
 
         <div className="border-t border-blue-200 pt-3">
           <p className="text-xs text-blue-700">
-            ⚠️ <span className="font-medium">Important:</span> Assurez-vous que votre bot Telegram (configuré dans les variables d&apos;environnement)
-            est administrateur de ce channel avec les permissions nécessaires pour inviter des utilisateurs.
+            ⚠️ <span className="font-medium">Important:</span> Assurez-vous que
+            votre bot Telegram (configuré dans les variables
+            d&apos;environnement) est administrateur de ce channel avec les
+            permissions nécessaires pour inviter des utilisateurs.
           </p>
         </div>
       </div>
 
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Enregistrement...' : channel ? 'Mettre à jour' : 'Ajouter le channel'}
+          {isSubmitting
+            ? "Enregistrement..."
+            : channel
+              ? "Mettre à jour"
+              : "Ajouter le channel"}
         </Button>
         <Button
           type="button"

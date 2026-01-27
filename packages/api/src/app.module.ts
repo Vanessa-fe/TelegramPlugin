@@ -10,6 +10,7 @@ import { SubscriptionsModule } from './modules/subscriptions/subscriptions.modul
 import { StripeWebhookModule } from './modules/payments/stripe-webhook.module';
 import { TelegramStarsModule } from './modules/payments/telegram-stars.module';
 import { BillingModule } from './modules/billing/billing.module';
+import { PlatformSubscriptionModule } from './modules/platform-subscription/platform-subscription.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CustomersModule } from './modules/customers/customers.module';
@@ -60,6 +61,7 @@ import { MetricsModule } from './modules/metrics/metrics.module';
     StripeWebhookModule,
     TelegramStarsModule,
     BillingModule,
+    PlatformSubscriptionModule,
     StorefrontModule,
     SchedulerModule,
     DataExportsModule,

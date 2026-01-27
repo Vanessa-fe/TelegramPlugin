@@ -9,33 +9,33 @@ export declare const createCustomerSchema: z.ZodEffects<z.ZodObject<{
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
 }, "strip", z.ZodTypeAny, {
     organizationId: string;
+    displayName?: string | undefined;
     email?: string | undefined;
     metadata?: Record<string, any> | undefined;
-    displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
     externalId?: string | undefined;
 }, {
     organizationId: string;
+    displayName?: string | undefined;
     email?: string | undefined;
     metadata?: Record<string, any> | undefined;
-    displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
     externalId?: string | undefined;
 }>, {
     organizationId: string;
+    displayName?: string | undefined;
     email?: string | undefined;
     metadata?: Record<string, any> | undefined;
-    displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
     externalId?: string | undefined;
 }, {
     organizationId: string;
+    displayName?: string | undefined;
     email?: string | undefined;
     metadata?: Record<string, any> | undefined;
-    displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
     externalId?: string | undefined;
@@ -50,18 +50,18 @@ export declare const updateCustomerSchema: z.ZodObject<{
     externalId: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     metadata: z.ZodOptional<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>>;
 }, "strip", z.ZodTypeAny, {
+    displayName?: string | undefined;
     email?: string | undefined;
     organizationId?: string | undefined;
     metadata?: Record<string, any> | undefined;
-    displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
     externalId?: string | undefined;
 }, {
+    displayName?: string | undefined;
     email?: string | undefined;
     organizationId?: string | undefined;
     metadata?: Record<string, any> | undefined;
-    displayName?: string | undefined;
     telegramUserId?: string | undefined;
     telegramUsername?: string | undefined;
     externalId?: string | undefined;

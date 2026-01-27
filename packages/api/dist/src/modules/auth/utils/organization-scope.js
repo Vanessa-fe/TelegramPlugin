@@ -10,7 +10,8 @@ function resolveOrganizationScope(user, requestedOrganizationId) {
     if (!user.organizationId) {
         throw new common_1.ForbiddenException('Ce compte n’est associé à aucune organisation');
     }
-    if (requestedOrganizationId && requestedOrganizationId !== user.organizationId) {
+    if (requestedOrganizationId &&
+        requestedOrganizationId !== user.organizationId) {
         throw new common_1.ForbiddenException('Organisation non accessible pour cet utilisateur');
     }
     return user.organizationId;

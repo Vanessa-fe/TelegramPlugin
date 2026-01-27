@@ -58,6 +58,72 @@ async function main() {
             },
         },
     });
+    console.log('🏷️  Seeding Platform Plans...');
+    await prisma.platformPlan.deleteMany({
+        where: {
+            name: {
+                in: ['grandfathered', 'early-adopter', 'pro'],
+            },
+        },
+    });
+    const grandfatheredPlan = await prisma.platformPlan.create({
+        data: {
+            name: 'grandfathered',
+            displayName: 'Grandfathered',
+            priceCents: 0,
+            currency: 'eur',
+            interval: client_1.PlanInterval.MONTH,
+            trialPeriodDays: null,
+            stripePriceId: null,
+            features: {
+                maxProducts: -1,
+                maxChannels: -1,
+                description: 'Plan gratuit pour les early adopters',
+            },
+            isActive: false,
+            sortOrder: 0,
+        },
+    });
+    const earlyAdopterPlan = await prisma.platformPlan.create({
+        data: {
+            name: 'early-adopter',
+            displayName: 'Early Adopter',
+            priceCents: 1900,
+            currency: 'eur',
+            interval: client_1.PlanInterval.MONTH,
+            trialPeriodDays: 14,
+            stripePriceId: null,
+            features: {
+                maxProducts: 10,
+                maxChannels: 5,
+                description: 'Parfait pour démarrer',
+            },
+            isActive: true,
+            sortOrder: 1,
+        },
+    });
+    const proPlan = await prisma.platformPlan.create({
+        data: {
+            name: 'pro',
+            displayName: 'Pro',
+            priceCents: 2900,
+            currency: 'eur',
+            interval: client_1.PlanInterval.MONTH,
+            trialPeriodDays: 14,
+            stripePriceId: null,
+            features: {
+                maxProducts: -1,
+                maxChannels: -1,
+                description: 'Pour les créateurs établis',
+            },
+            isActive: true,
+            sortOrder: 2,
+        },
+    });
+    console.log(`✅ Platform Plans created:`);
+    console.log(`   - ${grandfatheredPlan.displayName} (${grandfatheredPlan.priceCents / 100}€ - inactive)`);
+    console.log(`   - ${earlyAdopterPlan.displayName} (${earlyAdopterPlan.priceCents / 100}€)`);
+    console.log(`   - ${proPlan.displayName} (${proPlan.priceCents / 100}€)\n`);
     const hashedPassword = await bcrypt.hash('password123', 10);
     const alexPasswordHash = await bcrypt.hash('alexcreateur123', 10);
     const sophiePasswordHash = await bcrypt.hash('sophiefollower123', 10);
@@ -88,6 +154,28 @@ async function main() {
         },
     });
     console.log(`✅ Organization created: ${merchantOrg.name} (${merchantOrg.slug})`);
+    console.log('📜 Creating grandfathered platform subscription...');
+    const platformSub = await prisma.platformSubscription.create({
+        data: {
+            organizationId: merchantOrg.id,
+            platformPlanId: grandfatheredPlan.id,
+            status: client_1.PlatformSubscriptionStatus.ACTIVE,
+            stripeSubscriptionId: null,
+            stripeCustomerId: null,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: null,
+            trialEndsAt: null,
+            canceledAt: null,
+            cancelAtPeriodEnd: false,
+            graceUntil: null,
+            metadata: {
+                grandfathered: true,
+                migratedAt: new Date().toISOString(),
+                reason: 'Early adopter before platform subscription launch',
+            },
+        },
+    });
+    console.log(`✅ Platform subscription created: ${platformSub.id} (grandfathered)\n`);
     console.log('👤 Creating ORG_ADMIN account...');
     const merchantUser = await prisma.user.create({
         data: {
@@ -317,6 +405,8 @@ async function main() {
     console.log('   Org:      Test Merchant Organization');
     console.log('');
     console.log('📊 SAMPLE DATA CREATED:');
+    console.log(`   - 3 Platform Plans (grandfathered, early-adopter, pro)`);
+    console.log(`   - 1 Platform Subscription (grandfathered for test org)`);
     console.log(`   - 2 Products`);
     console.log(`   - 4 Plans (monthly, yearly, lifetime, 30-day)`);
     console.log(`   - 3 Customers`);

@@ -94,7 +94,9 @@ let StorefrontService = class StorefrontService {
                 stripeAccountId: true,
             },
         });
-        if (!organization || !organization.saasActive || !organization.stripeAccountId) {
+        if (!organization ||
+            !organization.saasActive ||
+            !organization.stripeAccountId) {
             return null;
         }
         return {
@@ -112,7 +114,9 @@ let StorefrontService = class StorefrontService {
                 stripeAccountId: true,
             },
         });
-        if (!organization || !organization.saasActive || !organization.stripeAccountId) {
+        if (!organization ||
+            !organization.saasActive ||
+            !organization.stripeAccountId) {
             return [];
         }
         const products = await this.prisma.product.findMany({

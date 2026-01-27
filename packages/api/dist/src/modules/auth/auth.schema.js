@@ -4,7 +4,9 @@ exports.registerSchema = exports.refreshSchema = exports.loginSchema = void 0;
 const zod_1 = require("zod");
 exports.loginSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
-    password: zod_1.z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
+    password: zod_1.z
+        .string()
+        .min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
 });
 exports.refreshSchema = zod_1.z
     .object({

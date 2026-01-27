@@ -11,13 +11,13 @@ export declare class EntitlementsService {
     }): Promise<({
         customer: {
             id: string;
-            email: string | null;
+            displayName: string | null;
             createdAt: Date;
             updatedAt: Date;
+            email: string | null;
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             deletedAt: Date | null;
-            displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
             externalId: string | null;
@@ -29,16 +29,16 @@ export declare class EntitlementsService {
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
-            externalId: string | null;
-            externalCustomerId: string | null;
-            externalPriceId: string | null;
-            startedAt: Date;
             currentPeriodStart: Date | null;
             currentPeriodEnd: Date | null;
             trialEndsAt: Date | null;
             canceledAt: Date | null;
-            endedAt: Date | null;
             graceUntil: Date | null;
+            externalId: string | null;
+            externalCustomerId: string | null;
+            externalPriceId: string | null;
+            startedAt: Date;
+            endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
@@ -61,13 +61,13 @@ export declare class EntitlementsService {
     findOne(id: string): Promise<{
         customer: {
             id: string;
-            email: string | null;
+            displayName: string | null;
             createdAt: Date;
             updatedAt: Date;
+            email: string | null;
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             deletedAt: Date | null;
-            displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
             externalId: string | null;
@@ -79,16 +79,16 @@ export declare class EntitlementsService {
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
-            externalId: string | null;
-            externalCustomerId: string | null;
-            externalPriceId: string | null;
-            startedAt: Date;
             currentPeriodStart: Date | null;
             currentPeriodEnd: Date | null;
             trialEndsAt: Date | null;
             canceledAt: Date | null;
-            endedAt: Date | null;
             graceUntil: Date | null;
+            externalId: string | null;
+            externalCustomerId: string | null;
+            externalPriceId: string | null;
+            startedAt: Date;
+            endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
@@ -111,13 +111,13 @@ export declare class EntitlementsService {
     create(dto: CreateEntitlementDto): Promise<{
         customer: {
             id: string;
-            email: string | null;
+            displayName: string | null;
             createdAt: Date;
             updatedAt: Date;
+            email: string | null;
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             deletedAt: Date | null;
-            displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
             externalId: string | null;
@@ -129,16 +129,16 @@ export declare class EntitlementsService {
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
-            externalId: string | null;
-            externalCustomerId: string | null;
-            externalPriceId: string | null;
-            startedAt: Date;
             currentPeriodStart: Date | null;
             currentPeriodEnd: Date | null;
             trialEndsAt: Date | null;
             canceledAt: Date | null;
-            endedAt: Date | null;
             graceUntil: Date | null;
+            externalId: string | null;
+            externalCustomerId: string | null;
+            externalPriceId: string | null;
+            startedAt: Date;
+            endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
@@ -161,13 +161,13 @@ export declare class EntitlementsService {
     update(id: string, dto: UpdateEntitlementDto): Promise<{
         customer: {
             id: string;
-            email: string | null;
+            displayName: string | null;
             createdAt: Date;
             updatedAt: Date;
+            email: string | null;
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             deletedAt: Date | null;
-            displayName: string | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
             externalId: string | null;
@@ -179,16 +179,16 @@ export declare class EntitlementsService {
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
-            externalId: string | null;
-            externalCustomerId: string | null;
-            externalPriceId: string | null;
-            startedAt: Date;
             currentPeriodStart: Date | null;
             currentPeriodEnd: Date | null;
             trialEndsAt: Date | null;
             canceledAt: Date | null;
-            endedAt: Date | null;
             graceUntil: Date | null;
+            externalId: string | null;
+            externalCustomerId: string | null;
+            externalPriceId: string | null;
+            startedAt: Date;
+            endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;
@@ -232,16 +232,16 @@ export declare class EntitlementsService {
             organizationId: string;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
-            externalId: string | null;
-            externalCustomerId: string | null;
-            externalPriceId: string | null;
-            startedAt: Date;
             currentPeriodStart: Date | null;
             currentPeriodEnd: Date | null;
             trialEndsAt: Date | null;
             canceledAt: Date | null;
-            endedAt: Date | null;
             graceUntil: Date | null;
+            externalId: string | null;
+            externalCustomerId: string | null;
+            externalPriceId: string | null;
+            startedAt: Date;
+            endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
             customerId: string;
             planId: string;

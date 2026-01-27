@@ -72,7 +72,9 @@ export class TelegramStarsController {
   }
 
   private ensureSecret(secret: string | undefined) {
-    const expectedSecret = this.config.get<string>('TELEGRAM_STARS_WEBHOOK_SECRET');
+    const expectedSecret = this.config.get<string>(
+      'TELEGRAM_STARS_WEBHOOK_SECRET',
+    );
     const isProduction = this.config.get<string>('NODE_ENV') === 'production';
 
     // In production, secret is required

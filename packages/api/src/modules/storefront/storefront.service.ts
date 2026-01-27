@@ -90,7 +90,11 @@ export class StorefrontService {
       },
     });
 
-    if (!organization || !organization.saasActive || !organization.stripeAccountId) {
+    if (
+      !organization ||
+      !organization.saasActive ||
+      !organization.stripeAccountId
+    ) {
       return null;
     }
 
@@ -111,7 +115,11 @@ export class StorefrontService {
       },
     });
 
-    if (!organization || !organization.saasActive || !organization.stripeAccountId) {
+    if (
+      !organization ||
+      !organization.saasActive ||
+      !organization.stripeAccountId
+    ) {
       return [];
     }
 

@@ -1,4 +1,4 @@
-import { Worker } from "bullmq";
+import { Queue, Worker } from "bullmq";
 import { Bot, GrammyError, HttpError } from "grammy";
 import { Redis } from "ioredis";
 import dotenv from "dotenv";
@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import pino from "pino";
 import { $Enums, PrismaClient } from "@prisma/client";
-import { GrantAccessPayload as GrantAccessPayloadSchema, RevokeAccessPayload as RevokeAccessPayloadSchema, queueNames, } from "@telegram-plugin/shared";
+import { GrantAccessPayload as GrantAccessPayloadSchema, RevokeAccessPayload as RevokeAccessPayloadSchema, computeJobLatencyMs, queueNames, } from "@telegram-plugin/shared";
 import { env as processEnv, argv } from "node:process";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
@@ -14,12 +14,14 @@ const logger = pino({
     name: "worker",
     level: processEnv.LOG_LEVEL ?? "info",
 });
+const DEFAULT_ACCESS_LATENCY_ALERT_MS = 2000;
 const BaseEnvSchema = z.object({
     REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
     DATABASE_URL: z.string().min(1),
     TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN requis"),
     TELEGRAM_INVITE_TTL_SECONDS: z.string().optional(),
     TELEGRAM_INVITE_MAX_USES: z.string().optional(),
+    ACCESS_LATENCY_ALERT_MS: z.string().optional(),
 });
 function parseOptionalInteger(value, { varName, min, max, }) {
     if (!value || value.trim().length === 0) {
@@ -55,12 +57,35 @@ const env = {
         min: 1,
         max: 100_000,
     }),
+    ACCESS_LATENCY_ALERT_MS: parseOptionalInteger(baseEnv.ACCESS_LATENCY_ALERT_MS, {
+        varName: "ACCESS_LATENCY_ALERT_MS",
+        min: 100,
+        max: 60 * 60 * 1000,
+    }) ?? DEFAULT_ACCESS_LATENCY_ALERT_MS,
 };
-const connection = new Redis(env.REDIS_URL);
+let connection;
 const prisma = new PrismaClient();
 const bot = new Bot(env.TELEGRAM_BOT_TOKEN);
 const workers = [];
+let grantDlq = null;
+let revokeDlq = null;
 let isShuttingDown = false;
+async function initRedis() {
+    const redis = new Redis(env.REDIS_URL, {
+        maxRetriesPerRequest: null,
+        enableReadyCheck: true,
+    });
+    return new Promise((resolve, reject) => {
+        redis.on("ready", () => {
+            logger.info("Redis connection established");
+            resolve(redis);
+        });
+        redis.on("error", (err) => {
+            logger.error({ error: err }, "Redis connection error");
+            reject(err);
+        });
+    });
+}
 function extractInviteHash(inviteLink) {
     const url = inviteLink.trim();
     if (!url) {
@@ -106,6 +131,7 @@ async function processGrantAccess(job) {
         include: {
             channel: true,
             invite: true,
+            customer: true,
         },
     });
     if (!channelAccess) {
@@ -185,6 +211,22 @@ async function processGrantAccess(job) {
                 },
             });
         });
+        // Send notification with invite link to customer
+        if (channelAccess.customer.telegramUserId) {
+            const channelTitle = channelAccess.channel.title || "le channel";
+            const message = `🎉 <b>Accès accordé !</b>\n\n` +
+                `Votre accès à "${channelTitle}" a été activé.\n\n` +
+                `👉 <a href="${invite.invite_link}">Rejoindre le channel</a>\n\n` +
+                `<i>Ce lien est personnel et à usage unique.</i>`;
+            const sent = await sendTelegramNotification(channelAccess.customer.telegramUserId, message);
+            if (sent) {
+                logger.info({
+                    jobId: job.id,
+                    customerId: channelAccess.customerId,
+                    telegramUserId: channelAccess.customer.telegramUserId,
+                }, "Invite link notification sent to customer");
+            }
+        }
         logger.info({
             jobId: job.id,
             subscriptionId: data.subscriptionId,
@@ -218,6 +260,44 @@ async function processGrantAccess(job) {
         throw error;
     }
 }
+async function kickMemberFromChannel(chatId, telegramUserId) {
+    try {
+        // Ban the user (this kicks them from the channel)
+        await bot.api.banChatMember(chatId, Number(telegramUserId));
+        // Immediately unban to allow them to rejoin if they purchase again
+        await bot.api.unbanChatMember(chatId, Number(telegramUserId), {
+            only_if_banned: true,
+        });
+        return true;
+    }
+    catch (error) {
+        if (error instanceof GrammyError) {
+            // User might not be in the channel or bot doesn't have permission
+            if (error.error_code === 400 ||
+                error.description.includes("USER_NOT_PARTICIPANT") ||
+                error.description.includes("CHAT_ADMIN_REQUIRED")) {
+                logger.warn({ chatId, telegramUserId, description: error.description }, "Could not kick member (might not be in channel or no permission)");
+                return false;
+            }
+        }
+        throw error;
+    }
+}
+async function sendTelegramNotification(telegramUserId, message) {
+    try {
+        await bot.api.sendMessage(telegramUserId, message, {
+            parse_mode: "HTML",
+        });
+        return true;
+    }
+    catch (error) {
+        if (error instanceof GrammyError) {
+            logger.warn({ telegramUserId, description: error.description }, "Could not send Telegram notification");
+            return false;
+        }
+        throw error;
+    }
+}
 async function processRevokeAccess(job) {
     const data = RevokeAccessPayloadSchema.parse(job.data);
     const channelAccesses = await prisma.channelAccess.findMany({
@@ -225,6 +305,7 @@ async function processRevokeAccess(job) {
         include: {
             channel: true,
             invite: true,
+            customer: true,
         },
     });
     if (channelAccesses.length === 0) {
@@ -273,6 +354,28 @@ async function processRevokeAccess(job) {
                 }
             }
         }
+        // Kick member from channel if they have a Telegram user ID
+        if (access.customer.telegramUserId) {
+            const kicked = await kickMemberFromChannel(chatId, access.customer.telegramUserId);
+            if (kicked) {
+                logger.info({
+                    jobId: job.id,
+                    channelId: access.channelId,
+                    telegramUserId: access.customer.telegramUserId,
+                }, "Member kicked from channel");
+            }
+            // Send notification about access revocation
+            const reasonMessages = {
+                payment_failed: "Échec du paiement",
+                canceled: "Abonnement annulé",
+                refund: "Remboursement effectué",
+            };
+            const channelTitle = access.channel.title || "le channel";
+            const message = `🚫 <b>Accès révoqué</b>\n\n` +
+                `Votre accès à "${channelTitle}" a été révoqué.\n\n` +
+                `Raison : ${reasonMessages[data.reason] || data.reason}`;
+            await sendTelegramNotification(access.customer.telegramUserId, message);
+        }
         await prisma.$transaction(async (tx) => {
             await tx.channelAccess.update({
                 where: { id: access.id },
@@ -312,7 +415,11 @@ async function shutdown(signal) {
     }
     isShuttingDown = true;
     logger.info({ signal }, "Shutting down workers");
-    await Promise.allSettled(workers.map((worker) => worker.close()));
+    await Promise.allSettled([
+        ...workers.map((worker) => worker.close()),
+        grantDlq?.close(),
+        revokeDlq?.close(),
+    ]);
     await prisma.$disconnect().catch((error) => {
         logger.error({ error: error }, "Failed to disconnect Prisma client");
     });
@@ -321,7 +428,34 @@ async function shutdown(signal) {
     });
     logger.info("Worker shutdown complete");
 }
+async function moveToDlq(job, error, dlq, queueName) {
+    if (!job || !dlq) {
+        return;
+    }
+    const attempts = job.opts.attempts ?? 1;
+    if (job.attemptsMade < attempts) {
+        return;
+    }
+    const jobId = job.id ? String(job.id) : `${queueName}:${Date.now()}`;
+    await dlq.add(queueName, {
+        originalJobId: jobId,
+        payload: job.data,
+        failedReason: error.message,
+        attemptsMade: job.attemptsMade,
+        stacktrace: job.stacktrace,
+        failedAt: new Date().toISOString(),
+    }, {
+        jobId,
+    });
+    await job.remove().catch((removeError) => {
+        logger.error({ error: removeError, jobId, queue: queueName }, "Failed to remove job after moving to DLQ");
+    });
+}
 export async function bootstrapWorkers() {
+    // Initialize Redis connection first
+    connection = await initRedis();
+    grantDlq = new Queue(queueNames.grantAccessDlq, { connection });
+    revokeDlq = new Queue(queueNames.revokeAccessDlq, { connection });
     const me = await bot.api.getMe();
     logger.info({
         botId: me.id,
@@ -338,16 +472,50 @@ export async function bootstrapWorkers() {
     workers.push(grantWorker, revokeWorker);
     await Promise.all(workers.map((worker) => worker.waitUntilReady()));
     grantWorker.on("completed", (job) => {
-        logger.info({ jobId: job.id, queue: queueNames.grantAccess }, "Grant access job completed");
+        const latencyMs = computeJobLatencyMs(job.timestamp, job.finishedOn);
+        const payload = {
+            jobId: job.id,
+            queue: queueNames.grantAccess,
+            latencyMs,
+            metric: "access_grant_latency_ms",
+        };
+        logger.info(payload, "Grant access job completed");
+        if (latencyMs !== null && latencyMs > env.ACCESS_LATENCY_ALERT_MS) {
+            logger.warn(payload, "Grant access latency threshold exceeded");
+        }
     });
     grantWorker.on("failed", (job, error) => {
         logger.error({ jobId: job?.id, queue: queueNames.grantAccess, error: error }, "Grant access job failed");
+        moveToDlq(job, error, grantDlq, queueNames.grantAccessDlq).catch((dlqError) => {
+            logger.error({
+                error: dlqError,
+                jobId: job?.id,
+                queue: queueNames.grantAccessDlq,
+            }, "Failed to move grant access job to DLQ");
+        });
     });
     revokeWorker.on("completed", (job) => {
-        logger.info({ jobId: job.id, queue: queueNames.revokeAccess }, "Revoke access job completed");
+        const latencyMs = computeJobLatencyMs(job.timestamp, job.finishedOn);
+        const payload = {
+            jobId: job.id,
+            queue: queueNames.revokeAccess,
+            latencyMs,
+            metric: "access_revoke_latency_ms",
+        };
+        logger.info(payload, "Revoke access job completed");
+        if (latencyMs !== null && latencyMs > env.ACCESS_LATENCY_ALERT_MS) {
+            logger.warn(payload, "Revoke access latency threshold exceeded");
+        }
     });
     revokeWorker.on("failed", (job, error) => {
         logger.error({ jobId: job?.id, queue: queueNames.revokeAccess, error: error }, "Revoke access job failed");
+        moveToDlq(job, error, revokeDlq, queueNames.revokeAccessDlq).catch((dlqError) => {
+            logger.error({
+                error: dlqError,
+                jobId: job?.id,
+                queue: queueNames.revokeAccessDlq,
+            }, "Failed to move revoke access job to DLQ");
+        });
     });
     const signals = ["SIGINT", "SIGTERM"];
     signals.forEach((signal) => {

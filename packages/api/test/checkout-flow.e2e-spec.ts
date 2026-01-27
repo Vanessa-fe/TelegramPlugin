@@ -5,17 +5,17 @@ import {
   ProductStatus,
   SubscriptionStatus,
 } from '@prisma/client';
-import { cleanDatabase, disconnectDatabase } from './utils/database';
-import {
-  createOrganization,
-  createProduct,
-  createPlan,
-  createChannel,
-  createCustomer,
-} from './utils/factories';
+import { ChannelAccessQueue } from '../src/modules/channel-access/channel-access.queue';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createTestApp } from './utils/app';
-import { ChannelAccessQueue } from '../src/modules/channel-access/channel-access.queue';
+import { cleanDatabase, disconnectDatabase } from './utils/database';
+import {
+  createChannel,
+  createCustomer,
+  createOrganization,
+  createPlan,
+  createProduct,
+} from './utils/factories';
 
 // Mock BullMQ queue to avoid Redis connections in tests
 jest.mock('../src/modules/channel-access/channel-access.queue');
@@ -28,7 +28,7 @@ describe('Checkout Flow (e2e)', () => {
   beforeAll(async () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
-    mockQueue = app.get(ChannelAccessQueue) as jest.Mocked<ChannelAccessQueue>;
+    mockQueue = app.get(ChannelAccessQueue);
 
     // Setup queue mocks
     mockQueue.enqueueGrantAccess = jest.fn().mockResolvedValue(undefined);
@@ -186,7 +186,7 @@ describe('Checkout Flow (e2e)', () => {
       const channel1 = await createChannel({
         organizationId: org.id,
         title: 'VIP Channel',
-        externalId: '-1001234567890',
+        externalId: '-1003487441463',
       });
 
       const channel2 = await createChannel({
@@ -247,8 +247,12 @@ describe('Checkout Flow (e2e)', () => {
       });
 
       expect(channelAccesses).toHaveLength(2);
-      expect(channelAccesses.every((a) => a.status === AccessStatus.PENDING)).toBe(true);
-      expect(channelAccesses.every((a) => a.customerId === customer.id)).toBe(true);
+      expect(
+        channelAccesses.every((a) => a.status === AccessStatus.PENDING),
+      ).toBe(true);
+      expect(channelAccesses.every((a) => a.customerId === customer.id)).toBe(
+        true,
+      );
 
       // Verify entitlements created
       const entitlements = await prisma.entitlement.findMany({
@@ -257,7 +261,9 @@ describe('Checkout Flow (e2e)', () => {
 
       expect(entitlements).toHaveLength(2);
       expect(entitlements.every((e) => e.type === 'CHANNEL_ACCESS')).toBe(true);
-      expect(entitlements.every((e) => e.customerId === customer.id)).toBe(true);
+      expect(entitlements.every((e) => e.customerId === customer.id)).toBe(
+        true,
+      );
 
       // Verify queue was called for each channel
       expect(mockQueue.enqueueGrantAccess).toHaveBeenCalledTimes(2);
@@ -413,7 +419,10 @@ describe('Checkout Flow (e2e)', () => {
         '../src/modules/channel-access/channel-access.service'
       );
       const channelAccessService = app.get(ChannelAccessService);
-      await channelAccessService.handlePaymentFailure(subscription.id, 'canceled');
+      await channelAccessService.handlePaymentFailure(
+        subscription.id,
+        'canceled',
+      );
 
       // Verify all channel accesses revoked
       const channelAccesses = await prisma.channelAccess.findMany({
@@ -421,8 +430,12 @@ describe('Checkout Flow (e2e)', () => {
       });
 
       expect(channelAccesses).toHaveLength(2);
-      expect(channelAccesses.every((a) => a.status === AccessStatus.REVOKED)).toBe(true);
-      expect(channelAccesses.every((a) => a.revokeReason === 'canceled')).toBe(true);
+      expect(
+        channelAccesses.every((a) => a.status === AccessStatus.REVOKED),
+      ).toBe(true);
+      expect(channelAccesses.every((a) => a.revokeReason === 'canceled')).toBe(
+        true,
+      );
 
       // Verify entitlements revoked
       const entitlements = await prisma.entitlement.findMany({
@@ -431,7 +444,9 @@ describe('Checkout Flow (e2e)', () => {
 
       expect(entitlements).toHaveLength(2);
       expect(entitlements.every((e) => e.revokedAt !== null)).toBe(true);
-      expect(entitlements.every((e) => e.revokeReason === 'canceled')).toBe(true);
+      expect(entitlements.every((e) => e.revokeReason === 'canceled')).toBe(
+        true,
+      );
 
       // Verify revoke queue was called
       expect(mockQueue.enqueueRevokeAccess).toHaveBeenCalledWith({

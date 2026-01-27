@@ -74,8 +74,10 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         this.config = config;
         this.prisma = prisma;
         this.telegramBotToken = this.config.get('TELEGRAM_BOT_TOKEN');
-        this.brevoFromEmail = this.config.get('BREVO_FROM_EMAIL') || 'noreply@example.com';
-        this.brevoFromName = this.config.get('BREVO_FROM_NAME') || 'Telegram Plugin';
+        this.brevoFromEmail =
+            this.config.get('BREVO_FROM_EMAIL') || 'noreply@example.com';
+        this.brevoFromName =
+            this.config.get('BREVO_FROM_NAME') || 'Telegram Plugin';
         const brevoApiKey = this.config.get('BREVO_API_KEY');
         this.brevoEnabled = !!brevoApiKey;
     }
@@ -329,7 +331,7 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
                 telegramMessage: `🚫 <b>Accès révoqué</b>\n\nVotre accès au channel "${data?.channelTitle || ''}" a été révoqué.\n\nRaison : ${data?.reason || 'Non spécifiée'}`,
             },
             [NotificationType.INVITE_LINK_SENT]: {
-                subject: 'Lien d\'invitation',
+                subject: "Lien d'invitation",
                 emailBody: `
           <h1>Votre lien d'invitation</h1>
           <p>Voici votre lien pour rejoindre le channel "${data?.channelTitle || ''}":</p>

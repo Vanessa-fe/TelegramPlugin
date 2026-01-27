@@ -13,7 +13,10 @@ export type AuditLogInput = {
   metadata?: Prisma.JsonValue;
 };
 
-export type SubscriptionAuditLogInput = Omit<AuditLogInput, 'organizationId'> & {
+export type SubscriptionAuditLogInput = Omit<
+  AuditLogInput,
+  'organizationId'
+> & {
   subscriptionId: string;
 };
 

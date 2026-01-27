@@ -31,7 +31,7 @@ describe('Telegram Stars Payment Flow (e2e)', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
     starsService = app.get(TelegramStarsService);
-    mockQueue = app.get(ChannelAccessQueue) as jest.Mocked<ChannelAccessQueue>;
+    mockQueue = app.get(ChannelAccessQueue);
 
     mockQueue.enqueueGrantAccess = jest.fn().mockResolvedValue(undefined);
     mockQueue.enqueueRevokeAccess = jest.fn().mockResolvedValue(undefined);
@@ -308,7 +308,9 @@ describe('Telegram Stars Payment Flow (e2e)', () => {
         where: { subscriptionId: invoice.subscriptionId },
       });
       expect(channelAccesses).toHaveLength(2);
-      expect(channelAccesses.every((a) => a.status === AccessStatus.PENDING)).toBe(true);
+      expect(
+        channelAccesses.every((a) => a.status === AccessStatus.PENDING),
+      ).toBe(true);
 
       // Verify queue was called
       expect(mockQueue.enqueueGrantAccess).toHaveBeenCalledTimes(2);
@@ -460,7 +462,9 @@ describe('Telegram Stars Payment Flow (e2e)', () => {
       expect(invoice.prices[0].amount).toBe(250); // 499 / 2 = 249.5, ceil = 250
 
       // Step 2: Validate pre-checkout (Telegram sends pre_checkout_query)
-      const validation = await starsService.validatePreCheckout(invoice.payload);
+      const validation = await starsService.validatePreCheckout(
+        invoice.payload,
+      );
       expect(validation.valid).toBe(true);
 
       // Step 3: Process successful payment (Telegram sends successful_payment)

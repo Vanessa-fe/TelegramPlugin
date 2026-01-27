@@ -8,9 +8,9 @@ export declare class OrganizationsController {
     constructor(organizationsService: OrganizationsService, dataDeletionsService: DataDeletionsService);
     findAll(): Promise<{
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
         billingEmail: string;
         stripeAccountId: string | null;
@@ -21,9 +21,9 @@ export declare class OrganizationsController {
     }[]>;
     findOne(user: AuthUser, id: string): Promise<{
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
         billingEmail: string;
         stripeAccountId: string | null;
@@ -34,9 +34,9 @@ export declare class OrganizationsController {
     }>;
     create(body: CreateOrganizationDto): Promise<{
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
         billingEmail: string;
         stripeAccountId: string | null;
@@ -47,9 +47,9 @@ export declare class OrganizationsController {
     }>;
     update(user: AuthUser, id: string, body: UpdateOrganizationDto): Promise<{
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
         billingEmail: string;
         stripeAccountId: string | null;

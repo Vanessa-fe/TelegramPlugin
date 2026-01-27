@@ -48,8 +48,8 @@ describe('DataExportsService', () => {
     }).compile();
 
     service = module.get(DataExportsService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
-    auditLog = module.get(AuditLogService) as jest.Mocked<AuditLogService>;
+    prisma = module.get(PrismaService);
+    auditLog = module.get(AuditLogService);
   });
 
   afterEach(() => {
@@ -133,9 +133,7 @@ describe('DataExportsService', () => {
         { id: 'export-3' },
         { id: 'export-4' },
       ] as any);
-      const spy = jest
-        .spyOn(service, 'processExport')
-        .mockResolvedValue();
+      const spy = jest.spyOn(service, 'processExport').mockResolvedValue();
 
       await service.processPendingExports();
 

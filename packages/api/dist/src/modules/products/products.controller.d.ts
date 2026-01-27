@@ -6,42 +6,42 @@ export declare class ProductsController {
     constructor(productsService: ProductsService);
     findAll(user: AuthUser, organizationId?: string): Promise<{
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        organizationId: string;
-        name: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         description: string | null;
+        organizationId: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: import("@prisma/client").$Enums.ProductStatus;
     }[]>;
     findOne(user: AuthUser, id: string): Promise<{
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        organizationId: string;
-        name: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         description: string | null;
+        organizationId: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: import("@prisma/client").$Enums.ProductStatus;
     }>;
     create(user: AuthUser, body: CreateProductDto): Promise<{
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        organizationId: string;
-        name: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         description: string | null;
+        organizationId: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: import("@prisma/client").$Enums.ProductStatus;
     }>;
     update(user: AuthUser, id: string, body: UpdateProductDto): Promise<{
         id: string;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        organizationId: string;
-        name: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         description: string | null;
+        organizationId: string;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: import("@prisma/client").$Enums.ProductStatus;
     }>;
 }

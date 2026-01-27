@@ -214,7 +214,9 @@ export class SchedulerService {
     this.logger.log(`Found ${actuallyExpired.length} expired channel accesses`);
 
     // Group by subscription to process together
-    const subscriptionIds = [...new Set(actuallyExpired.map((a) => a.subscriptionId))];
+    const subscriptionIds = [
+      ...new Set(actuallyExpired.map((a) => a.subscriptionId)),
+    ];
 
     for (const subscriptionId of subscriptionIds) {
       try {
@@ -289,10 +291,15 @@ export class SchedulerService {
       },
     });
 
-    const subscriptionsToNotify = expiringSubscriptions.filter((subscription) => {
-      const metadata = subscription.metadata as Record<string, unknown> | null;
-      return metadata?.expirationReminderSent !== true;
-    });
+    const subscriptionsToNotify = expiringSubscriptions.filter(
+      (subscription) => {
+        const metadata = subscription.metadata as Record<
+          string,
+          unknown
+        > | null;
+        return metadata?.expirationReminderSent !== true;
+      },
+    );
 
     this.logger.log(
       `Found ${subscriptionsToNotify.length} subscriptions expiring soon`,

@@ -16,8 +16,10 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const register = app.register.bind(app) as (plugin: any, opts?: any) => Promise<void>;
+  const register = app.register.bind(app) as (
+    plugin: any,
+    opts?: any,
+  ) => Promise<void>;
 
   await register(fastifyRawBody, {
     field: 'rawBody',

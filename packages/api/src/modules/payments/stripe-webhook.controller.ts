@@ -1,4 +1,10 @@
-import { BadRequestException, Controller, Headers, Post, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Headers,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { Public } from '../auth/decorators/public.decorator';
 import { StripeWebhookService } from './stripe-webhook.service';
 import type { StripeRawBodyRequest } from './stripe-webhook.service';

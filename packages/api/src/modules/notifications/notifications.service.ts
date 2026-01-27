@@ -48,8 +48,10 @@ export class NotificationsService implements OnModuleInit {
     private readonly prisma: PrismaService,
   ) {
     this.telegramBotToken = this.config.get<string>('TELEGRAM_BOT_TOKEN');
-    this.brevoFromEmail = this.config.get<string>('BREVO_FROM_EMAIL') || 'noreply@example.com';
-    this.brevoFromName = this.config.get<string>('BREVO_FROM_NAME') || 'Telegram Plugin';
+    this.brevoFromEmail =
+      this.config.get<string>('BREVO_FROM_EMAIL') || 'noreply@example.com';
+    this.brevoFromName =
+      this.config.get<string>('BREVO_FROM_NAME') || 'Telegram Plugin';
 
     // Check if Brevo is configured
     const brevoApiKey = this.config.get<string>('BREVO_API_KEY');
@@ -78,7 +80,9 @@ export class NotificationsService implements OnModuleInit {
     });
 
     if (!customer) {
-      this.logger.warn(`Customer ${payload.customerId} not found for notification`);
+      this.logger.warn(
+        `Customer ${payload.customerId} not found for notification`,
+      );
       return;
     }
 
@@ -86,12 +90,19 @@ export class NotificationsService implements OnModuleInit {
 
     // Send email notification if customer has email
     if (customer.email) {
-      await this.sendEmail(customer.email, template.subject, template.emailBody);
+      await this.sendEmail(
+        customer.email,
+        template.subject,
+        template.emailBody,
+      );
     }
 
     // Send Telegram notification if customer has telegramUserId
     if (customer.telegramUserId && this.telegramBotToken) {
-      await this.sendTelegram(customer.telegramUserId, template.telegramMessage);
+      await this.sendTelegram(
+        customer.telegramUserId,
+        template.telegramMessage,
+      );
     }
 
     // Log the notification
@@ -282,7 +293,9 @@ export class NotificationsService implements OnModuleInit {
     message: string,
   ): Promise<void> {
     if (!this.telegramBotToken) {
-      this.logger.warn('Telegram bot token not configured, skipping notification');
+      this.logger.warn(
+        'Telegram bot token not configured, skipping notification',
+      );
       return;
     }
 
@@ -386,7 +399,7 @@ export class NotificationsService implements OnModuleInit {
       },
 
       [NotificationType.INVITE_LINK_SENT]: {
-        subject: 'Lien d\'invitation',
+        subject: "Lien d'invitation",
         emailBody: `
           <h1>Votre lien d'invitation</h1>
           <p>Voici votre lien pour rejoindre le channel "${data?.channelTitle || ''}":</p>

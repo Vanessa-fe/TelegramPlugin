@@ -10,7 +10,10 @@ import {
 import { ParseUUIDPipe } from '@nestjs/common/pipes';
 import { UserRole } from '@prisma/client';
 import { ZodValidationPipe } from '../../common';
-import { createSubscriptionSchema, updateSubscriptionSchema } from './subscriptions.schema';
+import {
+  createSubscriptionSchema,
+  updateSubscriptionSchema,
+} from './subscriptions.schema';
 import type {
   CreateSubscriptionDto,
   UpdateSubscriptionDto,
@@ -36,7 +39,12 @@ export class SubscriptionsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   async findOne(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,

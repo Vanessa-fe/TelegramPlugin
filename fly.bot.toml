@@ -1,0 +1,17 @@
+# Telegram Bot - Long polling mode (no HTTP server needed)
+app = 'telegram-plugin-bot'
+primary_region = 'fra'
+
+[build]
+  dockerfile = 'packages/bot/Dockerfile'
+
+[env]
+  NODE_ENV = 'production'
+  TELEGRAM_STARS_API_URL = 'https://telegram-plugin-api.fly.dev'
+
+# No HTTP service needed - bot uses long polling
+# Just need the process to stay alive
+
+[[vm]]
+  memory = '256mb'
+  cpus = 1

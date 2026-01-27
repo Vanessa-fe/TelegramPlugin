@@ -10,8 +10,14 @@ import {
 import { ParseUUIDPipe } from '@nestjs/common/pipes';
 import { UserRole } from '@prisma/client';
 import { ZodValidationPipe } from '../../common';
-import { createEntitlementSchema, updateEntitlementSchema } from './entitlements.schema';
-import type { CreateEntitlementDto, UpdateEntitlementDto } from './entitlements.schema';
+import {
+  createEntitlementSchema,
+  updateEntitlementSchema,
+} from './entitlements.schema';
+import type {
+  CreateEntitlementDto,
+  UpdateEntitlementDto,
+} from './entitlements.schema';
 import { EntitlementsService } from './entitlements.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -22,7 +28,12 @@ export class EntitlementsController {
   constructor(private readonly entitlementsService: EntitlementsService) {}
 
   @Get()
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   findAll(
     @CurrentUser() user: AuthUser,
     @Query('subscriptionId') subscriptionId?: string,
@@ -37,7 +48,12 @@ export class EntitlementsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   findOne(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -49,7 +65,8 @@ export class EntitlementsController {
   @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   create(
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(createEntitlementSchema)) body: CreateEntitlementDto,
+    @Body(new ZodValidationPipe(createEntitlementSchema))
+    body: CreateEntitlementDto,
   ) {
     return this.entitlementsService.create(body);
   }
@@ -59,7 +76,8 @@ export class EntitlementsController {
   update(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body(new ZodValidationPipe(updateEntitlementSchema)) body: UpdateEntitlementDto,
+    @Body(new ZodValidationPipe(updateEntitlementSchema))
+    body: UpdateEntitlementDto,
   ) {
     return this.entitlementsService.update(id, body);
   }
@@ -75,17 +93,30 @@ export class EntitlementsController {
   }
 
   @Get('check/:customerId/:entitlementKey')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   checkEntitlement(
     @CurrentUser() user: AuthUser,
     @Param('customerId', new ParseUUIDPipe()) customerId: string,
     @Param('entitlementKey') entitlementKey: string,
   ) {
-    return this.entitlementsService.checkEntitlement(customerId, entitlementKey);
+    return this.entitlementsService.checkEntitlement(
+      customerId,
+      entitlementKey,
+    );
   }
 
   @Get('customer/:customerId/active')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   getActiveEntitlements(
     @CurrentUser() user: AuthUser,
     @Param('customerId', new ParseUUIDPipe()) customerId: string,

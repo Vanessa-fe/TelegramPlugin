@@ -30,7 +30,7 @@ describe('Scheduler Service (e2e)', () => {
     app = await createTestApp();
     prisma = app.get(PrismaService);
     schedulerService = app.get(SchedulerService);
-    mockQueue = app.get(ChannelAccessQueue) as jest.Mocked<ChannelAccessQueue>;
+    mockQueue = app.get(ChannelAccessQueue);
 
     mockQueue.enqueueGrantAccess = jest.fn().mockResolvedValue(undefined);
     mockQueue.enqueueRevokeAccess = jest.fn().mockResolvedValue(undefined);
@@ -183,7 +183,9 @@ describe('Scheduler Service (e2e)', () => {
           planId: plan.id,
           status: SubscriptionStatus.PAST_DUE,
           graceUntil,
-          lastPaymentFailedAt: new Date(graceUntil.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 days before grace end
+          lastPaymentFailedAt: new Date(
+            graceUntil.getTime() - 5 * 24 * 60 * 60 * 1000,
+          ), // 5 days before grace end
         },
       });
 

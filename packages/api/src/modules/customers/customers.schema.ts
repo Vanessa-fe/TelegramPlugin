@@ -18,23 +18,25 @@ const customerBaseSchema = z.object({
   metadata: metadataSchema,
 });
 
-export const createCustomerSchema = customerBaseSchema.superRefine((value, ctx) => {
-  if (
-    !(
-      value.email ||
-      value.displayName ||
-      value.telegramUserId ||
-      value.telegramUsername
-    )
-  ) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message:
-        'Un client doit contenir au moins un moyen d’identification (email, displayName ou identifiants Telegram)',
-      path: ['email'],
-    });
-  }
-});
+export const createCustomerSchema = customerBaseSchema.superRefine(
+  (value, ctx) => {
+    if (
+      !(
+        value.email ||
+        value.displayName ||
+        value.telegramUserId ||
+        value.telegramUsername
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Un client doit contenir au moins un moyen d’identification (email, displayName ou identifiants Telegram)',
+        path: ['email'],
+      });
+    }
+  },
+);
 
 export type CreateCustomerDto = z.infer<typeof createCustomerSchema>;
 

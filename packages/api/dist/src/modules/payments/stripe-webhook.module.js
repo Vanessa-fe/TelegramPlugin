@@ -13,12 +13,18 @@ const stripe_webhook_controller_1 = require("./stripe-webhook.controller");
 const stripe_webhook_service_1 = require("./stripe-webhook.service");
 const channel_access_module_1 = require("../channel-access/channel-access.module");
 const audit_log_module_1 = require("../audit-log/audit-log.module");
+const platform_subscription_module_1 = require("../platform-subscription/platform-subscription.module");
 let StripeWebhookModule = class StripeWebhookModule {
 };
 exports.StripeWebhookModule = StripeWebhookModule;
 exports.StripeWebhookModule = StripeWebhookModule = __decorate([
     (0, common_1.Module)({
-        imports: [config_1.ConfigModule, channel_access_module_1.ChannelAccessModule, audit_log_module_1.AuditLogModule],
+        imports: [
+            config_1.ConfigModule,
+            channel_access_module_1.ChannelAccessModule,
+            audit_log_module_1.AuditLogModule,
+            platform_subscription_module_1.PlatformSubscriptionModule,
+        ],
         controllers: [stripe_webhook_controller_1.StripeWebhookController],
         providers: [stripe_webhook_service_1.StripeWebhookService],
     })

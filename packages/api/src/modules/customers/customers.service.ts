@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { Customer } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import {
-  CreateCustomerDto,
-  UpdateCustomerDto,
-} from './customers.schema';
+import { CreateCustomerDto, UpdateCustomerDto } from './customers.schema';
 
 type CustomerWithRelations = Prisma.CustomerGetPayload<{
   include: {

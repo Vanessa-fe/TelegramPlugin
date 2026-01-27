@@ -7,15 +7,14 @@ import { ChannelAccessController } from '../channel-access/channel-access.contro
 import { PaymentEventsController } from '../payment-events/payment-events.controller';
 
 describe('RBAC metadata', () => {
-  const getRoles = (target: Record<string, unknown>, propertyKey: string): UserRole[] =>
-    Reflect.getMetadata(ROLES_KEY, target[propertyKey]) ?? [];
+  const getRoles = (
+    target: Record<string, unknown>,
+    propertyKey: string,
+  ): UserRole[] => Reflect.getMetadata(ROLES_KEY, target[propertyKey]) ?? [];
 
   describe('support read-only + manual actions', () => {
     it('should allow support on read endpoints', () => {
-      const roles = getRoles(
-        SubscriptionsController.prototype,
-        'findAll',
-      );
+      const roles = getRoles(SubscriptionsController.prototype, 'findAll');
       expect(roles).toContain(UserRole.SUPPORT);
     });
 
@@ -34,14 +33,8 @@ describe('RBAC metadata', () => {
     });
 
     it('should restrict support from subscription writes', () => {
-      const createRoles = getRoles(
-        SubscriptionsController.prototype,
-        'create',
-      );
-      const updateRoles = getRoles(
-        SubscriptionsController.prototype,
-        'update',
-      );
+      const createRoles = getRoles(SubscriptionsController.prototype, 'create');
+      const updateRoles = getRoles(SubscriptionsController.prototype, 'update');
 
       expect(createRoles).not.toContain(UserRole.SUPPORT);
       expect(updateRoles).not.toContain(UserRole.SUPPORT);
@@ -69,10 +62,7 @@ describe('RBAC metadata', () => {
 
   describe('admin payment secrets', () => {
     it('should restrict org admin from payment events', () => {
-      const listRoles = getRoles(
-        PaymentEventsController.prototype,
-        'findAll',
-      );
+      const listRoles = getRoles(PaymentEventsController.prototype, 'findAll');
       const detailRoles = getRoles(
         PaymentEventsController.prototype,
         'findOne',

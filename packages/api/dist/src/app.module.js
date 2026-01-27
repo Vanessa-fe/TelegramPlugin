@@ -19,6 +19,7 @@ const subscriptions_module_1 = require("./modules/subscriptions/subscriptions.mo
 const stripe_webhook_module_1 = require("./modules/payments/stripe-webhook.module");
 const telegram_stars_module_1 = require("./modules/payments/telegram-stars.module");
 const billing_module_1 = require("./modules/billing/billing.module");
+const platform_subscription_module_1 = require("./modules/platform-subscription/platform-subscription.module");
 const organizations_module_1 = require("./modules/organizations/organizations.module");
 const prisma_module_1 = require("./prisma/prisma.module");
 const customers_module_1 = require("./modules/customers/customers.module");
@@ -71,6 +72,7 @@ exports.AppModule = AppModule = __decorate([
             stripe_webhook_module_1.StripeWebhookModule,
             telegram_stars_module_1.TelegramStarsModule,
             billing_module_1.BillingModule,
+            platform_subscription_module_1.PlatformSubscriptionModule,
             storefront_module_1.StorefrontModule,
             scheduler_module_1.SchedulerModule,
             data_exports_module_1.DataExportsModule,
