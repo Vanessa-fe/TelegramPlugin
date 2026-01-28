@@ -21,7 +21,7 @@ const navigation = [
   { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Customers', href: '/dashboard/customers', icon: Users },
   { name: 'Subscriptions', href: '/dashboard/subscriptions', icon: FileText },
-  { name: 'Payments', href: '/dashboard/payments', icon: DollarSign, roles: [UserRole.SUPERADMIN, UserRole.SUPPORT] },
+  { name: 'Payments', href: '/dashboard/payments', icon: DollarSign, roles: [UserRole.SUPERADMIN, UserRole.SUPPORT, UserRole.ORG_ADMIN] },
   { name: 'Channels', href: '/dashboard/channels', icon: Hash },
   { name: 'Entitlements', href: '/dashboard/entitlements', icon: Key },
   { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
