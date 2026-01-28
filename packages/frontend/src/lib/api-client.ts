@@ -32,12 +32,8 @@ apiClient.interceptors.response.use(
         // Retry original request
         return apiClient(originalRequest);
       } catch {
-        // Refresh failed, redirect to login
-        if (typeof window !== 'undefined') {
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-        }
+        // Refresh failed - let the error bubble up
+        // ProtectedRoute will handle redirect for protected pages
       }
     }
     return Promise.reject(error);
