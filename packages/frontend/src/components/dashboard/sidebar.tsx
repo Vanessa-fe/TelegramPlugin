@@ -13,13 +13,15 @@ import {
   Key,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
+import { UserRole } from '@/types/auth';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Products', href: '/dashboard/products', icon: Package },
   { name: 'Customers', href: '/dashboard/customers', icon: Users },
   { name: 'Subscriptions', href: '/dashboard/subscriptions', icon: FileText },
-  { name: 'Payments', href: '/dashboard/payments', icon: DollarSign },
+  { name: 'Payments', href: '/dashboard/payments', icon: DollarSign, roles: [UserRole.SUPERADMIN, UserRole.SUPPORT] },
   { name: 'Channels', href: '/dashboard/channels', icon: Hash },
   { name: 'Entitlements', href: '/dashboard/entitlements', icon: Key },
   { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
@@ -27,6 +29,13 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  // Filter navigation based on user role
+  const filteredNavigation = navigation.filter((item) => {
+    if (!item.roles) return true; // No role restriction
+    return user?.role && item.roles.includes(user.role);
+  });
 
   return (
     <div className="hidden lg:flex h-full w-64 flex-col border-r border-[#E9E3EF] bg-white">
@@ -39,7 +48,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigation.map((item) => {
+        {filteredNavigation.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
