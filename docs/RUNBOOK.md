@@ -367,7 +367,8 @@ Si `BREVO_API_KEY` non configure:
 
 | Fichier | Description |
 |---------|-------------|
-| `.env` | Variables d'environnement locales |
+| `.env.local` | Variables d'environnement locales |
+| `.env.production` | Variables d'environnement production |
 | `.env.example` | Template des variables |
 | `fly.toml` | Config deploiement Fly.io |
 | `packages/api/prisma/schema.prisma` | Schema base de donnees |
@@ -388,8 +389,8 @@ corepack pnpm install
 docker compose -f infra/docker/docker-compose.dev.yml up -d
 
 # 3. Configurer l'environnement
-cp .env.example .env
-# Editer .env avec vos cles
+cp .env.example .env.local
+# Editer .env.local avec vos cles
 
 # 4. Appliquer les migrations
 pnpm --filter api prisma:migrate

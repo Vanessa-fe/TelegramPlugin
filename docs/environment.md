@@ -33,7 +33,7 @@ Ce projet est un monorepo PNPM contenant l'API NestJS, le bot Telegram, le worke
 1. Copier le fichier d'exemple :
 
    ```bash
-   cp .env.example .env
+   cp .env.example .env.local
    ```
 
 2. Renseigner les valeurs sensibles :
@@ -49,6 +49,8 @@ Ce projet est un monorepo PNPM contenant l'API NestJS, le bot Telegram, le worke
    - `TELEGRAM_BOT_TOKEN`.
    - `BREVO_API_KEY`, `BREVO_FROM_EMAIL`, `BREVO_FROM_NAME` (voir `docs/email-configuration.md`).
    - Adapter `CORS_ORIGIN`, `NEXT_PUBLIC_API_URL` si les ports changent.
+
+Pour la production, utilisez un fichier `.env.production` séparé (ou un gestionnaire de secrets).
 
 ## Services externes
 

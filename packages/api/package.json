@@ -41,6 +41,7 @@
     "@telegram-plugin/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.22.2",
+    "dotenv": "^16.4.5",
     "fastify-raw-body": "^5.0.0",
     "ioredis": "^5.4.1",
     "nestjs-pino": "^4.2.0",

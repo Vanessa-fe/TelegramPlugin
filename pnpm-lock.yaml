@@ -71,6 +71,9 @@ importers:
       bullmq:
         specifier: ^5.22.2
         version: 5.62.2
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
       fastify-raw-body:
         specifier: ^5.0.0
         version: 5.0.0

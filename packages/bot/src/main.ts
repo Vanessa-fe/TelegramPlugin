@@ -1,13 +1,56 @@
 import { config } from "dotenv";
-import { resolve, dirname } from "node:path";
+import { existsSync } from "node:fs";
+import { resolve, isAbsolute } from "node:path";
 import { Bot, GrammyError, HttpError } from "grammy";
 import { fileURLToPath } from "node:url";
 import { argv, env as processEnv } from "node:process";
 import { z } from "zod";
 
-// Load .env from monorepo root
-const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: resolve(__dirname, "../../../.env") });
+function findRepoRoot(startDir: string): string {
+  let dir = startDir;
+  while (true) {
+    if (existsSync(resolve(dir, "pnpm-workspace.yaml"))) {
+      return dir;
+    }
+    const parent = resolve(dir, "..");
+    if (parent === dir) {
+      return startDir;
+    }
+    dir = parent;
+  }
+}
+
+function resolveEnvFile(): string | undefined {
+  const explicit = processEnv.ENV_FILE?.trim();
+  if (explicit) {
+    const envPath = isAbsolute(explicit)
+      ? explicit
+      : resolve(findRepoRoot(process.cwd()), explicit);
+    return envPath;
+  }
+
+  const cwd = process.cwd();
+  const repoRoot = findRepoRoot(cwd);
+  const isProduction = processEnv.NODE_ENV === "production";
+  const preferredName = isProduction ? ".env.production" : ".env.local";
+  const candidates = [
+    resolve(cwd, preferredName),
+    resolve(repoRoot, preferredName),
+    resolve(cwd, ".env"),
+    resolve(repoRoot, ".env"),
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+const envFile = resolveEnvFile();
+if (envFile) {
+  config({ path: envFile });
+}
 
 const EnvSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN requis"),
