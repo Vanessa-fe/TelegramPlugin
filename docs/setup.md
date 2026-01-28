@@ -6,11 +6,11 @@
 - pnpm 9 (`corepack enable` ou `npm install -g pnpm@9`).
 - Docker et Docker Compose (pour PostgreSQL et Redis).
 - (Optionnel) Stripe CLI pour recevoir les webhooks en local.
-- (Optionnel) direnv ou équivalent pour charger automatiquement votre `.env`.
+- (Optionnel) direnv ou équivalent pour charger automatiquement votre `.env.local`.
 
 ## Variables d'environnement
 
-1. Copiez le fichier `./.env.example` vers `./.env`.
+1. Copiez le fichier `./.env.example` vers `./.env.local`.
 2. Ajustez les valeurs sensibles :
    - `DATABASE_URL` : connexion PostgreSQL locale (correspond à Docker).
    - `REDIS_URL` : connexion Redis pour BullMQ.
@@ -23,11 +23,13 @@
 ```bash
 # Dans un shell bash/zsh
 set -a
-source .env
+source .env.local
 set +a
 ```
 
 > Astuce : ajoutez ces lignes à un fichier `scripts/load-env.sh` puis `source scripts/load-env.sh` pour éviter de le retaper.
+
+Pour la production, utilisez un fichier dédié (`.env.production`) ou un gestionnaire de secrets (Railway/Render/AWS SSM, etc.).
 
 ## Infrastructure locale (PostgreSQL + Redis)
 
@@ -57,7 +59,7 @@ pnpm --filter api prisma migrate reset
 
 ## Lancer les services applicatifs
 
-Ouvrez un terminal par service (après avoir chargé `.env`) :
+Ouvrez un terminal par service (après avoir chargé `.env.local`) :
 
 - API NestJS : `pnpm dev:api`
 - Worker BullMQ : `pnpm dev:worker`
