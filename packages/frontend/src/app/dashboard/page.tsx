@@ -1,87 +1,96 @@
-import Link from 'next/link';
 import {
-  DollarSign,
-  Users,
-  FileText,
-  TrendingUp,
-  ArrowUpRight,
   ArrowDownRight,
-  Package,
+  ArrowUpRight,
   CreditCard,
+  DollarSign,
+  FileText,
   Hash,
-} from 'lucide-react';
+  Megaphone,
+  Package,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 
-type ChangeType = 'positive' | 'negative' | 'neutral';
+type ChangeType = "positive" | "negative" | "neutral";
 
-const stats: Array<{
-  name: string;
-  value: string;
-  change: string;
-  changeType: ChangeType;
-  icon: typeof DollarSign;
-}> = [
-  {
-    name: 'Total Revenue',
-    value: '€0.00',
-    change: '+0%',
-    changeType: 'neutral',
-    icon: DollarSign,
-  },
-  {
-    name: 'Active Subscriptions',
-    value: '0',
-    change: '+0%',
-    changeType: 'neutral',
-    icon: FileText,
-  },
-  {
-    name: 'Total Customers',
-    value: '0',
-    change: '+0%',
-    changeType: 'neutral',
-    icon: Users,
-  },
-  {
-    name: 'Conversion Rate',
-    value: '0%',
-    change: '+0%',
-    changeType: 'neutral',
-    icon: TrendingUp,
-  },
-];
+export default async function DashboardPage() {
+  const t = await getTranslations("dashboard");
 
-const quickActions = [
-  {
-    name: 'Create Product',
-    description: 'Set up a new subscription or one-time product',
-    href: '/dashboard/products/new',
-    icon: Package,
-  },
-  {
-    name: 'Connect Channel',
-    description: 'Link a Telegram, Discord, or WhatsApp channel',
-    href: '/dashboard/channels/new',
-    icon: Hash,
-  },
-  {
-    name: 'Setup Billing',
-    description: 'Connect your Stripe account to receive payments',
-    href: '/dashboard/billing',
-    icon: CreditCard,
-  },
-];
+  const stats: Array<{
+    name: string;
+    value: string;
+    change: string;
+    changeType: ChangeType;
+    icon: typeof DollarSign;
+  }> = [
+    {
+      name: t("stats.revenue"),
+      value: "0 €",
+      change: "+0%",
+      changeType: "neutral",
+      icon: DollarSign,
+    },
+    {
+      name: t("stats.activeSubscribers"),
+      value: "0",
+      change: "+0%",
+      changeType: "neutral",
+      icon: FileText,
+    },
+    {
+      name: t("stats.totalCustomers"),
+      value: "0",
+      change: "+0%",
+      changeType: "neutral",
+      icon: Users,
+    },
+    {
+      name: t("stats.conversionRate"),
+      value: "0%",
+      change: "+0%",
+      changeType: "neutral",
+      icon: TrendingUp,
+    },
+  ];
 
-export default function DashboardPage() {
+  const quickActions = [
+    {
+      name: t("quickActions.createProduct.title"),
+      description: t("quickActions.createProduct.description"),
+      href: "/dashboard/products/new",
+      icon: Package,
+    },
+    {
+      name: t("quickActions.promote.title"),
+      description: t("quickActions.promote.description"),
+      href: "/dashboard/promote",
+      icon: Megaphone,
+      highlight: true,
+    },
+    {
+      name: t("quickActions.connectChannel.title"),
+      description: t("quickActions.connectChannel.description"),
+      href: "/dashboard/channels/new",
+      icon: Hash,
+    },
+    {
+      name: t("quickActions.billing.title"),
+      description: t("quickActions.billing.description"),
+      href: "/dashboard/billing",
+      icon: CreditCard,
+    },
+  ];
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
-          Dashboard
+          {t("title")}
         </h1>
-        <p className="mt-1 text-[#6F6E77]">
-          Welcome back! Here&apos;s an overview of your business.
-        </p>
+        <p className="mt-1 text-[#6F6E77]">{t("welcome")}</p>
       </div>
 
       {/* Stats grid */}
@@ -89,7 +98,7 @@ export default function DashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.name}
-            className="bg-white rounded-xl border border-[#E9E3EF] p-5 lg:p-6"
+            className="bg-white rounded-xl border-border-[#E9E3EF] p-5 lg:p-6"
           >
             <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -97,23 +106,25 @@ export default function DashboardPage() {
               </div>
               <span
                 className={`inline-flex items-center text-sm font-medium ${
-                  stat.changeType === 'positive'
-                    ? 'text-green-600'
-                    : stat.changeType === 'negative'
-                      ? 'text-red-600'
-                      : 'text-[#6F6E77]'
+                  stat.changeType === "positive"
+                    ? "text-green-600"
+                    : stat.changeType === "negative"
+                      ? "text-red-600"
+                      : "text-[#6F6E77]"
                 }`}
               >
-                {stat.changeType === 'positive' && (
+                {stat.changeType === "positive" && (
                   <ArrowUpRight className="h-4 w-4 mr-0.5" />
                 )}
-                {stat.changeType === 'negative' && (
+                {stat.changeType === "negative" && (
                   <ArrowDownRight className="h-4 w-4 mr-0.5" />
                 )}
                 {stat.change}
               </span>
             </div>
-            <p className="mt-4 text-2xl font-bold text-[#1A1523]">{stat.value}</p>
+            <p className="mt-4 text-2xl font-bold text-[#1A1523]">
+              {stat.value}
+            </p>
             <p className="mt-1 text-sm text-[#6F6E77]">{stat.name}</p>
           </div>
         ))}
@@ -122,57 +133,70 @@ export default function DashboardPage() {
       {/* Quick actions */}
       <div>
         <h2 className="text-lg font-semibold text-[#1A1523] mb-4">
-          Quick Actions
+          Actions rapides
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {quickActions.map((action) => (
             <Link
               key={action.name}
               href={action.href}
-              className="group bg-white rounded-xl border border-[#E9E3EF] p-5 lg:p-6 hover:border-purple-200 hover:shadow-md transition-all"
+              className={`group bg-white rounded-xl border p-5 lg:p-6 hover:shadow-md transition-all ${
+                action.highlight
+                  ? "border-purple-300 bg-purple-50/50 hover:border-purple-400"
+                  : "border-border-[#E9E3EF] hover:border-purple-200"
+              }`}
             >
-              <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <div
+                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                  action.highlight
+                    ? "bg-purple-600 text-white group-hover:bg-purple-700"
+                    : "bg-purple-100 text-purple-600 group-hover:bg-purple-600 group-hover:text-white"
+                }`}
+              >
                 <action.icon className="h-5 w-5" />
               </div>
               <h3 className="mt-4 font-semibold text-[#1A1523] group-hover:text-purple-600 transition-colors">
                 {action.name}
               </h3>
-              <p className="mt-1 text-sm text-[#6F6E77]">{action.description}</p>
+              <p className="mt-1 text-sm text-[#6F6E77]">
+                {action.description}
+              </p>
             </Link>
           ))}
         </div>
       </div>
 
       {/* Getting started checklist */}
-      <div className="bg-white rounded-xl border border-[#E9E3EF] p-6">
+      <div className="bg-white rounded-xl border-border-[#E9E3EF] p-6">
         <h2 className="text-lg font-semibold text-[#1A1523] mb-4">
-          Getting Started
+          {t("gettingStarted.title")}
         </h2>
+
         <div className="space-y-3">
           <ChecklistItem
-            label="Create your account"
+            label={t("gettingStarted.accountCreated")}
             completed={true}
             href="/dashboard"
           />
           <ChecklistItem
-            label="Connect your Stripe account"
+            label={t("gettingStarted.connectPayment")}
             completed={false}
             href="/dashboard/billing"
           />
           <ChecklistItem
-            label="Create your first product"
+            label={t("gettingStarted.createProduct")}
             completed={false}
             href="/dashboard/products/new"
           />
           <ChecklistItem
-            label="Connect a Telegram channel"
+            label={t("gettingStarted.connectChannel")}
             completed={false}
             href="/dashboard/channels/new"
           />
           <ChecklistItem
-            label="Share your payment link"
+            label={t("gettingStarted.promoteProduct")}
             completed={false}
-            href="/dashboard/products"
+            href="/dashboard/promote"
           />
         </div>
       </div>
@@ -195,10 +219,10 @@ function ChecklistItem({
       className="flex items-center gap-3 p-3 rounded-lg hover:bg-purple-50 transition-colors group"
     >
       <div
-        className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
           completed
-            ? 'bg-purple-600 text-white'
-            : 'border-2 border-[#E9E3EF] group-hover:border-purple-300'
+            ? "bg-purple-600 text-white"
+            : "border-2 border-[#E9E3EF] group-hover:border-purple-300"
         }`}
       >
         {completed && (
@@ -213,7 +237,7 @@ function ChecklistItem({
       </div>
       <span
         className={`text-sm font-medium ${
-          completed ? 'text-[#6F6E77] line-through' : 'text-[#1A1523]'
+          completed ? "text-[#6F6E77] line-through" : "text-[#1A1523]"
         }`}
       >
         {label}

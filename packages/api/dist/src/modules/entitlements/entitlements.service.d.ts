@@ -8,7 +8,12 @@ export declare class EntitlementsService {
         subscriptionId?: string;
         customerId?: string;
         entitlementKey?: string;
-    }): Promise<({
+    }): Promise<{
+        channel: {
+            id: string;
+            title: string | null;
+            username: string | null;
+        } | null;
         customer: {
             id: string;
             displayName: string | null;
@@ -23,6 +28,22 @@ export declare class EntitlementsService {
             externalId: string | null;
         };
         subscription: {
+            plan: {
+                id: string;
+                name: string;
+                priceCents: number;
+                currency: string;
+                interval: import("@prisma/client").$Enums.PlanInterval;
+                trialPeriodDays: number | null;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+                description: string | null;
+                metadata: Prisma.JsonValue | null;
+                accessDurationDays: number | null;
+                productId: string;
+            };
+        } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
@@ -43,7 +64,6 @@ export declare class EntitlementsService {
             customerId: string;
             planId: string;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -57,8 +77,13 @@ export declare class EntitlementsService {
         resourceId: string | null;
         entitlementKey: string;
         expiresAt: Date | null;
-    })[]>;
+    }[]>;
     findOne(id: string): Promise<{
+        channel: {
+            id: string;
+            title: string | null;
+            username: string | null;
+        } | null;
         customer: {
             id: string;
             displayName: string | null;
@@ -73,6 +98,22 @@ export declare class EntitlementsService {
             externalId: string | null;
         };
         subscription: {
+            plan: {
+                id: string;
+                name: string;
+                priceCents: number;
+                currency: string;
+                interval: import("@prisma/client").$Enums.PlanInterval;
+                trialPeriodDays: number | null;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+                description: string | null;
+                metadata: Prisma.JsonValue | null;
+                accessDurationDays: number | null;
+                productId: string;
+            };
+        } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
@@ -93,7 +134,6 @@ export declare class EntitlementsService {
             customerId: string;
             planId: string;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;

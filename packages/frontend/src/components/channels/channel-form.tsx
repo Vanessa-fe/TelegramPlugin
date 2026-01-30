@@ -1,5 +1,8 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import { useMemo } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,20 +18,19 @@ import {
   type Channel,
   type CreateChannelDto,
 } from "@/types/channel";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const channelFormSchema = z.object({
-  provider: z.nativeEnum(ChannelProvider),
-  externalId: z.string().min(1, "L'ID externe est requis"),
-  title: z.string().optional(),
-  username: z.string().optional(),
-  inviteLink: z.string().url("URL invalide").optional().or(z.literal("")),
-  isActive: z.boolean().optional(),
-});
-
-type ChannelFormData = z.infer<typeof channelFormSchema>;
+type ChannelFormData = {
+  provider: ChannelProvider;
+  externalId: string;
+  title?: string;
+  username?: string;
+  inviteLink?: string;
+  isActive?: boolean;
+};
 
 interface ChannelFormProps {
   organizationId: string;
@@ -36,16 +38,41 @@ interface ChannelFormProps {
   onSubmit: (data: CreateChannelDto) => void | Promise<void>;
 }
 
-const providerOptions = [
-  { value: ChannelProvider.TELEGRAM, label: "Telegram" },
-  { value: ChannelProvider.DISCORD, label: "Discord" },
-];
-
 export function ChannelForm({
   organizationId,
   channel,
   onSubmit,
 }: ChannelFormProps) {
+  const t = useTranslations("channels.form");
+  const th = useTranslations("channels.howToFindId");
+
+  // ✅ Zod schema with translated error messages
+  const channelFormSchema = useMemo(
+    () =>
+      z.object({
+        provider: z.nativeEnum(ChannelProvider),
+        externalId: z.string().min(1, t("validation.externalIdRequired")),
+        title: z.string().optional(),
+        username: z.string().optional(),
+        inviteLink: z
+          .string()
+          .url(t("validation.invalidUrl"))
+          .optional()
+          .or(z.literal("")),
+        isActive: z.boolean().optional(),
+      }),
+    [t]
+  );
+
+  const providerOptions = useMemo(
+    () => [
+      { value: ChannelProvider.TELEGRAM, label: t("providers.telegram") },
+      { value: ChannelProvider.DISCORD, label: t("providers.discord") },
+      // si tu ajoutes Whatsapp plus tard : { value: ChannelProvider.WHATSAPP, label: t("providers.whatsapp") }
+    ],
+    [t]
+  );
+
   const {
     register,
     handleSubmit,
@@ -88,10 +115,11 @@ export function ChannelForm({
   return (
     <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
       <div className="rounded-lg border bg-white p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Informations du channel</h2>
+        <h2 className="text-lg font-semibold">{t("sectionTitle")}</h2>
 
+        {/* Provider */}
         <div>
-          <Label htmlFor="provider">Provider *</Label>
+          <Label htmlFor="provider">{t("providerLabel")}</Label>
           <Select
             value={selectedProvider}
             onValueChange={(value: string) =>
@@ -99,7 +127,7 @@ export function ChannelForm({
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un provider" />
+              <SelectValue placeholder={t("providerPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {providerOptions.map((option) => (
@@ -109,79 +137,88 @@ export function ChannelForm({
               ))}
             </SelectContent>
           </Select>
+
           {errors.provider && (
             <p className="mt-1 text-sm text-red-600">
-              {errors.provider.message}
+              {String(errors.provider.message || "")}
             </p>
           )}
+
           <p className="mt-1 text-xs text-muted-foreground">
-            Plateforme du channel (Telegram ou Discord)
+            {t("providerHelp")}
           </p>
         </div>
 
+        {/* External ID */}
         <div>
-          <Label htmlFor="externalId">ID externe du channel *</Label>
+          <Label htmlFor="externalId">{t("externalIdLabel")}</Label>
           <Input
             id="externalId"
             {...register("externalId")}
-            placeholder="-1003487441463"
+            placeholder={t("externalIdPlaceholder")}
           />
           {errors.externalId && (
             <p className="mt-1 text-sm text-red-600">
-              {errors.externalId.message}
+              {String(errors.externalId.message || "")}
             </p>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
-            L&apos;ID numérique du channel Telegram (commence par -100)
+            {t("externalIdHelp")}
           </p>
         </div>
 
+        {/* Title */}
         <div>
-          <Label htmlFor="title">Titre du channel</Label>
+          <Label htmlFor="title">{t("titleLabel")}</Label>
           <Input
             id="title"
             {...register("title")}
-            placeholder="Mon Channel VIP"
+            placeholder={t("titlePlaceholder")}
           />
           {errors.title && (
-            <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {String(errors.title.message || "")}
+            </p>
           )}
         </div>
 
+        {/* Username */}
         <div>
-          <Label htmlFor="username">Username</Label>
+          <Label htmlFor="username">{t("usernameLabel")}</Label>
           <Input
             id="username"
             {...register("username")}
-            placeholder="mon_channel_vip"
+            placeholder={t("usernamePlaceholder")}
           />
           {errors.username && (
             <p className="mt-1 text-sm text-red-600">
-              {errors.username.message}
+              {String(errors.username.message || "")}
             </p>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
-            Username du channel (sans @)
+            {t("usernameHelp")}
           </p>
         </div>
 
+        {/* Invite link */}
         <div>
-          <Label htmlFor="inviteLink">Lien d&apos;invitation</Label>
+          <Label htmlFor="inviteLink">{t("inviteLinkLabel")}</Label>
           <Input
             id="inviteLink"
             {...register("inviteLink")}
-            placeholder="https://t.me/+AbcDefGhiJkl"
+            placeholder={t("inviteLinkPlaceholder")}
           />
           {errors.inviteLink && (
             <p className="mt-1 text-sm text-red-600">
-              {errors.inviteLink.message}
+              {String(errors.inviteLink.message || "")}
             </p>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
-            Lien d&apos;invitation permanent du channel
+            {t("inviteLinkHelp")}
           </p>
         </div>
 
+        {/* Active */}
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -190,90 +227,85 @@ export function ChannelForm({
             className="h-4 w-4 rounded border-gray-300"
           />
           <Label htmlFor="isActive" className="cursor-pointer">
-            Channel actif
+            {t("isActiveLabel")}
           </Label>
         </div>
       </div>
 
+      {/* How to find ID helper */}
       <div className="rounded-lg border bg-blue-50 p-6 space-y-4">
         <div>
           <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-            <span className="text-xl">💡</span>
-            Comment trouver l&apos;ID de votre channel Telegram
+            <span className="text-xl">{th("titleIcon")}</span>
+            {th("title")}
           </h3>
+
           <div className="space-y-4 text-sm text-blue-900">
             <div className="bg-white/50 rounded p-3 space-y-2">
-              <p className="font-medium">Méthode 1: Via un bot (Recommandé)</p>
+              <p className="font-medium">{th("method1.title")}</p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>
-                  Transférez un message de votre channel à{" "}
-                  <span className="font-mono bg-white px-1 rounded">
-                    @userinfobot
-                  </span>
-                </li>
-                <li>
-                  Le bot vous répondra avec l&apos;ID du channel (commence par
-                  -100)
-                </li>
-                <li>Copiez cet ID dans le champ ci-dessus</li>
+                <li>{th("method1.steps.1")}</li>
+                <li>{th("method1.steps.2")}</li>
+                <li>{th("method1.steps.3")}</li>
               </ol>
+              <div className="ml-2">
+                <span className="font-mono bg-white px-1 rounded">
+                  @userinfobot
+                </span>
+              </div>
             </div>
 
             <div className="bg-white/50 rounded p-3 space-y-2">
-              <p className="font-medium">Méthode 2: Via l&apos;API Telegram</p>
+              <p className="font-medium">{th("method2.title")}</p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>
-                  Ajoutez le bot{" "}
-                  <span className="font-mono bg-white px-1 rounded">
-                    @getidsbot
-                  </span>{" "}
-                  à votre channel
-                </li>
-                <li>Le bot enverra automatiquement l&apos;ID du channel</li>
-                <li>Supprimez le bot après avoir récupéré l&apos;ID</li>
+                <li>{th("method2.steps.1")}</li>
+                <li>{th("method2.steps.2")}</li>
+                <li>{th("method2.steps.3")}</li>
               </ol>
+              <div className="ml-2">
+                <span className="font-mono bg-white px-1 rounded">
+                  @getidsbot
+                </span>
+              </div>
             </div>
 
             <div className="bg-white/50 rounded p-3 space-y-2">
-              <p className="font-medium">
-                Méthode 3: Via le lien d&apos;invitation
-              </p>
-              <p className="ml-2">
-                Si votre lien est{" "}
+              <p className="font-medium">{th("method3.title")}</p>
+              <p className="ml-2">{th("method3.text")}</p>
+              <div className="ml-2">
                 <span className="font-mono bg-white px-1 rounded">
                   https://t.me/joinchat/XXXXXX
                 </span>
-                , vous devez d&apos;abord convertir ce lien en ID numérique avec
-                un bot.
-              </p>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="border-t border-blue-200 pt-3">
           <p className="text-xs text-blue-700">
-            ⚠️ <span className="font-medium">Important:</span> Assurez-vous que
-            votre bot Telegram (configuré dans les variables
-            d&apos;environnement) est administrateur de ce channel avec les
-            permissions nécessaires pour inviter des utilisateurs.
+            {th("important.prefix")}{" "}
+            <span className="font-medium">{th("important.label")}</span>{" "}
+            {th("important.text")}
           </p>
         </div>
       </div>
 
+      {/* Footer buttons */}
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting
-            ? "Enregistrement..."
+            ? t("buttons.saving")
             : channel
-              ? "Mettre à jour"
-              : "Ajouter le channel"}
+              ? t("buttons.update")
+              : t("buttons.create")}
         </Button>
+
         <Button
           type="button"
           variant="outline"
           onClick={() => window.history.back()}
         >
-          Annuler
+          {t("buttons.cancel")}
         </Button>
       </div>
     </form>

@@ -1,0 +1,547 @@
+{
+  "common": {
+    "appName": "TelegramPlugin",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "open": "Open",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "view": "View",
+    "manage": "Manage",
+    "details": "Details",
+    "actions": "Actions",
+    "status": "Status",
+    "date": "Date",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{count} days ago"
+  },
+
+  "nav": {
+    "dashboard": "Dashboard",
+    "products": "My offers",
+    "customers": "My customers",
+    "subscriptions": "My subscribers",
+    "promote": "Promote",
+    "payments": "Payments",
+    "channels": "My channels",
+    "access": "Access management",
+    "billing": "Billing"
+  },
+
+  "sidebar": {
+    "proPlan": "Pro Plan",
+    "trialDaysLeft": "{count} days left in trial",
+    "upgradeNow": "Upgrade now"
+  },
+
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your account",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up free",
+      "termsNotice": "By signing in, you agree to our",
+      "terms": "Terms",
+      "and": "and",
+      "privacy": "Privacy Policy",
+      "success": "Login successful",
+      "error": "Invalid email or password"
+    },
+    "register": {
+      "title": "Create your account",
+      "subtitle": "Start monetizing in minutes",
+      "firstName": "First name",
+      "firstNamePlaceholder": "Jane",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Doe",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "passwordHint": "At least 8 characters",
+      "submit": "Create account",
+      "submitting": "Creating account...",
+      "trialBadge": "14-day free trial • No credit card required",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "termsNotice": "By creating an account, you agree to our",
+      "terms": "Terms",
+      "and": "and",
+      "privacy": "Privacy Policy",
+      "success": "Account created successfully",
+      "error": "Registration failed"
+    },
+    "forgotPassword": {
+      "title": "Forgot your password?",
+      "subtitle": "Enter your email to receive a reset link",
+      "email": "Email",
+      "submit": "Send reset link",
+      "backToLogin": "Back to login"
+    }
+  },
+
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome! Here's an overview of your activity.",
+    "stats": {
+      "revenue": "Revenue",
+      "activeSubscribers": "Active subscribers",
+      "totalCustomers": "Total customers",
+      "conversionRate": "Conversion rate"
+    },
+    "quickActions": {
+      "title": "Quick actions",
+      "createProduct": {
+        "title": "Create an offer",
+        "description": "Set up a new subscription or product"
+      },
+      "promote": {
+        "title": "Promote",
+        "description": "Share your links and attract subscribers"
+      },
+      "connectChannel": {
+        "title": "Connect a channel",
+        "description": "Link your Telegram, Discord, or WhatsApp channel"
+      },
+      "billing": {
+        "title": "Billing",
+        "description": "Connect your Stripe account"
+      }
+    },
+    "gettingStarted": {
+      "title": "Getting started",
+      "accountCreated": "Account created",
+      "connectPayment": "Connect my payment account",
+      "createProduct": "Create my offer",
+      "connectChannel": "Connect my Telegram channel",
+      "promoteProduct": "Promote my offer"
+    }
+  },
+
+  "products": {
+    "title": "My offers",
+    "subtitle": "Manage your offers and pricing plans",
+    "create": "Create an offer",
+    "empty": {
+      "title": "No offers yet",
+      "description": "Create your first offer to start selling.",
+      "cta": "Create my first offer"
+    },
+    "table": {
+      "name": "Name",
+      "plans": "Plans",
+      "status": "Status",
+      "created": "Created"
+    },
+    "status": {
+      "active": "Active",
+      "draft": "Draft",
+      "archived": "Archived"
+    }
+  },
+
+  "plans": {
+    "title": "Pricing plans",
+    "subtitle": "Pricing plan management",
+    "create": "New plan",
+    "createFirst": "Create the first plan",
+    "empty": "No plans found",
+    "table": {
+      "name": "Name",
+      "price": "Price",
+      "interval": "Interval",
+      "trial": "Trial",
+      "accessDuration": "Access duration",
+      "status": "Status"
+    },
+    "accessUnlimited": "Unlimited",
+    "accessDays": "{count} days",
+    "trialDays": "{count} days",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    }
+  },
+
+  "intervals": {
+    "ONE_TIME": "One-time payment",
+    "DAY": "per day",
+    "WEEK": "per week",
+    "MONTH": "per month",
+    "QUARTER": "per quarter",
+    "YEAR": "per year",
+    "short": {
+      "ONE_TIME": "one-time",
+      "DAY": "/day",
+      "WEEK": "/week",
+      "MONTH": "/month",
+      "QUARTER": "/quarter",
+      "YEAR": "/year"
+    },
+    "noun": {
+      "DAY": "Day",
+      "WEEK": "Week",
+      "MONTH": "Month",
+      "QUARTER": "Quarter",
+      "YEAR": "Year"
+    }
+  },
+
+  "subscriptionStatus": {
+    "ACTIVE": "Active",
+    "PAST_DUE": "Payment overdue",
+    "CANCELED": "Canceled",
+    "INCOMPLETE": "Pending",
+    "TRIALING": "Trial",
+    "EXPIRED": "Expired"
+  },
+
+  "accessStatus": {
+    "active": "Active",
+    "suspended": "Suspended",
+    "revoked": "Revoked",
+    "expired": "Expired"
+  },
+
+  "customers": {
+    "title": "My customers",
+    "subtitle": "View and manage your customer base",
+    "empty": {
+      "title": "No customers yet",
+      "description": "Your customers will appear here after their first purchase.",
+      "cta": "Promote my offer"
+    },
+    "table": {
+      "customer": "Customer",
+      "email": "Email",
+      "subscriptions": "Subscriptions",
+      "since": "Customer since"
+    },
+    "detail": {
+      "title": "Customer details",
+      "subtitle": "Customer details and subscriptions",
+      "info": "Information",
+      "stats": "Statistics",
+      "activeSubscriptions": "Active subscriptions",
+      "totalSubscriptions": "Total subscriptions",
+      "externalId": "External ID",
+      "createdAt": "Created on",
+      "entitlements": "Active access",
+      "viewAll": "View all",
+      "noEntitlements": "No active access for this customer",
+      "subscriptionsTitle": "Subscriptions",
+      "noSubscriptions": "No subscriptions for this customer",
+      "grantedAt": "Granted on",
+      "expiresAt": "Expires on",
+      "notFound": "Customer not found",
+      "backToCustomers": "Back to customers",
+      "noName": "No name"
+    }
+  },
+
+  "subscriptions": {
+    "title": "My subscribers",
+    "subtitle": "Track your subscribers and manage their access",
+    "empty": {
+      "title": "No subscribers yet",
+      "description": "Share your sales link to get your first subscribers.",
+      "cta": "Promote my offer"
+    },
+    "stats": {
+      "total": "Total",
+      "active": "Active",
+      "pastDue": "Overdue",
+      "trialing": "In trial"
+    },
+    "filters": {
+      "allStatuses": "All statuses",
+      "searchPlaceholder": "Search for a subscriber..."
+    },
+    "table": {
+      "subscriber": "Subscriber",
+      "offer": "Offer",
+      "status": "Status",
+      "since": "Since",
+      "noName": "No name"
+    },
+    "trialDaysLeft": "{count}d left",
+    "followUp": "Follow up",
+    "noResults": "No subscribers found for these criteria"
+  },
+
+  "promote": {
+    "title": "Promote my offers",
+    "subtitle": "Share your offers and attract new subscribers",
+    "empty": {
+      "title": "No active offer",
+      "description": "Create your first offer to start promoting it.",
+      "cta": "Create an offer"
+    },
+    "selectProduct": "Select an offer:",
+    "salesLink": {
+      "title": "Sales link",
+      "copy": "Copy",
+      "open": "Open",
+      "qrCode": "QR Code",
+      "qrCodeSoon": "Coming soon"
+    },
+    "shareMessage": {
+      "title": "Ready-to-share message",
+      "template": "🚀 Join my private channel {productName}!\n\n✅ Exclusive access to all my premium content\n✅ Regular updates\n✅ Private community\n\n{price}\n👉 {link}"
+    },
+    "shareDirect": {
+      "title": "Share directly",
+      "telegram": "Telegram",
+      "instagram": "Instagram",
+      "instagramHint": "Open Instagram and paste the message",
+      "twitter": "Twitter",
+      "email": "Email"
+    },
+    "offerDetails": {
+      "title": "Offer details"
+    }
+  },
+
+  "channels": {
+    "title": "My channels",
+    "subtitle": "Manage your connected Telegram channels",
+    "add": "Add a channel",
+    "empty": {
+      "title": "No channels connected",
+      "description": "Connect your first Telegram channel to get started.",
+      "cta": "Connect a channel"
+    },
+    "new": {
+      "title": "Add a channel",
+      "subtitle": "Connect a Telegram channel to your organization"
+    },
+    "form": {
+      "telegramId": "Telegram channel ID",
+      "telegramIdHelp": "The numeric ID of your channel (e.g., -1001234567890)",
+      "title": "Channel name",
+      "titleHelp": "A name to identify this channel",
+      "submit": "Add channel"
+    },
+    "success": "Channel added successfully",
+    "error": "Failed to add channel"
+  },
+
+  "access": {
+    "title": "Access management",
+    "subtitle": "Manage access granted to your subscribers",
+    "empty": {
+      "title": "No access granted",
+      "description": "Access is automatically created when a new subscription starts."
+    },
+    "stats": {
+      "total": "Total",
+      "active": "Active",
+      "revoked": "Revoked"
+    },
+    "filters": {
+      "allStatuses": "All statuses",
+      "searchPlaceholder": "Search..."
+    },
+    "table": {
+      "subscriber": "Subscriber",
+      "channel": "Channel",
+      "via": "Via",
+      "status": "Status",
+      "noName": "No name"
+    },
+    "types": {
+      "CHANNEL_ACCESS": "Channel access",
+      "FEATURE_FLAG": "Feature",
+      "CONTENT_UNLOCK": "Content unlock",
+      "API_QUOTA": "API quota"
+    },
+    "revokeReasons": {
+      "payment_failed": "Payment failed",
+      "canceled": "Canceled",
+      "refund": "Refunded",
+      "manual": "Manual revocation"
+    },
+    "manualAccess": "Manual access",
+    "noResults": "No access found for these criteria"
+  },
+
+  "payments": {
+    "title": "Payment events",
+    "subtitle": "History of all payment events",
+    "stats": {
+      "total": "Total events",
+      "processed": "Processed",
+      "pending": "Pending"
+    },
+    "table": {
+      "type": "Type",
+      "provider": "Provider",
+      "externalId": "External ID",
+      "date": "Date",
+      "status": "Status",
+      "subscription": "Subscription"
+    },
+    "status": {
+      "processed": "Processed",
+      "pending": "Pending"
+    },
+    "empty": "No payment events found",
+    "error": "Failed to load events",
+    "eventTypes": {
+      "CHECKOUT_COMPLETED": "Payment completed",
+      "SUBSCRIPTION_CREATED": "Subscription created",
+      "SUBSCRIPTION_UPDATED": "Subscription updated",
+      "SUBSCRIPTION_CANCELED": "Subscription canceled",
+      "INVOICE_PAID": "Invoice paid",
+      "INVOICE_PAYMENT_FAILED": "Payment failed",
+      "REFUND_CREATED": "Refund created"
+    },
+    "providers": {
+      "STRIPE": "Stripe",
+      "PAYPAL": "PayPal"
+    }
+  },
+
+  "billing": {
+    "title": "Billing",
+    "subtitle": "Connect Stripe to receive payments from your customers",
+    "saasWarning": {
+      "title": "Subscription required",
+      "description": "Your TelegramPlugin subscription is not active. Payments are disabled until you subscribe."
+    },
+    "stripeConnect": {
+      "title": "Stripe Connect",
+      "subtitle": "Receive payments directly to your Stripe account",
+      "accountConnected": "Account connected",
+      "chargesEnabled": "Charges enabled",
+      "detailsSubmitted": "Details submitted",
+      "connect": "Connect Stripe",
+      "completeSetup": "Complete setup",
+      "updateSettings": "Update Stripe settings",
+      "openDashboard": "Open Stripe Dashboard",
+      "accountId": "Account ID:"
+    },
+    "howItWorks": {
+      "title": "How payments work",
+      "step1": "Customers pay through Stripe checkout",
+      "step2": "Funds go directly to your Stripe account",
+      "step3": "We charge €39/month flat fee, 0% commission",
+      "step4": "Stripe fees (1.4% + €0.25 for EU cards) apply separately"
+    },
+    "loading": "Loading billing...",
+    "error": "Failed to load billing status",
+    "connectError": "Failed to start Stripe connection",
+    "dashboardError": "Failed to open Stripe dashboard"
+  },
+
+  "checkout": {
+    "offeredBy": "Offered by {name}",
+    "accessTo": "Access to:",
+    "choosePlan": "Choose your plan",
+    "popular": "Popular",
+    "freeTrial": "{days}-day free trial",
+    "accessDuration": "Access valid for {days} days",
+    "finalize": "Finalize",
+    "form": {
+      "email": "Email",
+      "emailPlaceholder": "your@email.com",
+      "emailRequired": "Email is required for card payment",
+      "name": "Name (optional)",
+      "namePlaceholder": "Jane Doe",
+      "telegram": "Telegram username",
+      "telegramPlaceholder": "@your_username",
+      "telegramHelp": "To receive access automatically",
+      "telegramRequired": "Telegram username is required for Telegram Stars payment"
+    },
+    "payment": {
+      "title": "Payment",
+      "card": "Credit card",
+      "telegramStars": "Telegram Stars",
+      "secure": "Secure payment"
+    },
+    "cta": {
+      "pay": "Pay {amount}",
+      "continueWithTelegram": "Continue with Telegram",
+      "selectPlan": "Select a plan",
+      "processing": "Processing..."
+    },
+    "errors": {
+      "selectPlan": "Please select a plan",
+      "productNotFound": "This product doesn't exist or is no longer available",
+      "checkoutFailed": "Failed to create checkout"
+    },
+    "telegramStarsInstructions": "To pay with Telegram Stars, use the Telegram bot:\n\nSend the command: /buy {planId}",
+    "noPlans": "No plans available for this product",
+    "unavailable": {
+      "title": "Product unavailable",
+      "description": "This product doesn't exist or is no longer available"
+    }
+  },
+
+  "checkoutSuccess": {
+    "title": "Payment successful!",
+    "description": "Thank you for your purchase. Your subscription has been activated.",
+    "emailNotice": "You'll receive a confirmation email with all your subscription details. If you provided your Telegram username, you'll also receive an invitation link to join the private channel(s).",
+    "sessionId": "Session ID:",
+    "backHome": "Back to home",
+    "safeToClose": "You can safely close this page"
+  },
+
+  "checkoutCancel": {
+    "title": "Payment canceled",
+    "description": "Your payment has been canceled. No amount has been charged to your account.",
+    "helpNotice": "If you encountered an issue during payment, feel free to try again or contact us for help.",
+    "retry": "Try again",
+    "backHome": "Back to home"
+  },
+
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Connection error. Please check your internet connection.",
+    "notFound": "Page not found",
+    "unauthorized": "You must be signed in to access this page",
+    "forbidden": "You don't have access to this resource",
+    "validation": "Please check the information you entered",
+    "loadingData": "Failed to load data"
+  },
+
+  "success": {
+    "saved": "Changes saved",
+    "created": "Created successfully",
+    "deleted": "Deleted successfully",
+    "copied": "Copied to clipboard"
+  },
+
+  "footer": {
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "gdpr": "GDPR",
+    "contact": "Contact",
+    "about": "About"
+  }
+}

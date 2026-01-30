@@ -36,13 +36,49 @@ function parseOptionalInteger(value, { varName, min, max, }) {
     }
     return parsed;
 }
-const dotenvResult = dotenv.config();
-if (dotenvResult.error) {
-    const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-    const fallbackEnvPath = path.resolve(moduleDir, "../../..", ".env");
-    if (fs.existsSync(fallbackEnvPath)) {
-        dotenv.config({ path: fallbackEnvPath });
+function findRepoRoot(startDir) {
+    let dir = startDir;
+    while (true) {
+        if (fs.existsSync(path.resolve(dir, "pnpm-workspace.yaml"))) {
+            return dir;
+        }
+        const parent = path.resolve(dir, "..");
+        if (parent === dir) {
+            return startDir;
+        }
+        dir = parent;
     }
+}
+function resolveEnvFile() {
+    const explicit = processEnv.ENV_FILE?.trim();
+    if (explicit) {
+        return path.isAbsolute(explicit)
+            ? explicit
+            : path.resolve(findRepoRoot(process.cwd()), explicit);
+    }
+    const cwd = process.cwd();
+    const repoRoot = findRepoRoot(cwd);
+    const isProduction = processEnv.NODE_ENV === "production";
+    const preferredName = isProduction ? ".env.production" : ".env.local";
+    const candidates = [
+        path.resolve(cwd, preferredName),
+        path.resolve(repoRoot, preferredName),
+        path.resolve(cwd, ".env"),
+        path.resolve(repoRoot, ".env"),
+    ];
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+    return undefined;
+}
+const envFile = resolveEnvFile();
+if (envFile) {
+    dotenv.config({ path: envFile });
+}
+else {
+    dotenv.config();
 }
 const baseEnv = BaseEnvSchema.parse(processEnv);
 const env = {

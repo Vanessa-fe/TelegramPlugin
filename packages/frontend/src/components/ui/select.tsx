@@ -79,6 +79,7 @@ export function SelectContent({ children }: { children: React.ReactNode }) {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [context.isOpen]);
 
   if (!context.isOpen) return null;

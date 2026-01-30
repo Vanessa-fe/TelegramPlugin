@@ -15,6 +15,36 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
 fi
 
+is_port_in_use() {
+  local port="$1"
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
+    return $?
+  fi
+  return 1
+}
+
+find_available_port() {
+  local start_port="$1"
+  local port="$start_port"
+  while is_port_in_use "$port"; do
+    port=$((port + 1))
+  done
+  echo "$port"
+}
+
+API_PORT="${PORT:-3001}"
+if is_port_in_use "$API_PORT"; then
+  NEW_PORT="$(find_available_port "$API_PORT")"
+  echo "⚠️  Port $API_PORT is in use, switching API to $NEW_PORT"
+  API_PORT="$NEW_PORT"
+fi
+
+export PORT="$API_PORT"
+if [[ -z "${NEXT_PUBLIC_API_URL:-}" || "${NEXT_PUBLIC_API_URL:-}" == http://localhost:* ]]; then
+  export NEXT_PUBLIC_API_URL="http://localhost:$API_PORT"
+fi
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "❌ Docker is required to start postgres/redis."
   exit 1

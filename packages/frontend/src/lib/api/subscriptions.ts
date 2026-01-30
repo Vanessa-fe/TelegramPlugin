@@ -1,16 +1,16 @@
 import apiClient from '../api-client';
-import type { Subscription, CreateSubscriptionDto, UpdateSubscriptionDto } from '@/types/subscription';
+import type { Subscription, SubscriptionWithRelations, CreateSubscriptionDto, UpdateSubscriptionDto } from '@/types/subscription';
 
 export const subscriptionsApi = {
   async findAll(organizationId?: string) {
-    const { data } = await apiClient.get<Subscription[]>('/subscriptions', {
+    const { data } = await apiClient.get<SubscriptionWithRelations[]>('/subscriptions', {
       params: organizationId ? { organizationId } : undefined,
     });
     return data;
   },
 
   async findOne(id: string) {
-    const { data } = await apiClient.get<Subscription>(`/subscriptions/${id}`);
+    const { data } = await apiClient.get<SubscriptionWithRelations>(`/subscriptions/${id}`);
     return data;
   },
 

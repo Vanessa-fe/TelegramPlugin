@@ -1,19 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { customersApi } from '@/lib/api/customers';
-import type { Customer } from '@/types/customer';
-import { Button } from '@/components/ui/button';
-import { Users, Eye, Search } from 'lucide-react';
-import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { customersApi } from "@/lib/api/customers";
+import type { Customer } from "@/types/customer";
+import { Eye, Search, Users } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function CustomersPage() {
+  const locale = useLocale();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
+  const t = useTranslations("customers");
 
   useEffect(() => {
     loadCustomers();
@@ -39,10 +42,10 @@ export default function CustomersPage() {
       setCustomers(data);
       setFilteredCustomers(data);
     } catch (error) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        axiosError.response?.data?.message || 'Failed to load customers'
-      );
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(axiosError.response?.data?.message || t("error"));
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +56,7 @@ export default function CustomersPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-[#6F6E77]">Loading customers...</p>
+          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading")}</p>
         </div>
       </div>
     );
@@ -65,10 +68,12 @@ export default function CustomersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
-            Customers
+            {t("title")}
           </h1>
+          <p className="mt-1 text-[#6F6E77]">{t("subtitle")}</p>
           <p className="mt-1 text-[#6F6E77]">
-            {customers.length} customer{customers.length !== 1 ? 's' : ''} total
+            {customers.length}{" "}
+            {customers.length !== 1 ? t("plural") : t("singular")}
           </p>
         </div>
       </div>
@@ -78,44 +83,43 @@ export default function CustomersPage() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6F6E77]" />
           <Input
-            placeholder="Search by name, email, or Telegram..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-11 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+            className="pl-10 h-11 border-border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
           />
         </div>
       )}
 
       {/* Customers list */}
       {customers.length === 0 ? (
-        <div className="bg-white rounded-xl border border-[#E9E3EF] p-12 text-center">
+        <div className="bg-white rounded-xl border border-border-[#E9E3EF] p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
             <Users className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-semibold text-[#1A1523] mb-2">
-            No customers yet
+            {t("empty.title")}
           </h3>
           <p className="text-[#6F6E77] max-w-sm mx-auto">
-            Customers will appear here when they purchase access to your
-            products.
+            {t("empty.description")}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E9E3EF] overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-[#E9E3EF] overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[#E9E3EF] bg-[#FDFAFF]">
+              <tr className="border-b border-border-[#E9E3EF] bg-surface">
                 <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
-                  Customer
+                  {t("table.customer")}
                 </th>
                 <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
-                  Telegram
+                  {t("table.Platform")}
                 </th>
                 <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
-                  Joined
+                  {t("table.since")}
                 </th>
                 <th className="text-right text-sm font-medium text-[#6F6E77] px-6 py-4">
-                  Actions
+                  {t("table.actions")}
                 </th>
               </tr>
             </thead>
@@ -126,28 +130,28 @@ export default function CustomersPage() {
                     colSpan={4}
                     className="px-6 py-12 text-center text-[#6F6E77]"
                   >
-                    No customers match your search
+                    {t("noResults")}
                   </td>
                 </tr>
               ) : (
                 filteredCustomers.map((customer) => (
                   <tr
                     key={customer.id}
-                    className="border-b border-[#E9E3EF] last:border-0 hover:bg-[#FDFAFF] transition-colors"
+                    className="border-b border-border-[#E9E3EF] last:border-0 hover:bg-surface transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-medium text-sm">
                           {customer.displayName?.[0]?.toUpperCase() ||
                             customer.email?.[0]?.toUpperCase() ||
-                            '?'}
+                            "?"}
                         </div>
                         <div>
                           <p className="font-medium text-[#1A1523]">
-                            {customer.displayName || 'No name'}
+                            {customer.displayName || t("detail.noName")}
                           </p>
                           <p className="text-sm text-[#6F6E77]">
-                            {customer.email || 'No email'}
+                            {customer.email || t("detail.noEmail")}
                           </p>
                         </div>
                       </div>
@@ -162,10 +166,10 @@ export default function CustomersPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-[#6F6E77]">
-                      {new Date(customer.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
+                      {new Date(customer.createdAt).toLocaleDateString(locale, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
                       })}
                     </td>
                     <td className="px-6 py-4 text-right">

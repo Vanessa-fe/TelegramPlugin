@@ -1,37 +1,37 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { channelsApi } from '@/lib/api/channels';
-import { useAuth } from '@/contexts/auth-context';
-import { ChannelForm } from '@/components/channels/channel-form';
-import type { CreateChannelDto } from '@/types/channel';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { toast } from 'sonner';
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { ChannelForm } from "@/components/channels/channel-form";
+import { useAuth } from "@/contexts/auth-context";
+import { channelsApi } from "@/lib/api/channels";
+import type { CreateChannelDto } from "@/types/channel";
+
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 export default function NewChannelPage() {
+  const t = useTranslations("channels");
   const router = useRouter();
   const { user } = useAuth();
 
   async function handleSubmit(data: CreateChannelDto) {
     try {
       await channelsApi.create(data);
-      toast.success('Channel ajouté avec succès');
-      router.push('/dashboard/channels');
+      toast.success(t("success.created"));
+      router.push("/dashboard/channels");
     } catch (error) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        axiosError.response?.data?.message ||
-          'Erreur lors de l\'ajout du channel'
-      );
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(axiosError.response?.data?.message || t("errors.create"));
     }
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -41,15 +41,15 @@ export default function NewChannelPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
+
         <div>
-          <h1 className="text-3xl font-bold">Ajouter un channel</h1>
-          <p className="mt-2 text-gray-600">
-            Connectez un channel Telegram à votre organisation
-          </p>
+          <h1 className="text-3xl font-bold">{t("new.title")}</h1>
+          <p className="mt-2 text-gray-600">{t("new.subtitle")}</p>
         </div>
       </div>
+
       <ChannelForm
-        organizationId={user.organizationId || ''}
+        organizationId={user.organizationId || ""}
         onSubmit={handleSubmit}
       />
     </div>
