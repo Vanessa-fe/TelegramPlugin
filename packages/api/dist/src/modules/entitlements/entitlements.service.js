@@ -18,31 +18,64 @@ let EntitlementsService = class EntitlementsService {
         this.prisma = prisma;
     }
     async findAll(params) {
-        return this.prisma.entitlement.findMany({
+        const entitlements = await this.prisma.entitlement.findMany({
             where: {
                 subscriptionId: params?.subscriptionId,
                 customerId: params?.customerId,
                 entitlementKey: params?.entitlementKey,
             },
             include: {
-                subscription: true,
+                subscription: {
+                    include: {
+                        plan: true,
+                    },
+                },
                 customer: true,
             },
             orderBy: { createdAt: 'desc' },
         });
+        const channelIds = entitlements
+            .filter((e) => e.type === 'CHANNEL_ACCESS' && e.resourceId)
+            .map((e) => e.resourceId);
+        const channels = channelIds.length > 0
+            ? await this.prisma.channel.findMany({
+                where: { id: { in: channelIds } },
+                select: { id: true, title: true, username: true },
+            })
+            : [];
+        const channelMap = new Map(channels.map((c) => [c.id, c]));
+        return entitlements.map((entitlement) => ({
+            ...entitlement,
+            channel: entitlement.type === 'CHANNEL_ACCESS' &&
+                entitlement.resourceId
+                ? channelMap.get(entitlement.resourceId) || null
+                : null,
+        }));
     }
     async findOne(id) {
         const entitlement = await this.prisma.entitlement.findUnique({
             where: { id },
             include: {
-                subscription: true,
+                subscription: {
+                    include: {
+                        plan: true,
+                    },
+                },
                 customer: true,
             },
         });
         if (!entitlement) {
             throw new common_1.NotFoundException(`Entitlement with ID ${id} not found`);
         }
-        return entitlement;
+        let channel = null;
+        if (entitlement.type === 'CHANNEL_ACCESS' &&
+            entitlement.resourceId) {
+            channel = await this.prisma.channel.findUnique({
+                where: { id: entitlement.resourceId },
+                select: { id: true, title: true, username: true },
+            });
+        }
+        return { ...entitlement, channel };
     }
     async create(dto) {
         return this.prisma.entitlement.create({

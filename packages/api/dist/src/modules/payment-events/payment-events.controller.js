@@ -44,7 +44,7 @@ let PaymentEventsController = class PaymentEventsController {
 exports.PaymentEventsController = PaymentEventsController;
 __decorate([
     (0, common_1.Get)(),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.SUPPORT),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.ORG_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Query)('organizationId')),
     __metadata("design:type", Function),
@@ -53,7 +53,7 @@ __decorate([
 ], PaymentEventsController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.SUPPORT),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.ORG_ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
     __metadata("design:type", Function),

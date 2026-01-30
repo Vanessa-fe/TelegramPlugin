@@ -1,19 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { billingApi } from '@/lib/api/billing';
-import type { StripeStatus } from '@/types/billing';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
+import { billingApi } from "@/lib/api/billing";
+import type { StripeStatus } from "@/types/billing";
 import {
-  CreditCard,
-  CheckCircle2,
   AlertCircle,
+  CheckCircle2,
+  CreditCard,
   ExternalLink,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function BillingPage() {
+  const t = useTranslations("billing");
   const [status, setStatus] = useState<StripeStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -28,10 +30,10 @@ export default function BillingPage() {
       const data = await billingApi.getStripeStatus();
       setStatus(data);
     } catch (error) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        axiosError.response?.data?.message || 'Failed to load billing status'
-      );
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(axiosError.response?.data?.message || t("error"));
     } finally {
       setIsLoading(false);
     }
@@ -43,10 +45,10 @@ export default function BillingPage() {
       const { url } = await billingApi.createStripeConnectLink();
       window.location.href = url;
     } catch (error) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        axiosError.response?.data?.message || 'Failed to start Stripe connection'
-      );
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(axiosError.response?.data?.message || t("connectError"));
     } finally {
       setIsConnecting(false);
     }
@@ -58,10 +60,10 @@ export default function BillingPage() {
       const { url } = await billingApi.createStripeLoginLink();
       window.location.href = url;
     } catch (error) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        axiosError.response?.data?.message || 'Failed to open Stripe dashboard'
-      );
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(axiosError.response?.data?.message || t("dashboardError"));
     } finally {
       setIsOpeningStripe(false);
     }
@@ -79,7 +81,7 @@ export default function BillingPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-[#6F6E77]">Loading billing...</p>
+          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading")}</p>
         </div>
       </div>
     );
@@ -93,39 +95,40 @@ export default function BillingPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">Billing</h1>
-        <p className="mt-1 text-[#6F6E77]">
-          Connect Stripe to start receiving payments from your customers
-        </p>
+        <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
+          {t("title")}
+        </h1>
+        <p className="mt-1 text-[#6F6E77]">{t("subtitle")}</p>
       </div>
 
       {/* SaaS subscription warning */}
       {!status.saasActive && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-amber-800">Subscription required</p>
+            <p className="font-medium text-amber-800">
+              {t("saasWarning.title")}
+            </p>
             <p className="text-sm text-amber-700 mt-1">
-              Your SaaS subscription is not active. Payments are disabled until
-              you subscribe.
+              {t("saasWarning.description")}
             </p>
           </div>
         </div>
       )}
 
       {/* Stripe Connect card */}
-      <div className="bg-white rounded-xl border border-[#E9E3EF] overflow-hidden">
-        <div className="p-6 border-b border-[#E9E3EF]">
+      <div className="bg-white rounded-xl border border-border-[#E9E3EF] overflow-hidden">
+        <div className="p-6 border-b border-border-[#E9E3EF]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-[#1A1523]">
-                Stripe Connect
+                {t("stripeConnect.title")}
               </h2>
               <p className="text-sm text-[#6F6E77]">
-                Receive payments directly to your Stripe account
+                {t("stripeConnect.subtitle")}
               </p>
             </div>
           </div>
@@ -135,16 +138,16 @@ export default function BillingPage() {
           {/* Status indicators */}
           <div className="space-y-3 mb-6">
             <StatusItem
-              label="Account connected"
+              label={t("stripeConnect.accountConnected")}
               isComplete={status.connected}
             />
             <StatusItem
-              label="Charges enabled"
+              label={t("stripeConnect.chargesEnabled")}
               isComplete={status.chargesEnabled || false}
               disabled={!status.connected}
             />
             <StatusItem
-              label="Details submitted"
+              label={t("stripeConnect.detailsSubmitted")}
               isComplete={status.detailsSubmitted || false}
               disabled={!status.connected}
             />
@@ -157,34 +160,36 @@ export default function BillingPage() {
               disabled={isConnecting}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              {isConnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isConnecting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               {status.connected
                 ? stripeReady
-                  ? 'Update Stripe settings'
-                  : 'Complete Stripe setup'
-                : 'Connect Stripe'}
+                  ? t("stripeConnect.updateSettings")
+                  : t("stripeConnect.completeSetup")
+                : t("stripeConnect.connect")}
             </Button>
             {status.connected && (
               <Button
                 variant="outline"
                 onClick={handleOpenStripe}
                 disabled={isOpeningStripe}
-                className="border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+                className="border-border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
               >
                 {isOpeningStripe && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Open Stripe Dashboard
+                {t("stripeConnect.openDashboard")}
               </Button>
             )}
           </div>
 
           {/* Account ID */}
           {status.connected && status.accountId && (
-            <p className="mt-4 text-xs text-[#6F6E77]">
-              Account ID:{' '}
-              <code className="bg-[#FDFAFF] px-1.5 py-0.5 rounded text-[#1A1523]">
+            <p className="mt-4 text-xs text-[#6F6E77] hidden">
+              {t("stripeConnect.accountId")}:{" "}
+              <code className="bg-surface px-1.5 py-0.5 rounded text-[#1A1523]">
                 {status.accountId}
               </code>
             </p>
@@ -193,26 +198,26 @@ export default function BillingPage() {
       </div>
 
       {/* Info box */}
-      <div className="bg-[#FDFAFF] rounded-xl border border-[#E9E3EF] p-6">
+      <div className="bg-surface rounded-xl border border-border-[#E9E3EF] p-6">
         <h3 className="font-semibold text-[#1A1523] mb-2">
-          How payments work
+          {t("howItWorks.title")}
         </h3>
         <ul className="space-y-2 text-sm text-[#6F6E77]">
           <li className="flex items-start gap-2">
             <span className="text-purple-600">•</span>
-            Customers pay through Stripe checkout
+            {t("howItWorks.step1")}
           </li>
           <li className="flex items-start gap-2">
             <span className="text-purple-600">•</span>
-            Funds go directly to your Stripe account
+            {t("howItWorks.step2")}
           </li>
           <li className="flex items-start gap-2">
             <span className="text-purple-600">•</span>
-            We charge €39/month flat fee, 0% commission
+            {t("howItWorks.step3")}
           </li>
           <li className="flex items-start gap-2">
             <span className="text-purple-600">•</span>
-            Stripe fees (1.4% + €0.25 for EU cards) apply separately
+            {t("howItWorks.step4")}
           </li>
         </ul>
       </div>
@@ -236,17 +241,17 @@ function StatusItem({
       ) : (
         <div
           className={`w-5 h-5 rounded-full border-2 ${
-            disabled ? 'border-gray-200' : 'border-[#E9E3EF]'
+            disabled ? "border-gray-200" : "border-border-[#E9E3EF]"
           }`}
         />
       )}
       <span
         className={`text-sm ${
           disabled
-            ? 'text-gray-400'
+            ? "text-gray-400"
             : isComplete
-              ? 'text-[#1A1523]'
-              : 'text-[#6F6E77]'
+              ? "text-[#1A1523]"
+              : "text-[#6F6E77]"
         }`}
       >
         {label}

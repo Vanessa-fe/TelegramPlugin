@@ -1,3 +1,9 @@
 import { Bot } from "grammy";
-export declare function createBot(token: string): Bot<import("grammy").Context, import("grammy").Api<import("grammy").RawApi>>;
+type BotConfig = {
+    token: string;
+    apiBaseUrl: string;
+    webhookSecret?: string;
+};
+export declare function createBot(config: BotConfig): Bot<import("grammy").Context, import("grammy").Api<import("grammy").RawApi>>;
 export declare function startBot(): Promise<void>;
+export {};

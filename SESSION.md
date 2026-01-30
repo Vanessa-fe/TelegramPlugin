@@ -857,3 +857,77 @@ Payment E2E:       ████████████████████ 
 **MVP READY FOR PRODUCTION** 🚀
 
 *Test paiement validé le 2026-01-26 — Bonne soirée Vanessa !*
+
+---
+
+## Session de debug production — 2026-01-28
+
+### Problème initial
+
+Redirection automatique vers `/login` en production, même sur la page d'accueil publique. Navigation entre menus renvoyait systématiquement à la page de connexion.
+
+### Causes identifiées et corrigées
+
+| Problème | Cause | Fix |
+|----------|-------|-----|
+| Redirect agressif sur 401 | Intercepteur Axios redirigeait vers `/login` à chaque 401, même sur pages publiques | Supprimé la redirection dans `api-client.ts` — seul `ProtectedRoute` gère les redirects |
+| Build Netlify échouait | `devDependencies` non installées (NODE_ENV=production skip devDeps) | Ajouté `NODE_ENV=development` pour l'install dans `netlify.toml` |
+| `next.config.ts` nécessitait TypeScript | TypeScript en devDep, non disponible au build | Converti en `next.config.mjs` (JavaScript pur) |
+| Menu Payments visible mais accès refusé | API `/payment-events` réservée à SUPERADMIN/SUPPORT | Ajouté `ORG_ADMIN` aux rôles autorisés + filtrage sidebar par rôle |
+
+### Fichiers modifiés
+
+| Fichier | Modification |
+|---------|--------------|
+| `packages/frontend/src/lib/api-client.ts` | Supprimé redirect vers `/login` dans l'intercepteur 401 |
+| `packages/frontend/src/components/dashboard/sidebar.tsx` | Ajouté filtrage par rôle utilisateur |
+| `packages/api/src/modules/payment-events/payment-events.controller.ts` | Ajouté `ORG_ADMIN` aux rôles autorisés |
+| `netlify.toml` | `NODE_ENV=development` pour pnpm install |
+| `packages/frontend/next.config.mjs` | Nouveau (remplace next.config.ts) |
+
+### Configuration Fly.io vérifiée
+
+Secrets mis à jour sur l'app API (`telegram-plugin-api`):
+- `NODE_ENV=production`
+- `CORS_ORIGIN=https://telegramplugin.netlify.app`
+
+### État final
+
+| Test | Résultat |
+|------|----------|
+| Page d'accueil sans redirect | ✅ OK |
+| Connexion créateur | ✅ OK |
+| Menu Payments visible pour créateurs | ✅ OK |
+| Navigation entre menus | ✅ OK |
+
+### Architecture des rôles clarifiée
+
+| Rôle | Accès |
+|------|-------|
+| `SUPERADMIN` | Tout (plateforme + admin) |
+| `SUPPORT` | Lecture globale + support |
+| `ORG_ADMIN` | Dashboard créateur (leurs données uniquement) |
+| `VIEWER` | Lecture seule |
+
+### Apps Fly.io
+
+| App | Rôle |
+|-----|------|
+| `telegram-plugin-api` | Backend NestJS |
+| `telegram-plugin-worker` | Jobs BullMQ |
+| `telegram-plugin-bot` | Bot Telegram |
+
+### Commandes utiles
+
+```bash
+# Déployer l'API
+fly deploy -a telegram-plugin-api
+
+# Voir les secrets
+fly secrets list -a telegram-plugin-api
+
+# Logs
+fly logs -a telegram-plugin-api
+```
+
+*Session du 2026-01-28 — Debug production terminé ✅*

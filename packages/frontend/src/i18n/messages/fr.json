@@ -1,0 +1,990 @@
+{
+  "common": {
+    "appName": "TelegramPlugin",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "all": "Tous",
+    "none": "Aucun",
+    "yes": "Oui",
+    "no": "Non",
+    "close": "Fermer",
+    "open": "Ouvrir",
+    "copy": "Copier",
+    "copied": "Copié !",
+    "view": "Voir",
+    "manage": "Gérer",
+    "details": "Détails",
+    "actions": "Actions",
+    "status": "Statut",
+    "date": "Date",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "daysAgo": "Il y a {count} jours"
+  },
+
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "products": "Mes offres",
+    "customers": "Mes clients",
+    "subscriptions": "Mes abonnés",
+    "promote": "Promouvoir",
+    "payments": "Paiements",
+    "channels": "Mes canaux",
+    "access": "Gestion des accès",
+    "billing": "Facturation"
+  },
+
+  "sidebar": {
+    "proPlan": "Plan Pro",
+    "trialDaysLeft": "{count} jours d'essai restants",
+    "upgradeNow": "Passer au plan payant"
+  },
+
+  "auth": {
+    "login": {
+      "title": "Bon retour !",
+      "subtitle": "Connecte-toi à ton compte",
+      "email": "Email",
+      "emailPlaceholder": "ton@email.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Mot de passe oublié ?",
+      "submit": "Se connecter",
+      "submitting": "Connexion...",
+      "noAccount": "Pas encore de compte ?",
+      "signUp": "Créer un compte gratuitement",
+      "termsNotice": "En te connectant, tu acceptes nos",
+      "terms": "Conditions",
+      "and": "et",
+      "privacy": "Politique de confidentialité",
+      "success": "Connexion réussie",
+      "error": "Email ou mot de passe incorrect"
+    },
+    "register": {
+      "title": "Crée ton compte",
+      "subtitle": "Commence à monétiser en quelques minutes",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Marie",
+      "lastName": "Nom",
+      "lastNamePlaceholder": "Dupont",
+      "email": "Email",
+      "emailPlaceholder": "ton@email.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "passwordHint": "8 caractères minimum",
+      "submit": "Créer mon compte",
+      "submitting": "Création du compte...",
+      "trialBadge": "14 jours d'essai gratuit • Sans carte bancaire",
+      "hasAccount": "Tu as déjà un compte ?",
+      "signIn": "Se connecter",
+      "termsNotice": "En créant un compte, tu acceptes nos",
+      "terms": "Conditions",
+      "and": "et",
+      "privacy": "Politique de confidentialité",
+      "success": "Compte créé avec succès",
+      "error": "Erreur lors de la création du compte"
+    },
+    "forgotPassword": {
+      "title": "Mot de passe oublié ?",
+      "subtitle": "Entre ton email pour recevoir un lien de réinitialisation",
+      "email": "Email",
+      "submit": "Envoyer le lien",
+      "backToLogin": "Retour à la connexion"
+    }
+  },
+
+  "dashboard": {
+    "title": "Tableau de bord",
+    "welcome": "Bienvenue ! Voici un aperçu de ton activité.",
+    "stats": {
+      "revenue": "Revenus",
+      "activeSubscribers": "Abonnés actifs",
+      "totalCustomers": "Total clients",
+      "conversionRate": "Taux de conversion"
+    },
+    "quickActions": {
+      "title": "Actions rapides",
+      "createProduct": {
+        "title": "Créer une offre",
+        "description": "Configure un nouvel abonnement ou produit"
+      },
+      "promote": {
+        "title": "Promouvoir",
+        "description": "Partage tes liens et attire des abonnés"
+      },
+      "connectChannel": {
+        "title": "Connecter un canal",
+        "description": "Lie ton canal Telegram, Discord ou WhatsApp"
+      },
+      "billing": {
+        "title": "Facturation",
+        "description": "Connecte ton compte Stripe"
+      }
+    },
+    "gettingStarted": {
+      "title": "Pour commencer",
+      "accountCreated": "Compte créé",
+      "connectPayment": "Connecter mon compte de paiement",
+      "createProduct": "Créer mon offre",
+      "connectChannel": "Connecter mon canal Telegram",
+      "promoteProduct": "Promouvoir mon offre"
+    }
+  },
+
+  "products": {
+    "title": "Mes offres",
+    "subtitle": "Gère tes offres et formules tarifaires",
+    "create": "Créer une offre",
+    "loading": "Chargement des offres...",
+
+    "noProducts": "Aucune offre trouvée",
+
+    "empty": {
+      "title": "Aucune offre créée",
+      "description": "Crée ta première offre pour commencer à vendre.",
+      "cta": "Créer ma première offre"
+    },
+
+    "table": {
+      "name": "Nom",
+      "plans": "Formules",
+      "status": "Statut",
+      "created": "Créé le"
+    },
+
+    "status": {
+      "active": "Active",
+      "draft": "Brouillon",
+      "archived": "Archivée"
+    },
+
+    "new": {
+      "title": "Nouveau produit",
+      "subtitle": "Crée un nouveau produit d’abonnement."
+    },
+
+    "form": {
+      "title": "Créer un produit",
+
+      "organization": {
+        "label": "Organisation",
+        "placeholder": "UUID de l’organisation",
+        "help": "Choisis l’organisation qui possède ce produit."
+      },
+
+      "name": {
+        "label": "Nom",
+        "placeholder": "Ex: Canal VIP"
+      },
+
+      "description": {
+        "label": "Description",
+        "placeholder": "Décris ce que les abonnés auront (contenu, accès, fréquence…)."
+      },
+
+      "status": {
+        "label": "Statut"
+      },
+
+      "submit": {
+        "create": "Créer",
+        "saving": "Enregistrement..."
+      },
+
+      "errors": {
+        "organizationRequired": "Organisation requise",
+        "nameRequired": "Le nom est requis",
+        "nameTooLong": "Le nom est trop long",
+        "descriptionTooLong": "La description est trop longue"
+      }
+    },
+
+    "statusLabels": {
+      "DRAFT": "Brouillon",
+      "ACTIVE": "Actif",
+      "ARCHIVED": "Archivé"
+    },
+
+    "toast": {
+      "organizationsLoadError": "Erreur lors du chargement des organisations",
+      "createSuccess": "Produit créé avec succès",
+      "createError": "Erreur lors de la création du produit"
+    }
+  },
+  "plans": {
+    "title": "Formules tarifaires",
+    "subtitle": "Gestion des plans tarifaires",
+    "create": "Nouvelle formule",
+    "createFirst": "Créer la première formule",
+    "empty": "Aucune formule trouvée",
+    "back": "Retour aux plans",
+    "loading": "Chargement...",
+    "table": {
+      "name": "Nom",
+      "price": "Prix",
+      "interval": "Intervalle",
+      "trial": "Essai",
+      "accessDuration": "Durée d'accès",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "accessUnlimited": "Illimité",
+    "accessDays": "{count} jours",
+    "trialDays": "{count} jours",
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    }
+  },
+
+  "intervals": {
+    "ONE_TIME": "Paiement unique",
+    "DAY": "par jour",
+    "WEEK": "par semaine",
+    "MONTH": "par mois",
+    "QUARTER": "par trimestre",
+    "YEAR": "par an",
+    "short": {
+      "ONE_TIME": "unique",
+      "DAY": "/jour",
+      "WEEK": "/sem",
+      "MONTH": "/mois",
+      "QUARTER": "/trim",
+      "YEAR": "/an"
+    },
+    "noun": {
+      "DAY": "Jour",
+      "WEEK": "Semaine",
+      "MONTH": "Mois",
+      "QUARTER": "Trimestre",
+      "YEAR": "Année"
+    }
+  },
+
+  "subscriptionStatus": {
+    "ACTIVE": "Actif",
+    "PAST_DUE": "Paiement en retard",
+    "CANCELED": "Annulé",
+    "INCOMPLETE": "En attente",
+    "TRIALING": "Période d'essai",
+    "EXPIRED": "Expiré"
+  },
+
+  "accessStatus": {
+    "active": "Actif",
+    "suspended": "Suspendu",
+    "revoked": "Révoqué",
+    "expired": "Expiré"
+  },
+
+  "customers": {
+    "title": "Mes clients",
+    "subtitle": "Consulte et gère ta base clients",
+    "searchPlaceholder": "Rechercher un client...",
+    "total": "Total",
+    "plural": "clients",
+    "singular": "client",
+    "loading": "Chargement des clients...",
+    "error": "Erreur lors du chargement des clients",
+    "empty": {
+      "title": "Pas encore de clients",
+      "description": "Tes clients apparaîtront ici après leur premier achat.",
+      "cta": "Promouvoir mon offre"
+    },
+    "table": {
+      "customer": "Client",
+      "Platform": "iD",
+      "email": "Email",
+      "subscriptions": "Abonnements",
+      "since": "Client depuis",
+      "actions": "Actions"
+    },
+    "detail": {
+      "title": "Détails du client",
+      "subtitle": "Détails du client et abonnements",
+      "info": "Informations",
+      "stats": "Statistiques",
+      "activeSubscriptions": "Abonnements actifs",
+      "totalSubscriptions": "Total abonnements",
+      "externalId": "ID externe",
+      "createdAt": "Créé le",
+      "entitlements": "Accès actifs",
+      "viewAll": "Voir tous",
+      "noEntitlements": "Aucun accès actif pour ce client",
+      "subscriptionsTitle": "Abonnements",
+      "noSubscriptions": "Aucun abonnement pour ce client",
+      "grantedAt": "Accordé le",
+      "expiresAt": "Expire le",
+      "notFound": "Client non trouvé",
+      "backToCustomers": "Retour aux clients",
+      "back": "Retour",
+      "noName": "Sans nom",
+      "status": {
+        "ACTIVE": "Actif",
+        "PAST_DUE": "Impayé",
+        "CANCELED": "Annulé",
+        "INCOMPLETE": "En attente",
+        "TRIALING": "Essai",
+        "EXPIRED": "Expiré"
+      }
+    },
+    "noResults": "Aucun client trouvé pour ces critères"
+  },
+
+  "subscriptions": {
+    "title": "Mes abonnés",
+    "subtitle": "Suis tes abonnés et gère leurs accès",
+
+    "loading": "Chargement...",
+    "error": "Erreur lors du chargement des abonnés",
+
+    "empty": {
+      "title": "Pas encore d'abonnés",
+      "description": "Partage ton lien de vente pour recevoir tes premiers abonnés.",
+      "cta": "Promouvoir mon offre"
+    },
+
+    "stats": {
+      "total": "Total",
+      "active": "Actifs",
+      "pastDue": "Impayés",
+      "trialing": "En essai"
+    },
+
+    "filters": {
+      "statusLabel": "Filtrer par statut",
+      "allStatuses": "Tous les statuts",
+      "searchPlaceholder": "Rechercher un abonné..."
+    },
+
+    "table": {
+      "subscriber": "Abonné",
+      "offer": "Offre",
+      "status": "Statut",
+      "since": "Depuis",
+      "actions": "Actions",
+      "noName": "Sans nom"
+    },
+
+    "actions": {
+      "view": "Voir"
+    },
+
+    "noResults": "Aucun abonné trouvé pour ces critères",
+
+    "trialDaysLeft": "J-{count}",
+    "followUp": "Relancer",
+
+    "status": {
+      "ACTIVE": "Actif",
+      "PAST_DUE": "Impayé",
+      "CANCELED": "Annulé",
+      "INCOMPLETE": "En attente",
+      "TRIALING": "Essai",
+      "EXPIRED": "Expiré"
+    },
+
+    "interval": {
+      "ONE_TIME": " unique",
+      "DAY": "/jour",
+      "WEEK": "/sem",
+      "MONTH": "/mois",
+      "QUARTER": "/trim",
+      "YEAR": "/an"
+    },
+
+    "relativeDate": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "daysAgo": "Il y a {count} jours"
+    }
+  },
+
+  "subscriptionDetail": {
+    "loading": "Chargement...",
+    "subtitle": "Détail de l'abonnement",
+
+    "errors": {
+      "load": "Erreur lors du chargement de l'abonnement"
+    },
+
+    "common": {
+      "na": "-"
+    },
+
+    "actions": {
+      "back": "Retour",
+      "viewProfile": "Voir le profil",
+      "viewOffer": "Voir l'offre",
+      "cancel": "Annuler l'abonnement",
+      "contact": "Contacter l'abonné"
+    },
+
+    "sections": {
+      "subscriber": "Abonné",
+      "offer": "Offre",
+      "subscriptionStatus": "Statut de l'abonnement",
+      "access": "Accès accordés"
+    },
+
+    "customer": {
+      "noName": "Sans nom"
+    },
+
+    "plan": {
+      "unknown": "Offre inconnue",
+      "noPlan": "Aucune offre associée"
+    },
+
+    "status": {
+      "ACTIVE": "Actif",
+      "PAST_DUE": "Impayé",
+      "CANCELED": "Annulé",
+      "INCOMPLETE": "En attente",
+      "TRIALING": "Essai",
+      "EXPIRED": "Expiré"
+    },
+
+    "interval": {
+      "ONE_TIME": "paiement unique",
+      "DAY": "par jour",
+      "WEEK": "par semaine",
+      "MONTH": "par mois",
+      "QUARTER": "par trimestre",
+      "YEAR": "par an"
+    },
+
+    "relative": {
+      "past": "(passé)",
+      "today": "(aujourd'hui)",
+      "tomorrow": "(demain)",
+      "inDays": "(dans {count} jours)"
+    },
+
+    "billing": {
+      "renewal": "Renouvellement",
+      "since": "depuis le {date}",
+      "nextCharge": "Prochaine facturation",
+      "amount": "Montant"
+    },
+
+    "trial": {
+      "ends": "Fin de l'essai"
+    },
+
+    "pastDue": {
+      "message": "⚠ Le paiement a échoué. L'abonné sera relancé automatiquement."
+    },
+
+    "canceled": {
+      "message": "Annulé le {date}"
+    },
+
+    "access": {
+      "message": "Les accès liés à cet abonnement sont gérés automatiquement.",
+      "viewAll": "Voir tous les accès"
+    }
+  },
+
+  "promote": {
+    "title": "Promouvoir mes offres",
+    "subtitle": "Partage tes offres et attire de nouveaux abonnés",
+
+    "loading": "Chargement...",
+
+    "errors": {
+      "loadOffers": "Erreur lors du chargement des offres"
+    },
+
+    "toasts": {
+      "copied": "Copié !",
+      "copyError": "Erreur lors de la copie"
+    },
+
+    "empty": {
+      "title": "Aucune offre active",
+      "description": "Crée ta première offre pour commencer à la promouvoir.",
+      "cta": "Créer une offre"
+    },
+
+    "selectProduct": "Sélectionner une offre :",
+
+    "salesLink": {
+      "title": "Lien de vente",
+      "copy": "Copier",
+      "copied": "Copié !",
+      "open": "Ouvrir",
+      "qrCode": "QR Code",
+      "qrCodeSoon": "Fonctionnalité à venir"
+    },
+
+    "shareMessage": {
+      "title": "Message prêt à partager",
+      "template": "🚀 Rejoignez mon canal privé {productName} !\n\n✅ Accès exclusif à tout mon contenu premium\n✅ Mises à jour régulières\n✅ Communauté privée\n\n{price}\n👉 {link}"
+    },
+
+    "shareDirect": {
+      "title": "Partager directement",
+      "telegram": "Telegram",
+      "instagram": "Instagram",
+      "instagramHint": "Ouvre Instagram et colle le message",
+      "twitter": "Twitter",
+      "email": "Email"
+    },
+
+    "offerDetails": {
+      "title": "Détails de l'offre"
+    },
+
+    "interval": {
+      "ONE_TIME": "paiement unique",
+      "DAY": "par jour",
+      "WEEK": "par semaine",
+      "MONTH": "par mois",
+      "QUARTER": "par trimestre",
+      "YEAR": "par an"
+    },
+
+    "email": {
+      "subject": "Rejoignez {productName}",
+      "defaultOffer": "mon offre"
+    }
+  },
+
+  "channels": {
+    "title": "Mes canaux",
+    "subtitle": "Gère tes canaux Telegram, Discord et WhatsApp connectés",
+
+    "add": "Ajouter un canal",
+    "addFirst": "Ajouter mon premier canal",
+
+    "loading": {
+      "title": "Chargement des canaux..."
+    },
+
+    "success": {
+      "created": "Canal ajouté avec succès",
+      "accessGranted": "Accès accordé avec succès",
+      "accessRevoked": "Accès révoqué avec succès"
+    },
+
+    "errors": {
+      "load": "Erreur lors du chargement des canaux",
+      "create": "Erreur lors de l'ajout du canal",
+      "loadData": "Erreur lors du chargement des données",
+      "grantAccess": "Erreur lors de l'accord de l'accès",
+      "revokeAccess": "Erreur lors de la révocation de l'accès",
+      "selectCustomerAndSubscription": "Veuillez sélectionner un client et un abonnement",
+      "subscriptionNotSelected": "Erreur : abonnement non sélectionné"
+    },
+
+    "empty": {
+      "title": "Aucun canal connecté",
+      "description": "Connecte ton premier canal pour commencer à donner accès à tes membres payants.",
+      "cta": "Ajouter mon premier canal"
+    },
+
+    "list": {
+      "untitled": "Canal sans titre",
+      "viewInviteLink": "Voir le lien d'invitation",
+      "manageAccess": "Gérer les accès",
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif"
+      }
+    },
+
+    "stats": {
+      "provider": "Plateforme",
+      "externalId": "ID externe",
+      "created": "Créé"
+    },
+
+    "providers": {
+      "TELEGRAM": "Telegram",
+      "DISCORD": "Discord",
+      "WHATSAPP": "WhatsApp",
+      "unknown": "Autre"
+    },
+
+    "access": {
+      "titleFallback": "Canal",
+      "subtitle": "Gestion des accès au canal",
+
+      "ctaGrant": "Accorder un accès",
+
+      "cards": {
+        "total": "Total accès",
+        "granted": "Accordés",
+        "revoked": "Révoqués"
+      },
+
+      "activeAccessesTitle": "Accès actifs",
+      "noAccesses": "Aucun accès configuré pour ce canal",
+
+      "table": {
+        "customer": "Client",
+        "status": "Statut",
+        "grantedAt": "Accordé le",
+        "revokedAt": "Révoqué le",
+        "reason": "Raison",
+        "actions": "Actions",
+        "revoke": "Révoquer"
+      },
+
+      "status": {
+        "PENDING": "En attente",
+        "GRANTED": "Accordé",
+        "REVOKED": "Révoqué"
+      },
+
+      "revokeReasons": {
+        "manual": "Révocation manuelle",
+        "payment_failed": "Paiement échoué",
+        "canceled": "Abonnement annulé",
+        "refund": "Remboursement"
+      },
+
+      "grantDialog": {
+        "title": "Accorder un accès",
+        "description": "Sélectionnez un client et son abonnement pour lui donner accès à ce canal.",
+        "customerLabel": "Client",
+        "customerPlaceholder": "Sélectionner un client",
+        "subscriptionLabel": "Abonnement",
+        "subscriptionPlaceholder": "Sélectionner un abonnement",
+        "noActiveSubscription": "Aucun abonnement actif",
+        "cancel": "Annuler",
+        "confirm": "Accorder l'accès",
+        "processing": "Traitement..."
+      },
+
+      "revokeDialog": {
+        "title": "Révoquer un accès",
+        "description": "Cette action révoquera l'accès au canal pour ce client.",
+        "reasonLabel": "Raison de la révocation",
+        "cancel": "Annuler",
+        "confirm": "Révoquer l'accès",
+        "processing": "Traitement..."
+      },
+
+      "helpers": {
+        "unknownCustomer": "Client inconnu"
+      },
+
+      "notFound": {
+        "title": "Canal non trouvé",
+        "back": "Retour aux canaux"
+      }
+    },
+
+    "new": {
+      "title": "Ajouter un canal",
+      "subtitle": "Connectez un canal Telegram à votre organisation",
+      "back": "Retour aux canaux"
+    },
+
+    "form": {
+      "sectionTitle": "Informations du canal",
+
+      "providerLabel": "Plateforme *",
+      "providerPlaceholder": "Sélectionner une plateforme",
+      "providerHelp": "Plateforme du canal (Telegram ou Discord)",
+
+      "externalIdLabel": "ID externe du canal *",
+      "externalIdPlaceholder": "-1003487441463",
+      "externalIdHelp": "L'ID numérique du canal Telegram (commence par -100)",
+
+      "titleLabel": "Nom du canal",
+      "titlePlaceholder": "Mon Canal VIP",
+
+      "usernameLabel": "Nom d'utilisateur",
+      "usernamePlaceholder": "mon_canal_vip",
+      "usernameHelp": "Nom d'utilisateur du canal (sans @)",
+
+      "inviteLinkLabel": "Lien d'invitation",
+      "inviteLinkPlaceholder": "https://t.me/+AbcDefGhiJkl",
+      "inviteLinkHelp": "Lien d'invitation permanent du canal",
+
+      "isActiveLabel": "Canal actif",
+
+      "buttons": {
+        "saving": "Enregistrement...",
+        "update": "Mettre à jour",
+        "create": "Ajouter le canal",
+        "cancel": "Annuler"
+      },
+
+      "validation": {
+        "externalIdRequired": "L'ID externe est requis",
+        "invalidUrl": "URL invalide"
+      },
+
+      "providers": {
+        "telegram": "Telegram",
+        "discord": "Discord"
+      }
+    },
+
+    "howToFindId": {
+      "titleIcon": "💡",
+      "title": "Comment trouver l'ID de votre canal Telegram",
+
+      "method1": {
+        "title": "Méthode 1 : Via un bot (recommandé)",
+        "bot": "@userinfobot",
+        "steps": {
+          "1": "Transférez un message de votre canal à @userinfobot",
+          "2": "Le bot vous répondra avec l'ID du canal (commence par -100)",
+          "3": "Copiez cet ID dans le champ ci-dessus"
+        }
+      },
+
+      "method2": {
+        "title": "Méthode 2 : Via l'API Telegram",
+        "bot": "@getidsbot",
+        "steps": {
+          "1": "Ajoutez le bot @getidsbot à votre canal",
+          "2": "Le bot enverra automatiquement l'ID du canal",
+          "3": "Supprimez le bot après avoir récupéré l'ID"
+        }
+      },
+
+      "method3": {
+        "title": "Méthode 3 : Via le lien d'invitation",
+        "text": "Si votre lien est https://t.me/joinchat/XXXXXX, vous devez d'abord convertir ce lien en ID numérique avec un bot."
+      },
+
+      "important": {
+        "prefix": "⚠️",
+        "label": "Important :",
+        "text": "Assurez-vous que votre bot Telegram (configuré dans les variables d'environnement) est administrateur de ce canal avec les permissions nécessaires pour inviter des utilisateurs."
+      }
+    }
+  },
+  "access": {
+    "title": "Gestion des accès",
+    "subtitle": "Gère les accès accordés à tes abonnés",
+    "error": "Erreur lors du chargement des accès",
+    "loading": "Chargement...",
+    "empty": {
+      "title": "Aucun accès accordé",
+      "description": "Les accès sont créés automatiquement lors d'un nouvel abonnement."
+    },
+    "stats": {
+      "total": "Total",
+      "active": "Actifs",
+      "revoked": "Révoqués"
+    },
+    "filters": {
+      "allStatuses": "Tous les statuts",
+      "searchPlaceholder": "Rechercher...",
+      "active": "Actifs",
+      "suspended": "Suspendus",
+      "revoked": "Révoqués",
+      "expired": "Expirés"
+    },
+    "table": {
+      "subscriber": "Abonné",
+      "channel": "Canal",
+      "via": "Via",
+      "status": "Statut",
+      "noName": "Sans nom",
+      "actions": "Actions",
+      "manage": "Gérer"
+    },
+    "types": {
+      "CHANNEL_ACCESS": "Accès canal",
+      "FEATURE_FLAG": "Fonctionnalité",
+      "CONTENT_UNLOCK": "Contenu débloqué",
+      "API_QUOTA": "Quota API"
+    },
+    "revokeReasons": {
+      "payment_failed": "Paiement échoué",
+      "canceled": "Annulé",
+      "refund": "Remboursé",
+      "manual": "Révocation manuelle"
+    },
+    "manualAccess": "Accès manuel",
+    "noResults": "Aucun accès trouvé pour ces critères",
+    "manage": "Gérer"
+  },
+
+  "payments": {
+    "title": "Événements de paiement",
+    "subtitle": "Historique de tous les événements de paiement",
+
+    "loading": "Chargement...",
+
+    "common": {
+      "na": "-"
+    },
+
+    "stats": {
+      "total": "Total événements",
+      "processed": "Traités",
+      "pending": "En attente"
+    },
+
+    "table": {
+      "type": "Type",
+      "provider": "Plateforme",
+      "externalId": "ID externe",
+      "date": "Date",
+      "status": "Statut",
+      "subscription": "Abonnement"
+    },
+
+    "status": {
+      "processed": "Traité",
+      "pending": "En attente"
+    },
+
+    "empty": "Aucun événement de paiement trouvé",
+    "error": "Erreur lors du chargement des événements",
+
+    "eventTypes": {
+      "CHECKOUT_COMPLETED": "Paiement complété",
+      "SUBSCRIPTION_CREATED": "Abonnement créé",
+      "SUBSCRIPTION_UPDATED": "Abonnement mis à jour",
+      "SUBSCRIPTION_CANCELED": "Abonnement annulé",
+      "INVOICE_PAID": "Facture payée",
+      "INVOICE_PAYMENT_FAILED": "Paiement échoué",
+      "REFUND_CREATED": "Remboursement créé"
+    },
+
+    "providers": {
+      "STRIPE": "Stripe",
+      "PAYPAL": "PayPal"
+    }
+  },
+  "billing": {
+    "title": "Facturation",
+    "subtitle": "Connecte Stripe pour recevoir les paiements de tes clients",
+    "saasWarning": {
+      "title": "Abonnement requis",
+      "description": "Ton abonnement TelegramPlugin n'est pas actif. Les paiements sont désactivés jusqu'à ton abonnement."
+    },
+    "stripeConnect": {
+      "title": "Stripe Connect",
+      "subtitle": "Reçois les paiements directement sur ton compte Stripe",
+      "accountConnected": "Compte connecté",
+      "chargesEnabled": "Paiements activés",
+      "detailsSubmitted": "Informations complétées",
+      "connect": "Connecter Stripe",
+      "completeSetup": "Compléter la configuration",
+      "updateSettings": "Modifier les paramètres Stripe",
+      "openDashboard": "Ouvrir le tableau de bord Stripe",
+      "accountId": "ID du compte :"
+    },
+    "howItWorks": {
+      "title": "Comment ça fonctionne",
+      "step1": "Tes clients paient via Stripe Checkout",
+      "step2": "Les fonds arrivent directement sur ton compte Stripe",
+      "step3": "Facturation selon ton abonnement",
+      "step4": "Les frais Stripe (1,4% + 0,25€ pour cartes EU) s'appliquent séparément"
+    },
+    "loading": "Chargement de la facturation...",
+    "error": "Erreur lors du chargement du statut de facturation",
+    "connectError": "Erreur lors de la connexion à Stripe",
+    "dashboardError": "Erreur lors de l'ouverture du tableau de bord Stripe"
+  },
+
+  "checkout": {
+    "offeredBy": "Offert par {name}",
+    "accessTo": "Accès à :",
+    "choosePlan": "Choisir votre formule",
+    "popular": "Populaire",
+    "freeTrial": "Essai gratuit de {days} jours",
+    "accessDuration": "Accès valide {days} jours",
+    "finalize": "Finaliser",
+    "form": {
+      "email": "Email",
+      "emailPlaceholder": "votre@email.com",
+      "emailRequired": "L'email est requis pour le paiement par carte",
+      "name": "Nom (optionnel)",
+      "namePlaceholder": "Jean Dupont",
+      "telegram": "Username Telegram",
+      "telegramPlaceholder": "@votre_username",
+      "telegramHelp": "Pour recevoir l'accès automatiquement",
+      "telegramRequired": "Le username Telegram est requis pour payer avec Telegram Stars"
+    },
+    "payment": {
+      "title": "Paiement",
+      "card": "Carte bancaire",
+      "telegramStars": "Telegram Stars",
+      "secure": "Paiement sécurisé"
+    },
+    "cta": {
+      "pay": "Payer {amount}",
+      "continueWithTelegram": "Continuer avec Telegram",
+      "selectPlan": "Sélectionnez une formule",
+      "processing": "Traitement..."
+    },
+    "errors": {
+      "selectPlan": "Veuillez sélectionner une formule",
+      "productNotFound": "Ce produit n'existe pas ou n'est plus disponible",
+      "checkoutFailed": "Erreur lors de la création du paiement"
+    },
+    "telegramStarsInstructions": "Pour payer avec Telegram Stars, utilise le bot Telegram :\n\nEnvoie la commande : /buy {planId}",
+    "noPlans": "Aucune formule disponible pour ce produit",
+    "unavailable": {
+      "title": "Produit indisponible",
+      "description": "Ce produit n'existe pas ou n'est plus disponible"
+    }
+  },
+
+  "checkoutSuccess": {
+    "title": "Paiement réussi !",
+    "description": "Merci pour ton achat. Ton abonnement a été activé avec succès.",
+    "emailNotice": "Tu vas recevoir un email de confirmation avec tous les détails de ton abonnement. Si tu as fourni ton username Telegram, tu recevras également un lien d'invitation pour rejoindre le(s) canal(aux) privé(s).",
+    "sessionId": "ID de session :",
+    "backHome": "Retour à l'accueil",
+    "safeToClose": "Tu peux fermer cette page en toute sécurité",
+    "loading": "Chargement..."
+  },
+
+  "checkoutCancel": {
+    "title": "Paiement annulé",
+    "description": "Ton paiement a été annulé. Aucun montant n'a été débité de ton compte.",
+    "helpNotice": "Si tu as rencontré un problème lors du paiement, n'hésite pas à réessayer ou à nous contacter pour obtenir de l'aide.",
+    "retry": "Réessayer",
+    "backHome": "Retour à l'accueil"
+  },
+
+  "errors": {
+    "generic": "Une erreur est survenue. Réessaie dans quelques instants.",
+    "network": "Erreur de connexion. Vérifie ta connexion internet.",
+    "notFound": "Page non trouvée",
+    "unauthorized": "Tu dois te connecter pour accéder à cette page",
+    "forbidden": "Tu n'as pas accès à cette ressource",
+    "validation": "Vérifie les informations saisies",
+    "loadingData": "Erreur lors du chargement des données"
+  },
+
+  "success": {
+    "saved": "Modifications enregistrées",
+    "created": "Créé avec succès",
+    "deleted": "Supprimé avec succès",
+    "copied": "Copié dans le presse-papier"
+  },
+
+  "footer": {
+    "terms": "Conditions",
+    "privacy": "Confidentialité",
+    "gdpr": "RGPD",
+    "contact": "Contact",
+    "about": "À propos"
+  }
+}

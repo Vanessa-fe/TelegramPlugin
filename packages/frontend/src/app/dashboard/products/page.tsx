@@ -1,37 +1,42 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { productsApi } from '@/lib/api/products';
-import type { Product, ProductStatus } from '@/types/product';
-import { Button } from '@/components/ui/button';
-import { Plus, Package, MoreHorizontal, List } from 'lucide-react';
-import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
+import { productsApi } from "@/lib/api/products";
+import type { Product, ProductStatus } from "@/types/product";
+import { List, MoreHorizontal, Package, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-const statusConfig: Record<ProductStatus, { label: string; className: string }> = {
+const statusConfig: Record<
+  ProductStatus,
+  { label: string; className: string }
+> = {
   DRAFT: {
-    label: 'Draft',
-    className: 'bg-gray-100 text-gray-700',
+    label: "Draft",
+    className: "bg-gray-100 text-gray-700",
   },
   ACTIVE: {
-    label: 'Active',
-    className: 'bg-green-100 text-green-700',
+    label: "Active",
+    className: "bg-green-100 text-green-700",
   },
   ARCHIVED: {
-    label: 'Archived',
-    className: 'bg-gray-100 text-gray-500',
+    label: "Archived",
+    className: "bg-gray-100 text-gray-500",
   },
 };
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const t = useTranslations("products");
 
   useEffect(() => {
     loadProducts();
@@ -42,8 +47,12 @@ export default function ProductsPage() {
       const data = await productsApi.findAll();
       setProducts(data);
     } catch (error) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      toast.error(axiosError.response?.data?.message || 'Failed to load products');
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(
+        axiosError.response?.data?.message || "Failed to load products"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +63,7 @@ export default function ProductsPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-[#6F6E77]">Loading products...</p>
+          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading")}</p>
         </div>
       </div>
     );
@@ -65,51 +74,51 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">Products</h1>
-          <p className="mt-1 text-[#6F6E77]">
-            Manage your subscription and one-time products
-          </p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
+            {t("title")}
+          </h1>
+          <p className="mt-1 text-[#6F6E77]">{t("subtitle")}</p>
         </div>
         <Link href="/dashboard/products/new">
           <Button className="bg-purple-600 hover:bg-purple-700 text-white">
             <Plus className="mr-2 h-4 w-4" />
-            New product
+            {t("create")}
           </Button>
         </Link>
       </div>
 
       {/* Products list */}
       {products.length === 0 ? (
-        <div className="bg-white rounded-xl border border-[#E9E3EF] p-12 text-center">
+        <div className="bg-white rounded-xl border-border-[#E9E3EF] p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
             <Package className="w-6 h-6" />
           </div>
           <h3 className="text-lg font-semibold text-[#1A1523] mb-2">
-            No products yet
+            {t("empty.title")}
           </h3>
           <p className="text-[#6F6E77] mb-6 max-w-sm mx-auto">
-            Create your first product to start selling access to your community.
+            {t("empty.description")}
           </p>
           <Link href="/dashboard/products/new">
             <Button className="bg-purple-600 hover:bg-purple-700 text-white">
               <Plus className="mr-2 h-4 w-4" />
-              Create product
+              {t("empty.cta")}
             </Button>
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-[#E9E3EF] overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-[#E9E3EF] overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-[#E9E3EF] bg-[#FDFAFF]">
+              <tr className="border-b border-border-[#E9E3EF] bg-surface">
                 <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
-                  Product
+                  {t("table.name")}
                 </th>
                 <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
-                  Status
+                  {t("table.status")}
                 </th>
                 <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
-                  Created
+                  {t("table.created")}
                 </th>
                 <th className="text-right text-sm font-medium text-[#6F6E77] px-6 py-4">
                   Actions
@@ -120,7 +129,7 @@ export default function ProductsPage() {
               {products.map((product) => (
                 <tr
                   key={product.id}
-                  className="border-b border-[#E9E3EF] last:border-0 hover:bg-[#FDFAFF] transition-colors"
+                  className="border-b border-border-[#E9E3EF] last:border-0 hover:bg-surface transition-colors"
                 >
                   <td className="px-6 py-4">
                     <p className="font-medium text-[#1A1523]">{product.name}</p>
@@ -138,10 +147,10 @@ export default function ProductsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-[#6F6E77]">
-                    {new Date(product.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
+                    {new Date(product.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
                     })}
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -150,7 +159,7 @@ export default function ProductsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+                          className="border-border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
                         >
                           <List className="mr-2 h-4 w-4" />
                           Plans

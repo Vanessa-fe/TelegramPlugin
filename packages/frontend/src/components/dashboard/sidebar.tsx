@@ -11,20 +11,22 @@ import {
   DollarSign,
   Hash,
   Key,
+  Megaphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { UserRole } from '@/types/auth';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Products', href: '/dashboard/products', icon: Package },
-  { name: 'Customers', href: '/dashboard/customers', icon: Users },
-  { name: 'Subscriptions', href: '/dashboard/subscriptions', icon: FileText },
-  { name: 'Payments', href: '/dashboard/payments', icon: DollarSign, roles: [UserRole.SUPERADMIN, UserRole.SUPPORT, UserRole.ORG_ADMIN] },
-  { name: 'Channels', href: '/dashboard/channels', icon: Hash },
-  { name: 'Entitlements', href: '/dashboard/entitlements', icon: Key },
-  { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
+  { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Mes offres', href: '/dashboard/products', icon: Package },
+  { name: 'Mes clients', href: '/dashboard/customers', icon: Users },
+  { name: 'Mes abonnés', href: '/dashboard/subscriptions', icon: FileText },
+  { name: 'Promouvoir', href: '/dashboard/promote', icon: Megaphone },
+  { name: 'Paiements', href: '/dashboard/payments', icon: DollarSign, roles: [UserRole.SUPERADMIN, UserRole.SUPPORT, UserRole.ORG_ADMIN] },
+  { name: 'Mes canaux', href: '/dashboard/channels', icon: Hash },
+  { name: 'Gestion des accès', href: '/dashboard/access', icon: Key },
+  { name: 'Facturation', href: '/dashboard/billing', icon: CreditCard },
 ];
 
 export function Sidebar() {

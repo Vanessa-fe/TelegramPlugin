@@ -1,6 +1,7 @@
 import apiClient from '../api-client';
 import type {
   Entitlement,
+  EntitlementWithRelations,
   CreateEntitlementDto,
   UpdateEntitlementDto,
 } from '@/types/entitlement';
@@ -11,14 +12,14 @@ export const entitlementsApi = {
     customerId?: string;
     entitlementKey?: string;
   }) {
-    const { data } = await apiClient.get<Entitlement[]>('/entitlements', {
+    const { data } = await apiClient.get<EntitlementWithRelations[]>('/entitlements', {
       params,
     });
     return data;
   },
 
   async findOne(id: string) {
-    const { data } = await apiClient.get<Entitlement>(`/entitlements/${id}`);
+    const { data } = await apiClient.get<EntitlementWithRelations>(`/entitlements/${id}`);
     return data;
   },
 

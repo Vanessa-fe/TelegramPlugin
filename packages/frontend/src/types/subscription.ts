@@ -58,3 +58,20 @@ export interface UpdateSubscriptionDto {
   endedAt?: string;
   metadata?: Record<string, unknown>;
 }
+
+// Subscription with related customer and plan data (returned by API)
+export interface SubscriptionWithRelations extends Subscription {
+  customer: {
+    id: string;
+    displayName?: string | null;
+    email?: string | null;
+    telegramUsername?: string | null;
+  };
+  plan: {
+    id: string;
+    name: string;
+    priceCents: number;
+    currency: string;
+    interval: string;
+  };
+}

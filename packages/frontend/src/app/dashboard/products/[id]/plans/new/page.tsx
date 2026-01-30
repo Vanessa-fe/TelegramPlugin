@@ -22,6 +22,7 @@ export default function NewPlanPage() {
 
   useEffect(() => {
     loadProduct();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId]);
 
   async function loadProduct() {

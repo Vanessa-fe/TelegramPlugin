@@ -4,7 +4,12 @@ import type { AuthUser } from '../auth/auth.types';
 export declare class EntitlementsController {
     private readonly entitlementsService;
     constructor(entitlementsService: EntitlementsService);
-    findAll(user: AuthUser, subscriptionId?: string, customerId?: string, entitlementKey?: string): Promise<({
+    findAll(user: AuthUser, subscriptionId?: string, customerId?: string, entitlementKey?: string): Promise<{
+        channel: {
+            id: string;
+            title: string | null;
+            username: string | null;
+        } | null;
         customer: {
             id: string;
             displayName: string | null;
@@ -19,6 +24,22 @@ export declare class EntitlementsController {
             externalId: string | null;
         };
         subscription: {
+            plan: {
+                id: string;
+                name: string;
+                priceCents: number;
+                currency: string;
+                interval: import("@prisma/client").$Enums.PlanInterval;
+                trialPeriodDays: number | null;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+                description: string | null;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                accessDurationDays: number | null;
+                productId: string;
+            };
+        } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
@@ -39,7 +60,6 @@ export declare class EntitlementsController {
             customerId: string;
             planId: string;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -53,8 +73,13 @@ export declare class EntitlementsController {
         resourceId: string | null;
         entitlementKey: string;
         expiresAt: Date | null;
-    })[]>;
+    }[]>;
     findOne(user: AuthUser, id: string): Promise<{
+        channel: {
+            id: string;
+            title: string | null;
+            username: string | null;
+        } | null;
         customer: {
             id: string;
             displayName: string | null;
@@ -69,6 +94,22 @@ export declare class EntitlementsController {
             externalId: string | null;
         };
         subscription: {
+            plan: {
+                id: string;
+                name: string;
+                priceCents: number;
+                currency: string;
+                interval: import("@prisma/client").$Enums.PlanInterval;
+                trialPeriodDays: number | null;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+                description: string | null;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                accessDurationDays: number | null;
+                productId: string;
+            };
+        } & {
             id: string;
             createdAt: Date;
             updatedAt: Date;
@@ -89,7 +130,6 @@ export declare class EntitlementsController {
             customerId: string;
             planId: string;
         };
-    } & {
         id: string;
         createdAt: Date;
         updatedAt: Date;

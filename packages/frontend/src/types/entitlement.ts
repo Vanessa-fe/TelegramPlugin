@@ -37,3 +37,30 @@ export interface UpdateEntitlementDto {
   revokeReason?: string;
   metadata?: Record<string, unknown>;
 }
+
+// Entitlement with related data (returned by API)
+export interface EntitlementWithRelations extends Entitlement {
+  customer: {
+    id: string;
+    displayName?: string | null;
+    email?: string | null;
+    telegramUsername?: string | null;
+  };
+  subscription: {
+    id: string;
+    status: string;
+    planId: string;
+    plan?: {
+      id: string;
+      name: string;
+      priceCents: number;
+      currency: string;
+      interval: string;
+    };
+  };
+  channel?: {
+    id: string;
+    title: string | null;
+    username: string | null;
+  } | null;
+}
