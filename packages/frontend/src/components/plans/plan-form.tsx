@@ -11,7 +11,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { PlanInterval, type CreatePlanDto, type Plan } from '@/types/plan';
 
@@ -19,7 +18,7 @@ const planFormSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
   description: z.string().optional(),
   interval: z.nativeEnum(PlanInterval),
-  priceCents: z.coerce.number().int().positive('Le prix doit être positif'),
+  price: z.coerce.number().positive('Le prix doit être positif'),
   currency: z.string().length(3, 'Code devise à 3 lettres (ex: EUR)'),
   trialPeriodDays: z.coerce.number().int().nonnegative().optional(),
   accessDurationDays: z.coerce.number().int().positive().optional(),
@@ -57,7 +56,7 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
           name: plan.name,
           description: plan.description || '',
           interval: plan.interval,
-          priceCents: plan.priceCents,
+          price: plan.priceCents / 100,
           currency: plan.currency,
           trialPeriodDays: plan.trialPeriodDays || undefined,
           accessDurationDays: plan.accessDurationDays || undefined,
@@ -78,7 +77,7 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
       name: data.name,
       description: data.description || undefined,
       interval: data.interval,
-      priceCents: data.priceCents,
+      priceCents: Math.round(data.price * 100),
       currency: data.currency.toUpperCase(),
       trialPeriodDays: data.trialPeriodDays || undefined,
       accessDurationDays: data.accessDurationDays || undefined,
@@ -128,7 +127,10 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un intervalle" />
+              <span>
+                {intervalOptions.find((opt) => opt.value === selectedInterval)
+                  ?.label || 'Sélectionner un intervalle'}
+              </span>
             </SelectTrigger>
             <SelectContent>
               {intervalOptions.map((option) => (
@@ -151,21 +153,20 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="priceCents">Prix (en centimes) *</Label>
+            <Label htmlFor="price">Prix *</Label>
             <Input
-              id="priceCents"
+              id="price"
               type="number"
-              {...register('priceCents')}
-              placeholder="2900"
+              step="0.01"
+              min="0"
+              {...register('price')}
+              placeholder="29.00"
             />
-            {errors.priceCents && (
+            {errors.price && (
               <p className="mt-1 text-sm text-red-600">
-                {errors.priceCents.message}
+                {errors.price.message}
               </p>
             )}
-            <p className="mt-1 text-xs text-muted-foreground">
-              Exemple: 2900 = 29,00€
-            </p>
           </div>
 
           <div>
