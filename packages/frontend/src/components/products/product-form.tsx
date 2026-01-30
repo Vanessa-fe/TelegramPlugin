@@ -90,13 +90,14 @@ export function ProductForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Organization */}
-          <div className="space-y-2">
-            <Label htmlFor="organizationId">
-              {t("form.organization.label")}
-            </Label>
-
-            {showOrganizationSelect ? (
+          {/* Organization - hidden for regular users, select for SUPERADMIN */}
+          {lockOrganization ? (
+            <input type="hidden" {...register("organizationId")} />
+          ) : showOrganizationSelect ? (
+            <div className="space-y-2">
+              <Label htmlFor="organizationId">
+                {t("form.organization.label")}
+              </Label>
               <select
                 id="organizationId"
                 {...register("organizationId")}
@@ -113,26 +114,16 @@ export function ProductForm({
                   </option>
                 ))}
               </select>
-            ) : (
-              <Input
-                id="organizationId"
-                {...register("organizationId")}
-                disabled={isSubmitting}
-                readOnly={lockOrganization}
-                placeholder={t("form.organization.placeholder")}
-              />
-            )}
-
-            {errors.organizationId && (
-              <p className="text-sm text-destructive">
-                {errors.organizationId.message as string}
+              {errors.organizationId && (
+                <p className="text-sm text-destructive">
+                  {errors.organizationId.message as string}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("form.organization.help")}
               </p>
-            )}
-
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("form.organization.help")}
-            </p>
-          </div>
+            </div>
+          ) : null}
 
           {/* Name */}
           <div className="space-y-2">
