@@ -52,6 +52,7 @@ export declare class SubscriptionsController {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        slug: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: import("@prisma/client").$Enums.SubscriptionStatus;
         currentPeriodStart: Date | null;
@@ -116,6 +117,7 @@ export declare class SubscriptionsController {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        slug: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: import("@prisma/client").$Enums.SubscriptionStatus;
         currentPeriodStart: Date | null;
@@ -137,6 +139,7 @@ export declare class SubscriptionsController {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        slug: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: import("@prisma/client").$Enums.SubscriptionStatus;
         currentPeriodStart: Date | null;
@@ -158,6 +161,7 @@ export declare class SubscriptionsController {
         createdAt: Date;
         updatedAt: Date;
         organizationId: string;
+        slug: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         status: import("@prisma/client").$Enums.SubscriptionStatus;
         currentPeriodStart: Date | null;

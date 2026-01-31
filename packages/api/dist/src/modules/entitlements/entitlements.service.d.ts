@@ -48,6 +48,7 @@ export declare class EntitlementsService {
             createdAt: Date;
             updatedAt: Date;
             organizationId: string;
+            slug: string | null;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
             currentPeriodStart: Date | null;
@@ -118,6 +119,7 @@ export declare class EntitlementsService {
             createdAt: Date;
             updatedAt: Date;
             organizationId: string;
+            slug: string | null;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
             currentPeriodStart: Date | null;
@@ -167,6 +169,7 @@ export declare class EntitlementsService {
             createdAt: Date;
             updatedAt: Date;
             organizationId: string;
+            slug: string | null;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
             currentPeriodStart: Date | null;
@@ -217,6 +220,7 @@ export declare class EntitlementsService {
             createdAt: Date;
             updatedAt: Date;
             organizationId: string;
+            slug: string | null;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
             currentPeriodStart: Date | null;
@@ -270,6 +274,7 @@ export declare class EntitlementsService {
             createdAt: Date;
             updatedAt: Date;
             organizationId: string;
+            slug: string | null;
             metadata: Prisma.JsonValue | null;
             status: import("@prisma/client").$Enums.SubscriptionStatus;
             currentPeriodStart: Date | null;
