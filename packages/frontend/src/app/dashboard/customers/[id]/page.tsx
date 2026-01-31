@@ -262,7 +262,7 @@ export default function CustomerDetailPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
+                <TableHead>{tCustomers("table.id")}</TableHead>
                 <TableHead>{tCustomers("table.subscriptions")}</TableHead>
                 <TableHead>{tCustomers("table.since")}</TableHead>
                 <TableHead>{t("expiresAt")}</TableHead>

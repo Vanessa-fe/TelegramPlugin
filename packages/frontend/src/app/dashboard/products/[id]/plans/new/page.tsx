@@ -11,11 +11,13 @@ import type { CreatePlanDto } from '@/types/plan';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export default function NewPlanPage() {
   const params = useParams();
   const router = useRouter();
   const productId = params.id as string;
+  const t = useTranslations('plans.newPage');
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,8 +34,7 @@ export default function NewPlanPage() {
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(
-        axiosError.response?.data?.message ||
-          'Erreur lors du chargement du produit'
+        axiosError.response?.data?.message || t('toast.loadError')
       );
     } finally {
       setIsLoading(false);
@@ -43,13 +44,12 @@ export default function NewPlanPage() {
   async function handleSubmit(data: CreatePlanDto) {
     try {
       await plansApi.create(data);
-      toast.success('Plan créé avec succès');
+      toast.success(t('toast.createSuccess'));
       router.push(`/dashboard/products/${productId}/plans`);
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(
-        axiosError.response?.data?.message ||
-          'Erreur lors de la création du plan'
+        axiosError.response?.data?.message || t('toast.createError')
       );
     }
   }
@@ -59,7 +59,7 @@ export default function NewPlanPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Chargement...</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('loading')}</p>
         </div>
       </div>
     );
@@ -68,10 +68,10 @@ export default function NewPlanPage() {
   if (!product) {
     return (
       <div className="space-y-6">
-        <p className="text-center text-red-600">Produit non trouvé</p>
+        <p className="text-center text-red-600">{t('notFound')}</p>
         <div className="flex justify-center">
           <Link href="/dashboard/products">
-            <Button variant="outline">Retour aux produits</Button>
+            <Button variant="outline">{t('backToProducts')}</Button>
           </Link>
         </div>
       </div>
@@ -87,9 +87,9 @@ export default function NewPlanPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">Nouveau plan</h1>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
           <p className="mt-2 text-gray-600">
-            Créer un plan tarifaire pour {product.name}
+            {t('subtitle', { productName: product.name })}
           </p>
         </div>
       </div>

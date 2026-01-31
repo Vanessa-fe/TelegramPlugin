@@ -31,6 +31,17 @@ let SubscriptionsController = class SubscriptionsController {
         const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, organizationId);
         return this.subscriptionsService.findAll(scopedOrgId);
     }
+    async findBySlug(user, slug, queryOrganizationId) {
+        const organizationId = (0, organization_scope_1.resolveOrganizationScope)(user, queryOrganizationId);
+        if (!organizationId) {
+            throw new common_1.NotFoundException('Organization ID required for slug lookup');
+        }
+        const subscription = await this.subscriptionsService.findBySlug(organizationId, slug);
+        if (!subscription) {
+            throw new common_1.NotFoundException('Subscription not found');
+        }
+        return subscription;
+    }
     async findOne(user, id) {
         const subscription = await this.subscriptionsService.findOne(id);
         (0, organization_scope_1.resolveOrganizationScope)(user, subscription.organizationId);
@@ -39,6 +50,10 @@ let SubscriptionsController = class SubscriptionsController {
     create(user, body) {
         (0, organization_scope_1.resolveOrganizationScope)(user, body.organizationId);
         return this.subscriptionsService.create(body);
+    }
+    async backfillSlugs() {
+        const count = await this.subscriptionsService.backfillSlugs();
+        return { message: `Updated ${count} subscriptions with slugs` };
     }
     async update(user, id, body) {
         const subscription = await this.subscriptionsService.findOne(id);
@@ -60,6 +75,16 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SubscriptionsController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Get)('by-slug/:slug'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('slug')),
+    __param(2, (0, common_1.Query)('organizationId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SubscriptionsController.prototype, "findBySlug", null);
+__decorate([
     (0, common_1.Get)(':id'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
@@ -77,6 +102,13 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], SubscriptionsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)('backfill-slugs'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SubscriptionsController.prototype, "backfillSlugs", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),

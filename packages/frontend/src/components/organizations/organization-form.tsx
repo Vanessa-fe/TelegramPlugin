@@ -3,31 +3,12 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type {
-  CreateOrganizationDto,
-  Organization,
-} from '@/types/organization';
-
-const organizationSchema = z.object({
-  name: z.string().min(1, 'Le nom est requis'),
-  slug: z
-    .string()
-    .min(1, 'Le slug est requis')
-    .max(50)
-    .regex(
-      /^[a-z0-9-]+$/,
-      'Seuls les lettres minuscules, chiffres et tirets sont autorisés'
-    ),
-  billingEmail: z.string().email('Email valide requis'),
-  saasActive: z.boolean().optional(),
-  timezone: z.string().optional(),
-});
-
-type FormData = z.infer<typeof organizationSchema>;
+import type { CreateOrganizationDto, Organization } from '@/types/organization';
 
 interface OrganizationFormProps {
   organization?: Organization;
@@ -38,6 +19,21 @@ export function OrganizationForm({
   organization,
   onSubmit,
 }: OrganizationFormProps) {
+  const t = useTranslations('admin.organizationForm');
+  const organizationSchema = z.object({
+    name: z.string().min(1, t('validation.nameRequired')),
+    slug: z
+      .string()
+      .min(1, t('validation.slugRequired'))
+      .max(50)
+      .regex(/^[a-z0-9-]+$/, t('validation.slugInvalid')),
+    billingEmail: z.string().email(t('validation.billingEmailInvalid')),
+    saasActive: z.boolean().optional(),
+    timezone: z.string().optional(),
+  });
+
+  type FormData = z.infer<typeof organizationSchema>;
+
   const {
     register,
     handleSubmit,
@@ -48,30 +44,30 @@ export function OrganizationForm({
       ? {
           name: organization.name,
           slug: organization.slug,
-        billingEmail: organization.billingEmail,
-        saasActive: organization.saasActive ?? false,
-        timezone: organization.timezone ?? 'UTC',
-      }
-    : {
-        name: '',
-        slug: '',
-        billingEmail: '',
-        saasActive: false,
-        timezone: 'UTC',
-      },
+          billingEmail: organization.billingEmail,
+          saasActive: organization.saasActive ?? false,
+          timezone: organization.timezone ?? 'UTC',
+        }
+      : {
+          name: '',
+          slug: '',
+          billingEmail: '',
+          saasActive: false,
+          timezone: 'UTC',
+        },
   });
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>
-          {organization ? 'Modifier l\'organisation' : 'Créer une organisation'}
+          {organization ? t('title.edit') : t('title.create')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nom</Label>
+            <Label htmlFor="name">{t('fields.name')}</Label>
             <Input id="name" {...register('name')} disabled={isSubmitting} />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
@@ -79,12 +75,12 @@ export function OrganizationForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="slug">Slug</Label>
+            <Label htmlFor="slug">{t('fields.slug')}</Label>
             <Input
               id="slug"
               {...register('slug')}
               disabled={isSubmitting}
-              placeholder="mon-organisation"
+              placeholder={t('placeholders.slug')}
             />
             {errors.slug && (
               <p className="text-sm text-destructive">{errors.slug.message}</p>
@@ -92,7 +88,7 @@ export function OrganizationForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="billingEmail">Email de facturation</Label>
+            <Label htmlFor="billingEmail">{t('fields.billingEmail')}</Label>
             <Input
               id="billingEmail"
               type="email"
@@ -114,16 +110,16 @@ export function OrganizationForm({
               {...register('saasActive')}
               disabled={isSubmitting}
             />
-            <Label htmlFor="saasActive">Abonnement SaaS actif</Label>
+            <Label htmlFor="saasActive">{t('fields.saasActive')}</Label>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="timezone">Fuseau horaire</Label>
+            <Label htmlFor="timezone">{t('fields.timezone')}</Label>
             <Input
               id="timezone"
               {...register('timezone')}
               disabled={isSubmitting}
-              placeholder="UTC"
+              placeholder={t('placeholders.timezone')}
             />
             {errors.timezone && (
               <p className="text-sm text-destructive">
@@ -134,10 +130,10 @@ export function OrganizationForm({
 
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting
-              ? 'Enregistrement...'
+              ? t('submit.saving')
               : organization
-                ? 'Mettre à jour'
-                : 'Créer'}
+                ? t('submit.update')
+                : t('submit.create')}
           </Button>
         </form>
       </CardContent>

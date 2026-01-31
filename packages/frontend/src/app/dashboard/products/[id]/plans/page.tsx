@@ -20,23 +20,24 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const intervalLabels: Record<PlanInterval, string> = {
-  ONE_TIME: "Paiement unique",
-  DAY: "Jour",
-  WEEK: "Semaine",
-  MONTH: "Mois",
-  QUARTER: "Trimestre",
-  YEAR: "Année",
-};
-
 export default function ProductPlansPage() {
   const params = useParams();
   const productId = params.id as string;
   const locale = useLocale();
   const t = useTranslations("plans");
+  const tIntervals = useTranslations("intervals");
+  const tErrors = useTranslations("errors");
   const [product, setProduct] = useState<Product | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const intervalLabels: Record<PlanInterval, string> = {
+    ONE_TIME: tIntervals("ONE_TIME"),
+    DAY: tIntervals("noun.DAY"),
+    WEEK: tIntervals("noun.WEEK"),
+    MONTH: tIntervals("noun.MONTH"),
+    QUARTER: tIntervals("noun.QUARTER"),
+    YEAR: tIntervals("noun.YEAR"),
+  };
 
   useEffect(() => {
     loadData();
@@ -56,8 +57,7 @@ export default function ProductPlansPage() {
         response?: { data?: { message?: string } };
       };
       toast.error(
-        axiosError.response?.data?.message ||
-          "Erreur lors du chargement des données"
+        axiosError.response?.data?.message || tErrors("loadingData")
       );
     } finally {
       setIsLoading(false);
@@ -153,15 +153,13 @@ export default function ProductPlansPage() {
                   <TableCell>{intervalLabels[plan.interval]}</TableCell>
                   <TableCell>
                     {plan.trialPeriodDays
-                      ? `${plan.trialPeriodDays} jours`
+                      ? t("trialDays", { count: plan.trialPeriodDays })
                       : "-"}
                   </TableCell>
                   <TableCell>
                     {plan.accessDurationDays
-                      ? `${plan.accessDurationDays} ${t("accessDays", {
-                          count: plan.accessDurationDays,
-                        })}`
-                      : "Illimité"}
+                      ? t("accessDays", { count: plan.accessDurationDays })
+                      : t("accessUnlimited")}
                   </TableCell>
                   <TableCell>
                     {plan.isActive ? (

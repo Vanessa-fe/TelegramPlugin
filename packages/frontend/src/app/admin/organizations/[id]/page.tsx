@@ -9,8 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function OrganizationDetailsPage() {
+  const t = useTranslations('admin.organizationDetails');
+  const locale = useLocale();
   const params = useParams();
   const organizationId = params.id as string;
   const [organization, setOrganization] = useState<Organization | null>(null);
@@ -23,8 +26,7 @@ export default function OrganizationDetailsPage() {
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(
-        axiosError.response?.data?.message ||
-          'Erreur lors du chargement de l\'organisation'
+        axiosError.response?.data?.message || t('toast.loadError')
       );
     } finally {
       setIsLoading(false);
@@ -40,7 +42,7 @@ export default function OrganizationDetailsPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Chargement...</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('loading')}</p>
         </div>
       </div>
     );
@@ -49,7 +51,7 @@ export default function OrganizationDetailsPage() {
   if (!organization) {
     return (
       <div className="text-center">
-        <p className="text-gray-600">Organisation introuvable</p>
+        <p className="text-gray-600">{t('notFound')}</p>
       </div>
     );
   }
@@ -61,42 +63,46 @@ export default function OrganizationDetailsPage() {
         <Link href={`/admin/organizations/${organization.id}/edit`}>
           <Button>
             <Pencil className="mr-2 h-4 w-4" />
-            Modifier
+            {t('edit')}
           </Button>
         </Link>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Détails</CardTitle>
+          <CardTitle>{t('cardTitle')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="text-sm font-medium text-gray-500">Slug</p>
+            <p className="text-sm font-medium text-gray-500">
+              {t('fields.slug')}
+            </p>
             <p className="mt-1">{organization.slug}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">
-              Email de facturation
+              {t('fields.billingEmail')}
             </p>
             <p className="mt-1">{organization.billingEmail}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">
-              Abonnement SaaS
+              {t('fields.saas')}
             </p>
             <p className="mt-1">
-              {organization.saasActive ? 'Actif' : 'Inactif'}
+              {organization.saasActive ? t('status.active') : t('status.inactive')}
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Fuseau horaire</p>
+            <p className="text-sm font-medium text-gray-500">
+              {t('fields.timezone')}
+            </p>
             <p className="mt-1">{organization.timezone || 'UTC'}</p>
           </div>
           {organization.stripeAccountId && (
             <div>
               <p className="text-sm font-medium text-gray-500">
-                Compte Stripe
+                {t('fields.stripeAccount')}
               </p>
               <p className="mt-1 font-mono text-sm">
                 {organization.stripeAccountId}
@@ -104,17 +110,19 @@ export default function OrganizationDetailsPage() {
             </div>
           )}
           <div>
-            <p className="text-sm font-medium text-gray-500">Créé le</p>
+            <p className="text-sm font-medium text-gray-500">
+              {t('fields.createdAt')}
+            </p>
             <p className="mt-1">
-              {new Date(organization.createdAt).toLocaleString('fr-FR')}
+              {new Date(organization.createdAt).toLocaleString(locale)}
             </p>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">
-              Dernière mise à jour
+              {t('fields.updatedAt')}
             </p>
             <p className="mt-1">
-              {new Date(organization.updatedAt).toLocaleString('fr-FR')}
+              {new Date(organization.updatedAt).toLocaleString(locale)}
             </p>
           </div>
         </CardContent>

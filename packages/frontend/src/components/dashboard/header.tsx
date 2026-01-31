@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
+import { LocaleSwitcher } from '@/components/locale-switcher';
+import { type Locale } from '@/i18n/config';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,22 +20,27 @@ import { UserRole } from '@/types/auth';
 import { LogOut, Shield, User, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useLocale, useTranslations } from 'next-intl';
 
 // Mobile navigation items
 const mobileNav = [
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Products', href: '/dashboard/products' },
-  { name: 'Customers', href: '/dashboard/customers' },
-  { name: 'Subscriptions', href: '/dashboard/subscriptions' },
-  { name: 'Payments', href: '/dashboard/payments' },
-  { name: 'Channels', href: '/dashboard/channels' },
-  { name: 'Billing', href: '/dashboard/billing' },
+  { key: 'dashboard', href: '/dashboard' },
+  { key: 'products', href: '/dashboard/products' },
+  { key: 'customers', href: '/dashboard/customers' },
+  { key: 'subscriptions', href: '/dashboard/subscriptions' },
+  { key: 'payments', href: '/dashboard/payments' },
+  { key: 'channels', href: '/dashboard/channels' },
+  { key: 'billing', href: '/dashboard/billing' },
 ];
 
 export function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const locale = useLocale() as Locale;
+  const tCommon = useTranslations('common');
+  const tNav = useTranslations('nav');
+  const tHeader = useTranslations('dashboard.header');
 
   const initials =
     user?.firstName && user?.lastName
@@ -48,10 +55,10 @@ export function Header() {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Logged out successfully');
+      toast.success(tCommon('logoutSuccess'));
       router.push('/login');
     } catch {
-      toast.error('Error logging out');
+      toast.error(tCommon('logoutError'));
     }
   };
 
@@ -77,7 +84,7 @@ export function Header() {
             )}
           </button>
           <Link href="/" className="text-lg font-bold text-[#1A1523]">
-            TelegramPlugin
+            {tCommon('appName')}
           </Link>
         </div>
 
@@ -86,6 +93,7 @@ export function Header() {
 
         {/* User menu */}
         <div className="flex items-center gap-4">
+          <LocaleSwitcher currentLocale={locale} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -112,12 +120,12 @@ export function Header() {
               {isSuperadmin && (
                 <DropdownMenuItem onClick={handleAdmin}>
                   <Shield className="mr-2 h-4 w-4" />
-                  Admin panel
+                  {tHeader('adminPanel')}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
-                Profile
+                {tCommon('profile')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -125,7 +133,7 @@ export function Header() {
                 className="text-red-600 focus:text-red-600"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                {tCommon('logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -138,7 +146,7 @@ export function Header() {
           <nav className="px-4 py-4 space-y-1">
             {mobileNav.map((item) => (
               <Link
-                key={item.name}
+                key={item.key}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
@@ -146,7 +154,7 @@ export function Header() {
                   'text-[#6F6E77] hover:bg-purple-50 hover:text-purple-600'
                 )}
               >
-                {item.name}
+                {tNav(item.key)}
               </Link>
             ))}
           </nav>

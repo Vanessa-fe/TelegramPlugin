@@ -25,6 +25,10 @@
     "copied": "Copied!",
     "view": "View",
     "manage": "Manage",
+    "profile": "Profile",
+    "logout": "Log out",
+    "logoutSuccess": "Logged out successfully",
+    "logoutError": "Error logging out",
     "details": "Details",
     "actions": "Actions",
     "status": "Status",
@@ -100,14 +104,25 @@
       "title": "Forgot your password?",
       "subtitle": "Enter your email to receive a reset link",
       "email": "Email",
+      "emailPlaceholder": "you@example.com",
       "submit": "Send reset link",
-      "backToLogin": "Back to login"
+      "sending": "Sending...",
+      "backToLogin": "Back to login",
+      "successTitle": "Check your email",
+      "successDescription": "We sent a password reset link to",
+      "successHint": "Didn't receive the email? Check your spam folder or",
+      "tryAgain": "try again",
+      "toastSuccess": "Reset link sent",
+      "toastError": "Failed to send reset link. Please try again."
     }
   },
 
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome! Here's an overview of your activity.",
+    "header": {
+      "adminPanel": "Admin panel"
+    },
     "stats": {
       "revenue": "Revenue",
       "activeSubscribers": "Active subscribers",
@@ -161,7 +176,8 @@
       "name": "Name",
       "plans": "Plans",
       "status": "Status",
-      "created": "Created"
+      "created": "Created",
+      "actions": "Actions"
     },
 
     "status": {
@@ -218,9 +234,16 @@
     },
 
     "toast": {
+      "loadError": "Failed to load products",
       "organizationsLoadError": "Failed to load organizations",
       "createSuccess": "Product created successfully",
       "createError": "Failed to create product"
+    },
+
+    "actions": {
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "archive": "Archive"
     }
   },
   "plans": {
@@ -244,6 +267,18 @@
     "status": {
       "active": "Active",
       "inactive": "Inactive"
+    },
+    "newPage": {
+      "loading": "Loading...",
+      "notFound": "Product not found",
+      "backToProducts": "Back to products",
+      "title": "New plan",
+      "subtitle": "Create a pricing plan for {productName}",
+      "toast": {
+        "loadError": "Failed to load product",
+        "createSuccess": "Plan created successfully",
+        "createError": "Failed to create plan"
+      }
     }
   },
 
@@ -296,6 +331,7 @@
       "cta": "Promote my offer"
     },
     "table": {
+      "id": "ID",
       "customer": "Customer",
       "email": "Email",
       "subscriptions": "Subscriptions",
@@ -873,9 +909,60 @@
     "dashboardError": "Failed to open Stripe dashboard"
   },
 
+  "planForm": {
+    "sections": {
+      "general": "General information",
+      "pricing": "Pricing",
+      "advanced": "Advanced options"
+    },
+    "fields": {
+      "nameLabel": "Plan name *",
+      "namePlaceholder": "e.g. Monthly, Yearly, Lifetime access",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Plan description",
+      "billingTypeLabel": "Billing type *",
+      "intervalPlaceholder": "Select an interval",
+
+      "priceLabel": "Price *",
+      "pricePlaceholder": "29.00",
+      "currencyLabel": "Currency *",
+      "currencyPlaceholder": "EUR",
+
+      "trialLabel": "Trial period (days)",
+      "trialPlaceholder": "7",
+      "trialHelper": "Leave empty if no free trial",
+
+      "accessDurationLabel": "Access duration (days)",
+      "accessDurationPlaceholder": "30",
+      "accessDurationHelper": "Leave empty for unlimited access",
+
+      "activeLabel": "Plan is active and visible to customers"
+    },
+    "intervals": {
+      "ONE_TIME": "One-time payment",
+      "DAY": "Daily",
+      "WEEK": "Weekly",
+      "MONTH": "Monthly",
+      "QUARTER": "Quarterly",
+      "YEAR": "Yearly"
+    },
+    "actions": {
+      "saving": "Saving...",
+      "update": "Update",
+      "create": "Create plan",
+      "cancel": "Cancel"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "pricePositive": "Price must be positive",
+      "currency3Letters": "3-letter currency code (e.g. EUR)"
+    }
+  },
+
   "checkout": {
     "offeredBy": "Offered by {name}",
     "accessTo": "Access to:",
+    "channelFallback": "Channel",
     "choosePlan": "Choose your plan",
     "popular": "Popular",
     "freeTrial": "{days}-day free trial",
@@ -923,7 +1010,8 @@
     "emailNotice": "You'll receive a confirmation email with all your subscription details. If you provided your Telegram username, you'll also receive an invitation link to join the private channel(s).",
     "sessionId": "Session ID:",
     "backHome": "Back to home",
-    "safeToClose": "You can safely close this page"
+    "safeToClose": "You can safely close this page",
+    "loading": "Loading..."
   },
 
   "checkoutCancel": {
@@ -949,6 +1037,958 @@
     "created": "Created successfully",
     "deleted": "Deleted successfully",
     "copied": "Copied to clipboard"
+  },
+
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated: January 25, 2026",
+    "sections": {
+      "acceptance": {
+        "title": "1. Acceptance of Terms",
+        "body": "By accessing or using TelegramPlugin (\"the Service\"), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service."
+      },
+      "description": {
+        "title": "2. Description of Service",
+        "body": "TelegramPlugin provides a platform for creators to monetize their communities on Telegram, Discord, and WhatsApp through subscriptions and one-time payments. We facilitate:",
+        "list": {
+          "item1": "Payment processing via Stripe Connect",
+          "item2": "Automatic access management to your channels",
+          "item3": "Customer and subscription management tools",
+          "item4": "Analytics and reporting"
+        }
+      },
+      "account": {
+        "title": "3. Account Registration",
+        "body": "To use the Service, you must:",
+        "list": {
+          "item1": "Be at least 18 years old",
+          "item2": "Provide accurate and complete registration information",
+          "item3": "Maintain the security of your account credentials",
+          "item4": "Accept responsibility for all activities under your account"
+        }
+      },
+      "fees": {
+        "title": "4. Fees and Payment",
+        "subscription": {
+          "title": "4.1 Subscription Fee",
+          "body": "The Service is offered at a flat monthly fee of €39. We charge 0% commission on your sales. Standard Stripe processing fees apply separately."
+        },
+        "trial": {
+          "title": "4.2 Free Trial",
+          "body": "New accounts receive a 14-day free trial. No credit card is required to start. At the end of the trial, you must subscribe to continue using the Service."
+        },
+        "billing": {
+          "title": "4.3 Billing",
+          "body": "Subscription fees are billed monthly in advance. You may cancel at any time; service continues until the end of the billing period."
+        }
+      },
+      "acceptableUse": {
+        "title": "5. Acceptable Use",
+        "body": "You agree not to use the Service to:",
+        "list": {
+          "item1": "Violate any applicable laws or regulations",
+          "item2": "Sell illegal content or services",
+          "item3": "Infringe on intellectual property rights",
+          "item4": "Distribute malware or harmful content",
+          "item5": "Engage in fraud or deceptive practices",
+          "item6": "Harass, abuse, or harm others",
+          "item7": "Circumvent platform restrictions on Telegram, Discord, or WhatsApp"
+        }
+      },
+      "responsibilities": {
+        "title": "6. Your Responsibilities",
+        "body": "As a creator using our platform, you are responsible for:",
+        "list": {
+          "item1": "Complying with tax obligations in your jurisdiction",
+          "item2": "Providing accurate descriptions of your products",
+          "item3": "Delivering the access and content promised to your customers",
+          "item4": "Handling customer support for your products",
+          "item5": "Complying with the terms of service of connected platforms"
+        }
+      },
+      "intellectualProperty": {
+        "title": "7. Intellectual Property",
+        "body": "You retain ownership of your content. By using the Service, you grant us a limited license to display and process your content as necessary to provide the Service."
+      },
+      "liability": {
+        "title": "8. Limitation of Liability",
+        "body": "To the maximum extent permitted by law, TelegramPlugin shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or business opportunities."
+      },
+      "availability": {
+        "title": "9. Service Availability",
+        "body": "We strive for high availability but do not guarantee uninterrupted service. We may perform maintenance or updates that temporarily affect availability."
+      },
+      "termination": {
+        "title": "10. Termination",
+        "body": "We may suspend or terminate your account for violation of these terms or for any other reason at our discretion. You may cancel your account at any time through your dashboard."
+      },
+      "changes": {
+        "title": "11. Changes to Terms",
+        "body": "We may modify these terms at any time. We will notify you of material changes via email. Continued use of the Service after changes constitutes acceptance."
+      },
+      "governingLaw": {
+        "title": "12. Governing Law",
+        "body": "These terms are governed by the laws of the European Union. Any disputes shall be resolved in the courts of [Jurisdiction]."
+      },
+      "contact": {
+        "title": "13. Contact",
+        "body": "For questions about these terms, contact us at",
+        "email": "legal@telegramplugin.com"
+      }
+    }
+  },
+
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: January 25, 2026",
+    "sections": {
+      "introduction": {
+        "title": "1. Introduction",
+        "body1": "TelegramPlugin (\"we\", \"our\", or \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.",
+        "body2": "We are based in the European Union and comply with the General Data Protection Regulation (GDPR) and other applicable data protection laws."
+      },
+      "collect": {
+        "title": "2. Information We Collect",
+        "provided": {
+          "title": "2.1 Information You Provide",
+          "items": {
+            "account": {
+              "label": "Account Information:",
+              "text": "Email address, name, password when you register"
+            },
+            "payment": {
+              "label": "Payment Information:",
+              "text": "Processed securely through Stripe; we do not store card details"
+            },
+            "channel": {
+              "label": "Channel Information:",
+              "text": "Telegram, Discord, or WhatsApp channel identifiers you connect"
+            },
+            "customer": {
+              "label": "Customer Data:",
+              "text": "Information about your subscribers and their access"
+            }
+          }
+        },
+        "automatic": {
+          "title": "2.2 Information Collected Automatically",
+          "items": {
+            "usage": {
+              "label": "Usage Data:",
+              "text": "Pages visited, features used, time spent on the platform"
+            },
+            "device": {
+              "label": "Device Information:",
+              "text": "Browser type, operating system, IP address"
+            },
+            "cookies": {
+              "label": "Cookies:",
+              "text": "Session cookies for authentication and preferences"
+            }
+          }
+        }
+      },
+      "use": {
+        "title": "3. How We Use Your Information",
+        "body": "We use your information to:",
+        "list": {
+          "item1": "Provide and maintain our services",
+          "item2": "Process payments and manage subscriptions",
+          "item3": "Grant and revoke access to your channels",
+          "item4": "Send transactional emails (receipts, access notifications)",
+          "item5": "Improve our platform and develop new features",
+          "item6": "Comply with legal obligations"
+        }
+      },
+      "sharing": {
+        "title": "4. Data Sharing",
+        "body": "We share your data only with:",
+        "items": {
+          "stripe": {
+            "label": "Stripe:",
+            "text": "For payment processing"
+          },
+          "brevo": {
+            "label": "Brevo:",
+            "text": "For transactional emails"
+          },
+          "platforms": {
+            "label": "Platform APIs:",
+            "text": "Telegram, Discord, WhatsApp for access management"
+          },
+          "legal": {
+            "label": "Legal authorities:",
+            "text": "When required by law"
+          }
+        },
+        "footer": "We never sell your personal data to third parties."
+      },
+      "retention": {
+        "title": "5. Data Retention",
+        "body": "We retain your data for as long as your account is active. Upon account deletion, we anonymize or delete your personal data within 30 days, except where retention is required for legal or audit purposes."
+      },
+      "rights": {
+        "title": "6. Your Rights",
+        "body": "Under GDPR, you have the right to:",
+        "items": {
+          "access": {
+            "label": "Access:",
+            "text": "Request a copy of your personal data"
+          },
+          "rectification": {
+            "label": "Rectification:",
+            "text": "Correct inaccurate data"
+          },
+          "erasure": {
+            "label": "Erasure:",
+            "text": "Request deletion of your data"
+          },
+          "portability": {
+            "label": "Portability:",
+            "text": "Export your data in a machine-readable format"
+          },
+          "objection": {
+            "label": "Objection:",
+            "text": "Object to certain processing activities"
+          },
+          "restriction": {
+            "label": "Restriction:",
+            "text": "Request limited processing of your data"
+          }
+        },
+        "contact": "To exercise these rights, contact us at",
+        "email": "privacy@telegramplugin.com"
+      },
+      "security": {
+        "title": "7. Security",
+        "body": "We implement industry-standard security measures including encryption in transit (TLS), secure password hashing, and regular security audits. All data is stored in European data centers."
+      },
+      "changes": {
+        "title": "8. Changes to This Policy",
+        "body": "We may update this Privacy Policy from time to time. We will notify you of significant changes via email or a notice on our platform."
+      },
+      "contact": {
+        "title": "9. Contact Us",
+        "body": "For privacy-related inquiries, contact our Data Protection Officer at",
+        "email": "dpo@telegramplugin.com"
+      }
+    }
+  },
+
+  "gdpr": {
+    "title": "GDPR Compliance",
+    "lastUpdated": "Last updated: January 25, 2026",
+    "sections": {
+      "commitment": {
+        "title": "Our Commitment to GDPR",
+        "body": "TelegramPlugin is fully committed to GDPR compliance. As an EU-based company, we have built our platform with privacy by design and data protection as core principles."
+      },
+      "controller": {
+        "title": "Data Controller Information",
+        "company": {
+          "label": "Company:",
+          "value": "TelegramPlugin SAS"
+        },
+        "address": {
+          "label": "Address:",
+          "value": "[Company Address], Europe"
+        },
+        "email": {
+          "label": "Email:",
+          "value": "dpo@telegramplugin.com"
+        },
+        "dpo": {
+          "label": "Data Protection Officer:",
+          "value": "[DPO Name]"
+        }
+      },
+      "legalBasis": {
+        "title": "Legal Basis for Processing",
+        "body": "We process personal data under the following legal bases:",
+        "items": {
+          "contract": {
+            "label": "Contract Performance (Art. 6(1)(b)):",
+            "text": "Processing necessary to provide our services - account management, payment processing, access control"
+          },
+          "legitimate": {
+            "label": "Legitimate Interest (Art. 6(1)(f)):",
+            "text": "Analytics and service improvement, fraud prevention, security"
+          },
+          "legal": {
+            "label": "Legal Obligation (Art. 6(1)(c)):",
+            "text": "Tax records, audit logs, regulatory compliance"
+          },
+          "consent": {
+            "label": "Consent (Art. 6(1)(a)):",
+            "text": "Marketing communications (opt-in only)"
+          }
+        }
+      },
+      "rights": {
+        "title": "Your Rights Under GDPR",
+        "body": "As a data subject, you have comprehensive rights under GDPR. Here's how to exercise them:",
+        "access": {
+          "title": "Right of Access (Art. 15)",
+          "before": "Request a copy of all personal data we hold about you. Go to",
+          "highlight": "Dashboard > Settings > Export Data",
+          "after": "to download your data instantly, or email us for a complete Subject Access Request."
+        },
+        "rectification": {
+          "title": "Right to Rectification (Art. 16)",
+          "body": "Correct inaccurate data directly in your dashboard, or contact us to update information you cannot modify yourself."
+        },
+        "erasure": {
+          "title": "Right to Erasure (Art. 17)",
+          "before": "Request deletion of your account and associated data. Go to",
+          "highlight": "Dashboard > Settings > Delete Account.",
+          "after": "We will anonymize or delete your data within 30 days, except where retention is legally required."
+        },
+        "portability": {
+          "title": "Right to Data Portability (Art. 20)",
+          "before": "Export your data in JSON format from",
+          "highlight": "Dashboard > Settings > Export Data.",
+          "after": "This includes your account information, products, customers, and transaction history."
+        },
+        "object": {
+          "title": "Right to Object (Art. 21)",
+          "body": "Object to processing based on legitimate interest. Contact our DPO to submit an objection, and we will review within 30 days."
+        },
+        "restriction": {
+          "title": "Right to Restriction (Art. 18)",
+          "body": "Request limited processing while we verify accuracy or assess an objection. Contact our DPO to request restriction."
+        }
+      },
+      "processing": {
+        "title": "Data Processing Activities",
+        "table": {
+          "activity": "Activity",
+          "data": "Data",
+          "retention": "Retention"
+        },
+        "rows": {
+          "account": {
+            "activity": "Account Management",
+            "data": "Email, name, password hash",
+            "retention": "Until account deletion"
+          },
+          "payment": {
+            "activity": "Payment Processing",
+            "data": "Transaction records (via Stripe)",
+            "retention": "7 years (legal requirement)"
+          },
+          "access": {
+            "activity": "Access Control",
+            "data": "Channel IDs, user IDs",
+            "retention": "Until subscription ends"
+          },
+          "analytics": {
+            "activity": "Analytics",
+            "data": "Aggregated usage data",
+            "retention": "2 years"
+          },
+          "audit": {
+            "activity": "Audit Logs",
+            "data": "Security events",
+            "retention": "1 year"
+          }
+        }
+      },
+      "subProcessors": {
+        "title": "Sub-Processors",
+        "body": "We use the following sub-processors, all with appropriate safeguards:",
+        "items": {
+          "stripe": {
+            "label": "Stripe",
+            "text": "(USA) - Payment processing, Standard Contractual Clauses"
+          },
+          "brevo": {
+            "label": "Brevo",
+            "text": "(France) - Email delivery, EU-based"
+          },
+          "vercel": {
+            "label": "Vercel",
+            "text": "(USA) - Hosting, Standard Contractual Clauses"
+          },
+          "postgres": {
+            "label": "PostgreSQL hosting",
+            "text": "(EU) - Database, EU-based"
+          }
+        }
+      },
+      "transfers": {
+        "title": "International Transfers",
+        "body": "When data is transferred outside the EU/EEA, we ensure appropriate safeguards through Standard Contractual Clauses (SCCs) or adequacy decisions."
+      },
+      "security": {
+        "title": "Security Measures",
+        "body": "We implement technical and organizational measures including:",
+        "list": {
+          "item1": "Encryption in transit (TLS 1.3) and at rest (AES-256)",
+          "item2": "Regular security audits and penetration testing",
+          "item3": "Access controls and authentication",
+          "item4": "Employee training on data protection",
+          "item5": "Incident response procedures"
+        }
+      },
+      "breach": {
+        "title": "Data Breach Notification",
+        "body": "In the event of a personal data breach, we will notify the relevant supervisory authority within 72 hours and affected individuals without undue delay when required by GDPR."
+      },
+      "contact": {
+        "title": "Contact Our DPO",
+        "body": "For any GDPR-related requests or questions, contact our Data Protection Officer:",
+        "email": {
+          "label": "Email:",
+          "value": "dpo@telegramplugin.com"
+        },
+        "response": {
+          "label": "Response time:",
+          "value": "Within 30 days (as required by GDPR)"
+        }
+      },
+      "authority": {
+        "title": "Supervisory Authority",
+        "body": "You have the right to lodge a complaint with your local data protection authority. Our lead supervisory authority is [Authority Name]."
+      },
+      "quickActions": {
+        "title": "Quick Actions",
+        "body": "Access your data rights directly from your dashboard:",
+        "actions": {
+          "export": "Export My Data",
+          "delete": "Delete My Account"
+        }
+      }
+    }
+  },
+
+  "pricing": {
+    "hero": {
+      "title": "Simple, transparent pricing",
+      "subtitle": "One plan. No hidden fees. No commission on your sales."
+    },
+    "pricingCard": {
+      "badge": "Most popular",
+      "planName": "Pro",
+      "planSubtitle": "Everything you need to monetize",
+      "price": "€39",
+      "perMonth": "/month",
+      "commission": "+ 0% commission",
+      "cta": "Start 14-day free trial →",
+      "ctaNote": "No credit card required"
+    },
+    "features": {
+      "item1": "Unlimited products & plans",
+      "item2": "Unlimited customers",
+      "item3": "Telegram, Discord & WhatsApp",
+      "item4": "Automatic access management",
+      "item5": "Subscriptions & one-time payments",
+      "item6": "Direct Stripe payouts",
+      "item7": "Real-time analytics dashboard",
+      "item8": "Email notifications (Brevo)",
+      "item9": "GDPR-compliant data handling",
+      "item10": "Priority email support"
+    },
+    "comparison": {
+      "title": "Why creators switch to us",
+      "cards": {
+        "card3Title": "EU",
+        "card1": "commission vs 3-15% elsewhere",
+        "card2": "flat fee, predictable costs",
+        "card3": "based & GDPR-compliant"
+      },
+      "example": {
+        "label": "Example:",
+        "text": "If you make €5,000/month, competitors charge €150-750 in commission.",
+        "highlight": "With us, you pay €39. You save €111-711 every month."
+      }
+    },
+    "faqs": {
+      "title": "Frequently asked questions",
+      "items": {
+        "item1": {
+          "question": "Is there really 0% commission?",
+          "answer": "Yes. We charge a flat monthly fee only. You keep 100% of your revenue. Stripe processing fees (typically 1.4% + €0.25 for EU cards) are separate and go directly to Stripe, not us."
+        },
+        "item2": {
+          "question": "What happens after the free trial?",
+          "answer": "Your account continues to work. We'll send you a reminder before the trial ends. If you don't upgrade, your payment links will pause until you subscribe."
+        },
+        "item3": {
+          "question": "Can I cancel anytime?",
+          "answer": "Absolutely. No contracts, no commitments. Cancel from your dashboard with one click. Your existing members keep their access until their subscriptions expire."
+        },
+        "item4": {
+          "question": "Do I need a Stripe account?",
+          "answer": "Yes. We use Stripe Connect so payments go directly to your Stripe account. If you don't have one, you can create it during onboarding - it takes about 5 minutes."
+        },
+        "item5": {
+          "question": "Which platforms are supported?",
+          "answer": "Currently Telegram (including Telegram Stars), with Discord and WhatsApp coming soon. You can manage all platforms from a single dashboard."
+        },
+        "item6": {
+          "question": "Is my data safe?",
+          "answer": "We're EU-based and fully GDPR-compliant. Your data is stored in European data centers. You can export or delete your data anytime from your dashboard."
+        }
+      }
+    },
+    "finalCta": {
+      "title": "Ready to keep 100% of your revenue?",
+      "button": "Start your free trial →",
+      "note": "14 days free • No credit card required"
+    }
+  },
+
+  "promote": {
+    "loading": "Loading...",
+    "title": "Promote my offers",
+    "subtitle": "Share your offers and attract new subscribers",
+    "errors": {
+      "loadProducts": "Error loading offers"
+    },
+    "empty": {
+      "title": "No active offers",
+      "body": "Create your first offer to start promoting it.",
+      "cta": "Create an offer"
+    },
+    "selector": {
+      "label": "Select an offer:"
+    },
+    "cards": {
+      "paymentLink": "Sales link",
+      "shareMessage": "Ready-to-share message",
+      "shareDirect": "Share directly",
+      "offerDetails": "Offer details"
+    },
+    "buttons": {
+      "copy": "Copy",
+      "copied": "Copied!",
+      "open": "Open",
+      "qr": "QR Code",
+      "email": "Email"
+    },
+    "toast": {
+      "copied": "Copied!",
+      "copyError": "Error copying",
+      "comingSoon": "Feature coming soon",
+      "instagram": "Open Instagram and paste the message"
+    },
+    "intervals": {
+      "oneTime": "one-time payment",
+      "day": "per day",
+      "week": "per week",
+      "month": "per month",
+      "quarter": "per quarter",
+      "year": "per year"
+    },
+    "shareMessage": {
+      "line1": "🚀 Join my private channel {productName}!",
+      "line2": "✅ Exclusive access to all my premium content",
+      "line3": "✅ Regular updates",
+      "line4": "✅ Private community",
+      "priceOneTime": "Only {price}",
+      "priceRecurring": "Only {price} {interval}",
+      "line5": "👉 {paymentLink}"
+    },
+    "email": {
+      "subject": "Join {productName}",
+      "defaultProduct": "my offer"
+    }
+  },
+
+  "about": {
+    "hero": {
+      "title": "Empowering European creators to monetize their communities",
+      "body": "TelegramPlugin was born from a simple observation: creators in Europe deserve better tools. While US-based platforms dominate the market, European creators face unique challenges — from payment processing restrictions to GDPR compliance."
+    },
+    "story": {
+      "title": "Our Story",
+      "paragraphs": {
+        "p1": "We started as creators ourselves, running Telegram communities and struggling with the same problems you face: clunky payment solutions, high commissions eating into our revenue, and tools that weren't designed with European regulations in mind.",
+        "p2": "In 2025, we decided to build the platform we wished existed. One that puts creators first, respects privacy, and doesn't take a cut of your hard-earned revenue.",
+        "p3": "Today, TelegramPlugin helps hundreds of creators across Europe monetize their Telegram, Discord, and WhatsApp communities — without the headaches."
+      }
+    },
+    "stats": {
+      "items": {
+        "item1": {
+          "value": "500+",
+          "label": "Creators"
+        },
+        "item2": {
+          "value": "€250K+",
+          "label": "Processed"
+        },
+        "item3": {
+          "value": "0%",
+          "label": "Commission"
+        },
+        "item4": {
+          "value": "EU",
+          "label": "Based"
+        }
+      }
+    },
+    "values": {
+      "title": "What We Stand For",
+      "items": {
+        "item1": {
+          "title": "Privacy First",
+          "description": "Your data stays yours. We are EU-based, GDPR-compliant, and never sell your information."
+        },
+        "item2": {
+          "title": "Creator-Focused",
+          "description": "Built by creators, for creators. We understand the challenges of monetizing communities."
+        },
+        "item3": {
+          "title": "Simple & Transparent",
+          "description": "No hidden fees, no complex pricing. One flat rate, zero commission on your sales."
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to join us?",
+      "body": "Start monetizing your community today with zero commission and full control over your revenue.",
+      "button": "Start your free trial →"
+    }
+  },
+
+  "contact": {
+    "title": "Get in Touch",
+    "subtitle": "Have a question or need help? We're here to assist you.",
+    "form": {
+      "title": "Send us a message",
+      "fields": {
+        "name": "Name",
+        "namePlaceholder": "Your name",
+        "email": "Email",
+        "emailPlaceholder": "you@example.com",
+        "subject": "Subject",
+        "subjectPlaceholder": "How can we help?",
+        "message": "Message",
+        "messagePlaceholder": "Tell us more about your question..."
+      },
+      "submit": "Send message",
+      "submitting": "Sending..."
+    },
+    "toast": {
+      "success": "Message sent successfully",
+      "error": "Failed to send message. Please try again."
+    },
+    "success": {
+      "title": "Message sent!",
+      "description": "Thank you for reaching out. We'll get back to you within 24 hours.",
+      "cta": "Send another message"
+    },
+    "options": {
+      "title": "Other ways to reach us",
+      "support": {
+        "title": "Email Support",
+        "description": "For general inquiries and support requests",
+        "contact": "support@telegramplugin.com"
+      },
+      "sales": {
+        "title": "Sales",
+        "description": "Questions about pricing or enterprise plans",
+        "contact": "sales@telegramplugin.com"
+      },
+      "responseTime": {
+        "title": "Response Time",
+        "description": "We typically respond within 24 hours",
+        "contact": "Mon-Fri, 9am-6pm CET"
+      }
+    },
+    "faq": {
+      "prompt": "Looking for quick answers?",
+      "cta": "Check our FAQ →"
+    }
+  },
+
+  "admin": {
+    "home": {
+      "title": "Back-office",
+      "subtitle": "Manage customer organizations and billing.",
+      "cards": {
+        "organizations": {
+          "title": "Organizations",
+          "description": "View and manage customer organizations"
+        },
+        "billing": {
+          "title": "Billing",
+          "description": "Track Stripe status and billing setup"
+        }
+      }
+    },
+    "nav": {
+      "home": "Overview",
+      "organizations": "Organizations",
+      "billing": "Billing"
+    },
+    "header": {
+      "switchToClient": "Client dashboard"
+    },
+    "billing": {
+      "loading": "Loading...",
+      "title": "Billing",
+      "subtitle": "Track Stripe setup and billing emails.",
+      "cards": {
+        "organizations": {
+          "title": "Organizations",
+          "description": "Registered customer accounts"
+        },
+        "stripe": {
+          "title": "Connected Stripe",
+          "description": "Organizations with a linked Stripe account"
+        },
+        "saas": {
+          "title": "Active SaaS",
+          "description": "Organizations with an active subscription"
+        }
+      },
+      "table": {
+        "organization": "Organization",
+        "billingEmail": "Billing email",
+        "stripe": "Stripe",
+        "createdAt": "Created on",
+        "empty": "No organizations found",
+        "stripeNotConnected": "Not connected"
+      },
+      "toast": {
+        "loadError": "Failed to load billing data"
+      }
+    },
+    "organizations": {
+      "loading": "Loading...",
+      "title": "Organizations",
+      "new": "New organization",
+      "table": {
+        "name": "Name",
+        "slug": "Slug",
+        "billingEmail": "Billing email",
+        "saas": "SaaS",
+        "stripe": "Stripe",
+        "createdAt": "Created on",
+        "actions": "Actions",
+        "empty": "No organizations found",
+        "stripeNotConnected": "Not connected",
+        "view": "View",
+        "status": {
+          "active": "Active",
+          "inactive": "Inactive"
+        }
+      },
+      "toast": {
+        "loadError": "Failed to load organizations"
+      }
+    },
+    "organizationsNew": {
+      "title": "New organization",
+      "subtitle": "Create a new organization to manage your products and channels.",
+      "toast": {
+        "createSuccess": "Organization created successfully",
+        "createError": "Failed to create organization"
+      }
+    },
+    "organizationDetails": {
+      "loading": "Loading...",
+      "notFound": "Organization not found",
+      "edit": "Edit",
+      "cardTitle": "Details",
+      "fields": {
+        "slug": "Slug",
+        "billingEmail": "Billing email",
+        "saas": "SaaS subscription",
+        "timezone": "Timezone",
+        "stripeAccount": "Stripe account",
+        "createdAt": "Created on",
+        "updatedAt": "Last updated"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "toast": {
+        "loadError": "Failed to load organization"
+      }
+    },
+    "organizationEdit": {
+      "loading": "Loading...",
+      "notFound": "Organization not found",
+      "title": "Edit organization",
+      "subtitle": "Update organization information for {name}.",
+      "toast": {
+        "loadError": "Failed to load organization",
+        "updateSuccess": "Organization updated successfully",
+        "updateError": "Failed to update organization"
+      }
+    },
+    "organizationForm": {
+      "title": {
+        "create": "Create organization",
+        "edit": "Edit organization"
+      },
+      "fields": {
+        "name": "Name",
+        "slug": "Slug",
+        "billingEmail": "Billing email",
+        "saasActive": "Active SaaS subscription",
+        "timezone": "Timezone"
+      },
+      "placeholders": {
+        "slug": "my-organization",
+        "timezone": "UTC"
+      },
+      "submit": {
+        "saving": "Saving...",
+        "create": "Create",
+        "update": "Update"
+      },
+      "validation": {
+        "nameRequired": "Name is required",
+        "slugRequired": "Slug is required",
+        "slugInvalid": "Only lowercase letters, numbers, and hyphens are allowed",
+        "billingEmailInvalid": "Valid email required"
+      }
+    }
+  },
+
+  "marketing": {
+    "navbar": {
+      "links": {
+        "pricing": "Pricing",
+        "login": "Login"
+      },
+      "cta": {
+        "desktop": "Start free →",
+        "mobile": "Start",
+        "mobileMenu": "Create your account"
+      },
+      "aria": {
+        "toggleMenu": "Toggle menu"
+      }
+    },
+    "hero": {
+      "title": {
+        "line1": "Monetize your community.",
+        "line2": "Keep 100% of your revenue."
+      },
+      "subtitle": "Sell subscriptions and one-time access to your Telegram, Discord, and WhatsApp communities. EU-based. GDPR-compliant. Zero commission.",
+      "cta": {
+        "primary": "Start monetizing →",
+        "secondary": "View pricing"
+      },
+      "trust": "No credit card required • Setup in 5 minutes"
+    },
+    "socialProof": {
+      "items": {
+        "item1": {
+          "value": "€250K+",
+          "label": "processed for creators"
+        },
+        "item2": {
+          "value": "500+",
+          "label": "creators across Europe"
+        },
+        "item3": {
+          "value": "0%",
+          "label": "commission"
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "How it works",
+      "steps": {
+        "item1": {
+          "title": "Create",
+          "description": "Set your pricing and access rules"
+        },
+        "item2": {
+          "title": "Connect",
+          "description": "Link your Telegram, Discord, or WhatsApp"
+        },
+        "item3": {
+          "title": "Sell",
+          "description": "Share your payment link anywhere"
+        },
+        "item4": {
+          "title": "Access",
+          "description": "Members get instant access automatically"
+        }
+      }
+    },
+    "features": {
+      "title": "Everything you need to monetize",
+      "items": {
+        "item1": {
+          "title": "Subscriptions",
+          "description": "Recurring revenue with automatic renewal and billing"
+        },
+        "item2": {
+          "title": "One-time payments",
+          "description": "Sell lifetime access or single purchases"
+        },
+        "item3": {
+          "title": "Auto-access",
+          "description": "Members get instant access after payment"
+        },
+        "item4": {
+          "title": "Multi-platform",
+          "description": "Telegram, Discord, WhatsApp. One dashboard."
+        }
+      }
+    },
+    "differentiators": {
+      "title": "Why creators choose us",
+      "items": {
+        "item1": {
+          "title": "0% commission",
+          "description": "You keep every euro. Just a flat monthly fee."
+        },
+        "item2": {
+          "title": "Direct payments",
+          "description": "Money goes straight to your Stripe account."
+        },
+        "item3": {
+          "title": "EU & GDPR",
+          "description": "Based in Europe. Fully GDPR-compliant."
+        }
+      }
+    },
+    "pricingTeaser": {
+      "title": "Simple, transparent pricing",
+      "price": "€39",
+      "perMonth": "/month",
+      "features": {
+        "item1": "0% commission",
+        "item2": "Unlimited products",
+        "item3": "All platforms"
+      },
+      "cta": "View full pricing →",
+      "note": "14-day free trial. No credit card required."
+    },
+    "finalCta": {
+      "title": "Ready to monetize your community?",
+      "cta": "Start free today →",
+      "note": "No credit card required"
+    },
+    "footer": {
+      "description": "The community monetization platform for European creators.",
+      "sections": {
+        "product": "Product",
+        "company": "Company",
+        "legal": "Legal"
+      },
+      "links": {
+        "pricing": "Pricing",
+        "features": "Features",
+        "about": "About",
+        "contact": "Contact",
+        "privacy": "Privacy",
+        "terms": "Terms",
+        "gdpr": "GDPR"
+      },
+      "copyright": "© {year} {appName}. All rights reserved.",
+      "madeIn": "Made in Europe 🇪🇺"
+    }
   },
 
   "footer": {

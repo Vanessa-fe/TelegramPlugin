@@ -236,6 +236,7 @@ model Subscription {
   organizationId     String
   customerId         String
   planId             String
+  slug               String?
   status             SubscriptionStatus  @default(ACTIVE)
   externalId         String?             @unique
   externalCustomerId String?
@@ -259,6 +260,7 @@ model Subscription {
   paymentEvents   PaymentEvent[]
   entitlements    Entitlement[]
 
+  @@unique([organizationId, slug])
   @@index([organizationId, status])
   @@index([customerId])
 }

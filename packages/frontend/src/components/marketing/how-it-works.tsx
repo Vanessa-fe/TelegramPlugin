@@ -1,33 +1,36 @@
-const steps = [
-  {
-    number: '1',
-    title: 'Create',
-    description: 'Set your pricing and access rules',
-  },
-  {
-    number: '2',
-    title: 'Connect',
-    description: 'Link your Telegram, Discord, or WhatsApp',
-  },
-  {
-    number: '3',
-    title: 'Sell',
-    description: 'Share your payment link anywhere',
-  },
-  {
-    number: '4',
-    title: 'Access',
-    description: 'Members get instant access automatically',
-  },
-];
+import { getTranslations } from 'next-intl/server';
 
-export function HowItWorks() {
+export async function HowItWorks() {
+  const t = await getTranslations('marketing.howItWorks');
+  const steps = [
+    {
+      number: '1',
+      title: t('steps.item1.title'),
+      description: t('steps.item1.description'),
+    },
+    {
+      number: '2',
+      title: t('steps.item2.title'),
+      description: t('steps.item2.description'),
+    },
+    {
+      number: '3',
+      title: t('steps.item3.title'),
+      description: t('steps.item3.description'),
+    },
+    {
+      number: '4',
+      title: t('steps.item4.title'),
+      description: t('steps.item4.description'),
+    },
+  ];
+
   return (
     <section className="py-20 lg:py-28 bg-[#FDFAFF]">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
         <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#1A1523] mb-16">
-          How it works
+          {t('title')}
         </h2>
 
         {/* Steps grid */}

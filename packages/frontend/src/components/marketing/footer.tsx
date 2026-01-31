@@ -1,22 +1,24 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
-const footerLinks = {
-  product: [
-    { label: 'Pricing', href: '/pricing' },
-    { label: 'Features', href: '/#features' },
-  ],
-  company: [
-    { label: 'About', href: '/about' },
-    { label: 'Contact', href: '/contact' },
-  ],
-  legal: [
-    { label: 'Privacy', href: '/privacy' },
-    { label: 'Terms', href: '/terms' },
-    { label: 'GDPR', href: '/gdpr' },
-  ],
-};
-
-export function Footer() {
+export async function Footer() {
+  const t = await getTranslations('marketing.footer');
+  const tCommon = await getTranslations('common');
+  const footerLinks = {
+    product: [
+      { label: t('links.pricing'), href: '/pricing' },
+      { label: t('links.features'), href: '/#features' },
+    ],
+    company: [
+      { label: t('links.about'), href: '/about' },
+      { label: t('links.contact'), href: '/contact' },
+    ],
+    legal: [
+      { label: t('links.privacy'), href: '/privacy' },
+      { label: t('links.terms'), href: '/terms' },
+      { label: t('links.gdpr'), href: '/gdpr' },
+    ],
+  };
   const currentYear = new Date().getFullYear();
 
   return (
@@ -27,17 +29,17 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="text-xl font-bold">
-              TelegramPlugin
+              {tCommon('appName')}
             </Link>
             <p className="mt-4 text-sm text-gray-400 leading-relaxed">
-              The community monetization platform for European creators.
+              {t('description')}
             </p>
           </div>
 
           {/* Product */}
           <div>
             <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">
-              Product
+              {t('sections.product')}
             </h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
@@ -56,7 +58,7 @@ export function Footer() {
           {/* Company */}
           <div>
             <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">
-              Company
+              {t('sections.company')}
             </h3>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
@@ -75,7 +77,7 @@ export function Footer() {
           {/* Legal */}
           <div>
             <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">
-              Legal
+              {t('sections.legal')}
             </h3>
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
@@ -95,9 +97,9 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-gray-400">
-            © {currentYear} TelegramPlugin. All rights reserved.
+            {t('copyright', { year: currentYear, appName: tCommon('appName') })}
           </p>
-          <p className="text-sm text-gray-400">Made in Europe 🇪🇺</p>
+          <p className="text-sm text-gray-400">{t('madeIn')}</p>
         </div>
       </div>
     </footer>

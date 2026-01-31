@@ -7,8 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { ArrowLeft, Mail } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('auth.forgotPassword');
+  const tCommon = useTranslations('common');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -24,9 +27,9 @@ export default function ForgotPasswordPage() {
       // Simulate success for now
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setIsSubmitted(true);
-      toast.success('Reset link sent');
+      toast.success(t('toastSuccess'));
     } catch {
-      toast.error('Failed to send reset link. Please try again.');
+      toast.error(t('toastError'));
     } finally {
       setIsLoading(false);
     }
@@ -38,7 +41,7 @@ export default function ForgotPasswordPage() {
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
           <Link href="/" className="text-xl font-bold text-[#1A1523]">
-            TelegramPlugin
+            {tCommon('appName')}
           </Link>
         </div>
       </header>
@@ -52,7 +55,7 @@ export default function ForgotPasswordPage() {
             className="inline-flex items-center gap-2 text-sm text-[#6F6E77] hover:text-[#1A1523] mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to login
+            {t('backToLogin')}
           </Link>
 
           {/* Card */}
@@ -64,17 +67,17 @@ export default function ForgotPasswordPage() {
                     <Mail className="w-6 h-6" />
                   </div>
                   <h1 className="text-2xl font-bold text-[#1A1523] mb-2">
-                    Forgot your password?
+                    {t('title')}
                   </h1>
                   <p className="text-[#6F6E77]">
-                    No worries. Enter your email and we&apos;ll send you a reset link.
+                    {t('subtitle')}
                   </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-[#1A1523]">
-                      Email
+                      {t('email')}
                     </Label>
                     <Input
                       id="email"
@@ -83,7 +86,7 @@ export default function ForgotPasswordPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       disabled={isLoading}
-                      placeholder="you@example.com"
+                      placeholder={t('emailPlaceholder')}
                       className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
                     />
                   </div>
@@ -93,7 +96,7 @@ export default function ForgotPasswordPage() {
                     className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold"
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Sending...' : 'Send reset link'}
+                    {isLoading ? t('sending') : t('submit')}
                   </Button>
                 </form>
               </>
@@ -115,26 +118,26 @@ export default function ForgotPasswordPage() {
                   </svg>
                 </div>
                 <h2 className="text-2xl font-bold text-[#1A1523] mb-2">
-                  Check your email
+                  {t('successTitle')}
                 </h2>
                 <p className="text-[#6F6E77] mb-6">
-                  We sent a password reset link to{' '}
+                  {t('successDescription')}{' '}
                   <span className="font-medium text-[#1A1523]">{email}</span>
                 </p>
                 <p className="text-sm text-[#6F6E77] mb-6">
-                  Didn&apos;t receive the email? Check your spam folder or{' '}
+                  {t('successHint')}{' '}
                   <button
                     onClick={() => setIsSubmitted(false)}
                     className="text-purple-600 hover:text-purple-700 font-medium"
                   >
-                    try again
+                    {t('tryAgain')}
                   </button>
                 </p>
                 <Link
                   href="/login"
                   className="inline-flex items-center justify-center w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
                 >
-                  Back to login
+                  {t('backToLogin')}
                 </Link>
               </div>
             )}

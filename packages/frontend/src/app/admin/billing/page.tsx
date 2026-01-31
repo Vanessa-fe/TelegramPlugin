@@ -13,8 +13,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { toast } from 'sonner';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function BillingPage() {
+  const t = useTranslations('admin.billing');
+  const locale = useLocale();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -29,8 +32,7 @@ export default function BillingPage() {
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(
-        axiosError.response?.data?.message ||
-          'Erreur lors du chargement des données de facturation'
+        axiosError.response?.data?.message || t('toast.loadError')
       );
     } finally {
       setIsLoading(false);
@@ -51,7 +53,7 @@ export default function BillingPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Chargement...</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('loading')}</p>
         </div>
       </div>
     );
@@ -60,43 +62,43 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Facturation</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="mt-2 text-gray-600">
-          Suivez la configuration Stripe et les emails de facturation.
+          {t('subtitle')}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Organisations</CardTitle>
+            <CardTitle>{t('cards.organizations.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{organizations.length}</p>
             <p className="text-sm text-muted-foreground">
-              Comptes clients enregistrés
+              {t('cards.organizations.description')}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Stripe connectés</CardTitle>
+            <CardTitle>{t('cards.stripe.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{connectedStripeCount}</p>
             <p className="text-sm text-muted-foreground">
-              Organisations avec un compte Stripe lié
+              {t('cards.stripe.description')}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>SaaS actifs</CardTitle>
+            <CardTitle>{t('cards.saas.title')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold">{activeSaasCount}</p>
             <p className="text-sm text-muted-foreground">
-              Organisations avec abonnement actif
+              {t('cards.saas.description')}
             </p>
           </CardContent>
         </Card>
@@ -106,17 +108,17 @@ export default function BillingPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Organisation</TableHead>
-              <TableHead>Email de facturation</TableHead>
-              <TableHead>Stripe</TableHead>
-              <TableHead>Créé le</TableHead>
+              <TableHead>{t('table.organization')}</TableHead>
+              <TableHead>{t('table.billingEmail')}</TableHead>
+              <TableHead>{t('table.stripe')}</TableHead>
+              <TableHead>{t('table.createdAt')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {organizations.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-gray-500">
-                  Aucune organisation trouvée
+                  {t('table.empty')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -129,12 +131,12 @@ export default function BillingPage() {
                       <span className="font-mono">{org.stripeAccountId}</span>
                     ) : (
                       <span className="text-muted-foreground">
-                        Non connecté
+                        {t('table.stripeNotConnected')}
                       </span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {new Date(org.createdAt).toLocaleDateString('fr-FR')}
+                    {new Date(org.createdAt).toLocaleDateString(locale)}
                   </TableCell>
                 </TableRow>
               ))

@@ -10,33 +10,27 @@ import {
 import { productsApi } from "@/lib/api/products";
 import type { Product, ProductStatus } from "@/types/product";
 import { List, MoreHorizontal, Package, Plus } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-const statusConfig: Record<
-  ProductStatus,
-  { label: string; className: string }
-> = {
-  DRAFT: {
-    label: "Draft",
-    className: "bg-gray-100 text-gray-700",
-  },
-  ACTIVE: {
-    label: "Active",
-    className: "bg-green-100 text-green-700",
-  },
-  ARCHIVED: {
-    label: "Archived",
-    className: "bg-gray-100 text-gray-500",
-  },
+const statusClassNames: Record<ProductStatus, string> = {
+  DRAFT: "bg-gray-100 text-gray-700",
+  ACTIVE: "bg-green-100 text-green-700",
+  ARCHIVED: "bg-gray-100 text-gray-500",
 };
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const t = useTranslations("products");
+  const locale = useLocale();
+  const statusLabels: Record<ProductStatus, string> = {
+    DRAFT: t("statusLabels.DRAFT"),
+    ACTIVE: t("statusLabels.ACTIVE"),
+    ARCHIVED: t("statusLabels.ARCHIVED"),
+  };
 
   useEffect(() => {
     loadProducts();
@@ -51,7 +45,7 @@ export default function ProductsPage() {
         response?: { data?: { message?: string } };
       };
       toast.error(
-        axiosError.response?.data?.message || "Failed to load products"
+        axiosError.response?.data?.message || t("toast.loadError")
       );
     } finally {
       setIsLoading(false);
@@ -121,7 +115,7 @@ export default function ProductsPage() {
                   {t("table.created")}
                 </th>
                 <th className="text-right text-sm font-medium text-[#6F6E77] px-6 py-4">
-                  Actions
+                  {t("table.actions")}
                 </th>
               </tr>
             </thead>
@@ -141,13 +135,13 @@ export default function ProductsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig[product.status].className}`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClassNames[product.status]}`}
                     >
-                      {statusConfig[product.status].label}
+                      {statusLabels[product.status]}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-[#6F6E77]">
-                    {new Date(product.createdAt).toLocaleDateString("en-US", {
+                    {new Date(product.createdAt).toLocaleDateString(locale, {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
@@ -162,7 +156,7 @@ export default function ProductsPage() {
                           className="border-border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
                         >
                           <List className="mr-2 h-4 w-4" />
-                          Plans
+                          {t("table.plans")}
                         </Button>
                       </Link>
                       <DropdownMenu>
@@ -176,10 +170,12 @@ export default function ProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                          <DropdownMenuItem>{t("actions.edit")}</DropdownMenuItem>
+                          <DropdownMenuItem>
+                            {t("actions.duplicate")}
+                          </DropdownMenuItem>
                           <DropdownMenuItem className="text-red-600">
-                            Archive
+                            {t("actions.archive")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

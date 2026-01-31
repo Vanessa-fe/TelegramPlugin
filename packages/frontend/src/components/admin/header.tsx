@@ -14,10 +14,13 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LayoutDashboard, LogOut, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export function AdminHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
+  const tAdmin = useTranslations('admin');
+  const tCommon = useTranslations('common');
 
   const initials =
     user?.firstName && user?.lastName
@@ -27,10 +30,10 @@ export function AdminHeader() {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Deconnexion reussie');
+      toast.success(tCommon('logoutSuccess'));
       router.push('/login');
     } catch {
-      toast.error('Erreur lors de la deconnexion');
+      toast.error(tCommon('logoutError'));
     }
   };
 
@@ -41,12 +44,12 @@ export function AdminHeader() {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       <div>
-        <h2 className="text-lg font-semibold">Back-office</h2>
+        <h2 className="text-lg font-semibold">{tAdmin('home.title')}</h2>
       </div>
       <div className="flex items-center gap-4">
         <Button variant="outline" size="sm" onClick={handleSwitchToClient}>
           <LayoutDashboard className="mr-2 h-4 w-4" />
-          Dashboard client
+          {tAdmin('header.switchToClient')}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -68,11 +71,11 @@ export function AdminHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <User className="mr-2 h-4 w-4" />
-              Profil
+              {tCommon('profile')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
-              Se deconnecter
+              {tCommon('logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

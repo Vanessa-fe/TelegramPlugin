@@ -1,14 +1,20 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
-const features = ['0% commission', 'Unlimited products', 'All platforms'];
+export async function PricingTeaser() {
+  const t = await getTranslations('marketing.pricingTeaser');
+  const features = [
+    t('features.item1'),
+    t('features.item2'),
+    t('features.item3'),
+  ];
 
-export function PricingTeaser() {
   return (
     <section className="py-20 lg:py-28">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
         <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#1A1523] mb-12">
-          Simple, transparent pricing
+          {t('title')}
         </h2>
 
         {/* Pricing card */}
@@ -17,8 +23,10 @@ export function PricingTeaser() {
             {/* Price */}
             <div className="text-center mb-8">
               <p className="text-5xl font-bold text-[#1A1523]">
-                €39
-                <span className="text-lg font-normal text-[#6F6E77]">/month</span>
+                {t('price')}
+                <span className="text-lg font-normal text-[#6F6E77]">
+                  {t('perMonth')}
+                </span>
               </p>
             </div>
 
@@ -47,12 +55,12 @@ export function PricingTeaser() {
               href="/pricing"
               className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-4 rounded-lg text-center transition-colors duration-150 shadow-sm hover:shadow-md"
             >
-              View full pricing →
+              {t('cta')}
             </Link>
 
             {/* Note */}
             <p className="text-center text-sm text-[#6F6E77] mt-4">
-              14-day free trial. No credit card required.
+              {t('note')}
             </p>
           </div>
         </div>
