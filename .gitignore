@@ -30,7 +30,6 @@ yarn-error.log*
 .env.production
 .env
 .env.*
-!.env.example
 
 # vercel
 .vercel
