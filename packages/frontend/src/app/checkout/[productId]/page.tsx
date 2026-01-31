@@ -18,15 +18,6 @@ import { toast } from "sonner";
 
 type PlanInterval = PublicPlan["interval"];
 
-const intervalLabels: Record<PlanInterval, string> = {
-  ONE_TIME: "Paiement unique",
-  DAY: "par jour",
-  WEEK: "par semaine",
-  MONTH: "par mois",
-  QUARTER: "par trimestre",
-  YEAR: "par an",
-};
-
 export default function CheckoutPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -38,6 +29,15 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslations("checkout");
+  const tIntervals = useTranslations("intervals");
+  const intervalLabels: Record<PlanInterval, string> = {
+    ONE_TIME: tIntervals("ONE_TIME"),
+    DAY: tIntervals("DAY"),
+    WEEK: tIntervals("WEEK"),
+    MONTH: tIntervals("MONTH"),
+    QUARTER: tIntervals("QUARTER"),
+    YEAR: tIntervals("YEAR"),
+  };
 
   // Customer info form
   const [email, setEmail] = useState("");
@@ -83,7 +83,7 @@ export default function CheckoutPage() {
       }
     } catch (err) {
       console.error(err);
-      setError("Ce produit n'existe pas ou n'est plus disponible");
+      setError(t("errors.productNotFound"));
     } finally {
       setLoading(false);
     }
@@ -91,13 +91,13 @@ export default function CheckoutPage() {
 
   async function handleCheckout() {
     if (!selectedPlan) {
-      toast.error("Veuillez sélectionner un plan");
+      toast.error(t("errors.selectPlan"));
       return;
     }
 
     if (paymentMethod === "stripe") {
       if (!email) {
-        toast.error("L'email est requis pour le paiement Stripe");
+        toast.error(t("form.emailRequired"));
         return;
       }
 
@@ -116,23 +116,19 @@ export default function CheckoutPage() {
         window.location.href = response.url;
       } catch (error) {
         console.error(error);
-        toast.error("Erreur lors de la création du checkout");
+        toast.error(t("errors.checkoutFailed"));
         setSubmitting(false);
       }
     } else if (paymentMethod === "telegram_stars") {
       if (!telegramUsername) {
-        toast.error(
-          "Le username Telegram est requis pour payer avec Telegram Stars"
-        );
+        toast.error(t("form.telegramRequired"));
         return;
       }
 
       // For Telegram Stars, show instructions to use the bot
-      toast.info(
-        "Pour payer avec Telegram Stars, veuillez utiliser le bot Telegram:\n\n" +
-          `Envoyez la commande: /buy ${selectedPlan.id}`,
-        { duration: 10000 }
-      );
+      toast.info(t("telegramStarsInstructions", { planId: selectedPlan.id }), {
+        duration: 10000,
+      });
       setSubmitting(false);
     }
   }
@@ -158,10 +154,10 @@ export default function CheckoutPage() {
         <Card className="p-8 max-w-md text-center">
           <div className="text-6xl mb-4">🔒</div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Produit indisponible
+            {t("unavailable.title")}
           </h1>
           <p className="mt-2 text-gray-600">
-            {error || "Ce produit n'existe pas ou n'est plus disponible"}
+            {error || t("unavailable.description")}
           </p>
         </Card>
       </div>
@@ -191,7 +187,7 @@ export default function CheckoutPage() {
                   className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium"
                 >
                   {channel.provider === "TELEGRAM" ? "📱" : "💬"}
-                  {channel.title || "Channel"}
+                  {channel.title || t("channelFallback")}
                 </span>
               ))}
             </div>
@@ -287,7 +283,7 @@ export default function CheckoutPage() {
 
                 <div>
                   <Label htmlFor="displayName">
-                    {t("form.name")} (optionnel)
+                    {t("form.name")}
                   </Label>
                   <Input
                     id="displayName"

@@ -1,14 +1,17 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function AdminPage() {
+  const t = useTranslations('admin.home');
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Back-office</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="mt-2 text-gray-600">
-          Gérez les organisations clientes et la facturation.
+          {t('subtitle')}
         </p>
       </div>
 
@@ -17,18 +20,20 @@ export default function AdminPage() {
           href="/admin/organizations"
           className="rounded-lg border bg-white p-6 shadow-sm transition hover:shadow-md"
         >
-          <h3 className="text-lg font-semibold">Organisations</h3>
+          <h3 className="text-lg font-semibold">
+            {t('cards.organizations.title')}
+          </h3>
           <p className="mt-2 text-sm text-gray-600">
-            Visualisez et gérez les organisations clientes
+            {t('cards.organizations.description')}
           </p>
         </Link>
         <Link
           href="/admin/billing"
           className="rounded-lg border bg-white p-6 shadow-sm transition hover:shadow-md"
         >
-          <h3 className="text-lg font-semibold">Facturation</h3>
+          <h3 className="text-lg font-semibold">{t('cards.billing.title')}</h3>
           <p className="mt-2 text-sm text-gray-600">
-            Suivez l&apos;etat Stripe et la configuration billing
+            {t('cards.billing.description')}
           </p>
         </Link>
       </div>

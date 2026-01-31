@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/infra/docker/docker-compose.dev.yml"
-ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env.local}"
+ENV_FILE="${ENV_FILE:-$ROOT_DIR/.env.development}"
 if [[ ! -f "$ENV_FILE" && -f "$ROOT_DIR/.env" ]]; then
   ENV_FILE="$ROOT_DIR/.env"
 fi
@@ -87,11 +87,15 @@ echo "🔧 Generating Prisma client..."
 pnpm --filter api prisma:generate
 
 echo "🗃️ Running database migrations..."
-pnpm --filter api prisma:deploy
+if [[ "${NODE_ENV:-development}" == "production" ]]; then
+  pnpm --filter api prisma:deploy
+else
+  pnpm --filter api prisma:migrate
+fi
 
 echo "🚀 Starting dev stack (API + Frontend + Bot + Worker)..."
 echo ""
 echo "   Frontend: http://localhost:3000"
-echo "   API:      http://localhost:3001"
+echo "   API:      http://localhost:$API_PORT"
 echo ""
 exec pnpm dev

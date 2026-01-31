@@ -14,6 +14,11 @@ export const subscriptionsApi = {
     return data;
   },
 
+  async findBySlug(slug: string) {
+    const { data } = await apiClient.get<SubscriptionWithRelations>(`/subscriptions/by-slug/${slug}`);
+    return data;
+  },
+
   async create(dto: CreateSubscriptionDto) {
     const { data } = await apiClient.post<Subscription>('/subscriptions', dto);
     return data;

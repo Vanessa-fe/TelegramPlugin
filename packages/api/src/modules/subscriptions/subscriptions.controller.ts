@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -38,6 +39,34 @@ export class SubscriptionsController {
     return this.subscriptionsService.findAll(scopedOrgId);
   }
 
+  @Get('by-slug/:slug')
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
+  async findBySlug(
+    @CurrentUser() user: AuthUser,
+    @Param('slug') slug: string,
+    @Query('organizationId') queryOrganizationId?: string,
+  ) {
+    const organizationId = resolveOrganizationScope(user, queryOrganizationId);
+    if (!organizationId) {
+      throw new NotFoundException(
+        'Organization ID required for slug lookup',
+      );
+    }
+    const subscription = await this.subscriptionsService.findBySlug(
+      organizationId,
+      slug,
+    );
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+    return subscription;
+  }
+
   @Get(':id')
   @Roles(
     UserRole.SUPERADMIN,
@@ -63,6 +92,13 @@ export class SubscriptionsController {
   ) {
     resolveOrganizationScope(user, body.organizationId);
     return this.subscriptionsService.create(body);
+  }
+
+  @Post('backfill-slugs')
+  @Roles(UserRole.SUPERADMIN)
+  async backfillSlugs() {
+    const count = await this.subscriptionsService.backfillSlugs();
+    return { message: `Updated ${count} subscriptions with slugs` };
   }
 
   @Patch(':id')

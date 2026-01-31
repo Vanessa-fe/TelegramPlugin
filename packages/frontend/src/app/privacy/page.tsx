@@ -1,95 +1,137 @@
 import { LegalLayout } from '@/components/marketing';
+import { getTranslations } from 'next-intl/server';
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const t = await getTranslations('privacy');
+
   return (
-    <LegalLayout title="Privacy Policy" lastUpdated="January 25, 2026">
-      <h2>1. Introduction</h2>
-      <p>
-        TelegramPlugin (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy.
-        This Privacy Policy explains how we collect, use, disclose, and safeguard your
-        information when you use our platform.
-      </p>
-      <p>
-        We are based in the European Union and comply with the General Data Protection
-        Regulation (GDPR) and other applicable data protection laws.
-      </p>
+    <LegalLayout title={t('title')} lastUpdated={t('lastUpdated')}>
+      <h2>{t('sections.introduction.title')}</h2>
+      <p>{t('sections.introduction.body1')}</p>
+      <p>{t('sections.introduction.body2')}</p>
 
-      <h2>2. Information We Collect</h2>
-      <h3>2.1 Information You Provide</h3>
+      <h2>{t('sections.collect.title')}</h2>
+      <h3>{t('sections.collect.provided.title')}</h3>
       <ul>
-        <li><strong>Account Information:</strong> Email address, name, password when you register</li>
-        <li><strong>Payment Information:</strong> Processed securely through Stripe; we do not store card details</li>
-        <li><strong>Channel Information:</strong> Telegram, Discord, or WhatsApp channel identifiers you connect</li>
-        <li><strong>Customer Data:</strong> Information about your subscribers and their access</li>
+        <li>
+          <strong>{t('sections.collect.provided.items.account.label')}</strong>{' '}
+          {t('sections.collect.provided.items.account.text')}
+        </li>
+        <li>
+          <strong>{t('sections.collect.provided.items.payment.label')}</strong>{' '}
+          {t('sections.collect.provided.items.payment.text')}
+        </li>
+        <li>
+          <strong>{t('sections.collect.provided.items.channel.label')}</strong>{' '}
+          {t('sections.collect.provided.items.channel.text')}
+        </li>
+        <li>
+          <strong>{t('sections.collect.provided.items.customer.label')}</strong>{' '}
+          {t('sections.collect.provided.items.customer.text')}
+        </li>
       </ul>
 
-      <h3>2.2 Information Collected Automatically</h3>
+      <h3>{t('sections.collect.automatic.title')}</h3>
       <ul>
-        <li><strong>Usage Data:</strong> Pages visited, features used, time spent on the platform</li>
-        <li><strong>Device Information:</strong> Browser type, operating system, IP address</li>
-        <li><strong>Cookies:</strong> Session cookies for authentication and preferences</li>
+        <li>
+          <strong>{t('sections.collect.automatic.items.usage.label')}</strong>{' '}
+          {t('sections.collect.automatic.items.usage.text')}
+        </li>
+        <li>
+          <strong>{t('sections.collect.automatic.items.device.label')}</strong>{' '}
+          {t('sections.collect.automatic.items.device.text')}
+        </li>
+        <li>
+          <strong>{t('sections.collect.automatic.items.cookies.label')}</strong>{' '}
+          {t('sections.collect.automatic.items.cookies.text')}
+        </li>
       </ul>
 
-      <h2>3. How We Use Your Information</h2>
-      <p>We use your information to:</p>
+      <h2>{t('sections.use.title')}</h2>
+      <p>{t('sections.use.body')}</p>
       <ul>
-        <li>Provide and maintain our services</li>
-        <li>Process payments and manage subscriptions</li>
-        <li>Grant and revoke access to your channels</li>
-        <li>Send transactional emails (receipts, access notifications)</li>
-        <li>Improve our platform and develop new features</li>
-        <li>Comply with legal obligations</li>
+        <li>{t('sections.use.list.item1')}</li>
+        <li>{t('sections.use.list.item2')}</li>
+        <li>{t('sections.use.list.item3')}</li>
+        <li>{t('sections.use.list.item4')}</li>
+        <li>{t('sections.use.list.item5')}</li>
+        <li>{t('sections.use.list.item6')}</li>
       </ul>
 
-      <h2>4. Data Sharing</h2>
-      <p>We share your data only with:</p>
+      <h2>{t('sections.sharing.title')}</h2>
+      <p>{t('sections.sharing.body')}</p>
       <ul>
-        <li><strong>Stripe:</strong> For payment processing</li>
-        <li><strong>Brevo:</strong> For transactional emails</li>
-        <li><strong>Platform APIs:</strong> Telegram, Discord, WhatsApp for access management</li>
-        <li><strong>Legal authorities:</strong> When required by law</li>
+        <li>
+          <strong>{t('sections.sharing.items.stripe.label')}</strong>{' '}
+          {t('sections.sharing.items.stripe.text')}
+        </li>
+        <li>
+          <strong>{t('sections.sharing.items.brevo.label')}</strong>{' '}
+          {t('sections.sharing.items.brevo.text')}
+        </li>
+        <li>
+          <strong>{t('sections.sharing.items.platforms.label')}</strong>{' '}
+          {t('sections.sharing.items.platforms.text')}
+        </li>
+        <li>
+          <strong>{t('sections.sharing.items.legal.label')}</strong>{' '}
+          {t('sections.sharing.items.legal.text')}
+        </li>
       </ul>
-      <p>We never sell your personal data to third parties.</p>
+      <p>{t('sections.sharing.footer')}</p>
 
-      <h2>5. Data Retention</h2>
-      <p>
-        We retain your data for as long as your account is active. Upon account deletion,
-        we anonymize or delete your personal data within 30 days, except where retention
-        is required for legal or audit purposes.
-      </p>
+      <h2>{t('sections.retention.title')}</h2>
+      <p>{t('sections.retention.body')}</p>
 
-      <h2>6. Your Rights</h2>
-      <p>Under GDPR, you have the right to:</p>
+      <h2>{t('sections.rights.title')}</h2>
+      <p>{t('sections.rights.body')}</p>
       <ul>
-        <li><strong>Access:</strong> Request a copy of your personal data</li>
-        <li><strong>Rectification:</strong> Correct inaccurate data</li>
-        <li><strong>Erasure:</strong> Request deletion of your data</li>
-        <li><strong>Portability:</strong> Export your data in a machine-readable format</li>
-        <li><strong>Objection:</strong> Object to certain processing activities</li>
-        <li><strong>Restriction:</strong> Request limited processing of your data</li>
+        <li>
+          <strong>{t('sections.rights.items.access.label')}</strong>{' '}
+          {t('sections.rights.items.access.text')}
+        </li>
+        <li>
+          <strong>{t('sections.rights.items.rectification.label')}</strong>{' '}
+          {t('sections.rights.items.rectification.text')}
+        </li>
+        <li>
+          <strong>{t('sections.rights.items.erasure.label')}</strong>{' '}
+          {t('sections.rights.items.erasure.text')}
+        </li>
+        <li>
+          <strong>{t('sections.rights.items.portability.label')}</strong>{' '}
+          {t('sections.rights.items.portability.text')}
+        </li>
+        <li>
+          <strong>{t('sections.rights.items.objection.label')}</strong>{' '}
+          {t('sections.rights.items.objection.text')}
+        </li>
+        <li>
+          <strong>{t('sections.rights.items.restriction.label')}</strong>{' '}
+          {t('sections.rights.items.restriction.text')}
+        </li>
       </ul>
       <p>
-        To exercise these rights, contact us at{' '}
-        <a href="mailto:privacy@telegramplugin.com">privacy@telegramplugin.com</a>.
+        {t('sections.rights.contact')}{' '}
+        <a href="mailto:privacy@telegramplugin.com">
+          {t('sections.rights.email')}
+        </a>
+        .
       </p>
 
-      <h2>7. Security</h2>
-      <p>
-        We implement industry-standard security measures including encryption in transit
-        (TLS), secure password hashing, and regular security audits. All data is stored
-        in European data centers.
-      </p>
+      <h2>{t('sections.security.title')}</h2>
+      <p>{t('sections.security.body')}</p>
 
-      <h2>8. Changes to This Policy</h2>
-      <p>
-        We may update this Privacy Policy from time to time. We will notify you of
-        significant changes via email or a notice on our platform.
-      </p>
+      <h2>{t('sections.changes.title')}</h2>
+      <p>{t('sections.changes.body')}</p>
 
-      <h2>9. Contact Us</h2>
+      <h2>{t('sections.contact.title')}</h2>
       <p>
-        For privacy-related inquiries, contact our Data Protection Officer at{' '}
-        <a href="mailto:dpo@telegramplugin.com">dpo@telegramplugin.com</a>.
+        {t('sections.contact.body')}{' '}
+        <a href="mailto:dpo@telegramplugin.com">
+          {t('sections.contact.email')}
+        </a>
+        .
       </p>
     </LegalLayout>
   );

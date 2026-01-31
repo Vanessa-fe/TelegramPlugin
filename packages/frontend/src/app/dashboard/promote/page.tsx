@@ -21,18 +21,10 @@ import {
   Megaphone,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocale, useTranslations } from 'next-intl';
 
-const intervalLabels: Record<string, string> = {
-  ONE_TIME: 'paiement unique',
-  DAY: 'par jour',
-  WEEK: 'par semaine',
-  MONTH: 'par mois',
-  QUARTER: 'par trimestre',
-  YEAR: 'par an',
-};
-
-function formatPrice(cents: number, currency: string): string {
-  return new Intl.NumberFormat('fr-FR', {
+function formatPrice(cents: number, currency: string, locale: string): string {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
   }).format(cents / 100);
@@ -48,12 +40,25 @@ function slugify(text: string): string {
 }
 
 export default function PromotePage() {
+  const t = useTranslations('promote');
+  const locale = useLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState(false);
+  const intervalLabels = useMemo(
+    () => ({
+      ONE_TIME: t('intervals.oneTime'),
+      DAY: t('intervals.day'),
+      WEEK: t('intervals.week'),
+      MONTH: t('intervals.month'),
+      QUARTER: t('intervals.quarter'),
+      YEAR: t('intervals.year'),
+    }),
+    [t]
+  );
 
   useEffect(() => {
     loadData();
@@ -76,7 +81,7 @@ export default function PromotePage() {
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(
-        axiosError.response?.data?.message || 'Erreur lors du chargement des offres'
+        axiosError.response?.data?.message || t('errors.loadProducts')
       );
     } finally {
       setIsLoading(false);
@@ -101,20 +106,35 @@ export default function PromotePage() {
 
   // Generate share message
   const shareMessage = useMemo(() => {
-    if (!selectedProduct || productPlans.length === 0) return '';
+    if (!selectedProduct || productPlans.length === 0) {
+      return '';
+    }
+
     const plan = productPlans[0];
-    const price = formatPrice(plan.priceCents, plan.currency);
+    const price = formatPrice(plan.priceCents, plan.currency, locale);
     const interval = intervalLabels[plan.interval] || '';
+    const priceLine =
+      plan.interval === 'ONE_TIME'
+        ? t('shareMessage.priceOneTime', { price })
+        : t('shareMessage.priceRecurring', { price, interval });
 
-    return `🚀 Rejoignez mon canal privé ${selectedProduct.name} !
+    return [
+      t('shareMessage.line1', { productName: selectedProduct.name }),
+      '',
+      t('shareMessage.line2'),
+      t('shareMessage.line3'),
+      t('shareMessage.line4'),
+      '',
+      priceLine,
+      t('shareMessage.line5', { paymentLink }),
+    ].join('\n');
+  }, [selectedProduct, productPlans, paymentLink, locale, intervalLabels, t]);
 
-✅ Accès exclusif à tout mon contenu premium
-✅ Mises à jour régulières
-✅ Communauté privée
-
-${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${interval}`}
-👉 ${paymentLink}`;
-  }, [selectedProduct, productPlans, paymentLink]);
+  const shareMessageNote = useMemo(() => {
+    if (!selectedProduct) return t('shareMessage.noProduct');
+    if (productPlans.length === 0) return t('shareMessage.noActivePlans');
+    return '';
+  }, [selectedProduct, productPlans.length, t]);
 
   async function copyToClipboard(text: string, type: 'link' | 'message') {
     try {
@@ -126,20 +146,21 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
         setCopiedMessage(true);
         setTimeout(() => setCopiedMessage(false), 2000);
       }
-      toast.success('Copié !');
+      toast.success(t('toast.copied'));
     } catch {
-      toast.error('Erreur lors de la copie');
+      toast.error(t('toast.copyError'));
     }
   }
 
   function shareOnPlatform(platform: string) {
     const encodedMessage = encodeURIComponent(shareMessage);
     const encodedUrl = encodeURIComponent(paymentLink);
+    const emailProductName = selectedProduct?.name || t('email.defaultProduct');
 
     const urls: Record<string, string> = {
       telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedMessage}`,
       twitter: `https://twitter.com/intent/tweet?text=${encodedMessage}`,
-      email: `mailto:?subject=${encodeURIComponent(`Rejoignez ${selectedProduct?.name || 'mon offre'}`)}&body=${encodedMessage}`,
+      email: `mailto:?subject=${encodeURIComponent(t('email.subject', { productName: emailProductName }))}&body=${encodedMessage}`,
     };
 
     if (urls[platform]) {
@@ -152,7 +173,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Chargement...</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('loading')}</p>
         </div>
       </div>
     );
@@ -163,20 +184,20 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Promouvoir mes offres</h1>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Partagez vos offres et attirez de nouveaux abonnés
+            {t('subtitle')}
           </p>
         </div>
 
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed bg-white p-12 text-center">
           <Megaphone className="h-12 w-12 text-muted-foreground/50" />
-          <h3 className="mt-4 text-lg font-medium">Aucune offre active</h3>
+          <h3 className="mt-4 text-lg font-medium">{t('empty.title')}</h3>
           <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-            Créez votre première offre pour commencer à la promouvoir.
+            {t('empty.body')}
           </p>
           <Button className="mt-6" asChild>
-            <a href="/dashboard/products/new">Créer une offre</a>
+            <a href="/dashboard/products/new">{t('empty.cta')}</a>
           </Button>
         </div>
       </div>
@@ -186,15 +207,15 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Promouvoir mes offres</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Partagez vos offres et attirez de nouveaux abonnés
+          {t('subtitle')}
         </p>
       </div>
 
       {/* Product selector */}
       <div className="flex items-center gap-3">
-        <label className="text-sm font-medium">Sélectionner une offre :</label>
+        <label className="text-sm font-medium">{t('selector.label')}</label>
         <select
           value={selectedProductId}
           onChange={(e) => setSelectedProductId(e.target.value)}
@@ -214,7 +235,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Link2 className="h-4 w-4" />
-              Lien de vente
+              {t('cards.paymentLink')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -237,7 +258,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
                 ) : (
                   <Copy className="h-4 w-4 mr-1" />
                 )}
-                {copiedLink ? 'Copié !' : 'Copier'}
+                {copiedLink ? t('buttons.copied') : t('buttons.copy')}
               </Button>
               <Button
                 variant="outline"
@@ -245,15 +266,15 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
                 onClick={() => window.open(paymentLink, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-1" />
-                Ouvrir
+                {t('buttons.open')}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => toast.info('Fonctionnalité à venir')}
+                onClick={() => toast.info(t('toast.comingSoon'))}
               >
                 <QrCode className="h-4 w-4 mr-1" />
-                QR Code
+                {t('buttons.qr')}
               </Button>
             </div>
           </CardContent>
@@ -264,7 +285,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <MessageSquare className="h-4 w-4" />
-              Message prêt à partager
+              {t('cards.shareMessage')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -276,18 +297,24 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
                 className="w-full bg-transparent text-sm resize-none"
               />
             </div>
+            {shareMessageNote && (
+              <p className="text-sm text-muted-foreground">
+                {shareMessageNote}
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => copyToClipboard(shareMessage, 'message')}
+                disabled={!shareMessage}
               >
                 {copiedMessage ? (
                   <Check className="h-4 w-4 mr-1" />
                 ) : (
                   <Copy className="h-4 w-4 mr-1" />
                 )}
-                {copiedMessage ? 'Copié !' : 'Copier'}
+                {copiedMessage ? t('buttons.copied') : t('buttons.copy')}
               </Button>
             </div>
           </CardContent>
@@ -297,7 +324,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
       {/* Share Buttons */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Partager directement</CardTitle>
+          <CardTitle className="text-base">{t('cards.shareDirect')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
@@ -312,7 +339,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
             <Button
               variant="outline"
               className="flex-1 min-w-[120px]"
-              onClick={() => toast.info('Ouvrez Instagram et collez le message')}
+              onClick={() => toast.info(t('toast.instagram'))}
             >
               <Instagram className="h-4 w-4 mr-2" />
               Instagram
@@ -331,7 +358,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
               onClick={() => shareOnPlatform('email')}
             >
               <Mail className="h-4 w-4 mr-2" />
-              Email
+              {t('buttons.email')}
             </Button>
           </div>
         </CardContent>
@@ -341,7 +368,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
       {productPlans.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Détails de l&apos;offre</CardTitle>
+            <CardTitle className="text-base">{t('cards.offerDetails')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -358,7 +385,7 @@ ${interval === 'paiement unique' ? `Seulement ${price}` : `Seulement ${price} ${
                   </div>
                   <div className="text-right">
                     <p className="font-bold">
-                      {formatPrice(plan.priceCents, plan.currency)}
+                      {formatPrice(plan.priceCents, plan.currency, locale)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {intervalLabels[plan.interval] || ''}

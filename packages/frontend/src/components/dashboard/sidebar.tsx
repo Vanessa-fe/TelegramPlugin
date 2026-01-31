@@ -16,22 +16,32 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { UserRole } from '@/types/auth';
+import { useTranslations } from 'next-intl';
 
 const navigation = [
-  { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Mes offres', href: '/dashboard/products', icon: Package },
-  { name: 'Mes clients', href: '/dashboard/customers', icon: Users },
-  { name: 'Mes abonnés', href: '/dashboard/subscriptions', icon: FileText },
-  { name: 'Promouvoir', href: '/dashboard/promote', icon: Megaphone },
-  { name: 'Paiements', href: '/dashboard/payments', icon: DollarSign, roles: [UserRole.SUPERADMIN, UserRole.SUPPORT, UserRole.ORG_ADMIN] },
-  { name: 'Mes canaux', href: '/dashboard/channels', icon: Hash },
-  { name: 'Gestion des accès', href: '/dashboard/access', icon: Key },
-  { name: 'Facturation', href: '/dashboard/billing', icon: CreditCard },
+  { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { key: 'products', href: '/dashboard/products', icon: Package },
+  { key: 'customers', href: '/dashboard/customers', icon: Users },
+  { key: 'subscriptions', href: '/dashboard/subscriptions', icon: FileText },
+  { key: 'promote', href: '/dashboard/promote', icon: Megaphone },
+  {
+    key: 'payments',
+    href: '/dashboard/payments',
+    icon: DollarSign,
+    roles: [UserRole.SUPERADMIN, UserRole.SUPPORT, UserRole.ORG_ADMIN],
+  },
+  { key: 'channels', href: '/dashboard/channels', icon: Hash },
+  { key: 'access', href: '/dashboard/access', icon: Key },
+  { key: 'billing', href: '/dashboard/billing', icon: CreditCard },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const tCommon = useTranslations('common');
+  const tNav = useTranslations('nav');
+  const tSidebar = useTranslations('sidebar');
+  const trialDaysLeft = 14;
 
   // Filter navigation based on user role
   const filteredNavigation = navigation.filter((item) => {
@@ -44,7 +54,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-[#E9E3EF] px-6">
         <Link href="/" className="text-xl font-bold text-[#1A1523]">
-          TelegramPlugin
+          {tCommon('appName')}
         </Link>
       </div>
 
@@ -56,7 +66,7 @@ export function Sidebar() {
             (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
@@ -66,7 +76,7 @@ export function Sidebar() {
               )}
             >
               <item.icon className="h-5 w-5" />
-              {item.name}
+              {tNav(item.key)}
             </Link>
           );
         })}
@@ -75,13 +85,17 @@ export function Sidebar() {
       {/* Footer */}
       <div className="border-t border-[#E9E3EF] p-4">
         <div className="rounded-lg bg-purple-50 p-4">
-          <p className="text-sm font-medium text-purple-600">Pro Plan</p>
-          <p className="mt-1 text-xs text-[#6F6E77]">14 days left in trial</p>
+          <p className="text-sm font-medium text-purple-600">
+            {tSidebar('proPlan')}
+          </p>
+          <p className="mt-1 text-xs text-[#6F6E77]">
+            {tSidebar('trialDaysLeft', { count: trialDaysLeft })}
+          </p>
           <Link
             href="/dashboard/billing"
             className="mt-3 block text-center text-sm font-medium text-purple-600 hover:text-purple-700"
           >
-            Upgrade now →
+            {tSidebar('upgradeNow')} →
           </Link>
         </div>
       </div>

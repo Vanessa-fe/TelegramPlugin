@@ -51,6 +51,11 @@ function getTrialDaysLeft(
   return diffDays > 0 ? diffDays : null;
 }
 
+function getSubscriptionUrl(subscription: SubscriptionWithRelations): string {
+  // Use stored slug if available, otherwise fall back to UUID
+  return subscription.slug || subscription.id;
+}
+
 export default function SubscriptionsPage() {
   const t = useTranslations("subscriptions");
   const locale = useLocale();
@@ -343,7 +348,7 @@ export default function SubscriptionsPage() {
 
                         {subscription.status === "PAST_DUE" && (
                           <Link
-                            href={`/dashboard/subscriptions/${subscription.id}`}
+                            href={`/dashboard/subscriptions/${getSubscriptionUrl(subscription)}`}
                             className="text-xs text-orange-600 hover:underline"
                           >
                             {t("followUp")} →
@@ -360,7 +365,7 @@ export default function SubscriptionsPage() {
                     {/* Actions */}
                     <TableCell className="text-right">
                       <Link
-                        href={`/dashboard/subscriptions/${subscription.id}`}
+                        href={`/dashboard/subscriptions/${getSubscriptionUrl(subscription)}`}
                       >
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4 mr-1" />

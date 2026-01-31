@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export function Navbar() {
+  const t = useTranslations('marketing.navbar');
+  const tCommon = useTranslations('common');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -28,7 +31,7 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <span className="text-xl font-bold text-[#1A1523]">
-              TelegramPlugin
+              {tCommon('appName')}
             </span>
           </Link>
 
@@ -38,19 +41,19 @@ export function Navbar() {
               href="/pricing"
               className="text-[#6F6E77] hover:text-[#1A1523] font-medium transition-colors duration-150"
             >
-              Pricing
+              {t('links.pricing')}
             </Link>
             <Link
               href="/login"
               className="text-[#6F6E77] hover:text-[#1A1523] font-medium transition-colors duration-150"
             >
-              Login
+              {t('links.login')}
             </Link>
             <Link
               href="/register"
               className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors duration-150 shadow-sm hover:shadow-md"
             >
-              Start free →
+              {t('cta.desktop')}
             </Link>
           </div>
 
@@ -60,12 +63,12 @@ export function Navbar() {
               href="/register"
               className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 text-sm rounded-lg transition-colors duration-150"
             >
-              Start
+              {t('cta.mobile')}
             </Link>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 text-[#6F6E77] hover:text-[#1A1523] transition-colors"
-              aria-label="Toggle menu"
+              aria-label={t('aria.toggleMenu')}
             >
               {isMobileMenuOpen ? (
                 <svg
@@ -109,21 +112,21 @@ export function Navbar() {
                 className="text-[#6F6E77] hover:text-[#1A1523] font-medium py-2 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Pricing
+                {t('links.pricing')}
               </Link>
               <Link
                 href="/login"
                 className="text-[#6F6E77] hover:text-[#1A1523] font-medium py-2 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Login
+                {t('links.login')}
               </Link>
               <Link
                 href="/register"
                 className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-3 rounded-lg text-center transition-colors duration-150"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Create your account
+                {t('cta.mobileMenu')}
               </Link>
             </div>
           </div>

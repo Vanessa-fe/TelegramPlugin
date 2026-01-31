@@ -1,51 +1,139 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
-import { plansApi } from "@/lib/api/plans";
-import { productsApi } from "@/lib/api/products";
-import type { Plan } from "@/types/plan";
-import type { Product } from "@/types/product";
+import { subscriptionsApi } from "@/lib/api/subscriptions";
+import { entitlementsApi } from "@/lib/api/entitlements";
+import type {
+  SubscriptionStatus,
+  SubscriptionWithRelations,
+} from "@/types/subscription";
+import type { Entitlement } from "@/types/entitlement";
+
+// Check if string is a valid UUID format
+function isUUID(str: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Check,
-  Copy,
-  ExternalLink,
-  Instagram,
-  Link2,
+  ArrowLeft,
+  Calendar,
+  CreditCard,
   Mail,
-  Megaphone,
-  MessageSquare,
-  QrCode,
-  Send,
-  Twitter,
+  User,
+  AtSign,
+  Package,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Key,
 } from "lucide-react";
-import { toast } from "sonner";
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+const statusColors: Record<SubscriptionStatus, string> = {
+  ACTIVE: "text-green-600 bg-green-50",
+  PAST_DUE: "text-orange-600 bg-orange-50",
+  CANCELED: "text-gray-600 bg-gray-50",
+  INCOMPLETE: "text-yellow-600 bg-yellow-50",
+  TRIALING: "text-blue-600 bg-blue-50",
+  EXPIRED: "text-red-600 bg-red-50",
+};
 
-export default function PromotePage() {
-  const t = useTranslations("promote");
+const statusIcons: Record<SubscriptionStatus, typeof CheckCircle> = {
+  ACTIVE: CheckCircle,
+  PAST_DUE: AlertTriangle,
+  CANCELED: XCircle,
+  INCOMPLETE: Clock,
+  TRIALING: Clock,
+  EXPIRED: XCircle,
+};
+
+export default function SubscriptionDetailPage() {
+  const t = useTranslations("subscriptionDetail");
   const locale = useLocale();
+  const router = useRouter();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const params = useParams();
+  const slug = params.id as string;
+
+  const [subscription, setSubscription] =
+    useState<SubscriptionWithRelations | null>(null);
+  const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [copiedMessage, setCopiedMessage] = useState(false);
 
-  const intervalLabels: Record<string, string> = useMemo(
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug]);
+
+  async function loadData() {
+    try {
+      let subscriptionData: SubscriptionWithRelations | null = null;
+
+      if (isUUID(slug)) {
+        // Direct lookup by UUID (backward compatibility)
+        subscriptionData = await subscriptionsApi.findOne(slug);
+      } else {
+        // Lookup by friendly slug
+        subscriptionData = await subscriptionsApi.findBySlug(slug);
+      }
+
+      if (!subscriptionData) {
+        setSubscription(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setSubscription(subscriptionData);
+
+      // Load entitlements for this subscription
+      const entData = await entitlementsApi.findAll({
+        subscriptionId: subscriptionData.id,
+      });
+      setEntitlements(entData);
+    } catch (error) {
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(axiosError.response?.data?.message || t("errors.load"));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function formatDate(dateStr: string | null | undefined): string {
+    if (!dateStr) return t("common.na");
+    return new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(
+      new Date(dateStr)
+    );
+  }
+
+  function formatPrice(cents: number, currency: string): string {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+    }).format(cents / 100);
+  }
+
+  const statusLabels = useMemo(
+    () => ({
+      ACTIVE: t("status.ACTIVE"),
+      PAST_DUE: t("status.PAST_DUE"),
+      CANCELED: t("status.CANCELED"),
+      INCOMPLETE: t("status.INCOMPLETE"),
+      TRIALING: t("status.TRIALING"),
+      EXPIRED: t("status.EXPIRED"),
+    }),
+    [t]
+  );
+
+  const intervalLabels = useMemo(
     () => ({
       ONE_TIME: t("interval.ONE_TIME"),
       DAY: t("interval.DAY"),
@@ -56,116 +144,6 @@ export default function PromotePage() {
     }),
     [t]
   );
-
-  function formatPrice(cents: number, currency: string): string {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency,
-    }).format(cents / 100);
-  }
-
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function loadData() {
-    try {
-      const [productsData, plansData] = await Promise.all([
-        productsApi.findAll(),
-        plansApi.findAll(),
-      ]);
-
-      // Only show active products
-      const activeProducts = productsData.filter((p) => p.status === "ACTIVE");
-      setProducts(activeProducts);
-      setPlans(plansData);
-
-      // Select first product by default
-      if (activeProducts.length > 0) setSelectedProductId(activeProducts[0].id);
-    } catch (error) {
-      const axiosError = error as {
-        response?: { data?: { message?: string } };
-      };
-      toast.error(axiosError.response?.data?.message || t("errors.loadOffers"));
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  const selectedProduct = useMemo(() => {
-    return products.find((p) => p.id === selectedProductId);
-  }, [products, selectedProductId]);
-
-  const productPlans = useMemo(() => {
-    return plans.filter((p) => p.productId === selectedProductId && p.isActive);
-  }, [plans, selectedProductId]);
-
-  // Generate payment link (placeholder - would be replaced with actual Stripe link)
-  const paymentLink = useMemo(() => {
-    if (!selectedProduct) return "";
-    const slug = slugify(selectedProduct.name);
-    return `${window.location.origin}/pay/${slug}`;
-  }, [selectedProduct]);
-
-  // Generate share message
-  const shareMessage = useMemo(() => {
-    if (!selectedProduct || productPlans.length === 0) return "";
-    const plan = productPlans[0];
-
-    const price = formatPrice(plan.priceCents, plan.currency);
-    const interval = intervalLabels[plan.interval] || "";
-    const formattedPrice =
-      plan.interval === "ONE_TIME" ? price : `${price} ${interval}`.trim();
-
-    return t("shareMessage.template", {
-      productName: selectedProduct.name,
-      price: formattedPrice,
-      link: paymentLink,
-    });
-  }, [
-    selectedProduct,
-    productPlans,
-    paymentLink,
-    formatPrice,
-    intervalLabels,
-    t,
-  ]);
-
-  async function copyToClipboard(text: string, type: "link" | "message") {
-    try {
-      await navigator.clipboard.writeText(text);
-
-      if (type === "link") {
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 2000);
-      } else {
-        setCopiedMessage(true);
-        setTimeout(() => setCopiedMessage(false), 2000);
-      }
-
-      toast.success(t("toasts.copied"));
-    } catch {
-      toast.error(t("toasts.copyError"));
-    }
-  }
-
-  function shareOnPlatform(platform: "telegram" | "twitter" | "email") {
-    const encodedMessage = encodeURIComponent(shareMessage);
-    const encodedUrl = encodeURIComponent(paymentLink);
-
-    const urls: Record<string, string> = {
-      telegram: `https://t.me/share/url?url=${encodedUrl}&text=${encodedMessage}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodedMessage}`,
-      email: `mailto:?subject=${encodeURIComponent(
-        t("email.subject", {
-          productName: selectedProduct?.name || t("email.defaultOffer"),
-        })
-      )}&body=${encodedMessage}`,
-    };
-
-    if (urls[platform]) window.open(urls[platform], "_blank");
-  }
 
   if (isLoading) {
     return (
@@ -178,231 +156,250 @@ export default function PromotePage() {
     );
   }
 
-  // Empty state - no products
-  if (products.length === 0) {
+  if (!subscription) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">{t("title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
-        </div>
-
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed bg-white p-12 text-center">
-          <Megaphone className="h-12 w-12 text-muted-foreground/50" />
-          <h3 className="mt-4 text-lg font-medium">{t("empty.title")}</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-            {t("empty.description")}
-          </p>
-
-          <Button className="mt-6" asChild>
-            <a href="/dashboard/products/new">{t("empty.cta")}</a>
+        <p className="text-center text-red-600">{t("errors.load")}</p>
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => router.back()}>
+            {t("actions.back")}
           </Button>
         </div>
       </div>
     );
   }
 
+  const StatusIcon = statusIcons[subscription.status];
+  const customerName =
+    subscription.customer?.displayName ||
+    subscription.customer?.email ||
+    t("customer.noName");
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
-      </div>
-
-      {/* Product selector */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium">{t("selectProduct")}</label>
-        <select
-          value={selectedProductId}
-          onChange={(e) => setSelectedProductId(e.target.value)}
-          className="rounded-md border px-4 py-2 text-sm font-medium"
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold">{customerName}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+        </div>
+        <span
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
+            statusColors[subscription.status]
+          }`}
         >
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name}
-            </option>
-          ))}
-        </select>
+          <StatusIcon className="h-4 w-4" />
+          {statusLabels[subscription.status]}
+        </span>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Payment Link Card */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Subscriber Info */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Link2 className="h-4 w-4" />
-              {t("salesLink.title")}
+              <User className="h-4 w-4" />
+              {t("sections.subscriber")}
             </CardTitle>
           </CardHeader>
-
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-3">
-              <input
-                type="text"
-                readOnly
-                value={paymentLink}
-                className="flex-1 bg-transparent text-sm font-mono"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => copyToClipboard(paymentLink, "link")}
-              >
-                {copiedLink ? (
-                  <Check className="h-4 w-4 mr-1" />
-                ) : (
-                  <Copy className="h-4 w-4 mr-1" />
-                )}
-                {copiedLink ? t("salesLink.copied") : t("salesLink.copy")}
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open(paymentLink, "_blank")}
-              >
-                <ExternalLink className="h-4 w-4 mr-1" />
-                {t("salesLink.open")}
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toast.info(t("salesLink.qrCodeSoon"))}
-              >
-                <QrCode className="h-4 w-4 mr-1" />
-                {t("salesLink.qrCode")}
-              </Button>
+          <CardContent className="space-y-3">
+            {subscription.customer?.displayName && (
+              <div className="flex items-center gap-3 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span>{subscription.customer.displayName}</span>
+              </div>
+            )}
+            {subscription.customer?.email && (
+              <div className="flex items-center gap-3 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span>{subscription.customer.email}</span>
+              </div>
+            )}
+            {subscription.customer?.telegramUsername && (
+              <div className="flex items-center gap-3 text-sm">
+                <AtSign className="h-4 w-4 text-muted-foreground" />
+                <span className="font-mono">
+                  @{subscription.customer.telegramUsername}
+                </span>
+              </div>
+            )}
+            <div className="pt-2">
+              <Link href={`/dashboard/customers/${subscription.customerId}`}>
+                <Button variant="outline" size="sm">
+                  {t("actions.viewProfile")}
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
 
-        {/* Share Message Card */}
+        {/* Offer Info */}
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <MessageSquare className="h-4 w-4" />
-              {t("shareMessage.title")}
+              <Package className="h-4 w-4" />
+              {t("sections.offer")}
             </CardTitle>
           </CardHeader>
-
-          <CardContent className="space-y-4">
-            <div className="rounded-lg bg-gray-50 p-3">
-              <textarea
-                readOnly
-                value={shareMessage}
-                rows={8}
-                className="w-full bg-transparent text-sm resize-none"
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => copyToClipboard(shareMessage, "message")}
-              >
-                {copiedMessage ? (
-                  <Check className="h-4 w-4 mr-1" />
-                ) : (
-                  <Copy className="h-4 w-4 mr-1" />
-                )}
-                {copiedMessage ? t("salesLink.copied") : t("salesLink.copy")}
-              </Button>
-            </div>
+          <CardContent className="space-y-3">
+            {subscription.plan ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{subscription.plan.name}</span>
+                  <span className="text-lg font-bold">
+                    {formatPrice(
+                      subscription.plan.priceCents,
+                      subscription.plan.currency
+                    )}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {intervalLabels[
+                    subscription.plan.interval as keyof typeof intervalLabels
+                  ] || subscription.plan.interval}
+                </p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">{t("plan.noPlan")}</p>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Share Buttons */}
+      {/* Subscription Status */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">{t("shareDirect.title")}</CardTitle>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4" />
+            {t("sections.subscriptionStatus")}
+          </CardTitle>
         </CardHeader>
-
         <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant="outline"
-              className="flex-1 min-w-[120px]"
-              onClick={() => shareOnPlatform("telegram")}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {t("shareDirect.telegram")}
-            </Button>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {t("billing.since", { date: "" }).replace("{date}", "")}
+              </p>
+              <p className="mt-1 font-medium">
+                {formatDate(subscription.startedAt)}
+              </p>
+            </div>
 
-            <Button
-              variant="outline"
-              className="flex-1 min-w-[120px]"
-              onClick={() => toast.info(t("shareDirect.instagramHint"))}
-            >
-              <Instagram className="h-4 w-4 mr-2" />
-              {t("shareDirect.instagram")}
-            </Button>
+            <div className="rounded-lg border p-3">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {t("billing.nextCharge")}
+              </p>
+              <p className="mt-1 font-medium">
+                {formatDate(subscription.currentPeriodEnd)}
+              </p>
+            </div>
 
-            <Button
-              variant="outline"
-              className="flex-1 min-w-[120px]"
-              onClick={() => shareOnPlatform("twitter")}
-            >
-              <Twitter className="h-4 w-4 mr-2" />
-              {t("shareDirect.twitter")}
-            </Button>
+            {subscription.trialEndsAt && (
+              <div className="rounded-lg border p-3 bg-blue-50">
+                <p className="text-xs text-blue-700 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {t("trial.ends")}
+                </p>
+                <p className="mt-1 font-medium text-blue-700">
+                  {formatDate(subscription.trialEndsAt)}
+                </p>
+              </div>
+            )}
 
-            <Button
-              variant="outline"
-              className="flex-1 min-w-[120px]"
-              onClick={() => shareOnPlatform("email")}
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              {t("shareDirect.email")}
-            </Button>
+            {subscription.canceledAt && (
+              <div className="rounded-lg border p-3 bg-gray-50">
+                <p className="text-xs text-gray-700 flex items-center gap-1">
+                  <XCircle className="h-3 w-3" />
+                  {t("canceled.message", { date: "" }).replace("{date}", "")}
+                </p>
+                <p className="mt-1 font-medium text-gray-700">
+                  {formatDate(subscription.canceledAt)}
+                </p>
+              </div>
+            )}
           </div>
+
+          {subscription.status === "PAST_DUE" && (
+            <div className="mt-4 rounded-lg bg-orange-50 border border-orange-200 p-3">
+              <p className="text-sm text-orange-700">{t("pastDue.message")}</p>
+            </div>
+          )}
+
+          {subscription.status === "INCOMPLETE" && (
+            <div className="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
+              <p className="text-sm text-yellow-700">
+                Le paiement initial n&apos;a pas encore été confirmé. L&apos;abonné doit finaliser son paiement.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Plan Info */}
-      {productPlans.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {t("offerDetails.title")}
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent>
+      {/* Granted Access */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Key className="h-4 w-4" />
+            {t("sections.access")}
+          </CardTitle>
+          <Link href="/dashboard/access">
+            <Button variant="outline" size="sm">
+              {t("access.viewAll")}
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {entitlements.length === 0 ? (
+            <p className="text-center text-muted-foreground py-4">
+              Aucun accès accordé pour cet abonnement
+            </p>
+          ) : (
             <div className="space-y-2">
-              {productPlans.map((plan) => (
-                <div
-                  key={plan.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div>
-                    <p className="font-medium">{plan.name}</p>
-                    {plan.description && (
-                      <p className="text-sm text-muted-foreground">
-                        {plan.description}
-                      </p>
-                    )}
-                  </div>
+              {entitlements.map((entitlement) => {
+                const isActive =
+                  !entitlement.revokedAt &&
+                  (!entitlement.expiresAt ||
+                    new Date(entitlement.expiresAt) > new Date());
 
-                  <div className="text-right">
-                    <p className="font-bold">
-                      {formatPrice(plan.priceCents, plan.currency)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {intervalLabels[plan.interval] || ""}
-                    </p>
+                return (
+                  <div
+                    key={entitlement.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${
+                      isActive ? "bg-green-50 border-green-200" : "bg-gray-50"
+                    }`}
+                  >
+                    <div>
+                      <p className="font-medium text-sm">
+                        {entitlement.entitlementKey}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Accordé le {formatDate(entitlement.grantedAt)}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        isActive
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {isActive ? "Actif" : "Inactif"}
+                    </span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+          <p className="mt-4 text-xs text-muted-foreground">
+            {t("access.message")}
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

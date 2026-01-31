@@ -7,32 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Mail, MessageSquare, Clock, Loader2 } from 'lucide-react';
-
-const contactOptions = [
-  {
-    icon: Mail,
-    title: 'Email Support',
-    description: 'For general inquiries and support requests',
-    contact: 'support@telegramplugin.com',
-    href: 'mailto:support@telegramplugin.com',
-  },
-  {
-    icon: MessageSquare,
-    title: 'Sales',
-    description: 'Questions about pricing or enterprise plans',
-    contact: 'sales@telegramplugin.com',
-    href: 'mailto:sales@telegramplugin.com',
-  },
-  {
-    icon: Clock,
-    title: 'Response Time',
-    description: 'We typically respond within 24 hours',
-    contact: 'Mon-Fri, 9am-6pm CET',
-    href: null,
-  },
-];
+import { useTranslations } from 'next-intl';
 
 export default function ContactPage() {
+  const t = useTranslations('contact');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -41,6 +19,31 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const supportEmail = t('options.support.contact');
+  const salesEmail = t('options.sales.contact');
+  const contactOptions = [
+    {
+      icon: Mail,
+      title: t('options.support.title'),
+      description: t('options.support.description'),
+      contact: supportEmail,
+      href: `mailto:${supportEmail}`,
+    },
+    {
+      icon: MessageSquare,
+      title: t('options.sales.title'),
+      description: t('options.sales.description'),
+      contact: salesEmail,
+      href: `mailto:${salesEmail}`,
+    },
+    {
+      icon: Clock,
+      title: t('options.responseTime.title'),
+      description: t('options.responseTime.description'),
+      contact: t('options.responseTime.contact'),
+      href: null,
+    },
+  ];
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -59,9 +62,9 @@ export default function ContactPage() {
       // TODO: Implement API call to send contact form
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setIsSubmitted(true);
-      toast.success('Message sent successfully');
+      toast.success(t('toast.success'));
     } catch {
-      toast.error('Failed to send message. Please try again.');
+      toast.error(t('toast.error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -76,10 +79,10 @@ export default function ContactPage() {
           {/* Header */}
           <div className="text-center mb-16">
             <h1 className="text-4xl lg:text-5xl font-bold text-[#1A1523] mb-4">
-              Get in Touch
+              {t('title')}
             </h1>
             <p className="text-lg text-[#6F6E77] max-w-2xl mx-auto">
-              Have a question or need help? We&apos;re here to assist you.
+              {t('subtitle')}
             </p>
           </div>
 
@@ -90,13 +93,13 @@ export default function ContactPage() {
                 {!isSubmitted ? (
                   <>
                     <h2 className="text-xl font-semibold text-[#1A1523] mb-6">
-                      Send us a message
+                      {t('form.title')}
                     </h2>
                     <form onSubmit={handleSubmit} className="space-y-5">
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="name" className="text-[#1A1523]">
-                            Name
+                            {t('form.fields.name')}
                           </Label>
                           <Input
                             id="name"
@@ -106,13 +109,13 @@ export default function ContactPage() {
                             onChange={handleChange}
                             required
                             disabled={isSubmitting}
-                            placeholder="Your name"
+                            placeholder={t('form.fields.namePlaceholder')}
                             className="h-11 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email" className="text-[#1A1523]">
-                            Email
+                            {t('form.fields.email')}
                           </Label>
                           <Input
                             id="email"
@@ -122,7 +125,7 @@ export default function ContactPage() {
                             onChange={handleChange}
                             required
                             disabled={isSubmitting}
-                            placeholder="you@example.com"
+                            placeholder={t('form.fields.emailPlaceholder')}
                             className="h-11 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
                           />
                         </div>
@@ -130,7 +133,7 @@ export default function ContactPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="subject" className="text-[#1A1523]">
-                          Subject
+                          {t('form.fields.subject')}
                         </Label>
                         <Input
                           id="subject"
@@ -140,14 +143,14 @@ export default function ContactPage() {
                           onChange={handleChange}
                           required
                           disabled={isSubmitting}
-                          placeholder="How can we help?"
+                          placeholder={t('form.fields.subjectPlaceholder')}
                           className="h-11 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
                         />
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="message" className="text-[#1A1523]">
-                          Message
+                          {t('form.fields.message')}
                         </Label>
                         <textarea
                           id="message"
@@ -156,7 +159,7 @@ export default function ContactPage() {
                           onChange={handleChange}
                           required
                           disabled={isSubmitting}
-                          placeholder="Tell us more about your question..."
+                          placeholder={t('form.fields.messagePlaceholder')}
                           rows={5}
                           className="w-full rounded-lg border border-[#E9E3EF] px-3 py-2 text-sm focus:border-purple-600 focus:ring-purple-600 focus:outline-none focus:ring-1 disabled:opacity-50"
                         />
@@ -170,7 +173,7 @@ export default function ContactPage() {
                         {isSubmitting && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        {isSubmitting ? 'Sending...' : 'Send message'}
+                        {isSubmitting ? t('form.submitting') : t('form.submit')}
                       </Button>
                     </form>
                   </>
@@ -192,11 +195,10 @@ export default function ContactPage() {
                       </svg>
                     </div>
                     <h3 className="text-xl font-semibold text-[#1A1523] mb-2">
-                      Message sent!
+                      {t('success.title')}
                     </h3>
                     <p className="text-[#6F6E77] mb-6">
-                      Thank you for reaching out. We&apos;ll get back to you within
-                      24 hours.
+                      {t('success.description')}
                     </p>
                     <Button
                       variant="outline"
@@ -206,7 +208,7 @@ export default function ContactPage() {
                       }}
                       className="border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600"
                     >
-                      Send another message
+                      {t('success.cta')}
                     </Button>
                   </div>
                 )}
@@ -216,7 +218,7 @@ export default function ContactPage() {
             {/* Contact options */}
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-[#1A1523]">
-                Other ways to reach us
+                {t('options.title')}
               </h2>
 
               <div className="space-y-4">
@@ -257,13 +259,13 @@ export default function ContactPage() {
               {/* FAQ link */}
               <div className="bg-white rounded-xl border border-[#E9E3EF] p-6 text-center">
                 <p className="text-[#6F6E77] mb-3">
-                  Looking for quick answers?
+                  {t('faq.prompt')}
                 </p>
                 <a
                   href="/pricing#faq"
                   className="text-purple-600 hover:text-purple-700 font-medium"
                 >
-                  Check our FAQ →
+                  {t('faq.cta')}
                 </a>
               </div>
             </div>

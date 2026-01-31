@@ -1,31 +1,35 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
+import { z } from "zod";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-} from '@/components/ui/select';
-import { PlanInterval, type CreatePlanDto, type Plan } from '@/types/plan';
+} from "@/components/ui/select";
+import { PlanInterval, type CreatePlanDto, type Plan } from "@/types/plan";
 
-const planFormSchema = z.object({
-  name: z.string().min(1, 'Le nom est requis'),
-  description: z.string().optional(),
-  interval: z.nativeEnum(PlanInterval),
-  price: z.coerce.number().positive('Le prix doit être positif'),
-  currency: z.string().length(3, 'Code devise à 3 lettres (ex: EUR)'),
-  trialPeriodDays: z.coerce.number().int().nonnegative().optional(),
-  accessDurationDays: z.coerce.number().int().positive().optional(),
-  isActive: z.boolean().optional(),
-});
+const makePlanFormSchema = (t: (key: string) => string) =>
+  z.object({
+    name: z.string().min(1, t("validation.nameRequired")),
+    description: z.string().optional(),
+    interval: z.nativeEnum(PlanInterval),
+    price: z.coerce.number().positive(t("validation.pricePositive")),
+    currency: z.string().length(3, t("validation.currency3Letters")),
+    trialPeriodDays: z.coerce.number().int().nonnegative().optional(),
+    accessDurationDays: z.coerce.number().int().positive().optional(),
+    isActive: z.boolean().optional(),
+  });
 
-type PlanFormData = z.infer<typeof planFormSchema>;
+type PlanFormData = z.infer<ReturnType<typeof makePlanFormSchema>>;
 
 interface PlanFormProps {
   productId: string;
@@ -33,16 +37,23 @@ interface PlanFormProps {
   onSubmit: (data: CreatePlanDto) => void | Promise<void>;
 }
 
-const intervalOptions = [
-  { value: PlanInterval.ONE_TIME, label: 'Paiement unique' },
-  { value: PlanInterval.DAY, label: 'Journalier' },
-  { value: PlanInterval.WEEK, label: 'Hebdomadaire' },
-  { value: PlanInterval.MONTH, label: 'Mensuel' },
-  { value: PlanInterval.QUARTER, label: 'Trimestriel' },
-  { value: PlanInterval.YEAR, label: 'Annuel' },
-];
-
 export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
+  const t = useTranslations("planForm");
+
+  const planFormSchema = useMemo(() => makePlanFormSchema(t), [t]);
+
+  const intervalOptions = useMemo(
+    () => [
+      { value: PlanInterval.ONE_TIME, label: t("intervals.ONE_TIME") },
+      { value: PlanInterval.DAY, label: t("intervals.DAY") },
+      { value: PlanInterval.WEEK, label: t("intervals.WEEK") },
+      { value: PlanInterval.MONTH, label: t("intervals.MONTH") },
+      { value: PlanInterval.QUARTER, label: t("intervals.QUARTER") },
+      { value: PlanInterval.YEAR, label: t("intervals.YEAR") },
+    ],
+    [t]
+  );
+
   const {
     register,
     handleSubmit,
@@ -54,7 +65,7 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
     defaultValues: plan
       ? {
           name: plan.name,
-          description: plan.description || '',
+          description: plan.description || "",
           interval: plan.interval,
           price: plan.priceCents / 100,
           currency: plan.currency,
@@ -63,13 +74,13 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
           isActive: plan.isActive,
         }
       : {
-          currency: 'EUR',
+          currency: "EUR",
           interval: PlanInterval.MONTH,
           isActive: true,
         },
   });
 
-  const selectedInterval = watch('interval');
+  const selectedInterval = watch("interval");
 
   async function onSubmitForm(data: PlanFormData) {
     const payload: CreatePlanDto = {
@@ -90,14 +101,16 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
       <div className="rounded-lg border bg-white p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Informations générales</h2>
+        <h2 className="text-lg font-semibold">
+          {t("sections.general")}
+        </h2>
 
         <div>
-          <Label htmlFor="name">Nom du plan *</Label>
+          <Label htmlFor="name">{t("fields.nameLabel")}</Label>
           <Input
             id="name"
-            {...register('name')}
-            placeholder="ex: Mensuel, Annuel, Accès à vie"
+            {...register("name")}
+            placeholder={t("fields.namePlaceholder")}
           />
           {errors.name && (
             <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -105,11 +118,13 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
         </div>
 
         <div>
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">
+            {t("fields.descriptionLabel")}
+          </Label>
           <Input
             id="description"
-            {...register('description')}
-            placeholder="Description du plan"
+            {...register("description")}
+            placeholder={t("fields.descriptionPlaceholder")}
           />
           {errors.description && (
             <p className="mt-1 text-sm text-red-600">
@@ -119,17 +134,19 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
         </div>
 
         <div>
-          <Label htmlFor="interval">Type de facturation *</Label>
+          <Label htmlFor="interval">
+            {t("fields.billingTypeLabel")}
+          </Label>
           <Select
             value={selectedInterval}
             onValueChange={(value) =>
-              setValue('interval', value as PlanInterval)
+              setValue("interval", value as PlanInterval)
             }
           >
             <SelectTrigger>
               <span>
                 {intervalOptions.find((opt) => opt.value === selectedInterval)
-                  ?.label || 'Sélectionner un intervalle'}
+                  ?.label || t("fields.intervalPlaceholder")}
               </span>
             </SelectTrigger>
             <SelectContent>
@@ -149,18 +166,20 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
       </div>
 
       <div className="rounded-lg border bg-white p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Tarification</h2>
+        <h2 className="text-lg font-semibold">
+          {t("sections.pricing")}
+        </h2>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="price">Prix *</Label>
+            <Label htmlFor="price">{t("fields.priceLabel")}</Label>
             <Input
               id="price"
               type="number"
               step="0.01"
               min="0"
-              {...register('price')}
-              placeholder="29.00"
+              {...register("price")}
+              placeholder={t("fields.pricePlaceholder")}
             />
             {errors.price && (
               <p className="mt-1 text-sm text-red-600">
@@ -170,11 +189,13 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
           </div>
 
           <div>
-            <Label htmlFor="currency">Devise *</Label>
+            <Label htmlFor="currency">
+              {t("fields.currencyLabel")}
+            </Label>
             <Input
               id="currency"
-              {...register('currency')}
-              placeholder="EUR"
+              {...register("currency")}
+              placeholder={t("fields.currencyPlaceholder")}
               maxLength={3}
             />
             {errors.currency && (
@@ -187,15 +208,19 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
       </div>
 
       <div className="rounded-lg border bg-white p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Options avancées</h2>
+        <h2 className="text-lg font-semibold">
+          {t("sections.advanced")}
+        </h2>
 
         <div>
-          <Label htmlFor="trialPeriodDays">Période d&apos;essai (jours)</Label>
+          <Label htmlFor="trialPeriodDays">
+            {t("fields.trialLabel")}
+          </Label>
           <Input
             id="trialPeriodDays"
             type="number"
-            {...register('trialPeriodDays')}
-            placeholder="7"
+            {...register("trialPeriodDays")}
+            placeholder={t("fields.trialPlaceholder")}
           />
           {errors.trialPeriodDays && (
             <p className="mt-1 text-sm text-red-600">
@@ -203,19 +228,19 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
             </p>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
-            Laisser vide si pas d&apos;essai gratuit
+            {t("fields.trialHelper")}
           </p>
         </div>
 
         <div>
           <Label htmlFor="accessDurationDays">
-            Durée d&apos;accès (jours)
+            {t("fields.accessDurationLabel")}
           </Label>
           <Input
             id="accessDurationDays"
             type="number"
-            {...register('accessDurationDays')}
-            placeholder="30"
+            {...register("accessDurationDays")}
+            placeholder={t("fields.accessDurationPlaceholder")}
           />
           {errors.accessDurationDays && (
             <p className="mt-1 text-sm text-red-600">
@@ -223,7 +248,7 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
             </p>
           )}
           <p className="mt-1 text-xs text-muted-foreground">
-            Laisser vide pour un accès illimité
+            {t("fields.accessDurationHelper")}
           </p>
         </div>
 
@@ -231,25 +256,30 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
           <input
             type="checkbox"
             id="isActive"
-            {...register('isActive')}
+            {...register("isActive")}
             className="h-4 w-4 rounded border-gray-300"
           />
           <Label htmlFor="isActive" className="cursor-pointer">
-            Plan actif et visible pour les clients
+            {t("fields.activeLabel")}
           </Label>
         </div>
       </div>
 
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Enregistrement...' : plan ? 'Mettre à jour' : 'Créer le plan'}
+          {isSubmitting
+            ? t("actions.saving")
+            : plan
+              ? t("actions.update")
+              : t("actions.create")}
         </Button>
+
         <Button
           type="button"
           variant="outline"
           onClick={() => window.history.back()}
         >
-          Annuler
+          {t("actions.cancel")}
         </Button>
       </div>
     </form>

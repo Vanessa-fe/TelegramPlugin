@@ -15,8 +15,11 @@ import {
 } from '@/components/ui/table';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function OrganizationsPage() {
+  const t = useTranslations('admin.organizations');
+  const locale = useLocale();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,8 +34,7 @@ export default function OrganizationsPage() {
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(
-        axiosError.response?.data?.message ||
-          'Erreur lors du chargement des organisations'
+        axiosError.response?.data?.message || t('toast.loadError')
       );
     } finally {
       setIsLoading(false);
@@ -44,7 +46,7 @@ export default function OrganizationsPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Chargement...</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t('loading')}</p>
         </div>
       </div>
     );
@@ -53,11 +55,11 @@ export default function OrganizationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Organisations</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <Link href="/admin/organizations/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Nouvelle organisation
+            {t('new')}
           </Button>
         </Link>
       </div>
@@ -66,20 +68,20 @@ export default function OrganizationsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Email de facturation</TableHead>
-              <TableHead>SaaS</TableHead>
-              <TableHead>Stripe</TableHead>
-              <TableHead>Créé le</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t('table.name')}</TableHead>
+              <TableHead>{t('table.slug')}</TableHead>
+              <TableHead>{t('table.billingEmail')}</TableHead>
+              <TableHead>{t('table.saas')}</TableHead>
+              <TableHead>{t('table.stripe')}</TableHead>
+              <TableHead>{t('table.createdAt')}</TableHead>
+              <TableHead>{t('table.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {organizations.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-gray-500">
-                  Aucune organisation trouvée
+                  {t('table.empty')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -89,22 +91,24 @@ export default function OrganizationsPage() {
                   <TableCell>{org.slug}</TableCell>
                   <TableCell>{org.billingEmail}</TableCell>
                   <TableCell>
-                    {org.saasActive ? 'Actif' : 'Inactif'}
+                    {org.saasActive ? t('table.status.active') : t('table.status.inactive')}
                   </TableCell>
                   <TableCell className="text-xs">
                     {org.stripeAccountId ? (
                       <span className="font-mono">{org.stripeAccountId}</span>
                     ) : (
-                      <span className="text-muted-foreground">Non connecté</span>
+                      <span className="text-muted-foreground">
+                        {t('table.stripeNotConnected')}
+                      </span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {new Date(org.createdAt).toLocaleDateString('fr-FR')}
+                    {new Date(org.createdAt).toLocaleDateString(locale)}
                   </TableCell>
                   <TableCell>
                     <Link href={`/admin/organizations/${org.id}`}>
                       <Button variant="ghost" size="sm">
-                        Voir
+                        {t('table.view')}
                       </Button>
                     </Link>
                   </TableCell>

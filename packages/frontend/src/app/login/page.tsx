@@ -8,10 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const t = useTranslations('auth.login');
+  const tCommon = useTranslations('common');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,11 +25,11 @@ export default function LoginPage() {
 
     try {
       await login({ email, password });
-      toast.success('Login successful');
+      toast.success(t('success'));
       router.push('/dashboard');
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      toast.error(axiosError.response?.data?.message || 'Login failed');
+      toast.error(axiosError.response?.data?.message || t('error'));
     } finally {
       setIsLoading(false);
     }
@@ -38,7 +41,7 @@ export default function LoginPage() {
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
           <Link href="/" className="text-xl font-bold text-[#1A1523]">
-            TelegramPlugin
+            {tCommon('appName')}
           </Link>
         </div>
       </header>
@@ -50,17 +53,17 @@ export default function LoginPage() {
           <div className="bg-white rounded-2xl border border-[#E9E3EF] shadow-sm p-8">
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-[#1A1523] mb-2">
-                Welcome back
+                {t('title')}
               </h1>
               <p className="text-[#6F6E77]">
-                Sign in to your account
+                {t('subtitle')}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[#1A1523]">
-                  Email
+                  {t('email')}
                 </Label>
                 <Input
                   id="email"
@@ -69,7 +72,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
-                  placeholder="you@example.com"
+                  placeholder={t('emailPlaceholder')}
                   className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
                 />
               </div>
@@ -77,13 +80,13 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-[#1A1523]">
-                    Password
+                    {t('password')}
                   </Label>
                   <Link
                     href="/forgot-password"
                     className="text-sm text-purple-600 hover:text-purple-700"
                   >
-                    Forgot password?
+                    {t('forgotPassword')}
                   </Link>
                 </div>
                 <Input
@@ -93,7 +96,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  placeholder="••••••••"
+                  placeholder={t('passwordPlaceholder')}
                   className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
                 />
               </div>
@@ -103,18 +106,18 @@ export default function LoginPage() {
                 className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold"
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? t('submitting') : t('submit')}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-[#6F6E77]">
-                Don&apos;t have an account?{' '}
+                {t('noAccount')}{' '}
                 <Link
                   href="/register"
                   className="text-purple-600 hover:text-purple-700 font-medium"
                 >
-                  Sign up free
+                  {t('signUp')}
                 </Link>
               </p>
             </div>
@@ -122,13 +125,13 @@ export default function LoginPage() {
 
           {/* Footer note */}
           <p className="text-center text-sm text-[#6F6E77] mt-6">
-            By signing in, you agree to our{' '}
+            {t('termsNotice')}{' '}
             <Link href="/terms" className="underline hover:text-[#1A1523]">
-              Terms
+              {t('terms')}
             </Link>{' '}
-            and{' '}
+            {t('and')}{' '}
             <Link href="/privacy" className="underline hover:text-[#1A1523]">
-              Privacy Policy
+              {t('privacy')}
             </Link>
           </p>
         </div>

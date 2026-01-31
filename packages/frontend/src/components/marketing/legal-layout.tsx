@@ -18,7 +18,7 @@ export function LegalLayout({ title, lastUpdated, children }: LegalLayoutProps) 
             <h1 className="text-3xl lg:text-4xl font-bold text-[#1A1523] mb-4">
               {title}
             </h1>
-            <p className="text-[#6F6E77]">Last updated: {lastUpdated}</p>
+            <p className="text-[#6F6E77]">{lastUpdated}</p>
           </div>
 
           {/* Content */}

@@ -69,6 +69,71 @@ export declare class SubscriptionsController {
         customerId: string;
         planId: string;
     })[]>;
+    findBySlug(user: AuthUser, slug: string, queryOrganizationId?: string): Promise<{
+        plan: {
+            id: string;
+            name: string;
+            priceCents: number;
+            currency: string;
+            interval: import("@prisma/client").$Enums.PlanInterval;
+            trialPeriodDays: number | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            accessDurationDays: number | null;
+            productId: string;
+        };
+        channelAccesses: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            status: import("@prisma/client").$Enums.AccessStatus;
+            customerId: string;
+            subscriptionId: string;
+            channelId: string;
+            inviteId: string | null;
+            grantedAt: Date | null;
+            revokedAt: Date | null;
+            revokeReason: string | null;
+        }[];
+        customer: {
+            id: string;
+            displayName: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            email: string | null;
+            organizationId: string;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            deletedAt: Date | null;
+            telegramUserId: string | null;
+            telegramUsername: string | null;
+            externalId: string | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        slug: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        currentPeriodStart: Date | null;
+        currentPeriodEnd: Date | null;
+        trialEndsAt: Date | null;
+        canceledAt: Date | null;
+        graceUntil: Date | null;
+        externalId: string | null;
+        externalCustomerId: string | null;
+        externalPriceId: string | null;
+        startedAt: Date;
+        endedAt: Date | null;
+        lastPaymentFailedAt: Date | null;
+        customerId: string;
+        planId: string;
+    }>;
     findOne(user: AuthUser, id: string): Promise<{
         plan: {
             id: string;
@@ -155,6 +220,9 @@ export declare class SubscriptionsController {
         lastPaymentFailedAt: Date | null;
         customerId: string;
         planId: string;
+    }>;
+    backfillSlugs(): Promise<{
+        message: string;
     }>;
     update(user: AuthUser, id: string, body: UpdateSubscriptionDto): Promise<{
         id: string;

@@ -12,6 +12,7 @@ export interface Subscription {
   organizationId: string;
   customerId: string;
   planId: string;
+  slug?: string | null;
   status: SubscriptionStatus;
   externalId?: string | null;
   externalCustomerId?: string | null;

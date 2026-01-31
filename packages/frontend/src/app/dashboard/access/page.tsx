@@ -24,27 +24,6 @@ import { toast } from "sonner";
 
 type AccessStatus = "active" | "suspended" | "revoked" | "expired";
 
-const statusConfig: Record<
-  AccessStatus,
-  { label: string; color: string; icon: string }
-> = {
-  active: { label: "Actif", color: "text-green-600 bg-green-50", icon: "●" },
-  suspended: {
-    label: "Suspendu",
-    color: "text-orange-600 bg-orange-50",
-    icon: "⚠",
-  },
-  revoked: { label: "Révoqué", color: "text-gray-600 bg-gray-50", icon: "✕" },
-  expired: { label: "Expiré", color: "text-red-600 bg-red-50", icon: "✕" },
-};
-
-const typeLabels: Record<EntitlementType, string> = {
-  CHANNEL_ACCESS: "Accès canal",
-  FEATURE_FLAG: "Fonctionnalité",
-  CONTENT_UNLOCK: "Contenu débloqué",
-  API_QUOTA: "Quota API",
-};
-
 function getAccessStatus(entitlement: EntitlementWithRelations): AccessStatus {
   if (entitlement.revokedAt) return "revoked";
   if (entitlement.expiresAt && new Date(entitlement.expiresAt) < new Date())
@@ -55,6 +34,7 @@ function getAccessStatus(entitlement: EntitlementWithRelations): AccessStatus {
 
 export default function AccessPage() {
   const locale = useLocale();
+  const tStatus = useTranslations("accessStatus");
   const [entitlements, setEntitlements] = useState<EntitlementWithRelations[]>(
     []
   );
@@ -63,6 +43,46 @@ export default function AccessPage() {
   const [filterStatus, setFilterStatus] = useState<AccessStatus | "ALL">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const t = useTranslations("access");
+  const tIntervals = useTranslations("intervals");
+
+  const statusConfig: Record<
+    AccessStatus,
+    { label: string; color: string; icon: string }
+  > = useMemo(
+    () => ({
+      active: {
+        label: tStatus("active"),
+        color: "text-green-600 bg-green-50",
+        icon: "●",
+      },
+      suspended: {
+        label: tStatus("suspended"),
+        color: "text-orange-600 bg-orange-50",
+        icon: "⚠",
+      },
+      revoked: {
+        label: tStatus("revoked"),
+        color: "text-gray-600 bg-gray-50",
+        icon: "✕",
+      },
+      expired: {
+        label: tStatus("expired"),
+        color: "text-red-600 bg-red-50",
+        icon: "✕",
+      },
+    }),
+    [tStatus]
+  );
+
+  const typeLabels: Record<EntitlementType, string> = useMemo(
+    () => ({
+      CHANNEL_ACCESS: t("types.CHANNEL_ACCESS"),
+      FEATURE_FLAG: t("types.FEATURE_FLAG"),
+      CONTENT_UNLOCK: t("types.CONTENT_UNLOCK"),
+      API_QUOTA: t("types.API_QUOTA"),
+    }),
+    [t]
+  );
 
   // Create a map of channel IDs to channel info
   const channelMap = useMemo(() => {
@@ -199,10 +219,10 @@ export default function AccessPage() {
             className="rounded-md border px-3 py-2 text-sm"
           >
             <option value="ALL">{t("filters.allStatuses")}</option>
-            <option value="active">{t("filters.active")}</option>
-            <option value="suspended">{t("filters.suspended")}</option>
-            <option value="revoked">{t("filters.revoked")}</option>
-            <option value="expired">{t("filters.expired")}</option>
+            <option value="active">{tStatus("active")}</option>
+            <option value="suspended">{tStatus("suspended")}</option>
+            <option value="revoked">{tStatus("revoked")}</option>
+            <option value="expired">{tStatus("expired")}</option>
           </select>
         </div>
         <div className="flex items-center gap-2 flex-1 max-w-xs">
@@ -292,10 +312,14 @@ export default function AccessPage() {
                             }).format(
                               entitlement.subscription.plan.priceCents / 100
                             )}
-                            /
-                            {entitlement.subscription.plan.interval === "MONTH"
-                              ? "mois"
-                              : entitlement.subscription.plan.interval.toLowerCase()}
+                            {(() => {
+                              const intervalLabel = tIntervals(
+                                `short.${entitlement.subscription.plan.interval}`
+                              );
+                              return intervalLabel.startsWith("/")
+                                ? intervalLabel
+                                : ` ${intervalLabel}`;
+                            })()}
                           </p>
                         </div>
                       ) : entitlement.revokeReason ? (
@@ -304,14 +328,7 @@ export default function AccessPage() {
                             {t("manualAccess")}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {entitlement.revokeReason === "payment_failed" &&
-                              "Paiement échoué"}
-                            {entitlement.revokeReason === "canceled" &&
-                              "Annulé"}
-                            {entitlement.revokeReason === "refund" &&
-                              "Remboursé"}
-                            {entitlement.revokeReason === "manual" &&
-                              "Révocation manuelle"}
+                            {t(`revokeReasons.${entitlement.revokeReason}`)}
                           </p>
                         </div>
                       ) : (
