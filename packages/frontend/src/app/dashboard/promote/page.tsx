@@ -106,7 +106,10 @@ export default function PromotePage() {
 
   // Generate share message
   const shareMessage = useMemo(() => {
-    if (!selectedProduct || productPlans.length === 0) return '';
+    if (!selectedProduct || productPlans.length === 0) {
+      return '';
+    }
+
     const plan = productPlans[0];
     const price = formatPrice(plan.priceCents, plan.currency, locale);
     const interval = intervalLabels[plan.interval] || '';
@@ -126,6 +129,12 @@ export default function PromotePage() {
       t('shareMessage.line5', { paymentLink }),
     ].join('\n');
   }, [selectedProduct, productPlans, paymentLink, locale, intervalLabels, t]);
+
+  const shareMessageNote = useMemo(() => {
+    if (!selectedProduct) return t('shareMessage.noProduct');
+    if (productPlans.length === 0) return t('shareMessage.noActivePlans');
+    return '';
+  }, [selectedProduct, productPlans.length, t]);
 
   async function copyToClipboard(text: string, type: 'link' | 'message') {
     try {
@@ -288,11 +297,17 @@ export default function PromotePage() {
                 className="w-full bg-transparent text-sm resize-none"
               />
             </div>
+            {shareMessageNote && (
+              <p className="text-sm text-muted-foreground">
+                {shareMessageNote}
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => copyToClipboard(shareMessage, 'message')}
+                disabled={!shareMessage}
               >
                 {copiedMessage ? (
                   <Check className="h-4 w-4 mr-1" />

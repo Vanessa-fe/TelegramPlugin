@@ -515,70 +515,6 @@
     }
   },
 
-  "promote": {
-    "title": "Promote my offers",
-    "subtitle": "Share your offers and get new subscribers",
-
-    "loading": "Loading...",
-
-    "errors": {
-      "loadOffers": "Error while loading offers"
-    },
-
-    "toasts": {
-      "copied": "Copied!",
-      "copyError": "Copy failed"
-    },
-
-    "empty": {
-      "title": "No active offer",
-      "description": "Create your first offer to start promoting it.",
-      "cta": "Create an offer"
-    },
-
-    "selectProduct": "Select an offer:",
-
-    "salesLink": {
-      "title": "Sales link",
-      "copy": "Copy",
-      "copied": "Copied!",
-      "open": "Open",
-      "qrCode": "QR code",
-      "qrCodeSoon": "Coming soon"
-    },
-
-    "shareMessage": {
-      "title": "Ready-to-share message",
-      "template": "🚀 Join my private channel {productName}!\n\n✅ Exclusive access to my premium content\n✅ Regular updates\n✅ Private community\n\n{price}\n👉 {link}"
-    },
-
-    "shareDirect": {
-      "title": "Share directly",
-      "telegram": "Telegram",
-      "instagram": "Instagram",
-      "instagramHint": "Open Instagram and paste the message",
-      "twitter": "X (Twitter)",
-      "email": "Email"
-    },
-
-    "offerDetails": {
-      "title": "Offer details"
-    },
-
-    "interval": {
-      "ONE_TIME": "one-time payment",
-      "DAY": "per day",
-      "WEEK": "per week",
-      "MONTH": "per month",
-      "QUARTER": "per quarter",
-      "YEAR": "per year"
-    },
-
-    "email": {
-      "subject": "Join {productName}",
-      "defaultOffer": "my offer"
-    }
-  },
   "channels": {
     "title": "My channels",
     "subtitle": "Manage your connected Telegram, Discord and WhatsApp channels",
@@ -1585,6 +1521,9 @@
       "line2": "✅ Exclusive access to all my premium content",
       "line3": "✅ Regular updates",
       "line4": "✅ Private community",
+      "noProduct": "Select an offer to generate the message.",
+      "noActivePlans": "No active plan for this offer.",
+      "noPlan": "🚀 Join my private channel {productName}!\n\nI'm finalizing the offer details — check back soon.\n👉 {paymentLink}",
       "priceOneTime": "Only {price}",
       "priceRecurring": "Only {price} {interval}",
       "line5": "👉 {paymentLink}"

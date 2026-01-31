@@ -534,71 +534,6 @@
     }
   },
 
-  "promote": {
-    "title": "Promouvoir mes offres",
-    "subtitle": "Partage tes offres et attire de nouveaux abonnés",
-
-    "loading": "Chargement...",
-
-    "errors": {
-      "loadOffers": "Erreur lors du chargement des offres"
-    },
-
-    "toasts": {
-      "copied": "Copié !",
-      "copyError": "Erreur lors de la copie"
-    },
-
-    "empty": {
-      "title": "Aucune offre active",
-      "description": "Crée ta première offre pour commencer à la promouvoir.",
-      "cta": "Créer une offre"
-    },
-
-    "selectProduct": "Sélectionner une offre :",
-
-    "salesLink": {
-      "title": "Lien de vente",
-      "copy": "Copier",
-      "copied": "Copié !",
-      "open": "Ouvrir",
-      "qrCode": "QR Code",
-      "qrCodeSoon": "Fonctionnalité à venir"
-    },
-
-    "shareMessage": {
-      "title": "Message prêt à partager",
-      "template": "🚀 Rejoignez mon canal privé {productName} !\n\n✅ Accès exclusif à tout mon contenu premium\n✅ Mises à jour régulières\n✅ Communauté privée\n\n{price}\n👉 {link}"
-    },
-
-    "shareDirect": {
-      "title": "Partager directement",
-      "telegram": "Telegram",
-      "instagram": "Instagram",
-      "instagramHint": "Ouvre Instagram et colle le message",
-      "twitter": "Twitter",
-      "email": "Email"
-    },
-
-    "offerDetails": {
-      "title": "Détails de l'offre"
-    },
-
-    "interval": {
-      "ONE_TIME": "paiement unique",
-      "DAY": "par jour",
-      "WEEK": "par semaine",
-      "MONTH": "par mois",
-      "QUARTER": "par trimestre",
-      "YEAR": "par an"
-    },
-
-    "email": {
-      "subject": "Rejoignez {productName}",
-      "defaultOffer": "mon offre"
-    }
-  },
-
   "channels": {
     "title": "Mes canaux",
     "subtitle": "Gère tes canaux Telegram, Discord et WhatsApp connectés",
@@ -1569,20 +1504,20 @@
   "promote": {
     "loading": "Chargement...",
     "title": "Promouvoir mes offres",
-    "subtitle": "Partagez vos offres et attirez de nouveaux abonnés",
+    "subtitle": "Partage tes offres et attire de nouveaux abonnés",
     "errors": {
       "loadProducts": "Erreur lors du chargement des offres"
     },
     "empty": {
       "title": "Aucune offre active",
-      "body": "Créez votre première offre pour commencer à la promouvoir.",
+      "body": "Crée ta première offre pour commencer à la promouvoir.",
       "cta": "Créer une offre"
     },
     "selector": {
       "label": "Sélectionner une offre :"
     },
     "cards": {
-      "paymentLink": "Lien de vente",
+      "paymentLink": "Lien de paiement",
       "shareMessage": "Message prêt à partager",
       "shareDirect": "Partager directement",
       "offerDetails": "Détails de l'offre"
@@ -1598,7 +1533,7 @@
       "copied": "Copié !",
       "copyError": "Erreur lors de la copie",
       "comingSoon": "Fonctionnalité à venir",
-      "instagram": "Ouvrez Instagram et collez le message"
+      "instagram": "Ouvre Instagram et colle le message"
     },
     "intervals": {
       "oneTime": "paiement unique",
@@ -1609,16 +1544,19 @@
       "year": "par an"
     },
     "shareMessage": {
-      "line1": "🚀 Rejoignez mon canal privé {productName} !",
+      "line1": "🚀 Rejoins mon canal privé {productName} !",
       "line2": "✅ Accès exclusif à tout mon contenu premium",
       "line3": "✅ Mises à jour régulières",
       "line4": "✅ Communauté privée",
-      "priceOneTime": "Seulement {price}",
-      "priceRecurring": "Seulement {price} {interval}",
+      "noProduct": "Sélectionne une offre pour générer le message.",
+      "noActivePlans": "Aucune formule active pour cette offre.",
+      "noPlan": "🚀 Rejoins mon canal privé {productName} !\n\nJe finalise les détails de l'offre — reviens bientôt.\n👉 {paymentLink}",
+      "priceOneTime": "{price} (paiement unique)",
+      "priceRecurring": "{price} {interval}",
       "line5": "👉 {paymentLink}"
     },
     "email": {
-      "subject": "Rejoignez {productName}",
+      "subject": "Rejoins {productName}",
       "defaultProduct": "mon offre"
     }
   },
