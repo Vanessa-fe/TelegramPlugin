@@ -1,70 +1,81 @@
 
+
 > frontend@0.1.0 build /Users/vanessa/Sites/localhost/TelegramPlugin/packages/frontend
 > next build --turbopack
 
-   ▲ Next.js 15.5.9 (Turbopack)
+   [1m[38;2;173;127;168m▲ Next.js 15.5.9[39m[22m (Turbopack)
    - Environments: .env.local
 
-   Creating an optimized production build ...
- ✓ Finished writing to disk in 332ms
- ✓ Compiled successfully in 2.6s
-   Linting and checking validity of types ...
-   Collecting page data ...
-   Generating static pages (0/32) ...
-   Generating static pages (8/32) 
-   Generating static pages (16/32) 
-   Generating static pages (24/32) 
- ✓ Generating static pages (32/32)
-   Finalizing page optimization ...
-   Collecting build traces ...
+ [37m[1m [22m[39m Creating an optimized production build ...
+ ✓ Finished writing to disk in 230ms
+ [32m[1m✓[22m[39m Compiled successfully in 2.9s
+[?25l [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m..[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m...[39m[2K[1G [37m[1m [22m[39m Linting and checking validity of types  [36m.[39m[2K[1G[?25h
+./src/app/dashboard/access/page.tsx
+76:6  Warning: React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
-Route (app)                                Size  First Load JS
-┌ ○ /                                       0 B         152 kB
-├ ○ /_not-found                             0 B         148 kB
-├ ○ /about                                  0 B         152 kB
-├ ○ /admin                                519 B         192 kB
-├ ○ /admin/billing                      1.81 kB         193 kB
-├ ○ /admin/organizations                1.65 kB         193 kB
-├ ƒ /admin/organizations/[id]           1.56 kB         193 kB
-├ ƒ /admin/organizations/[id]/edit       2.4 kB         218 kB
-├ ○ /admin/organizations/new            2.17 kB         218 kB
-├ ƒ /checkout/[productId]               5.79 kB         162 kB
-├ ○ /checkout/cancel                    5.86 kB         162 kB
-├ ○ /checkout/success                   6.11 kB         162 kB
-├ ○ /contact                            8.64 kB         165 kB
-├ ○ /dashboard                              0 B         193 kB
-├ ○ /dashboard/access                   3.46 kB         196 kB
-├ ○ /dashboard/billing                  2.19 kB         195 kB
-├ ○ /dashboard/channels                 2.25 kB         195 kB
-├ ƒ /dashboard/channels/[id]/access     4.84 kB         198 kB
-├ ○ /dashboard/channels/new             3.96 kB         221 kB
-├ ○ /dashboard/customers                2.23 kB         195 kB
-├ ƒ /dashboard/customers/[id]           3.34 kB         196 kB
-├ ○ /dashboard/entitlements             1.92 kB         195 kB
-├ ○ /dashboard/payments                 2.16 kB         195 kB
-├ ○ /dashboard/products                 1.93 kB         195 kB
-├ ƒ /dashboard/products/[id]/plans      2.47 kB         195 kB
-├ ƒ /dashboard/products/[id]/plans/new  3.88 kB         221 kB
-├ ○ /dashboard/products/new             2.69 kB         220 kB
-├ ○ /dashboard/promote                  3.94 kB         197 kB
-├ ○ /dashboard/subscriptions             3.5 kB         196 kB
-├ ƒ /dashboard/subscriptions/[id]       3.12 kB         196 kB
-├ ○ /forgot-password                    6.84 kB         163 kB
-├ ○ /gdpr                                   0 B         152 kB
-├ ○ /login                              6.53 kB         163 kB
-├ ○ /pricing                                0 B         152 kB
-├ ○ /privacy                                0 B         152 kB
-├ ○ /register                           6.88 kB         163 kB
-└ ○ /terms                                  0 B         152 kB
-+ First Load JS shared by all            159 kB
+./src/app/dashboard/billing/page.tsx
+26:6  Warning: React Hook useEffect has a missing dependency: 'loadStatus'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/customers/page.tsx
+23:6  Warning: React Hook useEffect has a missing dependency: 'loadCustomers'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/dashboard/subscriptions/[id]/page.tsx
+60:3  Warning: The 'formatPrice' function makes the dependencies of useMemo Hook (at line 126) change on every render. To fix this, wrap the definition of 'formatPrice' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+[?25l [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G [36m..[39m [2K[1G [36m...[39m [2K[1G [36m.[39m [2K[1G[?25h    [32m[1m✓[22m[39m Linting and checking validity of types 
+[?25l [37m[1m [22m[39m Collecting page data  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting page data  [36m..[39m[2K[1G[?25h [37m[1m [22m[39m Collecting page data     [32m[1m✓[22m[39m Collecting page data 
+[?25l [37m[1m [22m[39m Generating static pages (0/31)  [36m[    ][39m[2K[1G [37m[1m [22m[39m Generating static pages (0/31)  [36m[=   ][39m[2K[1G[?25h [32m[1m✓[22m[39m Generating static pages (31/31)
+[?25l [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[?25l [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m...[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m...[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m.[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m.[39m[2K[1G [37m[1m [22m[39m Finalizing page optimization  [36m..[39m[2K[1G [37m[1m [22m[39m Collecting build traces  [36m..[39m[2K[1G[?25h [37m[1m [22m[39m Collecting build traces     [32m[1m✓[22m[39m Collecting build traces 
+[2K[1G[?25h [37m[1m [22m[39m Finalizing page optimization     [32m[1m✓[22m[39m Finalizing page optimization 
+
+[4mRoute (app)[24m                                [4mSize[24m  [4mFirst Load JS[24m  [4m[24m  [4m[24m
+┌ ƒ /                                       0 B         [37m[1m165 kB[22m[39m
+├ ƒ /_not-found                             0 B         [37m[1m160 kB[22m[39m
+├ ƒ /about                                  0 B         [37m[1m165 kB[22m[39m
+├ ƒ /admin                                519 B         [37m[1m204 kB[22m[39m
+├ ƒ /admin/billing                      1.81 kB         [37m[1m206 kB[22m[39m
+├ ƒ /admin/organizations                1.65 kB         [37m[1m206 kB[22m[39m
+├ ƒ /admin/organizations/[id]           1.56 kB         [37m[1m206 kB[22m[39m
+├ ƒ /admin/organizations/[id]/edit       2.4 kB         [37m[1m231 kB[22m[39m
+├ ƒ /admin/organizations/new            2.17 kB         [37m[1m231 kB[22m[39m
+├ ƒ /checkout/[productId]               5.88 kB         [37m[1m174 kB[22m[39m
+├ ƒ /checkout/cancel                    5.86 kB         [37m[1m174 kB[22m[39m
+├ ƒ /checkout/success                   6.02 kB         [37m[1m175 kB[22m[39m
+├ ƒ /contact                            8.64 kB         [37m[1m177 kB[22m[39m
+├ ƒ /dashboard                              0 B         [37m[1m205 kB[22m[39m
+├ ƒ /dashboard/access                   3.57 kB         [37m[1m209 kB[22m[39m
+├ ƒ /dashboard/billing                  2.14 kB         [37m[1m208 kB[22m[39m
+├ ƒ /dashboard/channels                 2.36 kB         [37m[1m208 kB[22m[39m
+├ ƒ /dashboard/channels/[id]/access     4.92 kB         [37m[1m210 kB[22m[39m
+├ ƒ /dashboard/channels/new             3.68 kB         [37m[1m234 kB[22m[39m
+├ ƒ /dashboard/customers                2.35 kB         [37m[1m208 kB[22m[39m
+├ ƒ /dashboard/customers/[id]           3.43 kB         [37m[1m209 kB[22m[39m
+├ ƒ /dashboard/payments                 2.26 kB         [37m[1m208 kB[22m[39m
+├ ƒ /dashboard/products                    2 kB         [37m[1m207 kB[22m[39m
+├ ƒ /dashboard/products/[id]/plans      2.59 kB         [37m[1m208 kB[22m[39m
+├ ƒ /dashboard/products/[id]/plans/new   3.9 kB         [37m[1m234 kB[22m[39m
+├ ƒ /dashboard/products/new             2.81 kB         [37m[1m233 kB[22m[39m
+├ ƒ /dashboard/promote                  4.06 kB         [37m[1m209 kB[22m[39m
+├ ƒ /dashboard/subscriptions            3.61 kB         [37m[1m209 kB[22m[39m
+├ ƒ /dashboard/subscriptions/[id]       4.01 kB         [37m[1m209 kB[22m[39m
+├ ƒ /forgot-password                    6.84 kB         [37m[1m175 kB[22m[39m
+├ ƒ /gdpr                                   0 B         [37m[1m165 kB[22m[39m
+├ ƒ /login                              6.54 kB         [37m[1m175 kB[22m[39m
+├ ƒ /pricing                                0 B         [37m[1m165 kB[22m[39m
+├ ƒ /privacy                                0 B         [37m[1m165 kB[22m[39m
+├ ƒ /register                           6.88 kB         [37m[1m175 kB[22m[39m
+└ ƒ /terms                                  0 B         [37m[1m165 kB[22m[39m
++ First Load JS shared by all            [37m[1m171 kB[22m[39m
   ├ chunks/66d26a49d9588569.js            21 kB
   ├ chunks/7f56cbd7c5650345.js          59.2 kB
   ├ chunks/89ea2e611512e2cf.js          17.1 kB
-  └ chunks/a3f0bf8035372253.js          13.1 kB
-  ├ chunks/0bf65687f71c1d0c.css         11.1 kB
-  └ other shared chunks (total)         37.3 kB
+  ├ chunks/901848e31b21f388.js          12.5 kB
+  ├ chunks/a3f0bf8035372253.js          13.1 kB
+  ├ chunks/9d76ff678211b5cb.css         10.9 kB
+  └ other shared chunks (total)         37.4 kB
 
 
-○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
 
+[?25h
