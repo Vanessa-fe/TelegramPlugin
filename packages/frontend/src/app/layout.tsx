@@ -4,7 +4,7 @@ import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
 
@@ -18,10 +18,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: 'Telegram Monetization - Admin Dashboard',
-  description: 'Manage your Telegram monetization platform',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('metadata');
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
 
 export default async function RootLayout({
   children,

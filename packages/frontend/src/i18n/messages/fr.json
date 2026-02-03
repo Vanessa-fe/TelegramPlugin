@@ -1,4 +1,9 @@
 {
+  "metadata": {
+    "title": "TelegramPlugin - Monétisez vos canaux Telegram",
+    "description": "Créateurs, monétisez enfin votre communauté Telegram ! Abonnements, accès premium, paiements automatiques. Concentrez-vous sur votre contenu, on gère le reste."
+  },
+
   "common": {
     "appName": "TelegramPlugin",
     "loading": "Chargement...",
@@ -1834,10 +1839,10 @@
     },
     "hero": {
       "title": {
-        "line1": "Monétise ta communauté.",
-        "line2": "Garde 100 % de tes revenus."
+        "line1": "Votre contenu a de la valeur",
+        "line2": "— monétisez-le sur Telegram"
       },
-      "subtitle": "Vends des abonnements et des accès ponctuels à tes communautés Telegram, Discord et WhatsApp. Basé dans l'UE. Conforme au RGPD. Zéro commission.",
+      "subtitle": "Vous créez, on s'occupe du reste. Vendez l'accès à vos canaux Telegram, encaissez via Stripe, gérez vos membres en autopilote. C'est parti !",
       "cta": {
         "primary": "Commencer à monétiser →",
         "secondary": "Voir les tarifs"
