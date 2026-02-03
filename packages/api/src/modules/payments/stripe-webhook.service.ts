@@ -13,6 +13,7 @@ import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { MetricsService } from '../metrics/metrics.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 export type StripeRawBodyRequest = {
   rawBody?: Buffer | string;
@@ -35,6 +36,7 @@ export class StripeWebhookService {
     private readonly auditLogService: AuditLogService,
     private readonly metricsService: MetricsService,
     private readonly platformSubscriptionService: PlatformSubscriptionService,
+    private readonly analyticsService: AnalyticsService,
   ) {
     const apiKey = this.config.get<string>('STRIPE_SECRET_KEY');
     if (!apiKey) {
@@ -185,6 +187,17 @@ export class StripeWebhookService {
     }
 
     await this.applyDomainSideEffects(mappedType, context);
+
+    // Track purchase in GA4 for successful invoice payments
+    if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object;
+      await this.analyticsService.trackPurchase({
+        transactionId: invoice.id,
+        value: (invoice.amount_paid ?? 0) / 100,
+        currency: (invoice.currency ?? 'eur').toUpperCase(),
+        clientId: context.subscriptionId,
+      });
+    }
 
     try {
       await this.auditLogService.create({
