@@ -1,7 +1,12 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
 import { Shield, Heart, Zap } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/about' },
+};
 
 export default async function AboutPage() {
   const t = await getTranslations('about');

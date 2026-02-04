@@ -1,5 +1,10 @@
+import type { Metadata } from 'next';
 import { LegalLayout } from '@/components/marketing';
 import { getTranslations } from 'next-intl/server';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/terms' },
+};
 
 export default async function TermsPage() {
   const t = await getTranslations('terms');

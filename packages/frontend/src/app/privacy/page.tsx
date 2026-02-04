@@ -1,5 +1,10 @@
+import type { Metadata } from 'next';
 import { LegalLayout } from '@/components/marketing';
 import { getTranslations } from 'next-intl/server';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/privacy' },
+};
 
 export default async function PrivacyPage() {
   const t = await getTranslations('privacy');

@@ -1,6 +1,11 @@
+import type { Metadata } from 'next';
 import { AdminRoute } from '@/components/auth/admin-route';
 import { AdminSidebar } from '@/components/admin/sidebar';
 import { AdminHeader } from '@/components/admin/header';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function AdminLayout({
   children,

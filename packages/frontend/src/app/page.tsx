@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import {
   Navbar,
   Hero,
@@ -9,6 +10,10 @@ import {
   FinalCTA,
   Footer,
 } from '@/components/marketing';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export default function Home() {
   return (

@@ -1,6 +1,11 @@
+import type { Metadata } from 'next';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Header } from '@/components/dashboard/header';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function DashboardLayout({
   children,

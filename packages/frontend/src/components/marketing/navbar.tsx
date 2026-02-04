@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
 export function Navbar() {
@@ -30,9 +31,13 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16 md:h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className="text-xl font-bold text-[#1A1523]">
-              {tCommon('appName')}
-            </span>
+            <Image
+              src="/android-chrome-192x192.png"
+              alt="Sublynk"
+              width={32}
+              height={32}
+              className="rounded-md"
+            />
           </Link>
 
           {/* Desktop Navigation */}

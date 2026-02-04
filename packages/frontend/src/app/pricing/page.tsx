@@ -1,6 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
 import { getTranslations } from 'next-intl/server';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/pricing' },
+};
 
 export default async function PricingPage() {
   const t = await getTranslations('pricing');

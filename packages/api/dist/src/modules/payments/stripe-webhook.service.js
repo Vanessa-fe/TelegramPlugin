@@ -23,6 +23,7 @@ const channel_access_service_1 = require("../channel-access/channel-access.servi
 const audit_log_service_1 = require("../audit-log/audit-log.service");
 const metrics_service_1 = require("../metrics/metrics.service");
 const platform_subscription_service_1 = require("../platform-subscription/platform-subscription.service");
+const analytics_service_1 = require("../analytics/analytics.service");
 let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
     config;
     prisma;
@@ -30,15 +31,17 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
     auditLogService;
     metricsService;
     platformSubscriptionService;
+    analyticsService;
     logger = new common_1.Logger(StripeWebhookService_1.name);
     stripe;
-    constructor(config, prisma, channelAccessService, auditLogService, metricsService, platformSubscriptionService) {
+    constructor(config, prisma, channelAccessService, auditLogService, metricsService, platformSubscriptionService, analyticsService) {
         this.config = config;
         this.prisma = prisma;
         this.channelAccessService = channelAccessService;
         this.auditLogService = auditLogService;
         this.metricsService = metricsService;
         this.platformSubscriptionService = platformSubscriptionService;
+        this.analyticsService = analyticsService;
         const apiKey = this.config.get('STRIPE_SECRET_KEY');
         if (!apiKey) {
             throw new Error('STRIPE_SECRET_KEY is not configured');
@@ -141,6 +144,15 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
             await this.syncSubscriptionFromCheckout(event.data.object, context.subscriptionId);
         }
         await this.applyDomainSideEffects(mappedType, context);
+        if (event.type === 'invoice.payment_succeeded') {
+            const invoice = event.data.object;
+            await this.analyticsService.trackPurchase({
+                transactionId: invoice.id,
+                value: (invoice.amount_paid ?? 0) / 100,
+                currency: (invoice.currency ?? 'eur').toUpperCase(),
+                clientId: context.subscriptionId,
+            });
+        }
         try {
             await this.auditLogService.create({
                 organizationId: context.organizationId,
@@ -451,6 +463,7 @@ exports.StripeWebhookService = StripeWebhookService = StripeWebhookService_1 = _
         channel_access_service_1.ChannelAccessService,
         audit_log_service_1.AuditLogService,
         metrics_service_1.MetricsService,
-        platform_subscription_service_1.PlatformSubscriptionService])
+        platform_subscription_service_1.PlatformSubscriptionService,
+        analytics_service_1.AnalyticsService])
 ], StripeWebhookService);
 //# sourceMappingURL=stripe-webhook.service.js.map
