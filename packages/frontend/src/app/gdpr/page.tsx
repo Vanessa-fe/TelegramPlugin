@@ -2,10 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalLayout } from '@/components/marketing';
 import { getTranslations } from 'next-intl/server';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/gdpr' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('gdpr');
+  return buildMetadata({ canonical: '/gdpr', title: t('title') });
+}
 
 export default async function GDPRPage() {
   const t = await getTranslations('gdpr');

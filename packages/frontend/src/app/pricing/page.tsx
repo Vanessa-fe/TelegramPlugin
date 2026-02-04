@@ -2,10 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
 import { getTranslations } from 'next-intl/server';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/pricing' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('pricing');
+  return buildMetadata({ canonical: '/pricing', title: t('hero.title'), description: t('hero.subtitle') });
+}
 
 export default async function PricingPage() {
   const t = await getTranslations('pricing');

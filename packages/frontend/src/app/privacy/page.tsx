@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { LegalLayout } from '@/components/marketing';
 import { getTranslations } from 'next-intl/server';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/privacy' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('privacy');
+  return buildMetadata({ canonical: '/privacy', title: t('title') });
+}
 
 export default async function PrivacyPage() {
   const t = await getTranslations('privacy');

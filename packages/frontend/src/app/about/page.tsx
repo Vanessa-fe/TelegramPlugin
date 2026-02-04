@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
 import { Shield, Heart, Zap } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/about' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('about');
+  return buildMetadata({ canonical: '/about', title: t('hero.title'), description: t('hero.body') });
+}
 
 export default async function AboutPage() {
   const t = await getTranslations('about');

@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { LegalLayout } from '@/components/marketing';
 import { getTranslations } from 'next-intl/server';
+import { buildMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  alternates: { canonical: '/terms' },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('terms');
+  return buildMetadata({ canonical: '/terms', title: t('title') });
+}
 
 export default async function TermsPage() {
   const t = await getTranslations('terms');
