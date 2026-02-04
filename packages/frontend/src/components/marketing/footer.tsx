@@ -1,9 +1,11 @@
-import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+'use client';
 
-export async function Footer() {
-  const t = await getTranslations('marketing.footer');
-  const tCommon = await getTranslations('common');
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+
+export function Footer() {
+  const t = useTranslations('marketing.footer');
+  const tCommon = useTranslations('common');
   const footerLinks = {
     product: [
       { label: t('links.pricing'), href: '/pricing' },
