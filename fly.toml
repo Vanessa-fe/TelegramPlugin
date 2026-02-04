@@ -27,3 +27,6 @@ primary_region = 'fra'
   memory = '1gb'
   cpus = 1
   memory_mb = 1024
+
+[services]
+  min_machines_running = 1
