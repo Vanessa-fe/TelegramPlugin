@@ -19,6 +19,7 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState('');
   const supportEmail = t('options.support.contact');
   const salesEmail = t('options.sales.contact');
   const contactOptions = [
@@ -57,6 +58,7 @@ export default function ContactPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
 
     try {
       // TODO: Implement API call to send contact form
@@ -64,6 +66,7 @@ export default function ContactPage() {
       setIsSubmitted(true);
       toast.success(t('toast.success'));
     } catch {
+      setError(t('toast.error'));
       toast.error(t('toast.error'));
     } finally {
       setIsSubmitting(false);
@@ -95,7 +98,12 @@ export default function ContactPage() {
                     <h2 className="text-xl font-semibold text-[#1A1523] mb-6">
                       {t('form.title')}
                     </h2>
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isSubmitting}>
+                      {error && (
+                        <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                          {error}
+                        </p>
+                      )}
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="name" className="text-[#1A1523]">
@@ -178,13 +186,14 @@ export default function ContactPage() {
                     </form>
                   </>
                 ) : (
-                  <div className="text-center py-8">
+                  <div className="text-center py-8" role="status">
                     <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4">
                       <svg
                         className="w-6 h-6"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
+                        aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"

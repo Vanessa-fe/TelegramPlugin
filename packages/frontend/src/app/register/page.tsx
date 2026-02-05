@@ -22,6 +22,7 @@ export default function RegisterPage() {
     lastName: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFormData((prev) => ({
@@ -33,6 +34,7 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
     try {
       await register({
@@ -45,7 +47,9 @@ export default function RegisterPage() {
       router.push('/dashboard');
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      toast.error(axiosError.response?.data?.message || t('error'));
+      const msg = axiosError.response?.data?.message || t('error');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +80,12 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
+              {error && (
+                <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                  {error}
+                </p>
+              )}
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -141,9 +150,10 @@ export default function RegisterPage() {
                   required
                   disabled={isLoading}
                   placeholder={t('passwordPlaceholder')}
+                  aria-describedby="password-hint"
                   className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
                 />
-                <p className="text-xs text-[#6F6E77]">
+                <p id="password-hint" className="text-xs text-[#6F6E77]">
                   {t('passwordHint')}
                 </p>
               </div>
@@ -164,6 +174,7 @@ export default function RegisterPage() {
                   className="w-4 h-4 text-purple-600"
                   fill="currentColor"
                   viewBox="0 0 20 20"
+                  aria-hidden="true"
                 >
                   <path
                     fillRule="evenodd"

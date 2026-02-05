@@ -18,10 +18,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
     try {
       await login({ email, password });
@@ -29,7 +31,9 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
-      toast.error(axiosError.response?.data?.message || t('error'));
+      const msg = axiosError.response?.data?.message || t('error');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +64,12 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
+              {error && (
+                <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                  {error}
+                </p>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[#1A1523]">
                   {t('email')}

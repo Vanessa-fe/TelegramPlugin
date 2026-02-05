@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
               <>
                 <div className="text-center mb-8">
                   <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
-                    <Mail className="w-6 h-6" />
+                    <Mail className="w-6 h-6" aria-hidden="true" />
                   </div>
                   <h1 className="text-2xl font-bold text-[#1A1523] mb-2">
                     {t('title')}
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-[#1A1523]">
                       {t('email')}
@@ -101,13 +101,14 @@ export default function ForgotPasswordPage() {
                 </form>
               </>
             ) : (
-              <div className="text-center py-4">
+              <div className="text-center py-4" role="status">
                 <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4">
                   <svg
                     className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
