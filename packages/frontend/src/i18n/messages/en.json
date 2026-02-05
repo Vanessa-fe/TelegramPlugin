@@ -910,15 +910,15 @@
     "accessDuration": "Access valid for {days} days",
     "finalize": "Finalize",
     "form": {
-      "email": "Email",
-      "emailPlaceholder": "your@email.com",
-      "emailRequired": "Email is required for card payment",
-      "name": "Name (optional)",
-      "namePlaceholder": "Jane Doe",
       "telegram": "Telegram username",
       "telegramPlaceholder": "@your_username",
-      "telegramHelp": "To receive access automatically",
-      "telegramRequired": "Telegram username is required for Telegram Stars payment"
+      "telegramHelp": "To receive access and notifications",
+      "telegramRequired": "Telegram username is required",
+      "name": "Name (optional)",
+      "namePlaceholder": "Jane Doe",
+      "email": "Email (optional)",
+      "emailPlaceholder": "your@email.com",
+      "emailHelp": "To receive email confirmations"
     },
     "payment": {
       "title": "Payment",
@@ -948,7 +948,7 @@
   "checkoutSuccess": {
     "title": "Payment successful!",
     "description": "Thank you for your purchase. Your subscription has been activated.",
-    "emailNotice": "You'll receive a confirmation email with all your subscription details. If you provided your Telegram username, you'll also receive an invitation link to join the private channel(s).",
+    "emailNotice": "You'll receive your invitation link on Telegram to join the private channel(s). If you provided your email, you'll also receive a confirmation by email.",
     "sessionId": "Session ID:",
     "backHome": "Back to home",
     "safeToClose": "You can safely close this page",
@@ -1218,185 +1218,342 @@
 
   "gdpr": {
     "title": "GDPR Compliance",
-    "lastUpdated": "Last updated: January 25, 2026",
+    "lastUpdated": "Last updated: February 5, 2026",
     "sections": {
       "commitment": {
-        "title": "Our Commitment to GDPR",
-        "body": "TelegramPlugin is fully committed to GDPR compliance. As an EU-based company, we have built our platform with privacy by design and data protection as core principles."
+        "title": "Our commitment to GDPR",
+        "body": "Sublynk is fully committed to GDPR compliance. As a France-based business, we have designed our platform with Privacy by Design and data protection as core principles."
       },
       "controller": {
-        "title": "Data Controller Information",
+        "title": "Information about the data controller",
         "company": {
           "label": "Company:",
-          "value": "TelegramPlugin SAS"
+          "value": "Sublynk – Micro-enterprise"
         },
         "address": {
           "label": "Address:",
-          "value": "[Company Address], Europe"
+          "value": "19 rue Delandine, 69002 Lyon, France"
         },
         "email": {
           "label": "Email:",
-          "value": "dpo@telegramplugin.com"
+          "value": "contact@sublynk.fr"
         },
         "dpo": {
-          "label": "Data Protection Officer:",
-          "value": "[DPO Name]"
+          "label": "GDPR contact / Privacy lead:",
+          "value": "contact@sublynk.fr"
         }
       },
-      "legalBasis": {
-        "title": "Legal Basis for Processing",
-        "body": "We process personal data under the following legal bases:",
-        "items": {
-          "contract": {
-            "label": "Contract Performance (Art. 6(1)(b)):",
-            "text": "Processing necessary to provide our services - account management, payment processing, access control"
+      "dataCollected": {
+        "title": "Personal data collected",
+        "body": "We only collect personal data that is strictly necessary to operate the service:",
+        "categories": {
+          "account": {
+            "title": "Account data",
+            "items": "Email, first name, last name, password (hashed with bcrypt), creation date"
           },
-          "legitimate": {
-            "label": "Legitimate Interest (Art. 6(1)(f)):",
-            "text": "Analytics and service improvement, fraud prevention, security"
+          "organization": {
+            "title": "Organization data",
+            "items": "Organization name, slug, billing email, time zone"
           },
-          "legal": {
-            "label": "Legal Obligation (Art. 6(1)(c)):",
-            "text": "Tax records, audit logs, regulatory compliance"
+          "customer": {
+            "title": "Customer data (your subscribers)",
+            "items": "Telegram username (required), Telegram identifier (if available), display name (optional), email (optional — only if you provide it during checkout)"
           },
-          "consent": {
-            "label": "Consent (Art. 6(1)(a)):",
-            "text": "Marketing communications (opt-in only)"
+          "telegram": {
+            "title": "Telegram-related data",
+            "items": "Technical identifiers (Telegram user_id, chat_id/channel_id) required to manage access. We do not collect or store Telegram message content."
+          },
+          "payment": {
+            "title": "Payment data",
+            "items": "Stripe transaction identifiers, amounts, statuses (we do NOT store card numbers)"
+          },
+          "stripe": {
+            "title": "Data collected by Stripe during payment",
+            "items": "Email and billing details collected directly by Stripe to process payment. We only receive/store your email on Sublynk’s side if you enter it in our form."
+          },
+          "technical": {
+            "title": "Technical data",
+            "items": "IP address (server logs), browser type, pages visited, timestamps"
+          },
+          "support": {
+            "title": "Support data",
+            "items": "Email exchanges and any information you choose to share with us when requesting assistance"
           }
         }
       },
+      "cookies": {
+        "title": "Cookies and trackers",
+        "body": "We use cookies that are strictly necessary for the service to function, as well as audience measurement trackers (Google Analytics via Google Tag Manager) only after your consent, when required.",
+        "items": {
+          "session": {
+            "label": "Authentication / session cookie(s)",
+            "text": "User authentication and session persistence – Duration: session / up to 7 days"
+          },
+          "locale": {
+            "label": "Language preference cookie (NEXT_LOCALE)",
+            "text": "Stores your selected language – Duration: 1 year"
+          },
+          "analytics": {
+            "label": "Audience measurement (Google Analytics via Google Tag Manager)",
+            "text": "Traffic statistics and service improvement – Legal basis: consent – Duration: based on GA4 configuration"
+          },
+          "cmp": {
+            "label": "Consent management (consentmanager.net)",
+            "text": "Cookie banner and storage of your consent choices – Legal basis: legal obligation/consent depending on trackers – Duration: based on consentmanager.net configuration"
+          }
+        },
+        "consent": "You can accept or refuse audience measurement at any time via our consent banner (or cookie settings). Refusing does not prevent you from using the service.",
+        "tools": {
+          "gtm": "Google Tag Manager (GTM)",
+          "ga4": "Google Analytics 4 (GA4)"
+        }
+      },
+      "legalBasis": {
+        "title": "Legal basis for processing",
+        "body": "We process personal data on the following legal bases:",
+        "items": {
+          "contract": {
+            "label": "Performance of a contract (Art. 6(1)(b)):",
+            "text": "Account management, payment processing, Telegram channel access management, sending invitation links, and transactional notifications (Telegram; email only if provided)"
+          },
+          "legitimate": {
+            "label": "Legitimate interest (Art. 6(1)(f)):",
+            "text": "Service improvement, fraud prevention, security, technical logs and debugging"
+          },
+          "legal": {
+            "label": "Legal obligation (Art. 6(1)(c)):",
+            "text": "Retention of billing data (10 years), tax reporting"
+          },
+          "consent": {
+            "label": "Consent (Art. 6(1)(a)):",
+            "text": "Newsletter and marketing communications (opt-in only, unsubscribe anytime)"
+          },
+          "cookiesAnalytics": {
+            "label": "Consent (Art. 6(1)(a)):",
+            "text": "Audience measurement cookies/trackers (Google Analytics via Google Tag Manager), only after your choice"
+          }
+        }
+      },
+      "recipients": {
+        "title": "Data recipients",
+        "body": "Your personal data may be accessed by:",
+        "items": {
+          "internal": {
+            "label": "Sublynk internal team:",
+            "text": "Customer support and technical administration (limited to what is strictly necessary)"
+          },
+          "processors": {
+            "label": "Technical processors:",
+            "text": "Hosting, payments, email delivery (see dedicated section below)"
+          },
+          "legal": {
+            "label": "Legal authorities:",
+            "text": "Only upon a lawful request (court order, legal requisition)"
+          }
+        },
+        "noSale": "We never sell your personal data to third parties."
+      },
       "rights": {
-        "title": "Your Rights Under GDPR",
-        "body": "As a data subject, you have comprehensive rights under GDPR. Here's how to exercise them:",
+        "title": "Your rights under GDPR",
+        "body": "As a data subject, you have full rights under GDPR. Here is how to exercise them:",
         "access": {
-          "title": "Right of Access (Art. 15)",
-          "before": "Request a copy of all personal data we hold about you. Go to",
-          "highlight": "Dashboard > Settings > Export Data",
-          "after": "to download your data instantly, or email us for a complete Subject Access Request."
+          "title": "Right of access (Art. 15)",
+          "body": "Request a copy of the personal data we hold about you. Contact us at contact@sublynk.fr for a complete access request."
         },
         "rectification": {
-          "title": "Right to Rectification (Art. 16)",
-          "body": "Correct inaccurate data directly in your dashboard, or contact us to update information you cannot modify yourself."
+          "title": "Right to rectification (Art. 16)",
+          "body": "Correct inaccurate data directly in your dashboard (profile, organization), or contact us to update information you cannot edit yourself."
         },
         "erasure": {
-          "title": "Right to Erasure (Art. 17)",
-          "before": "Request deletion of your account and associated data. Go to",
-          "highlight": "Dashboard > Settings > Delete Account.",
-          "after": "We will anonymize or delete your data within 30 days, except where retention is legally required."
+          "title": "Right to erasure (Art. 17)",
+          "body": "Request deletion of your account and associated data by contacting contact@sublynk.fr. We will delete or anonymize data within 30 days, except where legal retention is required (billing data: 10 years) or where necessary to handle disputes/fraud."
         },
         "portability": {
-          "title": "Right to Data Portability (Art. 20)",
-          "before": "Export your data in JSON format from",
-          "highlight": "Dashboard > Settings > Export Data.",
-          "after": "This includes your account information, products, customers, and transaction history."
+          "title": "Right to data portability (Art. 20)",
+          "body": "Request an export of your data in a structured format (JSON) by contacting us. This includes your account information, products, customers, and transaction history."
         },
         "object": {
-          "title": "Right to Object (Art. 21)",
-          "body": "Object to processing based on legitimate interest. Contact our DPO to submit an objection, and we will review within 30 days."
+          "title": "Right to object (Art. 21)",
+          "body": "Object to processing based on legitimate interest. Contact us at contact@sublynk.fr and we will review your request within 30 days."
         },
         "restriction": {
-          "title": "Right to Restriction (Art. 18)",
-          "body": "Request limited processing while we verify accuracy or assess an objection. Contact our DPO to request restriction."
+          "title": "Right to restriction (Art. 18)",
+          "body": "Request restricted processing while we verify data accuracy or assess an objection. Contact us at contact@sublynk.fr."
         }
       },
       "processing": {
-        "title": "Data Processing Activities",
+        "title": "Processing activities and retention periods",
         "table": {
           "activity": "Activity",
           "data": "Data",
-          "retention": "Retention"
+          "retention": "Retention",
+          "basis": "Legal basis"
         },
         "rows": {
           "account": {
-            "activity": "Account Management",
-            "data": "Email, name, password hash",
-            "retention": "Until account deletion"
+            "activity": "Account management",
+            "data": "Email, name, hashed password",
+            "retention": "Until account deletion + 30 days",
+            "basis": "Contract"
           },
           "payment": {
-            "activity": "Payment Processing",
-            "data": "Transaction records (via Stripe)",
-            "retention": "7 years (legal requirement)"
+            "activity": "Billing",
+            "data": "Transactions, amounts, invoices (handled via Stripe; payment email collected by Stripe)",
+            "retention": "10 years (tax obligation)",
+            "basis": "Legal obligation"
           },
           "access": {
-            "activity": "Access Control",
-            "data": "Channel IDs, user IDs",
-            "retention": "Until subscription ends"
+            "activity": "Telegram access management",
+            "data": "Telegram username (required), Telegram IDs (if available), invitation links; email only if provided",
+            "retention": "Subscription duration + 30 days",
+            "basis": "Contract"
+          },
+          "logs": {
+            "activity": "Technical logs",
+            "data": "IP, user-agent, timestamps",
+            "retention": "12 months",
+            "basis": "Legitimate interest"
+          },
+          "support": {
+            "activity": "Customer support",
+            "data": "Email exchanges",
+            "retention": "3 years after last contact",
+            "basis": "Legitimate interest"
+          },
+          "backups": {
+            "activity": "Backups and recovery",
+            "data": "Database and file copies required for restoration",
+            "retention": "Up to 90 days (backup rotation)",
+            "basis": "Legitimate interest"
           },
           "analytics": {
-            "activity": "Analytics",
-            "data": "Aggregated usage data",
-            "retention": "2 years"
-          },
-          "audit": {
-            "activity": "Audit Logs",
-            "data": "Security events",
-            "retention": "1 year"
+            "activity": "Audience measurement",
+            "data": "Navigation data and events (e.g., CTA clicks), without directly identifying data",
+            "retention": "Based on GA4 configuration",
+            "basis": "Consent"
           }
         }
       },
       "subProcessors": {
-        "title": "Sub-Processors",
-        "body": "We use the following sub-processors, all with appropriate safeguards:",
+        "title": "Processors",
+        "body": "We use the following processors to provide our service. Each has appropriate safeguards for data transfers:",
+        "table": {
+          "name": "Processor",
+          "purpose": "Purpose",
+          "location": "Location",
+          "safeguards": "Safeguards",
+          "dpa": "DPA"
+        },
         "items": {
           "stripe": {
-            "label": "Stripe",
-            "text": "(USA) - Payment processing, Standard Contractual Clauses"
+            "name": "Stripe",
+            "purpose": "Payment processing, subscription management",
+            "location": "USA",
+            "safeguards": "SCC (where applicable) + security measures (encryption, minimization); DPF where applicable depending on certification",
+            "dpa": "stripe.com/legal/dpa"
           },
           "brevo": {
-            "label": "Brevo",
-            "text": "(France) - Email delivery, EU-based"
+            "name": "Brevo (formerly Sendinblue)",
+            "purpose": "Transactional email delivery (confirmations, invitation links)",
+            "location": "France (EU)",
+            "safeguards": "EU hosting, GDPR-compliant",
+            "dpa": "brevo.com/legal"
           },
           "vercel": {
-            "label": "Vercel",
-            "text": "(USA) - Hosting, Standard Contractual Clauses"
+            "name": "Vercel",
+            "purpose": "Frontend hosting (website)",
+            "location": "USA (Edge: global)",
+            "safeguards": "SCC + supplementary measures (TLS encryption, minimization)",
+            "dpa": "vercel.com/legal/dpa"
           },
-          "postgres": {
-            "label": "PostgreSQL hosting",
-            "text": "(EU) - Database, EU-based"
+          "flyio": {
+            "name": "Fly.io",
+            "purpose": "API and Telegram bot hosting",
+            "location": "Frankfurt region (EU)",
+            "safeguards": "Data hosted in the EU (depending on region configuration)",
+            "dpa": "fly.io/legal/privacy-policy"
+          },
+          "neon": {
+            "name": "Neon (PostgreSQL)",
+            "purpose": "Primary database",
+            "location": "Frankfurt region (EU)",
+            "safeguards": "Data hosted in the EU, encryption at rest (depending on provider configuration)",
+            "dpa": "neon.tech/dpa"
+          },
+          "telegram": {
+            "name": "Telegram",
+            "purpose": "Bot API to manage channel access",
+            "location": "Global",
+            "safeguards": "Minimal data (IDs only); we do not store message content",
+            "dpa": "telegram.org/privacy"
           }
         }
       },
       "transfers": {
-        "title": "International Transfers",
-        "body": "When data is transferred outside the EU/EEA, we ensure appropriate safeguards through Standard Contractual Clauses (SCCs) or adequacy decisions."
+        "title": "International transfers",
+        "body": "Some of our processors may be based in or operate outside the EU/EEA (e.g., Stripe, Vercel). For these transfers, we rely on appropriate safeguards such as:",
+        "items": {
+          "dpf": {
+            "label": "Data Privacy Framework (DPF):",
+            "text": "For certified companies, where applicable"
+          },
+          "scc": {
+            "label": "Standard Contractual Clauses (SCC):",
+            "text": "Approved by the European Commission"
+          },
+          "measures": {
+            "label": "Supplementary measures:",
+            "text": "Encryption in transit (TLS 1.3), data minimization, pseudonymization where possible"
+          }
+        }
       },
       "security": {
-        "title": "Security Measures",
-        "body": "We implement technical and organizational measures including:",
+        "title": "Security measures",
+        "body": "We implement technical and organizational measures to protect your data:",
         "list": {
-          "item1": "Encryption in transit (TLS 1.3) and at rest (AES-256)",
-          "item2": "Regular security audits and penetration testing",
-          "item3": "Access controls and authentication",
-          "item4": "Employee training on data protection",
-          "item5": "Incident response procedures"
+          "item1": "Encryption in transit (TLS 1.3) for all communications",
+          "item2": "Encryption at rest when available with our providers (e.g., database)",
+          "item3": "Passwords hashed with bcrypt (never stored in plain text)",
+          "item4": "Authentication tokens with expiration and renewal mechanisms",
+          "item5": "Strict access controls (least privilege principle)",
+          "item6": "Security incident response procedures"
         }
       },
       "breach": {
-        "title": "Data Breach Notification",
-        "body": "In the event of a personal data breach, we will notify the relevant supervisory authority within 72 hours and affected individuals without undue delay when required by GDPR."
+        "title": "Personal data breach notification",
+        "body": "In case of a personal data breach likely to result in a risk to your rights and freedoms, we will notify the CNIL within 72 hours and inform you without undue delay in accordance with Articles 33 and 34 of GDPR."
       },
       "contact": {
-        "title": "Contact Our DPO",
-        "body": "For any GDPR-related requests or questions, contact our Data Protection Officer:",
+        "title": "Exercise your rights / Contact us",
+        "body": "For any request relating to your personal data or to exercise your GDPR rights:",
         "email": {
           "label": "Email:",
-          "value": "dpo@telegramplugin.com"
+          "value": "contact@sublynk.fr"
         },
         "response": {
           "label": "Response time:",
-          "value": "Within 30 days (as required by GDPR)"
+          "value": "Within 30 days maximum (as required by GDPR)"
+        },
+        "free": {
+          "label": "Cost:",
+          "value": "Free of charge (except for manifestly unfounded or excessive requests)"
         }
       },
       "authority": {
-        "title": "Supervisory Authority",
-        "body": "You have the right to lodge a complaint with your local data protection authority. Our lead supervisory authority is [Authority Name]."
+        "title": "Supervisory authority",
+        "body": "You have the right to lodge a complaint with the CNIL (French Data Protection Authority), our supervisory authority:",
+        "cnil": {
+          "name": "CNIL",
+          "address": "3 Place de Fontenoy, TSA 80715, 75334 Paris Cedex 07",
+          "website": "www.cnil.fr"
+        }
       },
       "quickActions": {
-        "title": "Quick Actions",
-        "body": "Access your data rights directly from your dashboard:",
+        "title": "Exercise your rights",
+        "body": "To request access, export, or deletion of your data, contact us:",
         "actions": {
-          "export": "Export My Data",
-          "delete": "Delete My Account"
+          "export": "Request an export of my data",
+          "delete": "Request deletion of my account"
         }
       }
     }
@@ -1924,6 +2081,7 @@
       "links": {
         "pricing": "Pricing",
         "features": "Features",
+        "faq": "FAQ",
         "about": "About",
         "contact": "Contact",
         "privacy": "Privacy",
@@ -1941,5 +2099,96 @@
     "gdpr": "GDPR",
     "contact": "Contact",
     "about": "About"
+  },
+
+  "faq": {
+    "meta": {
+      "title": "FAQ - How it works",
+      "description": "Learn how to monetize your Telegram channel with Sublynk. Step-by-step guide for creators."
+    },
+    "hero": {
+      "title": "How does it work?",
+      "subtitle": "Everything you need to know to start monetizing your Telegram channel with Sublynk."
+    },
+    "gettingStarted": {
+      "title": "Quick Start",
+      "subtitle": "Follow these 5 steps to start selling access to your Telegram channel.",
+      "steps": {
+        "step1": {
+          "title": "Create your account",
+          "description": "Sign up for free on Sublynk. No credit card required for the 14-day trial."
+        },
+        "step2": {
+          "title": "Connect Stripe",
+          "description": "Link your Stripe account to receive payments directly. If you don't have one, create it in 5 minutes."
+        },
+        "step3": {
+          "title": "Create your offer",
+          "description": "Set up your product, pricing (monthly, annual subscription, or one-time payment) and included channels."
+        },
+        "step4": {
+          "title": "Set up the bot on your channel",
+          "description": "Add @SublynkBot as an administrator of your Telegram channel with the necessary permissions."
+        },
+        "step5": {
+          "title": "Share your payment link",
+          "description": "Share the generated payment link with your audience. New members get automatic access after payment."
+        }
+      }
+    },
+    "botSetup": {
+      "badge": "Bot Setup",
+      "title": "How to add the bot to your channel",
+      "subtitle": "The @SublynkBot automatically manages access to your channel. Here's how to set it up:",
+      "steps": {
+        "step1": "Open your Telegram channel",
+        "step2": "Go to channel settings → Administrators",
+        "step3": "Click \"Add Administrator\"",
+        "step4": "Search for @SublynkBot and add it",
+        "step5": "Grant the necessary permissions (see sidebar)"
+      },
+      "permissions": {
+        "title": "Required Permissions",
+        "invite": "Invite users via links",
+        "ban": "Ban users (optional, to revoke access)"
+      },
+      "important": {
+        "label": "Important:",
+        "text": "Without these permissions, the bot won't be able to generate invite links for your new subscribers."
+      }
+    },
+    "questions": {
+      "title": "Frequently Asked Questions",
+      "q1": {
+        "question": "How do I get my Telegram channel ID?",
+        "answer": "Forward a message from your channel to @userinfobot. It will reply with the channel ID (starts with -100). You can also use @getidsbot by temporarily adding it to your channel."
+      },
+      "q2": {
+        "question": "Does the bot need to stay as administrator?",
+        "answer": "Yes, the bot must remain an administrator to generate invite links for each new subscriber and revoke access when needed."
+      },
+      "q3": {
+        "question": "What happens when a subscriber pays?",
+        "answer": "The payment is processed by Stripe, then our bot automatically generates a unique invite link and sends it to the subscriber. Access is instant."
+      },
+      "q4": {
+        "question": "What happens if a subscription is canceled?",
+        "answer": "At the end of the paid period, the bot automatically revokes the subscriber's access to the channel. You don't need to do anything manually."
+      },
+      "q5": {
+        "question": "Can I have multiple channels?",
+        "answer": "Yes! You can connect as many channels as you want and associate them with different products or offers."
+      },
+      "q6": {
+        "question": "Are payments secure?",
+        "answer": "Absolutely. All payments are processed by Stripe, the world leader in online payments. We never store your banking data."
+      }
+    },
+    "cta": {
+      "title": "Ready to get started?",
+      "subtitle": "Start for free and begin monetizing your Telegram community today.",
+      "register": "Create my account →",
+      "contact": "Have a question? Contact us"
+    }
   }
 }

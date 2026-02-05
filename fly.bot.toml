@@ -1,5 +1,7 @@
-# Telegram Bot - Long polling mode (no HTTP server needed)
-app = 'telegram-plugin-bot'
+# fly.bot.toml - Telegram Bot (long polling)
+# Deploy with: fly deploy --config fly.bot.toml
+
+app = 'sublynk-bot'
 primary_region = 'fra'
 
 [build]
@@ -7,11 +9,21 @@ primary_region = 'fra'
 
 [env]
   NODE_ENV = 'production'
-  TELEGRAM_STARS_API_URL = 'https://telegram-plugin-api.fly.dev'
 
-# No HTTP service needed - bot uses long polling
-# Just need the process to stay alive
+# No HTTP service - this is a worker process
+# Long polling requires exactly 1 instance running 24/7
 
 [[vm]]
   memory = '256mb'
   cpus = 1
+
+[processes]
+  app = "node packages/bot/dist/main.js"
+
+# Keep exactly 1 machine running at all times
+# auto_stop MUST be disabled for long polling
+[[machines]]
+  auto_destroy = false
+
+[deploy]
+  strategy = 'rolling'

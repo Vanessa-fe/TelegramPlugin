@@ -1,13 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
+import { locales, localeNames, type Locale } from '@/i18n/config';
+import { Globe } from 'lucide-react';
 
 export function Navbar() {
   const t = useTranslations('marketing.navbar');
   const tCommon = useTranslations('common');
+  const currentLocale = useLocale() as Locale;
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -18,6 +24,13 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  function handleLocaleChange(newLocale: Locale) {
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
+    startTransition(() => {
+      router.refresh();
+    });
+  }
 
   return (
     <nav
@@ -54,6 +67,24 @@ export function Navbar() {
             >
               {t('links.login')}
             </Link>
+
+            {/* Language Switcher */}
+            <div className="flex items-center gap-1.5 text-[#6F6E77]">
+              <Globe className="w-4 h-4" />
+              <select
+                value={currentLocale}
+                onChange={(e) => handleLocaleChange(e.target.value as Locale)}
+                disabled={isPending}
+                className="bg-transparent text-sm font-medium cursor-pointer hover:text-[#1A1523] transition-colors focus:outline-none"
+              >
+                {locales.map((locale) => (
+                  <option key={locale} value={locale}>
+                    {localeNames[locale]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <Link
               href="/register"
               className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors duration-150 shadow-sm hover:shadow-md"
@@ -126,6 +157,24 @@ export function Navbar() {
               >
                 {t('links.login')}
               </Link>
+
+              {/* Language Switcher Mobile */}
+              <div className="flex items-center gap-2 py-2 text-[#6F6E77]">
+                <Globe className="w-4 h-4" />
+                <select
+                  value={currentLocale}
+                  onChange={(e) => handleLocaleChange(e.target.value as Locale)}
+                  disabled={isPending}
+                  className="bg-transparent text-sm font-medium cursor-pointer hover:text-[#1A1523] transition-colors focus:outline-none"
+                >
+                  {locales.map((locale) => (
+                    <option key={locale} value={locale}>
+                      {localeNames[locale]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <Link
                 href="/register"
                 className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-3 rounded-lg text-center transition-colors duration-150"

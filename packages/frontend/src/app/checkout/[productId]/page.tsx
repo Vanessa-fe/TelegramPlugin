@@ -96,8 +96,8 @@ export default function CheckoutPage() {
     }
 
     if (paymentMethod === "stripe") {
-      if (!email) {
-        toast.error(t("form.emailRequired"));
+      if (!telegramUsername) {
+        toast.error(t("form.telegramRequired"));
         return;
       }
 
@@ -106,9 +106,9 @@ export default function CheckoutPage() {
         const response = await billingApi.createCheckout({
           planId: selectedPlan.id,
           customer: {
-            email: email || undefined,
+            telegramUsername: telegramUsername,
             displayName: displayName || undefined,
-            telegramUsername: telegramUsername || undefined,
+            email: email || undefined,
           },
         });
 
@@ -270,21 +270,21 @@ export default function CheckoutPage() {
               </h2>
               <Card className="p-6 space-y-4">
                 <div>
-                  <Label htmlFor="email">{t("form.email")} *</Label>
+                  <Label htmlFor="telegram">{t("form.telegram")} *</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("form.emailPlaceholder")}
+                    id="telegram"
+                    value={telegramUsername}
+                    onChange={(e) => setTelegramUsername(e.target.value)}
+                    placeholder={t("form.telegramPlaceholder")}
                     required
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    {t("form.telegramHelp")}
+                  </p>
                 </div>
 
                 <div>
-                  <Label htmlFor="displayName">
-                    {t("form.name")}
-                  </Label>
+                  <Label htmlFor="displayName">{t("form.name")}</Label>
                   <Input
                     id="displayName"
                     value={displayName}
@@ -294,19 +294,16 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="telegram">
-                    {t("form.telegram")}{" "}
-                    {paymentMethod === "telegram_stars" ? "*" : ""}
-                  </Label>
+                  <Label htmlFor="email">{t("form.email")}</Label>
                   <Input
-                    id="telegram"
-                    value={telegramUsername}
-                    onChange={(e) => setTelegramUsername(e.target.value)}
-                    placeholder={t("form.telegramPlaceholder")}
-                    required={paymentMethod === "telegram_stars"}
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={t("form.emailPlaceholder")}
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    {t("form.telegramHelp")}
+                    {t("form.emailHelp")}
                   </p>
                 </div>
 
@@ -373,8 +370,7 @@ export default function CheckoutPage() {
                   disabled={
                     !selectedPlan ||
                     submitting ||
-                    (paymentMethod === "stripe" && !email) ||
-                    (paymentMethod === "telegram_stars" && !telegramUsername)
+                    !telegramUsername
                   }
                   className="w-full"
                   size="lg"

@@ -10,6 +10,7 @@ export function Footer() {
     product: [
       { label: t('links.pricing'), href: '/pricing' },
       { label: t('links.features'), href: '/#features' },
+      { label: t('links.faq'), href: '/faq' },
     ],
     company: [
       { label: t('links.about'), href: '/about' },

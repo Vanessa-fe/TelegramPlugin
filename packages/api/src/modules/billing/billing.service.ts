@@ -195,19 +195,22 @@ export class BillingService {
     }
 
     const { customer } = payload;
-    const email = customer.email?.toLowerCase();
+    const telegramUsername = customer.telegramUsername?.toLowerCase().replace(/^@/, '');
     const telegramUserId = customer.telegramUserId?.trim();
-    const telegramUsername = customer.telegramUsername?.toLowerCase();
+    const email = customer.email?.toLowerCase() || undefined;
 
-    const customerFilters: Prisma.CustomerWhereInput[] = [];
-    if (email) {
-      customerFilters.push({ email });
+    if (!telegramUsername) {
+      throw new BadRequestException('Nom d\'utilisateur Telegram requis');
     }
+
+    const customerFilters: Prisma.CustomerWhereInput[] = [
+      { telegramUsername },
+    ];
     if (telegramUserId) {
       customerFilters.push({ telegramUserId });
     }
-    if (customerFilters.length === 0) {
-      throw new BadRequestException('Client non identifié');
+    if (email) {
+      customerFilters.push({ email });
     }
 
     const customerMatch = await this.prisma.customer.findFirst({
@@ -310,8 +313,9 @@ export class BillingService {
       success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
       client_reference_id: subscription.id,
-      customer_email: email,
       metadata,
+      // Email is optional - if not provided, Stripe will ask for it
+      ...(email && { customer_email: email }),
     };
 
     if (plan.interval === PlanInterval.ONE_TIME) {

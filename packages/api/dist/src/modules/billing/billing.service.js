@@ -141,18 +141,20 @@ let BillingService = class BillingService {
             throw new common_1.ForbiddenException("Compte Stripe incomplet, finalisez l'onboarding");
         }
         const { customer } = payload;
-        const email = customer.email?.toLowerCase();
+        const telegramUsername = customer.telegramUsername?.toLowerCase().replace(/^@/, '');
         const telegramUserId = customer.telegramUserId?.trim();
-        const telegramUsername = customer.telegramUsername?.toLowerCase();
-        const customerFilters = [];
-        if (email) {
-            customerFilters.push({ email });
+        const email = customer.email?.toLowerCase() || undefined;
+        if (!telegramUsername) {
+            throw new common_1.BadRequestException('Nom d\'utilisateur Telegram requis');
         }
+        const customerFilters = [
+            { telegramUsername },
+        ];
         if (telegramUserId) {
             customerFilters.push({ telegramUserId });
         }
-        if (customerFilters.length === 0) {
-            throw new common_1.BadRequestException('Client non identifié');
+        if (email) {
+            customerFilters.push({ email });
         }
         const customerMatch = await this.prisma.customer.findFirst({
             where: {
@@ -240,8 +242,8 @@ let BillingService = class BillingService {
             success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: cancelUrl,
             client_reference_id: subscription.id,
-            customer_email: email,
             metadata,
+            ...(email && { customer_email: email }),
         };
         if (plan.interval === client_1.PlanInterval.ONE_TIME) {
             const paymentIntentData = {
