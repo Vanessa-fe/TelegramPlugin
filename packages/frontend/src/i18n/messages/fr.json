@@ -5,7 +5,7 @@
   },
 
   "common": {
-    "appName": "TelegramPlugin",
+    "appName": "Sublynk",
     "loading": "Chargement...",
     "error": "Une erreur est survenue",
     "retry": "Réessayer",
@@ -850,7 +850,7 @@
     "subtitle": "Connecte Stripe pour recevoir les paiements de tes clients",
     "saasWarning": {
       "title": "Abonnement requis",
-      "description": "Ton abonnement TelegramPlugin n'est pas actif. Les paiements sont désactivés jusqu'à ton abonnement."
+      "description": "Ton abonnement Sublynk n'est pas actif. Les paiements sont désactivés jusqu'à ton abonnement."
     },
     "stripeConnect": {
       "title": "Stripe Connect",
@@ -1013,11 +1013,11 @@
     "sections": {
       "acceptance": {
         "title": "1. Acceptation des conditions",
-        "body": "En accédant ou en utilisant TelegramPlugin (\"le Service\"), vous acceptez d'être lié par les présentes conditions d'utilisation. Si vous n'acceptez pas ces conditions, n'utilisez pas le Service."
+        "body": "En accédant ou en utilisant Sublynk (\"le Service\"), vous acceptez d'être lié par les présentes conditions d'utilisation. Si vous n'acceptez pas ces conditions, n'utilisez pas le Service."
       },
       "description": {
         "title": "2. Description du service",
-        "body": "TelegramPlugin fournit une plateforme permettant aux créateurs de monétiser leurs communautés sur Telegram, Discord et WhatsApp via des abonnements et des paiements uniques. Nous facilitons :",
+        "body": "Sublynk fournit une plateforme permettant aux créateurs de monétiser leurs communautés sur Telegram, Discord et WhatsApp via des abonnements et des paiements uniques. Nous facilitons :",
         "list": {
           "item1": "Le traitement des paiements via Stripe Connect",
           "item2": "La gestion automatique des accès à vos canaux",
@@ -1080,7 +1080,7 @@
       },
       "liability": {
         "title": "8. Limitation de responsabilité",
-        "body": "Dans la mesure permise par la loi, TelegramPlugin ne pourra être tenu responsable des dommages indirects, accessoires, spéciaux, consécutifs ou punitifs, y compris la perte de profits, de données ou d'opportunités commerciales."
+        "body": "Dans la mesure permise par la loi, Sublynk ne pourra être tenu responsable des dommages indirects, accessoires, spéciaux, consécutifs ou punitifs, y compris la perte de profits, de données ou d'opportunités commerciales."
       },
       "availability": {
         "title": "9. Disponibilité du service",
@@ -1101,7 +1101,7 @@
       "contact": {
         "title": "13. Contact",
         "body": "Pour toute question concernant ces conditions, contactez-nous à",
-        "email": "legal@telegramplugin.com"
+        "email": "contatc@sublynk.fr"
       }
     }
   },
@@ -1112,7 +1112,7 @@
     "sections": {
       "introduction": {
         "title": "1. Introduction",
-        "body1": "TelegramPlugin (\"nous\", \"notre\", ou \"nos\") s'engage à protéger votre vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons, divulguons et protégeons vos informations lorsque vous utilisez notre plateforme.",
+        "body1": "Sublynk (\"nous\", \"notre\", ou \"nos\") s'engage à protéger votre vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons, divulguons et protégeons vos informations lorsque vous utilisez notre plateforme.",
         "body2": "Nous sommes basés dans l'Union européenne et respectons le Règlement général sur la protection des données (RGPD) ainsi que les autres lois applicables en matière de protection des données."
       },
       "collect": {
@@ -1225,7 +1225,7 @@
           }
         },
         "contact": "Pour exercer ces droits, contactez-nous à",
-        "email": "privacy@telegramplugin.com"
+        "email": "contact@sublynk.fr"
       },
       "security": {
         "title": "7. Sécurité",
@@ -1238,7 +1238,7 @@
       "contact": {
         "title": "9. Nous contacter",
         "body": "Pour toute demande liée à la confidentialité, contactez notre Délégué à la Protection des Données à",
-        "email": "dpo@telegramplugin.com"
+        "email": "contact@sublynk.fr"
       }
     }
   },
@@ -1329,6 +1329,7 @@
             "text": "Bandeau cookies et enregistrement de vos choix de consentement – Base légale : obligation légale/consentement selon les traceurs – Durée : selon la configuration consentmanager.net"
           }
         },
+        "noTracking": "Aucun suivi publicitaire n’est activé sans votre consentement.",
         "consent": "Vous pouvez accepter ou refuser la mesure d’audience à tout moment via notre bandeau de consentement (ou les paramètres cookies). Le refus n’empêche pas l’utilisation du service.",
         "tools": {
           "gtm": "Google Tag Manager (GTM)",
@@ -1726,15 +1727,15 @@
 
   "about": {
     "hero": {
-      "title": "Aider les créateurs européens à monétiser leurs communautés",
-      "body": "TelegramPlugin est né d'un constat simple : les créateurs en Europe méritent de meilleurs outils. Alors que les plateformes basées aux États‑Unis dominent le marché, les créateurs européens font face à des défis uniques — des restrictions de paiement à la conformité RGPD."
+      "title": "Aider les créateurs de contenus à monétiser leurs communautés",
+      "body": "Sublynk est né d'un constat simple : les créateurs méritent de meilleurs outils. Alors que les plateformes dominantes imposent leurs règles, les créateurs font face à des défis concrets — des restrictions de paiement à la conformité RGPD."
     },
     "story": {
       "title": "Notre histoire",
       "paragraphs": {
-        "p1": "Nous avons commencé comme créateurs nous‑mêmes, en animant des communautés Telegram et en rencontrant les mêmes problèmes que toi : des solutions de paiement bancales, des commissions élevées qui grignotent les revenus, et des outils pas pensés pour les réglementations européennes.",
+        "p1": "Nous avons commencé comme créateurs nous‑mêmes, en animant des communautés Telegram et en rencontrant les mêmes problèmes que toi : des solutions de paiement bancales, des commissions élevées qui grignotent les revenus, et des outils pas pensés pour les réglementations de protection des données.",
         "p2": "En 2025, nous avons décidé de construire la plateforme que nous aurions aimé avoir. Une plateforme qui met les créateurs au premier plan, respecte la confidentialité et ne prend pas de part sur tes revenus.",
-        "p3": "Aujourd'hui, TelegramPlugin aide des centaines de créateurs à travers l'Europe à monétiser leurs communautés Telegram, Discord et WhatsApp — sans les galères."
+        "p3": "Aujourd'hui, Sublynk aide des centaines de créateurs à monétiser leurs communautés Telegram, Discord et WhatsApp — sans les galères."
       }
     },
     "stats": {
@@ -1752,8 +1753,8 @@
           "label": "Commission"
         },
         "item4": {
-          "value": "UE",
-          "label": "Basé"
+          "value": "France",
+          "label": "Basé en"
         }
       }
     },
@@ -1762,7 +1763,7 @@
       "items": {
         "item1": {
           "title": "Confidentialité d'abord",
-          "description": "Tes données restent les tiennes. Nous sommes basés dans l'UE, conformes au RGPD, et nous ne revendons jamais tes informations."
+          "description": "Tes données restent les tiennes. Nous sommes basés en France, conformes au RGPD, et nous ne revendons jamais tes informations."
         },
         "item2": {
           "title": "Pensé pour les créateurs",
@@ -1813,12 +1814,12 @@
       "support": {
         "title": "Support email",
         "description": "Pour les questions générales et demandes de support",
-        "contact": "support@telegramplugin.com"
+        "contact": "contact@sublynk.fr"
       },
       "sales": {
         "title": "Commercial",
         "description": "Questions sur les tarifs ou les offres entreprise",
-        "contact": "sales@telegramplugin.com"
+        "contact": "contact@sublynk.fr"
       },
       "responseTime": {
         "title": "Temps de réponse",
@@ -1998,9 +1999,9 @@
     "hero": {
       "title": {
         "line1": "Votre contenu a de la valeur",
-        "line2": "— monétisez-le sur Telegram"
+        "line2": "monétisez-le"
       },
-      "subtitle": "Vous créez, on s'occupe du reste. Vendez l'accès à vos canaux Telegram, encaissez via Stripe, gérez vos membres en autopilote. C'est parti !",
+      "subtitle": "Vous créez, on s'occupe du reste. Vendez l'accès à vos canaux Telegram (discord et whatsapp bientôt disponibles), encaissez via Stripe, gérez vos membres vous-même. C'est parti !",
       "cta": {
         "primary": "Commencer à monétiser →",
         "secondary": "Voir les tarifs"
@@ -2010,16 +2011,16 @@
     "socialProof": {
       "items": {
         "item1": {
-          "value": "€250K+",
-          "label": "traités pour des créateurs"
+          "value": "0% commission",
+          "label": "Un forfait mensuel fixe"
         },
         "item2": {
-          "value": "500+",
-          "label": "créateurs en Europe"
+          "value": "Mise en place rapide",
+          "label": "Lance-toi en quelques minutes"
         },
         "item3": {
-          "value": "0%",
-          "label": "commission"
+          "value": "Multi‑plateforme",
+          "label": "Telegram et prochainement Discord/WhatsApp"
         }
       }
     },
@@ -2077,8 +2078,8 @@
           "description": "L'argent arrive directement sur ton compte Stripe."
         },
         "item3": {
-          "title": "UE & RGPD",
-          "description": "Basé en Europe. Entièrement conforme au RGPD."
+          "title": "RGPD & confidentialité",
+          "description": "Basé en France. Entièrement conforme au RGPD."
         }
       }
     },
@@ -2100,7 +2101,7 @@
       "note": "Aucune carte bancaire requise"
     },
     "footer": {
-      "description": "La plateforme de monétisation de communautés pour les créateurs européens.",
+      "description": "La plateforme de monétisation de communautés pour les créateurs de contenus.",
       "sections": {
         "product": "Produit",
         "company": "Entreprise",
@@ -2117,7 +2118,7 @@
         "gdpr": "RGPD"
       },
       "copyright": "© {year} {appName}. Tous droits réservés.",
-      "madeIn": "Fait en Europe 🇪🇺"
+      "madeIn": "Fait en France 🇫🇷"
     }
   },
 

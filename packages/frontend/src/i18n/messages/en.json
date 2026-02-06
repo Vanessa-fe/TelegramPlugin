@@ -1302,6 +1302,7 @@
             "text": "Cookie banner and storage of your consent choices – Legal basis: legal obligation/consent depending on trackers – Duration: based on consentmanager.net configuration"
           }
         },
+        "noTracking": "No advertising tracking is activated without your consent.",
         "consent": "You can accept or refuse audience measurement at any time via our consent banner (or cookie settings). Refusing does not prevent you from using the service.",
         "tools": {
           "gtm": "Google Tag Manager (GTM)",
@@ -1698,15 +1699,15 @@
 
   "about": {
     "hero": {
-      "title": "Empowering European creators to monetize their communities",
-      "body": "TelegramPlugin was born from a simple observation: creators in Europe deserve better tools. While US-based platforms dominate the market, European creators face unique challenges — from payment processing restrictions to GDPR compliance."
+      "title": "Empowering content creators to monetize their communities",
+      "body": "TelegramPlugin was born from a simple observation: creators deserve better tools. While dominant platforms set the rules, creators face real challenges — from payment restrictions to GDPR compliance."
     },
     "story": {
       "title": "Our Story",
       "paragraphs": {
-        "p1": "We started as creators ourselves, running Telegram communities and struggling with the same problems you face: clunky payment solutions, high commissions eating into our revenue, and tools that weren't designed with European regulations in mind.",
+        "p1": "We started as creators ourselves, running Telegram communities and struggling with the same problems you face: clunky payment solutions, high commissions eating into our revenue, and tools that weren't designed with data protection regulations in mind.",
         "p2": "In 2025, we decided to build the platform we wished existed. One that puts creators first, respects privacy, and doesn't take a cut of your hard-earned revenue.",
-        "p3": "Today, TelegramPlugin helps hundreds of creators across Europe monetize their Telegram, Discord, and WhatsApp communities — without the headaches."
+        "p3": "Today, TelegramPlugin helps hundreds of creators monetize their Telegram, Discord, and WhatsApp communities — without the headaches."
       }
     },
     "stats": {
@@ -1724,8 +1725,8 @@
           "label": "Commission"
         },
         "item4": {
-          "value": "EU",
-          "label": "Based"
+          "value": "France",
+          "label": "Based in"
         }
       }
     },
@@ -1734,7 +1735,7 @@
       "items": {
         "item1": {
           "title": "Privacy First",
-          "description": "Your data stays yours. We are EU-based, GDPR-compliant, and never sell your information."
+          "description": "Your data stays yours. We are based in France, GDPR-compliant, and never sell your information."
         },
         "item2": {
           "title": "Creator-Focused",
@@ -1970,9 +1971,9 @@
     "hero": {
       "title": {
         "line1": "Your content has value",
-        "line2": "— monetize it on Telegram"
+        "line2": "monetize it"
       },
-      "subtitle": "You create, we handle the rest. Sell access to your Telegram channels, collect payments via Stripe, manage your members on autopilot. Let's go!",
+      "subtitle": "You create, we handle the rest. Sell access to your Telegram channels (discord and whatsapp soon available), collect payments via Stripe, manage your members yourself. Let's go!",
       "cta": {
         "primary": "Start monetizing →",
         "secondary": "View pricing"
@@ -1982,16 +1983,16 @@
     "socialProof": {
       "items": {
         "item1": {
-          "value": "€250K+",
-          "label": "processed for creators"
+          "value": "0% commission",
+          "label": "A flat monthly fee"
         },
         "item2": {
-          "value": "500+",
-          "label": "creators across Europe"
+          "value": "Fast setup",
+          "label": "Launch in just a few minutes"
         },
         "item3": {
-          "value": "0%",
-          "label": "commission"
+          "value": "Multi‑platform",
+          "label": "Telegram and soon Discord/WhatsApp"
         }
       }
     },
@@ -2049,8 +2050,8 @@
           "description": "Money goes straight to your Stripe account."
         },
         "item3": {
-          "title": "EU & GDPR",
-          "description": "Based in Europe. Fully GDPR-compliant."
+          "title": "GDPR & Privacy",
+          "description": "Based in France. Fully GDPR-compliant."
         }
       }
     },
@@ -2072,7 +2073,7 @@
       "note": "No credit card required"
     },
     "footer": {
-      "description": "The community monetization platform for European creators.",
+      "description": "The community monetization platform for content creators.",
       "sections": {
         "product": "Product",
         "company": "Company",
@@ -2089,7 +2090,7 @@
         "gdpr": "GDPR"
       },
       "copyright": "© {year} {appName}. All rights reserved.",
-      "madeIn": "Made in Europe 🇪🇺"
+      "madeIn": "Made in France 🇫🇷"
     }
   },
 

@@ -7,3 +7,4 @@ export { customersApi } from './customers';
 export { subscriptionsApi } from './subscriptions';
 export { paymentEventsApi } from './payment-events';
 export { channelsApi } from './channels';
+export { contactApi } from './contact';

@@ -37,6 +37,7 @@ const scheduler_module_1 = require("./modules/scheduler/scheduler.module");
 const data_exports_module_1 = require("./modules/data-exports/data-exports.module");
 const metrics_module_1 = require("./modules/metrics/metrics.module");
 const analytics_module_1 = require("./modules/analytics/analytics.module");
+const contact_module_1 = require("./modules/contact/contact.module");
 function findRepoRoot(startDir) {
     let dir = startDir;
     while (true) {
@@ -120,6 +121,7 @@ exports.AppModule = AppModule = __decorate([
             data_exports_module_1.DataExportsModule,
             metrics_module_1.MetricsModule,
             analytics_module_1.AnalyticsModule,
+            contact_module_1.ContactModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

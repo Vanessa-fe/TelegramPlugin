@@ -28,6 +28,7 @@ import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { DataExportsModule } from './modules/data-exports/data-exports.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ContactModule } from './modules/contact/contact.module';
 
 function findRepoRoot(startDir: string): string {
   let dir = startDir;
@@ -114,6 +115,7 @@ function resolveEnvFiles(): string[] {
     DataExportsModule,
     MetricsModule,
     AnalyticsModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [

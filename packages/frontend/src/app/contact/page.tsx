@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Mail, MessageSquare, Clock, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { contactApi } from '@/lib/api';
 
 export default function ContactPage() {
   const t = useTranslations('contact');
@@ -20,31 +20,7 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
-  const supportEmail = t('options.support.contact');
-  const salesEmail = t('options.sales.contact');
-  const contactOptions = [
-    {
-      icon: Mail,
-      title: t('options.support.title'),
-      description: t('options.support.description'),
-      contact: supportEmail,
-      href: `mailto:${supportEmail}`,
-    },
-    {
-      icon: MessageSquare,
-      title: t('options.sales.title'),
-      description: t('options.sales.description'),
-      contact: salesEmail,
-      href: `mailto:${salesEmail}`,
-    },
-    {
-      icon: Clock,
-      title: t('options.responseTime.title'),
-      description: t('options.responseTime.description'),
-      contact: t('options.responseTime.contact'),
-      href: null,
-    },
-  ];
+  // Right-side contact options removed (single email only).
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -61,8 +37,7 @@ export default function ContactPage() {
     setError('');
 
     try {
-      // TODO: Implement API call to send contact form
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await contactApi.sendMessage(formData);
       setIsSubmitted(true);
       toast.success(t('toast.success'));
     } catch {
@@ -179,7 +154,10 @@ export default function ContactPage() {
                         disabled={isSubmitting}
                       >
                         {isSubmitting && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <span
+                            aria-hidden="true"
+                            className="mr-2 h-4 w-4 rounded-full border-2 border-white/70 border-t-transparent animate-spin"
+                          />
                         )}
                         {isSubmitting ? t('form.submitting') : t('form.submit')}
                       </Button>
@@ -224,48 +202,8 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Contact options */}
+            {/* FAQ link */}
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-[#1A1523]">
-                {t('options.title')}
-              </h2>
-
-              <div className="space-y-4">
-                {contactOptions.map((option) => (
-                  <div
-                    key={option.title}
-                    className="bg-[#FDFAFF] rounded-xl border border-[#E9E3EF] p-5"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
-                        <option.icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-[#1A1523]">
-                          {option.title}
-                        </h3>
-                        <p className="text-sm text-[#6F6E77] mt-0.5">
-                          {option.description}
-                        </p>
-                        {option.href ? (
-                          <a
-                            href={option.href}
-                            className="text-sm text-purple-600 hover:text-purple-700 font-medium mt-2 inline-block"
-                          >
-                            {option.contact}
-                          </a>
-                        ) : (
-                          <p className="text-sm text-[#1A1523] font-medium mt-2">
-                            {option.contact}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* FAQ link */}
               <div className="bg-white rounded-xl border border-[#E9E3EF] p-6 text-center">
                 <p className="text-[#6F6E77] mb-3">
                   {t('faq.prompt')}
