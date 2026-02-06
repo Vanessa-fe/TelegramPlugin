@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 
 export function Footer() {
@@ -20,8 +20,12 @@ export function Footer() {
       { label: t('links.privacy'), href: '/privacy' },
       { label: t('links.terms'), href: '/terms' },
       { label: t('links.gdpr'), href: '/gdpr' },
+      { label: t('links.legalNotice'), href: '/mentions-legales' },
     ],
   };
+  const socialLinks = [
+    { label: t('social.x'), href: 'https://x.com/Sublynk' },
+  ];
   const currentYear = new Date().getFullYear();
 
   return (
@@ -37,6 +41,24 @@ export function Footer() {
             <p className="mt-4 text-sm text-gray-400 leading-relaxed">
               {t('description')}
             </p>
+            <div className="mt-6">
+              <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">
+                {t('social.title')}
+              </p>
+              <div className="flex items-center gap-3">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-300 hover:text-white transition-colors duration-150 text-sm"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Product */}

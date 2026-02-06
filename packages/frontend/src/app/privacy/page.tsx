@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
 import { LegalLayout } from '@/components/marketing';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('privacy');
-  return buildMetadata({ canonical: '/privacy', title: t('title') });
+  const locale = await getLocale();
+  return buildMetadata({
+    canonical: '/privacy',
+    title: t('title'),
+    description: t('meta.description'),
+    locale,
+  });
 }
 
 export default async function PrivacyPage() {

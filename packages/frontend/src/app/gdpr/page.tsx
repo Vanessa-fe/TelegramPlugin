@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalLayout } from '@/components/marketing';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('gdpr');
-  return buildMetadata({ canonical: '/gdpr', title: t('title') });
+  const locale = await getLocale();
+  return buildMetadata({
+    canonical: '/gdpr',
+    title: t('title'),
+    description: t('meta.description'),
+    locale,
+  });
 }
 
 export default async function GDPRPage() {

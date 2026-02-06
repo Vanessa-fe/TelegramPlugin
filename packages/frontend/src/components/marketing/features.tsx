@@ -82,7 +82,7 @@ export async function Features() {
   ];
 
   return (
-    <section className="py-20 lg:py-28">
+    <section id="features" className="py-20 lg:py-28">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
         <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#1A1523] mb-16">

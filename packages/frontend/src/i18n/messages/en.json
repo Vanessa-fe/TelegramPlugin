@@ -5,7 +5,7 @@
   },
 
   "common": {
-    "appName": "TelegramPlugin",
+    "appName": "Sublynk",
     "loading": "Loading...",
     "error": "An error occurred",
     "retry": "Try again",
@@ -983,6 +983,9 @@
   "terms": {
     "title": "Terms of Service",
     "lastUpdated": "Last updated: January 25, 2026",
+    "meta": {
+      "description": "Read Sublynk’s terms of service and the rules that apply to the platform."
+    },
     "sections": {
       "acceptance": {
         "title": "1. Acceptance of Terms",
@@ -1079,9 +1082,64 @@
     }
   },
 
+  "legalNotice": {
+    "title": "Legal notice",
+    "lastUpdated": "Last updated: February 6, 2026",
+    "meta": {
+      "description": "Legal information and mandatory notices for Sublynk."
+    },
+    "sections": {
+      "publisher": {
+        "title": "Website publisher",
+        "name": {
+          "label": "Trade name:",
+          "value": "Sublynk"
+        },
+        "company": {
+          "label": "Legal entity:",
+          "value": "Vanessa Ferrand (sole proprietor)"
+        },
+        "address": {
+          "label": "Address:",
+          "value": "19 rue Delandine, 69002 Lyon, France"
+        },
+        "siret": {
+          "label": "SIRET:",
+          "value": "517 869 905 00045"
+        },
+        "email": {
+          "label": "Email:",
+          "value": "contact@sublynk.fr"
+        },
+        "director": {
+          "label": "Publication director:",
+          "value": "Vanessa Ferrand"
+        }
+      },
+      "hosting": {
+        "title": "Hosting",
+        "name": {
+          "label": "Hosting provider:",
+          "value": "Netlify, Inc."
+        },
+        "address": {
+          "label": "Address:",
+          "value": "512 2nd Street, Suite 200, San Francisco, CA 94107, USA"
+        },
+        "website": {
+          "label": "Website:",
+          "value": "www.netlify.com"
+        }
+      }
+    }
+  },
+
   "privacy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: January 25, 2026",
+    "meta": {
+      "description": "Learn how Sublynk collects, uses, and protects your personal data."
+    },
     "sections": {
       "introduction": {
         "title": "1. Introduction",
@@ -1219,6 +1277,9 @@
   "gdpr": {
     "title": "GDPR Compliance",
     "lastUpdated": "Last updated: February 5, 2026",
+    "meta": {
+      "description": "GDPR information, data processing details, and user rights on Sublynk."
+    },
     "sections": {
       "commitment": {
         "title": "Our commitment to GDPR",
@@ -1707,18 +1768,18 @@
       "paragraphs": {
         "p1": "We started as creators ourselves, running Telegram communities and struggling with the same problems you face: clunky payment solutions, high commissions eating into our revenue, and tools that weren't designed with data protection regulations in mind.",
         "p2": "In 2025, we decided to build the platform we wished existed. One that puts creators first, respects privacy, and doesn't take a cut of your hard-earned revenue.",
-        "p3": "Today, TelegramPlugin helps hundreds of creators monetize their Telegram, Discord, and WhatsApp communities — without the headaches."
+        "p3": "Today, TelegramPlugin helps creators monetize their Telegram, Discord, and WhatsApp communities — without the headaches."
       }
     },
     "stats": {
       "items": {
         "item1": {
-          "value": "500+",
-          "label": "Creators"
+          "value": "Launching",
+          "label": "Platform"
         },
         "item2": {
-          "value": "€250K+",
-          "label": "Processed"
+          "value": "Stripe",
+          "label": "Payments"
         },
         "item3": {
           "value": "0%",
@@ -1983,16 +2044,19 @@
     "socialProof": {
       "items": {
         "item1": {
-          "value": "0% commission",
-          "label": "A flat monthly fee"
+          "icon": "💳",
+          "title": "Stripe payments",
+          "description": "Secure subscriptions and purchases"
         },
         "item2": {
-          "value": "Fast setup",
-          "label": "Launch in just a few minutes"
+          "icon": "🤖",
+          "title": "100% automated",
+          "description": "Invites and access managed by the bot"
         },
         "item3": {
-          "value": "Multi‑platform",
-          "label": "Telegram and soon Discord/WhatsApp"
+          "icon": "📊",
+          "title": "Complete dashboard",
+          "description": "Stats and centralized management"
         }
       }
     },
@@ -2079,6 +2143,10 @@
         "company": "Company",
         "legal": "Legal"
       },
+      "social": {
+        "title": "Follow us",
+        "x": "X (Twitter)"
+      },
       "links": {
         "pricing": "Pricing",
         "features": "Features",
@@ -2087,7 +2155,8 @@
         "contact": "Contact",
         "privacy": "Privacy",
         "terms": "Terms",
-        "gdpr": "GDPR"
+        "gdpr": "GDPR",
+        "legalNotice": "Legal notice"
       },
       "copyright": "© {year} {appName}. All rights reserved.",
       "madeIn": "Made in France 🇫🇷"
@@ -2100,6 +2169,12 @@
     "gdpr": "GDPR",
     "contact": "Contact",
     "about": "About"
+  },
+
+  "notFound": {
+    "title": "This page doesn't exist",
+    "description": "The page you're looking for can't be found. Try going back home.",
+    "cta": "Back to home"
   },
 
   "faq": {

@@ -6,7 +6,17 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/dashboard/', '/admin/', '/checkout/'],
+        disallow: [
+          '/dashboard/',
+          '/admin/',
+          '/checkout/',
+          '/fr/dashboard/',
+          '/fr/admin/',
+          '/fr/checkout/',
+          '/en/dashboard/',
+          '/en/admin/',
+          '/en/checkout/',
+        ],
       },
     ],
     sitemap: 'https://sublynk.fr/sitemap.xml',

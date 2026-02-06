@@ -1,39 +1,45 @@
-import { Fragment } from 'react';
 import { getTranslations } from 'next-intl/server';
 
 export async function SocialProof() {
   const t = await getTranslations('marketing.socialProof');
   const items = [
     {
-      value: t('items.item1.value'),
-      label: t('items.item1.label'),
+      icon: t('items.item1.icon'),
+      title: t('items.item1.title'),
+      description: t('items.item1.description'),
     },
     {
-      value: t('items.item2.value'),
-      label: t('items.item2.label'),
+      icon: t('items.item2.icon'),
+      title: t('items.item2.title'),
+      description: t('items.item2.description'),
     },
     {
-      value: t('items.item3.value'),
-      label: t('items.item3.label'),
+      icon: t('items.item3.icon'),
+      title: t('items.item3.title'),
+      description: t('items.item3.description'),
     },
   ];
 
   return (
-    <section className="py-12 border-b border-[#E9E3EF]">
+    <section className="py-12 lg:py-16 bg-[#F6EEFF] border-b border-[#E9E3EF]">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
-          {items.map((item, index) => (
-            <Fragment key={item.label}>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-[#1A1523]">
-                  {item.value}
-                </p>
-                <p className="text-sm text-[#6F6E77]">{item.label}</p>
+        <div className="grid gap-6 md:grid-cols-3">
+          {items.map((item) => (
+            <div
+              key={item.title}
+              className="bg-white rounded-2xl border border-[#E9E3EF] p-6 text-center shadow-sm"
+            >
+              <div
+                className="text-3xl mb-3"
+                aria-hidden="true"
+              >
+                {item.icon}
               </div>
-              {index < items.length - 1 && (
-                <div className="hidden sm:block w-px h-12 bg-[#E9E3EF]" />
-              )}
-            </Fragment>
+              <h3 className="text-xl font-semibold text-[#1A1523] mb-1">
+                {item.title}
+              </h3>
+              <p className="text-[#6F6E77]">{item.description}</p>
+            </div>
           ))}
         </div>
       </div>

@@ -14,7 +14,7 @@ const organizationJsonLd = {
   name: "Sublynk",
   url: "https://sublynk.fr",
   logo: "https://sublynk.fr/android-chrome-512x512.png",
-  sameAs: [],
+  sameAs: ["https://x.com/Sublynk"],
 };
 
 const softwareJsonLd = {

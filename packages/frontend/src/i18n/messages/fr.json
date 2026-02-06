@@ -1010,6 +1010,9 @@
   "terms": {
     "title": "Conditions d'utilisation",
     "lastUpdated": "Dernière mise à jour : 25 janvier 2026",
+    "meta": {
+      "description": "Consultez les conditions d'utilisation de Sublynk et les règles applicables au service."
+    },
     "sections": {
       "acceptance": {
         "title": "1. Acceptation des conditions",
@@ -1106,9 +1109,64 @@
     }
   },
 
+  "legalNotice": {
+    "title": "Mentions légales",
+    "lastUpdated": "Dernière mise à jour : 6 février 2026",
+    "meta": {
+      "description": "Informations légales et mentions obligatoires de Sublynk."
+    },
+    "sections": {
+      "publisher": {
+        "title": "Éditeur du site",
+        "name": {
+          "label": "Nom commercial :",
+          "value": "Sublynk"
+        },
+        "company": {
+          "label": "Raison sociale :",
+          "value": "Vanessa Ferrand (auto-entreprise)"
+        },
+        "address": {
+          "label": "Adresse :",
+          "value": "19 rue Delandine, 69002 Lyon, France"
+        },
+        "siret": {
+          "label": "SIRET :",
+          "value": "517 869 905 00045"
+        },
+        "email": {
+          "label": "Email :",
+          "value": "contact@sublynk.fr"
+        },
+        "director": {
+          "label": "Directeur de la publication :",
+          "value": "Vanessa Ferrand"
+        }
+      },
+      "hosting": {
+        "title": "Hébergement",
+        "name": {
+          "label": "Hébergeur :",
+          "value": "Netlify, Inc."
+        },
+        "address": {
+          "label": "Adresse :",
+          "value": "512 2nd Street, Suite 200, San Francisco, CA 94107, USA"
+        },
+        "website": {
+          "label": "Site :",
+          "value": "www.netlify.com"
+        }
+      }
+    }
+  },
+
   "privacy": {
     "title": "Politique de confidentialité",
     "lastUpdated": "Dernière mise à jour : 25 janvier 2026",
+    "meta": {
+      "description": "Découvrez comment Sublynk collecte, utilise et protège vos données personnelles."
+    },
     "sections": {
       "introduction": {
         "title": "1. Introduction",
@@ -1246,6 +1304,9 @@
   "gdpr": {
     "title": "Conformité RGPD",
     "lastUpdated": "Dernière mise à jour : 5 février 2026",
+    "meta": {
+      "description": "Informations RGPD, traitement des données et droits des utilisateurs sur Sublynk."
+    },
     "sections": {
       "commitment": {
         "title": "Notre engagement envers le RGPD",
@@ -1735,18 +1796,18 @@
       "paragraphs": {
         "p1": "Nous avons commencé comme créateurs nous‑mêmes, en animant des communautés Telegram et en rencontrant les mêmes problèmes que toi : des solutions de paiement bancales, des commissions élevées qui grignotent les revenus, et des outils pas pensés pour les réglementations de protection des données.",
         "p2": "En 2025, nous avons décidé de construire la plateforme que nous aurions aimé avoir. Une plateforme qui met les créateurs au premier plan, respecte la confidentialité et ne prend pas de part sur tes revenus.",
-        "p3": "Aujourd'hui, Sublynk aide des centaines de créateurs à monétiser leurs communautés Telegram, Discord et WhatsApp — sans les galères."
+        "p3": "Aujourd'hui, Sublynk aide les créateurs à monétiser leurs communautés Telegram, Discord et WhatsApp — sans les galères."
       }
     },
     "stats": {
       "items": {
         "item1": {
-          "value": "500+",
-          "label": "Créateurs"
+          "value": "En lancement",
+          "label": "Plateforme"
         },
         "item2": {
-          "value": "€250K+",
-          "label": "Traités"
+          "value": "Stripe",
+          "label": "Paiements"
         },
         "item3": {
           "value": "0%",
@@ -2011,16 +2072,19 @@
     "socialProof": {
       "items": {
         "item1": {
-          "value": "0% commission",
-          "label": "Un forfait mensuel fixe"
+          "icon": "💳",
+          "title": "Paiements Stripe",
+          "description": "Abonnements et achats sécurisés"
         },
         "item2": {
-          "value": "Mise en place rapide",
-          "label": "Lance-toi en quelques minutes"
+          "icon": "🤖",
+          "title": "100% automatisé",
+          "description": "Invitations et accès gérés par bot"
         },
         "item3": {
-          "value": "Multi‑plateforme",
-          "label": "Telegram et prochainement Discord/WhatsApp"
+          "icon": "📊",
+          "title": "Dashboard complet",
+          "description": "Statistiques et gestion centralisée"
         }
       }
     },
@@ -2107,6 +2171,10 @@
         "company": "Entreprise",
         "legal": "Légal"
       },
+      "social": {
+        "title": "Suivez-nous",
+        "x": "X (Twitter)"
+      },
       "links": {
         "pricing": "Tarifs",
         "features": "Fonctionnalités",
@@ -2115,7 +2183,8 @@
         "contact": "Contact",
         "privacy": "Confidentialité",
         "terms": "Conditions",
-        "gdpr": "RGPD"
+        "gdpr": "RGPD",
+        "legalNotice": "Mentions légales"
       },
       "copyright": "© {year} {appName}. Tous droits réservés.",
       "madeIn": "Fait en France 🇫🇷"
@@ -2128,6 +2197,12 @@
     "gdpr": "RGPD",
     "contact": "Contact",
     "about": "À propos"
+  },
+
+  "notFound": {
+    "title": "Cette page n'existe pas",
+    "description": "La page que vous cherchez est introuvable. Essayez de revenir à l'accueil.",
+    "cta": "Retour à l'accueil"
   },
 
   "faq": {

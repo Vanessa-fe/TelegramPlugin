@@ -5,7 +5,20 @@ import { defaultLocale, locales, type Locale } from './config';
 /**
  * Server-side locale detection and message loading
  */
-export default getRequestConfig(async () => {
+export default getRequestConfig(async ({ requestLocale }) => {
+  const requested = await requestLocale;
+  const requestLocaleValue =
+    requested && locales.includes(requested as Locale)
+      ? (requested as Locale)
+      : undefined;
+
+  if (requestLocaleValue) {
+    return {
+      locale: requestLocaleValue,
+      messages: (await import(`./messages/${requestLocaleValue}.json`)).default,
+    };
+  }
+
   // 1. Check cookie first (user preference)
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value as Locale | undefined;

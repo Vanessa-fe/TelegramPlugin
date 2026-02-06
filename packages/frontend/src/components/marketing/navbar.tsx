@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { locales, localeNames, type Locale } from '@/i18n/config';
 import { Globe } from 'lucide-react';
 
 export function Navbar() {
   const t = useTranslations('marketing.navbar');
-  const tCommon = useTranslations('common');
   const currentLocale = useLocale() as Locale;
   const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,9 +26,8 @@ export function Navbar() {
   }, []);
 
   function handleLocaleChange(newLocale: Locale) {
-    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
     startTransition(() => {
-      router.refresh();
+      router.replace(pathname, { locale: newLocale });
     });
   }
 

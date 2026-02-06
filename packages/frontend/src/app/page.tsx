@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
 import {
   Navbar,
@@ -16,7 +16,13 @@ import {
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('marketing.hero');
   const title = `${t('title.line1')} ${t('title.line2')}`;
-  return buildMetadata({ canonical: '/', title, description: t('subtitle') });
+  const locale = await getLocale();
+  return buildMetadata({
+    canonical: '/',
+    title,
+    description: t('subtitle'),
+    locale,
+  });
 }
 
 export default function Home() {

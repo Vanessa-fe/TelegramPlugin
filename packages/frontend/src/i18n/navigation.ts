@@ -10,6 +10,5 @@ import { locales, defaultLocale } from './config';
 export const { Link, redirect, usePathname, useRouter } = createNavigation({
   locales,
   defaultLocale,
-  // No locale prefix in URL for cleaner URLs (locale stored in cookie)
-  localePrefix: 'never',
+  localePrefix: 'always',
 });

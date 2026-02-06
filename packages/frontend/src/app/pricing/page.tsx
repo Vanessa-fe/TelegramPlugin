@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('pricing');
-  return buildMetadata({ canonical: '/pricing', title: t('hero.title'), description: t('hero.subtitle') });
+  const locale = await getLocale();
+  return buildMetadata({
+    canonical: '/pricing',
+    title: t('hero.title'),
+    description: t('hero.subtitle'),
+    locale,
+  });
 }
 
 export default async function PricingPage() {

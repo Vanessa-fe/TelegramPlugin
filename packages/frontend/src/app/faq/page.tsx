@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
 import {
   UserPlus,
@@ -15,10 +15,12 @@ import {
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('faq');
+  const locale = await getLocale();
   return buildMetadata({
     canonical: '/faq',
     title: t('meta.title'),
     description: t('meta.description'),
+    locale,
   });
 }
 
@@ -88,8 +90,25 @@ export default async function FaqPage() {
     },
   ];
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <Navbar />
 
       {/* Hero */}

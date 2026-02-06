@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { defaultLocale, locales, type Locale } from '@/i18n/config';
 
 const OG_DEFAULTS = {
   siteName: 'Sublynk',
@@ -18,17 +19,41 @@ export function buildMetadata({
   canonical,
   title,
   description,
+  locale,
 }: {
   canonical: string;
   title: string;
   description?: string;
+  locale?: Locale;
 }): Metadata {
+  const prefixPath = (targetLocale: Locale, path: string) => {
+    const suffix = path === '/' ? '' : path;
+    return `/${targetLocale}${suffix}`;
+  };
+  const activeLocale = locale ?? defaultLocale;
+  const localizedCanonical = prefixPath(activeLocale, canonical);
+  const languageAlternates = locales.reduce<Record<string, string>>(
+    (acc, targetLocale) => {
+      acc[targetLocale] = prefixPath(targetLocale, canonical);
+      return acc;
+    },
+    {},
+  );
+  const openGraphLocale = activeLocale === 'en' ? 'en_US' : 'fr_FR';
+
   return {
-    alternates: { canonical },
+    title,
+    ...(description && { description }),
+    alternates: {
+      canonical: localizedCanonical,
+      languages: languageAlternates,
+    },
     openGraph: {
       ...OG_DEFAULTS,
+      locale: openGraphLocale,
       title,
       ...(description && { description }),
+      url: localizedCanonical,
     },
     twitter: {
       card: 'summary_large_image',
