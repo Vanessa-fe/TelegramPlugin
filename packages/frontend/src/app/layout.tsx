@@ -126,7 +126,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             />
           </noscript>
         )}
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider
+          locale={locale}
+          messages={messages}
+          key={locale}
+        >
           <AuthProvider>{children}</AuthProvider>
         </NextIntlClientProvider>
       </body>

@@ -6,6 +6,18 @@ import { defaultLocale, locales, type Locale } from './config';
  * Server-side locale detection and message loading
  */
 export default getRequestConfig(async ({ requestLocale }) => {
+  // 1. Check X-NEXT-INTL-LOCALE header first (set by middleware for non-default locales)
+  const headerStore = await headers();
+  const headerLocale = headerStore.get('X-NEXT-INTL-LOCALE') as Locale | undefined;
+
+  if (headerLocale && locales.includes(headerLocale)) {
+    return {
+      locale: headerLocale,
+      messages: (await import(`./messages/${headerLocale}.json`)).default,
+    };
+  }
+
+  // 2. Check requestLocale from next-intl routing
   const requested = await requestLocale;
   const requestLocaleValue =
     requested && locales.includes(requested as Locale)
@@ -19,7 +31,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     };
   }
 
-  // 1. Check cookie first (user preference)
+  // 3. Check cookie (user preference)
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value as Locale | undefined;
 
@@ -30,8 +42,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     };
   }
 
-  // 2. Check Accept-Language header
-  const headerStore = await headers();
+  // 4. Check Accept-Language header
   const acceptLanguage = headerStore.get('accept-language');
 
   if (acceptLanguage) {
@@ -49,7 +60,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     }
   }
 
-  // 3. Fallback to default locale
+  // 5. Fallback to default locale
   return {
     locale: defaultLocale,
     messages: (await import(`./messages/${defaultLocale}.json`)).default,

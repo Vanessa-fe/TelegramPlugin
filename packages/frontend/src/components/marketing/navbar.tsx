@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
-import { useRouter, usePathname } from '@/i18n/navigation';
+import { usePathname, getPathname } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { locales, localeNames, type Locale } from '@/i18n/config';
 import { Globe } from 'lucide-react';
@@ -11,9 +11,7 @@ import { Globe } from 'lucide-react';
 export function Navbar() {
   const t = useTranslations('marketing.navbar');
   const currentLocale = useLocale() as Locale;
-  const router = useRouter();
   const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -26,9 +24,9 @@ export function Navbar() {
   }, []);
 
   function handleLocaleChange(newLocale: Locale) {
-    startTransition(() => {
-      router.replace(pathname, { locale: newLocale });
-    });
+    const nextPath = getPathname({ href: pathname, locale: newLocale });
+    // Force hard reload with cache bypass to ensure translations reload
+    window.location.href = nextPath;
   }
 
   return (
@@ -73,7 +71,6 @@ export function Navbar() {
               <select
                 value={currentLocale}
                 onChange={(e) => handleLocaleChange(e.target.value as Locale)}
-                disabled={isPending}
                 className="bg-transparent text-sm font-medium cursor-pointer hover:text-[#1A1523] transition-colors focus:outline-none"
               >
                 {locales.map((locale) => (
@@ -163,7 +160,6 @@ export function Navbar() {
                 <select
                   value={currentLocale}
                   onChange={(e) => handleLocaleChange(e.target.value as Locale)}
-                  disabled={isPending}
                   className="bg-transparent text-sm font-medium cursor-pointer hover:text-[#1A1523] transition-colors focus:outline-none"
                 >
                   {locales.map((locale) => (

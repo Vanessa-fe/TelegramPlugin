@@ -15,12 +15,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/gdpr',
     '/mentions-legales',
   ];
-  const locales = ['fr', 'en'];
-
-  return locales.flatMap((locale) =>
-    paths.map((path) => ({
-      url: `https://sublynk.fr/${locale}${path === '/' ? '' : path}`,
+  return [
+    ...paths.map((path) => ({
+      url: `https://sublynk.fr${path === '/' ? '' : path}`,
       lastModified,
     })),
-  );
+    ...paths.map((path) => ({
+      url: `https://sublynk.fr/en${path === '/' ? '' : path}`,
+      lastModified,
+    })),
+  ];
 }

@@ -28,6 +28,9 @@ export function buildMetadata({
 }): Metadata {
   const prefixPath = (targetLocale: Locale, path: string) => {
     const suffix = path === '/' ? '' : path;
+    if (targetLocale === defaultLocale) {
+      return suffix || '/';
+    }
     return `/${targetLocale}${suffix}`;
   };
   const activeLocale =

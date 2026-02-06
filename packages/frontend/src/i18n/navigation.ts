@@ -7,8 +7,9 @@ import { locales, defaultLocale } from './config';
  * Usage:
  * import { Link, useRouter, usePathname } from '@/i18n/navigation';
  */
-export const { Link, redirect, usePathname, useRouter } = createNavigation({
+export const { Link, redirect, usePathname, useRouter, getPathname } =
+  createNavigation({
   locales,
   defaultLocale,
-  localePrefix: 'always',
-});
+  localePrefix: 'as-needed',
+  });
