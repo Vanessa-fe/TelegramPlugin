@@ -27,8 +27,11 @@ async function bootstrap() {
     await register(cookie_1.default, {
         secret: config.getOrThrow('COOKIE_SECRET'),
     });
+    const allowedOrigins = process.env.CORS_ORIGIN?.split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
     await register(cors_1.default, {
-        origin: process.env.CORS_ORIGIN?.split(',') ?? true,
+        origin: allowedOrigins && allowedOrigins.length > 0 ? allowedOrigins : true,
         credentials: true,
     });
     const port = Number(process.env.PORT ?? 3000);

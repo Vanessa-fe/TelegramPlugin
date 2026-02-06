@@ -37,8 +37,12 @@ async function bootstrap() {
     secret: config.getOrThrow<string>('COOKIE_SECRET'),
   });
 
+  const allowedOrigins = process.env.CORS_ORIGIN?.split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   await register(cors, {
-    origin: process.env.CORS_ORIGIN?.split(',') ?? true,
+    origin: allowedOrigins && allowedOrigins.length > 0 ? allowedOrigins : true,
     credentials: true,
   });
 
