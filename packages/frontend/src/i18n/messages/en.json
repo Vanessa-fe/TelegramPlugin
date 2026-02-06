@@ -562,6 +562,20 @@
         "inactive": "Inactive"
       }
     },
+    "actions": {
+      "viewInviteLink": "View invite link",
+      "manageAccess": "Manage access"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "labels": {
+      "untitled": "Untitled channel"
+    },
+    "common": {
+      "cancel": "Cancel"
+    },
 
     "stats": {
       "provider": "Platform",
@@ -581,8 +595,16 @@
       "subtitle": "Channel access management",
 
       "ctaGrant": "Grant access",
+      "actions": {
+        "grant": "Grant access"
+      },
 
       "cards": {
+        "total": "Total access",
+        "granted": "Granted",
+        "revoked": "Revoked"
+      },
+      "stats": {
         "total": "Total access",
         "granted": "Granted",
         "revoked": "Revoked"
@@ -592,6 +614,8 @@
       "noAccesses": "No access configured for this channel",
 
       "table": {
+        "title": "Active access",
+        "empty": "No access configured for this channel",
         "customer": "Customer",
         "status": "Status",
         "grantedAt": "Granted on",

@@ -581,6 +581,20 @@
         "inactive": "Inactif"
       }
     },
+    "actions": {
+      "viewInviteLink": "Voir le lien d'invitation",
+      "manageAccess": "Gérer les accès"
+    },
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "labels": {
+      "untitled": "Canal sans titre"
+    },
+    "common": {
+      "cancel": "Annuler"
+    },
 
     "stats": {
       "provider": "Plateforme",
@@ -600,8 +614,16 @@
       "subtitle": "Gestion des accès au canal",
 
       "ctaGrant": "Accorder un accès",
+      "actions": {
+        "grant": "Accorder un accès"
+      },
 
       "cards": {
+        "total": "Total accès",
+        "granted": "Accordés",
+        "revoked": "Révoqués"
+      },
+      "stats": {
         "total": "Total accès",
         "granted": "Accordés",
         "revoked": "Révoqués"
@@ -611,6 +633,8 @@
       "noAccesses": "Aucun accès configuré pour ce canal",
 
       "table": {
+        "title": "Accès actifs",
+        "empty": "Aucun accès configuré pour ce canal",
         "customer": "Client",
         "status": "Statut",
         "grantedAt": "Accordé le",
