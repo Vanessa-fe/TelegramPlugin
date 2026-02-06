@@ -132,7 +132,7 @@ export default function ChannelsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
                       <h2 className="text-lg font-semibold text-[#1A1523]">
-                        {channel.title || t("labels.untitled")}
+                        {channel.title || t("list.untitled")}
                       </h2>
 
                       <span
@@ -144,12 +144,12 @@ export default function ChannelsPage() {
                       {channel.isActive ? (
                         <span className="inline-flex items-center gap-1 text-green-600 text-sm">
                           <CheckCircle2 className="h-4 w-4" />
-                          {t("status.active")}
+                          {t("list.status.active")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-gray-500 text-sm">
                           <XCircle className="h-4 w-4" />
-                          {t("status.inactive")}
+                          {t("list.status.inactive")}
                         </span>
                       )}
                     </div>
@@ -168,7 +168,7 @@ export default function ChannelsPage() {
                         className="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 mt-2"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
-                        {t("actions.viewInviteLink")}
+                        {t("list.viewInviteLink")}
                       </a>
                     )}
                   </div>
@@ -181,7 +181,7 @@ export default function ChannelsPage() {
                       className="border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
                     >
                       <Settings className="mr-2 h-4 w-4" />
-                      {t("actions.manageAccess")}
+                      {t("list.manageAccess")}
                     </Button>
                   </Link>
                 </div>

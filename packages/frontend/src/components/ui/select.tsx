@@ -7,6 +7,8 @@ interface SelectContextValue {
   onValueChange: (value: string) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  displayValue: string;
+  setDisplayValue: (label: string) => void;
 }
 
 const SelectContext = React.createContext<SelectContextValue | undefined>(undefined);
@@ -19,9 +21,10 @@ interface SelectProps {
 
 export function Select({ value, onValueChange, children }: SelectProps) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [displayValue, setDisplayValue] = React.useState('');
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen }}>
+    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen, displayValue, setDisplayValue }}>
       <div className="relative">{children}</div>
     </SelectContext.Provider>
   );
@@ -59,7 +62,7 @@ export function SelectValue({ placeholder }: { placeholder?: string }) {
   const context = React.useContext(SelectContext);
   if (!context) throw new Error('SelectValue must be used within Select');
 
-  return <span>{context.value || placeholder}</span>;
+  return <span>{context.displayValue || placeholder}</span>;
 }
 
 export function SelectContent({ children }: { children: React.ReactNode }) {
@@ -104,9 +107,19 @@ export function SelectItem({ value, children, disabled }: SelectItemProps) {
   const context = React.useContext(SelectContext);
   if (!context) throw new Error('SelectItem must be used within Select');
 
+  // Update display value when this item matches the current value
+  React.useEffect(() => {
+    if (context.value === value && typeof children === 'string') {
+      context.setDisplayValue(children);
+    }
+  }, [context.value, value, children, context]);
+
   const handleClick = () => {
     if (!disabled) {
       context.onValueChange(value);
+      if (typeof children === 'string') {
+        context.setDisplayValue(children);
+      }
       context.setIsOpen(false);
     }
   };

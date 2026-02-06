@@ -666,9 +666,9 @@
       "titleLabel": "Channel name",
       "titlePlaceholder": "My VIP Channel",
 
-      "usernameLabel": "Username",
+      "usernameLabel": "Username (optional)",
       "usernamePlaceholder": "my_vip_channel",
-      "usernameHelp": "Channel username (without @)",
+      "usernameHelp": "Public channel handle (e.g., t.me/my_channel → my_channel). Leave empty if your channel is private.",
 
       "inviteLinkLabel": "Invite link",
       "inviteLinkPlaceholder": "https://t.me/+AbcDefGhiJkl",

@@ -67,7 +67,8 @@ export function ChannelForm({
   const providerOptions = useMemo(
     () => [
       { value: ChannelProvider.TELEGRAM, label: t("providers.telegram") },
-      { value: ChannelProvider.DISCORD, label: t("providers.discord") },
+      // Discord désactivé pour le moment
+      // { value: ChannelProvider.DISCORD, label: t("providers.discord") },
       // si tu ajoutes Whatsapp plus tard : { value: ChannelProvider.WHATSAPP, label: t("providers.whatsapp") }
     ],
     [t]

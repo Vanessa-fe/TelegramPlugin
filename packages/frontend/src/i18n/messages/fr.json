@@ -685,9 +685,9 @@
       "titleLabel": "Nom du canal",
       "titlePlaceholder": "Mon Canal VIP",
 
-      "usernameLabel": "Nom d'utilisateur",
+      "usernameLabel": "Nom d'utilisateur (optionnel)",
       "usernamePlaceholder": "mon_canal_vip",
-      "usernameHelp": "Nom d'utilisateur du canal (sans @)",
+      "usernameHelp": "Handle public du canal (ex: t.me/mon_canal → mon_canal). Laissez vide si votre canal est privé.",
 
       "inviteLinkLabel": "Lien d'invitation",
       "inviteLinkPlaceholder": "https://t.me/+AbcDefGhiJkl",
