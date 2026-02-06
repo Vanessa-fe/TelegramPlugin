@@ -24,13 +24,16 @@ export function buildMetadata({
   canonical: string;
   title: string;
   description?: string;
-  locale?: Locale;
+  locale?: string;
 }): Metadata {
   const prefixPath = (targetLocale: Locale, path: string) => {
     const suffix = path === '/' ? '' : path;
     return `/${targetLocale}${suffix}`;
   };
-  const activeLocale = locale ?? defaultLocale;
+  const activeLocale =
+    locale && locales.includes(locale as Locale)
+      ? (locale as Locale)
+      : defaultLocale;
   const localizedCanonical = prefixPath(activeLocale, canonical);
   const languageAlternates = locales.reduce<Record<string, string>>(
     (acc, targetLocale) => {
