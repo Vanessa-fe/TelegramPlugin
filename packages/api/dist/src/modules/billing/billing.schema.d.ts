@@ -9,20 +9,20 @@ export declare const createCheckoutSchema: z.ZodObject<{
         email: z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>;
     }, "strip", z.ZodTypeAny, {
         telegramUsername: string;
-        displayName?: string | undefined;
         email?: string | undefined;
+        displayName?: string | undefined;
         telegramUserId?: string | undefined;
     }, {
         telegramUsername: string;
-        displayName?: string | undefined;
         email?: string | undefined;
+        displayName?: string | undefined;
         telegramUserId?: string | undefined;
     }>;
 }, "strip", z.ZodTypeAny, {
     customer: {
         telegramUsername: string;
-        displayName?: string | undefined;
         email?: string | undefined;
+        displayName?: string | undefined;
         telegramUserId?: string | undefined;
     };
     planId: string;
@@ -30,8 +30,8 @@ export declare const createCheckoutSchema: z.ZodObject<{
 }, {
     customer: {
         telegramUsername: string;
-        displayName?: string | undefined;
         email?: string | undefined;
+        displayName?: string | undefined;
         telegramUserId?: string | undefined;
     };
     planId: string;
