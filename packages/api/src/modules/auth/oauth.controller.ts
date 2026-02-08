@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Logger, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from './decorators/public.decorator';
@@ -15,6 +15,8 @@ interface OAuthRequest extends FastifyRequest {
 
 @Controller('auth')
 export class OAuthController {
+  private readonly logger = new Logger(OAuthController.name);
+
   constructor(
     private readonly oauthService: OAuthService,
     private readonly config: ConfigService,
@@ -50,8 +52,12 @@ export class OAuthController {
 
     // If the guard captured an OAuth error or no user was provided
     if (req.oauthError || !req.user) {
-      reply.redirect(failureUrl);
-      return;
+      if (req.oauthError) {
+        this.logger.warn(`OAuth failed: ${req.oauthError}`);
+      } else {
+        this.logger.warn('OAuth failed: no user returned by Google strategy');
+      }
+      return reply.status(302).redirect(failureUrl);
     }
 
     try {
@@ -81,9 +87,12 @@ export class OAuthController {
         maxAge: 7 * 24 * 60 * 60, // 7 days (seconds)
       });
 
-      reply.redirect(successUrl);
-    } catch {
-      reply.redirect(failureUrl);
+      return reply.status(302).redirect(successUrl);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.stack ?? error.message : String(error);
+      this.logger.error(`OAuth callback failed: ${message}`);
+      return reply.status(302).redirect(failureUrl);
     }
   }
 }

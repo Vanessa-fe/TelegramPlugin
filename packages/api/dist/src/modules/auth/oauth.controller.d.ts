@@ -8,6 +8,7 @@ interface OAuthRequest extends FastifyRequest {
 export declare class OAuthController {
     private readonly oauthService;
     private readonly config;
+    private readonly logger;
     constructor(oauthService: OAuthService, config: ConfigService);
     googleAuth(): void;
     googleCallback(req: OAuthRequest, reply: FastifyReply): Promise<void>;
