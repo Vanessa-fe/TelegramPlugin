@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { OAuthService, OAuthProfile } from './oauth.service';
+import { OAuthProfile, OAuthService } from './oauth.service';
 interface OAuthRequest extends FastifyRequest {
     user?: OAuthProfile;
     oauthError?: string;

@@ -1,9 +1,10 @@
 import { Controller, Get, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from './decorators/public.decorator';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { OAuthService, OAuthProfile } from './oauth.service';
+import { OAuthProfile, OAuthService } from './oauth.service';
 
 interface OAuthRequest extends FastifyRequest {
   user?: OAuthProfile;
@@ -19,7 +20,7 @@ export class OAuthController {
 
   @Public()
   @Get('google')
-  @UseGuards(GoogleAuthGuard)
+  @UseGuards(AuthGuard('google'))
   googleAuth(): void {
     // Guard redirects to Google
   }
