@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const passport_1 = require("@nestjs/passport");
 const public_decorator_1 = require("./decorators/public.decorator");
-const google_auth_guard_1 = require("./guards/google-auth.guard");
 const oauth_service_1 = require("./oauth.service");
 let OAuthController = class OAuthController {
     oauthService;
@@ -29,10 +28,11 @@ let OAuthController = class OAuthController {
     googleAuth() {
     }
     async googleCallback(req, reply) {
-        const successUrl = this.config.get('OAUTH_SUCCESS_REDIRECT');
-        const failureUrl = this.config.get('OAUTH_FAILURE_REDIRECT');
+        const successUrl = this.config.get('OAUTH_SUCCESS_REDIRECT') ?? '/dashboard';
+        const failureUrl = this.config.get('OAUTH_FAILURE_REDIRECT') ??
+            '/login?error=oauth_failed';
         if (req.oauthError || !req.user) {
-            reply.redirect(failureUrl || '/login?error=oauth_failed');
+            reply.redirect(failureUrl);
             return;
         }
         try {
@@ -53,10 +53,10 @@ let OAuthController = class OAuthController {
                 path: '/',
                 maxAge: 7 * 24 * 60 * 60,
             });
-            reply.redirect(successUrl || '/dashboard');
+            reply.redirect(successUrl);
         }
         catch {
-            reply.redirect(failureUrl || '/login?error=oauth_failed');
+            reply.redirect(failureUrl);
         }
     }
 };
@@ -72,7 +72,7 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('google/callback'),
-    (0, common_1.UseGuards)(google_auth_guard_1.GoogleAuthGuard),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('google')),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),

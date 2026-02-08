@@ -1,4 +1,8 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 interface OAuthRequest {
@@ -6,18 +10,27 @@ interface OAuthRequest {
 }
 
 @Injectable()
-export class GoogleAuthGuard extends AuthGuard('google') {
+export class GoogleCallbackGuard extends AuthGuard('google') {
   handleRequest<TUser = unknown>(
-    err: Error | null,
+    err: any,
     user: TUser | false,
-    _info: unknown,
+    info: any,
     context: ExecutionContext,
   ): TUser {
+    const request = context.switchToHttp().getRequest<OAuthRequest>();
+
+    // Passport peut mettre des infos utiles dans "info"
+    const message: string =
+      (err as { message?: string })?.message ||
+      (info as { message?: string })?.message ||
+      (info as { error_description?: string })?.error_description ||
+      'Authentication failed';
+
     if (err || !user) {
-      const request = context.switchToHttp().getRequest<OAuthRequest>();
-      request.oauthError = err?.message || 'Authentication failed';
-      return null as TUser;
+      request.oauthError = message;
+      throw new UnauthorizedException(message);
     }
+
     return user;
   }
 }
