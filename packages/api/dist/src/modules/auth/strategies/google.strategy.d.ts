@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { Strategy, VerifyCallback, Profile } from 'passport-google-oauth20';
+import { Strategy, Profile } from 'passport-google-oauth20';
 export interface GoogleProfile {
     provider: 'google';
     providerId: string;
@@ -12,6 +12,6 @@ declare const GoogleStrategy_base: new (...args: [options: import("passport-goog
 };
 export declare class GoogleStrategy extends GoogleStrategy_base {
     constructor(config: ConfigService);
-    validate(_accessToken: string, _refreshToken: string, profile: Profile, done: VerifyCallback): void;
+    validate(_accessToken: string, _refreshToken: string, profile: Profile): GoogleProfile;
 }
 export {};

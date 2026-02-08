@@ -23,7 +23,7 @@ let GoogleStrategy = class GoogleStrategy extends (0, passport_1.PassportStrateg
             scope: ['email', 'profile'],
         });
     }
-    validate(_accessToken, _refreshToken, profile, done) {
+    validate(_accessToken, _refreshToken, profile) {
         const { id, emails, name } = profile;
         const googleProfile = {
             provider: 'google',
@@ -32,7 +32,7 @@ let GoogleStrategy = class GoogleStrategy extends (0, passport_1.PassportStrateg
             firstName: name?.givenName,
             lastName: name?.familyName,
         };
-        done(null, googleProfile);
+        return googleProfile;
     }
 };
 exports.GoogleStrategy = GoogleStrategy;

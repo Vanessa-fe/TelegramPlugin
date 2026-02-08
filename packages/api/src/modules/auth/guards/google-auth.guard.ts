@@ -1,4 +1,4 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { FastifyReply } from 'fastify';
 
@@ -16,6 +16,8 @@ export class GoogleAuthGuard extends AuthGuard('google') {
 
 @Injectable()
 export class GoogleCallbackGuard extends GoogleAuthGuard {
+  private readonly logger = new Logger(GoogleCallbackGuard.name);
+
   handleRequest<TUser = unknown>(
     err: any,
     user: TUser | false,
@@ -33,6 +35,23 @@ export class GoogleCallbackGuard extends GoogleAuthGuard {
 
     if (err || !user) {
       request.oauthError = message;
+      const errMessage =
+        err instanceof Error ? err.message : err ? String(err) : undefined;
+      const infoMessage =
+        info && typeof info === 'object'
+          ? (info as { message?: string; error_description?: string }).message ||
+            (info as { error_description?: string }).error_description ||
+            JSON.stringify(info)
+          : info
+            ? String(info)
+            : undefined;
+      this.logger.warn(
+        {
+          err: errMessage,
+          info: infoMessage,
+        },
+        'Google OAuth failed',
+      );
       return null;
     }
 

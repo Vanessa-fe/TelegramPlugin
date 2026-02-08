@@ -4,6 +4,7 @@ export declare class GoogleAuthGuard extends GoogleAuthGuard_base {
     getResponse(context: ExecutionContext): import("http").ServerResponse<import("http").IncomingMessage>;
 }
 export declare class GoogleCallbackGuard extends GoogleAuthGuard {
+    private readonly logger;
     handleRequest<TUser = unknown>(err: any, user: TUser | false, info: any, context: ExecutionContext): TUser | null;
 }
 export {};
