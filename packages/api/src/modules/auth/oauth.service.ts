@@ -32,12 +32,13 @@ export class OAuthService {
 
     if (existingOAuth) {
       // Update lastLoginAt
-      await this.prisma.user.update({
+      const updatedUser = await this.prisma.user.update({
         where: { id: existingOAuth.userId },
         data: { lastLoginAt: new Date() },
       });
 
-      return this.generateAuthResult(existingOAuth.user);
+      const ensuredUser = await this.ensureOrganization(updatedUser, profile);
+      return this.generateAuthResult(ensuredUser);
     }
 
     // 2. Check if user with same email exists
@@ -58,26 +59,41 @@ export class OAuthService {
         });
 
         // Update lastLoginAt
-        await this.prisma.user.update({
+        const updatedUser = await this.prisma.user.update({
           where: { id: existingUser.id },
           data: { lastLoginAt: new Date() },
         });
 
-        return this.generateAuthResult(existingUser);
+        const ensuredUser = await this.ensureOrganization(
+          updatedUser,
+          profile,
+        );
+        return this.generateAuthResult(ensuredUser);
       }
     }
 
-    // 3. Create new user (without password) + OAuth account
-    const role: UserRole = 'VIEWER';
+    // 3. Create new user (without password) + OAuth account + organization
+    const email =
+      profile.email?.toLowerCase() || `${profile.providerId}@oauth.local`;
+    const organizationName = this.buildOrganizationName(profile, email);
+    const organizationSlug = await this.generateUniqueOrganizationSlug(
+      organizationName,
+    );
 
     const user = await this.prisma.user.create({
       data: {
-        email:
-          profile.email?.toLowerCase() || `${profile.providerId}@oauth.local`,
+        email,
         firstName: profile.firstName,
         lastName: profile.lastName,
-        role,
+        role: UserRole.ORG_ADMIN,
         lastLoginAt: new Date(),
+        organization: {
+          create: {
+            name: organizationName,
+            slug: organizationSlug,
+            billingEmail: email,
+          },
+        },
         oauthAccounts: {
           create: {
             provider,
@@ -154,5 +170,70 @@ export class OAuthService {
     }
 
     return fallback;
+  }
+
+  private buildOrganizationName(profile: OAuthProfile, email: string): string {
+    const name = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
+    if (name) {
+      return name;
+    }
+    return email.split('@')[0] || 'Organisation';
+  }
+
+  private slugify(value: string): string {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '')
+      .slice(0, 50);
+  }
+
+  private async generateUniqueOrganizationSlug(name: string): Promise<string> {
+    const base = this.slugify(name) || 'organisation';
+    let slug = base;
+    let counter = 1;
+
+    while (
+      await this.prisma.organization.findUnique({
+        where: { slug },
+        select: { id: true },
+      })
+    ) {
+      slug = `${base}-${counter}`;
+      counter += 1;
+    }
+
+    return slug;
+  }
+
+  private async ensureOrganization(
+    user: User,
+    profile: OAuthProfile,
+  ): Promise<User> {
+    if (user.organizationId) {
+      return user;
+    }
+
+    const email = user.email;
+    const organizationName = this.buildOrganizationName(profile, email);
+    const organizationSlug = await this.generateUniqueOrganizationSlug(
+      organizationName,
+    );
+
+    const organization = await this.prisma.organization.create({
+      data: {
+        name: organizationName,
+        slug: organizationSlug,
+        billingEmail: email,
+      },
+    });
+
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        organizationId: organization.id,
+        role: UserRole.ORG_ADMIN,
+      },
+    });
   }
 }

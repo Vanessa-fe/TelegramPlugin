@@ -215,7 +215,7 @@ export default function ChannelAccessManagementPage() {
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="mt-2 text-sm text-muted-foreground">
-            {t("access.loading")}
+            {t("access.loading.title")}
           </p>
         </div>
       </div>
@@ -225,10 +225,12 @@ export default function ChannelAccessManagementPage() {
   if (!channel) {
     return (
       <div className="space-y-6">
-        <p className="text-center text-red-600">{t("access.notFound")}</p>
+        <p className="text-center text-red-600">
+          {t("access.notFound.title")}
+        </p>
         <div className="flex justify-center">
           <Link href="/dashboard/channels">
-            <Button variant="outline">{t("access.backToChannels")}</Button>
+            <Button variant="outline">{t("access.notFound.back")}</Button>
           </Link>
         </div>
       </div>

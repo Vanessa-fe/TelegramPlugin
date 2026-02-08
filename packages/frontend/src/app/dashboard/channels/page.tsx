@@ -68,7 +68,7 @@ export default function ChannelsPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading")}</p>
+          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading.title")}</p>
         </div>
       </div>
     );

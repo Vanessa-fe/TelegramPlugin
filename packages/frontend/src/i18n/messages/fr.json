@@ -630,6 +630,9 @@
     "access": {
       "titleFallback": "Canal",
       "subtitle": "Gestion des accès au canal",
+      "loading": {
+        "title": "Chargement des accès..."
+      },
 
       "ctaGrant": "Accorder un accès",
       "actions": {

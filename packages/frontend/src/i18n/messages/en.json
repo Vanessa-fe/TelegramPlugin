@@ -611,6 +611,9 @@
     "access": {
       "titleFallback": "Channel",
       "subtitle": "Channel access management",
+      "loading": {
+        "title": "Loading access..."
+      },
 
       "ctaGrant": "Grant access",
       "actions": {

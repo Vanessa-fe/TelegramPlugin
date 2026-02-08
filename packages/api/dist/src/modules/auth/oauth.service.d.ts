@@ -16,4 +16,8 @@ export declare class OAuthService {
     private buildPayload;
     private signTokens;
     private getTtlSeconds;
+    private buildOrganizationName;
+    private slugify;
+    private generateUniqueOrganizationSlug;
+    private ensureOrganization;
 }

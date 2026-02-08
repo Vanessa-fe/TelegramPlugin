@@ -36,11 +36,12 @@ let OAuthService = class OAuthService {
             include: { user: true },
         });
         if (existingOAuth) {
-            await this.prisma.user.update({
+            const updatedUser = await this.prisma.user.update({
                 where: { id: existingOAuth.userId },
                 data: { lastLoginAt: new Date() },
             });
-            return this.generateAuthResult(existingOAuth.user);
+            const ensuredUser = await this.ensureOrganization(updatedUser, profile);
+            return this.generateAuthResult(ensuredUser);
         }
         if (profile.email) {
             const existingUser = await this.prisma.user.findUnique({
@@ -55,21 +56,31 @@ let OAuthService = class OAuthService {
                         email: profile.email.toLowerCase(),
                     },
                 });
-                await this.prisma.user.update({
+                const updatedUser = await this.prisma.user.update({
                     where: { id: existingUser.id },
                     data: { lastLoginAt: new Date() },
                 });
-                return this.generateAuthResult(existingUser);
+                const ensuredUser = await this.ensureOrganization(updatedUser, profile);
+                return this.generateAuthResult(ensuredUser);
             }
         }
-        const role = 'VIEWER';
+        const email = profile.email?.toLowerCase() || `${profile.providerId}@oauth.local`;
+        const organizationName = this.buildOrganizationName(profile, email);
+        const organizationSlug = await this.generateUniqueOrganizationSlug(organizationName);
         const user = await this.prisma.user.create({
             data: {
-                email: profile.email?.toLowerCase() || `${profile.providerId}@oauth.local`,
+                email,
                 firstName: profile.firstName,
                 lastName: profile.lastName,
-                role,
+                role: client_1.UserRole.ORG_ADMIN,
                 lastLoginAt: new Date(),
+                organization: {
+                    create: {
+                        name: organizationName,
+                        slug: organizationSlug,
+                        billingEmail: email,
+                    },
+                },
                 oauthAccounts: {
                     create: {
                         provider,
@@ -132,6 +143,55 @@ let OAuthService = class OAuthService {
             return parsed;
         }
         return fallback;
+    }
+    buildOrganizationName(profile, email) {
+        const name = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
+        if (name) {
+            return name;
+        }
+        return email.split('@')[0] || 'Organisation';
+    }
+    slugify(value) {
+        return value
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '')
+            .slice(0, 50);
+    }
+    async generateUniqueOrganizationSlug(name) {
+        const base = this.slugify(name) || 'organisation';
+        let slug = base;
+        let counter = 1;
+        while (await this.prisma.organization.findUnique({
+            where: { slug },
+            select: { id: true },
+        })) {
+            slug = `${base}-${counter}`;
+            counter += 1;
+        }
+        return slug;
+    }
+    async ensureOrganization(user, profile) {
+        if (user.organizationId) {
+            return user;
+        }
+        const email = user.email;
+        const organizationName = this.buildOrganizationName(profile, email);
+        const organizationSlug = await this.generateUniqueOrganizationSlug(organizationName);
+        const organization = await this.prisma.organization.create({
+            data: {
+                name: organizationName,
+                slug: organizationSlug,
+                billingEmail: email,
+            },
+        });
+        return this.prisma.user.update({
+            where: { id: user.id },
+            data: {
+                organizationId: organization.id,
+                role: client_1.UserRole.ORG_ADMIN,
+            },
+        });
     }
 };
 exports.OAuthService = OAuthService;
