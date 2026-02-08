@@ -15,9 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OAuthController = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
-const passport_1 = require("@nestjs/passport");
 const public_decorator_1 = require("./decorators/public.decorator");
 const oauth_service_1 = require("./oauth.service");
+const google_auth_guard_1 = require("./guards/google-auth.guard");
 let OAuthController = class OAuthController {
     oauthService;
     config;
@@ -64,7 +64,7 @@ exports.OAuthController = OAuthController;
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('google'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('google')),
+    (0, common_1.UseGuards)(google_auth_guard_1.GoogleAuthGuard),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -72,7 +72,7 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('google/callback'),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('google')),
+    (0, common_1.UseGuards)(google_auth_guard_1.GoogleCallbackGuard),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),

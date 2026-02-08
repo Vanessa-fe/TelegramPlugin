@@ -1,22 +1,27 @@
-import {
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import type { FastifyReply } from 'fastify';
 
 interface OAuthRequest {
   oauthError?: string;
 }
 
 @Injectable()
-export class GoogleCallbackGuard extends AuthGuard('google') {
+export class GoogleAuthGuard extends AuthGuard('google') {
+  getResponse(context: ExecutionContext) {
+    const response = context.switchToHttp().getResponse<FastifyReply>();
+    return response.raw;
+  }
+}
+
+@Injectable()
+export class GoogleCallbackGuard extends GoogleAuthGuard {
   handleRequest<TUser = unknown>(
     err: any,
     user: TUser | false,
     info: any,
     context: ExecutionContext,
-  ): TUser {
+  ): TUser | null {
     const request = context.switchToHttp().getRequest<OAuthRequest>();
 
     // Passport peut mettre des infos utiles dans "info"
@@ -28,7 +33,7 @@ export class GoogleCallbackGuard extends AuthGuard('google') {
 
     if (err || !user) {
       request.oauthError = message;
-      throw new UnauthorizedException(message);
+      return null;
     }
 
     return user;

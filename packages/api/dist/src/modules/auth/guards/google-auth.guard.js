@@ -6,10 +6,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GoogleCallbackGuard = void 0;
+exports.GoogleCallbackGuard = exports.GoogleAuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
-let GoogleCallbackGuard = class GoogleCallbackGuard extends (0, passport_1.AuthGuard)('google') {
+let GoogleAuthGuard = class GoogleAuthGuard extends (0, passport_1.AuthGuard)('google') {
+    getResponse(context) {
+        const response = context.switchToHttp().getResponse();
+        return response.raw;
+    }
+};
+exports.GoogleAuthGuard = GoogleAuthGuard;
+exports.GoogleAuthGuard = GoogleAuthGuard = __decorate([
+    (0, common_1.Injectable)()
+], GoogleAuthGuard);
+let GoogleCallbackGuard = class GoogleCallbackGuard extends GoogleAuthGuard {
     handleRequest(err, user, info, context) {
         const request = context.switchToHttp().getRequest();
         const message = err?.message ||
@@ -18,7 +28,7 @@ let GoogleCallbackGuard = class GoogleCallbackGuard extends (0, passport_1.AuthG
             'Authentication failed';
         if (err || !user) {
             request.oauthError = message;
-            throw new common_1.UnauthorizedException(message);
+            return null;
         }
         return user;
     }
