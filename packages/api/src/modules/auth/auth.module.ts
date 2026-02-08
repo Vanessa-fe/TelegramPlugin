@@ -4,7 +4,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { OAuthController } from './oauth.controller';
+import { OAuthService } from './oauth.service';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { CookieResponseInterceptor } from './interceptors/cookie-response.interceptor';
 import { CookieClearInterceptor } from './interceptors/cookie-clear.interceptor';
 
@@ -20,13 +23,15 @@ import { CookieClearInterceptor } from './interceptors/cookie-clear.interceptor'
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, OAuthController],
   providers: [
     AuthService,
+    OAuthService,
     JwtAccessStrategy,
+    GoogleStrategy,
     CookieResponseInterceptor,
     CookieClearInterceptor,
   ],
-  exports: [AuthService],
+  exports: [AuthService, OAuthService],
 })
 export class AuthModule {}

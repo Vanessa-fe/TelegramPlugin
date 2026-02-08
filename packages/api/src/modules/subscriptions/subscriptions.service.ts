@@ -99,7 +99,10 @@ export class SubscriptionsService {
 
     const customerName =
       customer?.displayName || customer?.email?.split('@')[0] || 'subscriber';
-    const slug = await this.generateUniqueSlug(data.organizationId, customerName);
+    const slug = await this.generateUniqueSlug(
+      data.organizationId,
+      customerName,
+    );
 
     const payload: Prisma.SubscriptionUncheckedCreateInput = {
       organizationId: data.organizationId,

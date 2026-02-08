@@ -53,9 +53,7 @@ export class SubscriptionsController {
   ) {
     const organizationId = resolveOrganizationScope(user, queryOrganizationId);
     if (!organizationId) {
-      throw new NotFoundException(
-        'Organization ID required for slug lookup',
-      );
+      throw new NotFoundException('Organization ID required for slug lookup');
     }
     const subscription = await this.subscriptionsService.findBySlug(
       organizationId,

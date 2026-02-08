@@ -195,17 +195,17 @@ export class BillingService {
     }
 
     const { customer } = payload;
-    const telegramUsername = customer.telegramUsername?.toLowerCase().replace(/^@/, '');
+    const telegramUsername = customer.telegramUsername
+      ?.toLowerCase()
+      .replace(/^@/, '');
     const telegramUserId = customer.telegramUserId?.trim();
     const email = customer.email?.toLowerCase() || undefined;
 
     if (!telegramUsername) {
-      throw new BadRequestException('Nom d\'utilisateur Telegram requis');
+      throw new BadRequestException("Nom d'utilisateur Telegram requis");
     }
 
-    const customerFilters: Prisma.CustomerWhereInput[] = [
-      { telegramUsername },
-    ];
+    const customerFilters: Prisma.CustomerWhereInput[] = [{ telegramUsername }];
     if (telegramUserId) {
       customerFilters.push({ telegramUserId });
     }

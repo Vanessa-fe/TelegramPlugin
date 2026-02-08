@@ -141,15 +141,15 @@ let BillingService = class BillingService {
             throw new common_1.ForbiddenException("Compte Stripe incomplet, finalisez l'onboarding");
         }
         const { customer } = payload;
-        const telegramUsername = customer.telegramUsername?.toLowerCase().replace(/^@/, '');
+        const telegramUsername = customer.telegramUsername
+            ?.toLowerCase()
+            .replace(/^@/, '');
         const telegramUserId = customer.telegramUserId?.trim();
         const email = customer.email?.toLowerCase() || undefined;
         if (!telegramUsername) {
-            throw new common_1.BadRequestException('Nom d\'utilisateur Telegram requis');
+            throw new common_1.BadRequestException("Nom d'utilisateur Telegram requis");
         }
-        const customerFilters = [
-            { telegramUsername },
-        ];
+        const customerFilters = [{ telegramUsername }];
         if (telegramUserId) {
             customerFilters.push({ telegramUserId });
         }

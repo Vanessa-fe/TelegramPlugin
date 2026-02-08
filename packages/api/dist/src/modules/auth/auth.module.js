@@ -13,7 +13,10 @@ const jwt_1 = require("@nestjs/jwt");
 const passport_1 = require("@nestjs/passport");
 const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
+const oauth_controller_1 = require("./oauth.controller");
+const oauth_service_1 = require("./oauth.service");
 const jwt_access_strategy_1 = require("./strategies/jwt-access.strategy");
+const google_strategy_1 = require("./strategies/google.strategy");
 const cookie_response_interceptor_1 = require("./interceptors/cookie-response.interceptor");
 const cookie_clear_interceptor_1 = require("./interceptors/cookie-clear.interceptor");
 let AuthModule = class AuthModule {
@@ -32,14 +35,16 @@ exports.AuthModule = AuthModule = __decorate([
                 }),
             }),
         ],
-        controllers: [auth_controller_1.AuthController],
+        controllers: [auth_controller_1.AuthController, oauth_controller_1.OAuthController],
         providers: [
             auth_service_1.AuthService,
+            oauth_service_1.OAuthService,
             jwt_access_strategy_1.JwtAccessStrategy,
+            google_strategy_1.GoogleStrategy,
             cookie_response_interceptor_1.CookieResponseInterceptor,
             cookie_clear_interceptor_1.CookieClearInterceptor,
         ],
-        exports: [auth_service_1.AuthService],
+        exports: [auth_service_1.AuthService, oauth_service_1.OAuthService],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

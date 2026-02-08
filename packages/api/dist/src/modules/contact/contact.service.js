@@ -59,8 +59,7 @@ let ContactService = ContactService_1 = class ContactService {
         this.config = config;
         this.fromEmail =
             this.config.get('BREVO_FROM_EMAIL') || 'noreply@example.com';
-        this.fromName =
-            this.config.get('BREVO_FROM_NAME') || 'Sublynk';
+        this.fromName = this.config.get('BREVO_FROM_NAME') || 'Sublynk';
         this.toEmail =
             this.config.get('CONTACT_TO_EMAIL') || this.fromEmail;
         const brevoApiKey = this.config.get('BREVO_API_KEY');
