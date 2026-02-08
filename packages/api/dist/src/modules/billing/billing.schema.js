@@ -6,7 +6,7 @@ exports.createCheckoutSchema = zod_1.z.object({
     planId: zod_1.z.string().uuid(),
     quantity: zod_1.z.number().int().positive().max(10).optional(),
     customer: zod_1.z.object({
-        telegramUsername: zod_1.z.string().min(1, 'Nom d\'utilisateur Telegram requis'),
+        telegramUsername: zod_1.z.string().min(1, "Nom d'utilisateur Telegram requis"),
         telegramUserId: zod_1.z.string().optional(),
         displayName: zod_1.z.string().optional(),
         email: zod_1.z.string().email().optional().or(zod_1.z.literal('')),

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import { OAuthButtons } from '@/components/auth/oauth-buttons';
+import { OAuthDivider } from '@/components/auth/oauth-divider';
+import { PasswordStrengthIndicator } from '@/components/auth/password-strength';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register } = useAuth();
   const t = useTranslations('auth.register');
+  const tOAuth = useTranslations('auth.oauth');
   const tCommon = useTranslations('common');
   const [formData, setFormData] = useState({
     email: '',
@@ -23,6 +28,15 @@ export default function RegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Handle OAuth error from redirect
+  useEffect(() => {
+    const oauthError = searchParams.get('error');
+    if (oauthError === 'oauth_failed') {
+      setError(tOAuth('error'));
+      toast.error(tOAuth('error'));
+    }
+  }, [searchParams, tOAuth]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFormData((prev) => ({
@@ -80,6 +94,11 @@ export default function RegisterPage() {
               </p>
             </div>
 
+            {/* OAuth Buttons */}
+            <OAuthButtons mode="register" disabled={isLoading} />
+
+            <OAuthDivider />
+
             <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
               {error && (
                 <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
@@ -96,6 +115,7 @@ export default function RegisterPage() {
                     id="firstName"
                     name="firstName"
                     type="text"
+                    autoComplete="given-name"
                     value={formData.firstName}
                     onChange={handleChange}
                     disabled={isLoading}
@@ -111,6 +131,7 @@ export default function RegisterPage() {
                     id="lastName"
                     name="lastName"
                     type="text"
+                    autoComplete="family-name"
                     value={formData.lastName}
                     onChange={handleChange}
                     disabled={isLoading}
@@ -128,6 +149,7 @@ export default function RegisterPage() {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -145,17 +167,16 @@ export default function RegisterPage() {
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
                   required
                   disabled={isLoading}
                   placeholder={t('passwordPlaceholder')}
-                  aria-describedby="password-hint"
+                  aria-describedby="password-strength"
                   className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
                 />
-                <p id="password-hint" className="text-xs text-[#6F6E77]">
-                  {t('passwordHint')}
-                </p>
+                <PasswordStrengthIndicator password={formData.password} />
               </div>
 
               <Button

@@ -19,8 +19,7 @@ export class ContactService {
   constructor(private readonly config: ConfigService) {
     this.fromEmail =
       this.config.get<string>('BREVO_FROM_EMAIL') || 'noreply@example.com';
-    this.fromName =
-      this.config.get<string>('BREVO_FROM_NAME') || 'Sublynk';
+    this.fromName = this.config.get<string>('BREVO_FROM_NAME') || 'Sublynk';
     this.toEmail =
       this.config.get<string>('CONTACT_TO_EMAIL') || this.fromEmail;
 
@@ -35,7 +34,9 @@ export class ContactService {
       );
       this.logger.log('Brevo contact email service initialized');
     } else {
-      this.logger.warn('Brevo not configured - contact emails will be logged only');
+      this.logger.warn(
+        'Brevo not configured - contact emails will be logged only',
+      );
     }
   }
 
@@ -48,7 +49,9 @@ export class ContactService {
       if (process.env.NODE_ENV === 'production') {
         throw new ServiceUnavailableException('Email service not configured');
       }
-      this.logger.log(`[CONTACT - DEV MODE] To: ${this.toEmail}, Subject: ${subject}`);
+      this.logger.log(
+        `[CONTACT - DEV MODE] To: ${this.toEmail}, Subject: ${subject}`,
+      );
       this.logger.debug(`[CONTACT - DEV MODE] Body: ${messageText}`);
       return;
     }

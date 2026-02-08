@@ -79,7 +79,11 @@ export class EntitlementsService {
     }
 
     // If CHANNEL_ACCESS, fetch the channel
-    let channel: { id: string; title: string | null; username: string | null } | null = null;
+    let channel: {
+      id: string;
+      title: string | null;
+      username: string | null;
+    } | null = null;
     if (
       entitlement.type === ('CHANNEL_ACCESS' as EntitlementType) &&
       entitlement.resourceId

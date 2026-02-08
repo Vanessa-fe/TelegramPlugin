@@ -92,7 +92,7 @@
       "emailPlaceholder": "ton@email.com",
       "password": "Mot de passe",
       "passwordPlaceholder": "••••••••",
-      "passwordHint": "8 caractères minimum",
+      "passwordHint": "10 caractères minimum avec majuscule, chiffre et caractère spécial",
       "submit": "Créer mon compte",
       "submitting": "Création du compte...",
       "trialBadge": "14 jours d'essai gratuit • Sans carte bancaire",
@@ -119,6 +119,24 @@
       "tryAgain": "réessayer",
       "toastSuccess": "Lien de réinitialisation envoyé",
       "toastError": "Échec de l'envoi du lien. Réessaie."
+    },
+    "oauth": {
+      "continueWithGoogle": "Continuer avec Google",
+      "signUpWithGoogle": "S'inscrire avec Google",
+      "or": "ou continuer avec email",
+      "error": "Échec de la connexion. Veuillez réessayer."
+    },
+    "passwordStrength": {
+      "weak": "Faible",
+      "medium": "Moyen",
+      "strong": "Fort",
+      "requirements": {
+        "minLength": "Au moins 10 caractères",
+        "uppercase": "Au moins une majuscule",
+        "lowercase": "Au moins une minuscule",
+        "number": "Au moins un chiffre",
+        "special": "Au moins un caractère spécial"
+      }
     }
   },
 
