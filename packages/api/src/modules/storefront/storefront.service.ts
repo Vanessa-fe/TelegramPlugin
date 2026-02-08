@@ -2,6 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { ProductStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .substring(0, 60);
+}
+
 @Injectable()
 export class StorefrontService {
   constructor(private readonly prisma: PrismaService) {}
@@ -76,6 +86,41 @@ export class StorefrontService {
         provider: pc.channel.provider,
       })),
     };
+  }
+
+  async getPublicProductBySlug(organizationSlug: string, productSlug: string) {
+    const organization = await this.prisma.organization.findUnique({
+      where: { slug: organizationSlug },
+      select: {
+        id: true,
+        saasActive: true,
+        stripeAccountId: true,
+      },
+    });
+
+    if (
+      !organization ||
+      !organization.saasActive ||
+      !organization.stripeAccountId
+    ) {
+      return null;
+    }
+
+    const products = await this.prisma.product.findMany({
+      where: { organizationId: organization.id, status: ProductStatus.ACTIVE },
+      select: { id: true, name: true },
+    });
+
+    const normalizedSlug = slugify(productSlug);
+    const matchedProduct = products.find(
+      (product) => slugify(product.name) === normalizedSlug,
+    );
+
+    if (!matchedProduct) {
+      return null;
+    }
+
+    return this.getPublicProduct(matchedProduct.id);
   }
 
   async getPublicOrganization(slug: string) {

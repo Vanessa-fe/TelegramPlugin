@@ -13,6 +13,15 @@ exports.StorefrontService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../../prisma/prisma.service");
+function slugify(text) {
+    return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+        .substring(0, 60);
+}
 let StorefrontService = class StorefrontService {
     prisma;
     constructor(prisma) {
@@ -82,6 +91,31 @@ let StorefrontService = class StorefrontService {
                 provider: pc.channel.provider,
             })),
         };
+    }
+    async getPublicProductBySlug(organizationSlug, productSlug) {
+        const organization = await this.prisma.organization.findUnique({
+            where: { slug: organizationSlug },
+            select: {
+                id: true,
+                saasActive: true,
+                stripeAccountId: true,
+            },
+        });
+        if (!organization ||
+            !organization.saasActive ||
+            !organization.stripeAccountId) {
+            return null;
+        }
+        const products = await this.prisma.product.findMany({
+            where: { organizationId: organization.id, status: client_1.ProductStatus.ACTIVE },
+            select: { id: true, name: true },
+        });
+        const normalizedSlug = slugify(productSlug);
+        const matchedProduct = products.find((product) => slugify(product.name) === normalizedSlug);
+        if (!matchedProduct) {
+            return null;
+        }
+        return this.getPublicProduct(matchedProduct.id);
     }
     async getPublicOrganization(slug) {
         const organization = await this.prisma.organization.findUnique({

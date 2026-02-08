@@ -5,23 +5,25 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { billingApi } from "@/lib/api/billing";
-import {
-  storefrontApi,
-  type PublicPlan,
-  type PublicProduct,
-} from "@/lib/api/storefront";
+import type { PublicPlan, PublicProduct } from "@/lib/api/storefront";
 import { Check, ShieldCheck, Star } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type PlanInterval = PublicPlan["interval"];
 
-export default function CheckoutPage() {
-  const params = useParams();
+type CheckoutPageContentProps = {
+  productKey: string;
+  fetchProduct: () => Promise<PublicProduct>;
+};
+
+export function CheckoutPageContent({
+  productKey,
+  fetchProduct,
+}: CheckoutPageContentProps) {
   const searchParams = useSearchParams();
-  const productId = params.productId as string;
   const locale = useLocale();
   const [product, setProduct] = useState<PublicProduct | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
@@ -50,7 +52,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     loadProduct();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
+  }, [productKey]);
 
   useEffect(() => {
     // Pre-fill from URL params if available
@@ -74,7 +76,7 @@ export default function CheckoutPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await storefrontApi.getProduct(productId);
+      const data = await fetchProduct();
       setProduct(data);
 
       // Auto-select if only one plan
@@ -367,11 +369,7 @@ export default function CheckoutPage() {
 
                 <Button
                   onClick={handleCheckout}
-                  disabled={
-                    !selectedPlan ||
-                    submitting ||
-                    !telegramUsername
-                  }
+                  disabled={!selectedPlan || submitting || !telegramUsername}
                   className="w-full"
                   size="lg"
                 >

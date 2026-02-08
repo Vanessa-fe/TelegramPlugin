@@ -61,6 +61,16 @@ export const storefrontApi = {
     return data;
   },
 
+  async getProductBySlug(
+    organizationSlug: string,
+    productSlug: string,
+  ): Promise<PublicProduct> {
+    const { data } = await publicClient.get<PublicProduct>(
+      `/storefront/organizations/${organizationSlug}/products/${productSlug}`,
+    );
+    return data;
+  },
+
   async getOrganization(slug: string): Promise<PublicOrganization> {
     const { data } = await publicClient.get<PublicOrganization>(
       `/storefront/organizations/${slug}`

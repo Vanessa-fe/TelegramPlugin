@@ -27,6 +27,31 @@ export declare class StorefrontService {
             provider: import("@prisma/client").$Enums.ChannelProvider;
         }[];
     } | null>;
+    getPublicProductBySlug(organizationSlug: string, productSlug: string): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        organization: {
+            id: string;
+            name: string;
+            slug: string;
+        };
+        plans: {
+            id: string;
+            name: string;
+            priceCents: number;
+            currency: string;
+            interval: import("@prisma/client").$Enums.PlanInterval;
+            trialPeriodDays: number | null;
+            description: string | null;
+            accessDurationDays: number | null;
+        }[];
+        channels: {
+            id: string;
+            title: string | null;
+            provider: import("@prisma/client").$Enums.ChannelProvider;
+        }[];
+    } | null>;
     getPublicOrganization(slug: string): Promise<{
         id: string;
         name: string;

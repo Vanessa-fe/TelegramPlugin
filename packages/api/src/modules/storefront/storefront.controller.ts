@@ -17,6 +17,22 @@ export class StorefrontController {
     return product;
   }
 
+  @Get('organizations/:slug/products/:productSlug')
+  @Public()
+  async getProductBySlug(
+    @Param('slug') slug: string,
+    @Param('productSlug') productSlug: string,
+  ) {
+    const product = await this.storefrontService.getPublicProductBySlug(
+      slug,
+      productSlug,
+    );
+    if (!product) {
+      throw new NotFoundException('Produit introuvable');
+    }
+    return product;
+  }
+
   @Get('organizations/:slug')
   @Public()
   async getOrganizationBySlug(@Param('slug') slug: string) {

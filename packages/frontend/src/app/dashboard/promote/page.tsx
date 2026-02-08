@@ -5,6 +5,7 @@ import { productsApi } from '@/lib/api/products';
 import { plansApi } from '@/lib/api/plans';
 import type { Product } from '@/types/product';
 import type { Plan } from '@/types/plan';
+import { organizationsApi } from '@/lib/api/organizations';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
+import { slugify } from '@/lib/slugify';
 
 function formatPrice(cents: number, currency: string, locale: string): string {
   return new Intl.NumberFormat(locale, {
@@ -35,6 +37,9 @@ export default function PromotePage() {
   const locale = useLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [organizationSlugs, setOrganizationSlugs] = useState<
+    Record<string, string>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -83,15 +88,48 @@ export default function PromotePage() {
     return products.find(p => p.id === selectedProductId);
   }, [products, selectedProductId]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOrganizationSlug(orgId: string) {
+      try {
+        const organization = await organizationsApi.findOne(orgId);
+        if (!cancelled) {
+          setOrganizationSlugs(prev => ({ ...prev, [orgId]: organization.slug }));
+        }
+      } catch {
+        // Fallback to UUID link if organization lookup fails (e.g. permissions)
+      }
+    }
+
+    if (!selectedProduct) return;
+    const orgId = selectedProduct.organizationId;
+    if (organizationSlugs[orgId]) return;
+    void loadOrganizationSlug(orgId);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProduct, organizationSlugs]);
+
   const productPlans = useMemo(() => {
     return plans.filter(p => p.productId === selectedProductId && p.isActive);
   }, [plans, selectedProductId]);
 
+  const organizationSlug = useMemo(() => {
+    if (!selectedProduct) return '';
+    return organizationSlugs[selectedProduct.organizationId] || '';
+  }, [organizationSlugs, selectedProduct]);
+
   // Generate payment link
   const paymentLink = useMemo(() => {
     if (!selectedProduct) return '';
+    const productSlug = slugify(selectedProduct.name);
+    if (organizationSlug && productSlug) {
+      return `${window.location.origin}/checkout/${organizationSlug}/${productSlug}`;
+    }
     return `${window.location.origin}/checkout/${selectedProduct.id}`;
-  }, [selectedProduct]);
+  }, [selectedProduct, organizationSlug]);
 
   // Generate share message
   const shareMessage = useMemo(() => {

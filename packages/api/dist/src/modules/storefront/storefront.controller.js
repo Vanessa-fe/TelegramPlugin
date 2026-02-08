@@ -29,6 +29,13 @@ let StorefrontController = class StorefrontController {
         }
         return product;
     }
+    async getProductBySlug(slug, productSlug) {
+        const product = await this.storefrontService.getPublicProductBySlug(slug, productSlug);
+        if (!product) {
+            throw new common_1.NotFoundException('Produit introuvable');
+        }
+        return product;
+    }
     async getOrganizationBySlug(slug) {
         const organization = await this.storefrontService.getPublicOrganization(slug);
         if (!organization) {
@@ -49,6 +56,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], StorefrontController.prototype, "getProduct", null);
+__decorate([
+    (0, common_1.Get)('organizations/:slug/products/:productSlug'),
+    (0, public_decorator_1.Public)(),
+    __param(0, (0, common_1.Param)('slug')),
+    __param(1, (0, common_1.Param)('productSlug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], StorefrontController.prototype, "getProductBySlug", null);
 __decorate([
     (0, common_1.Get)('organizations/:slug'),
     (0, public_decorator_1.Public)(),
