@@ -176,7 +176,7 @@
       "accountCreated": "Account created",
       "connectPayment": "Connect my payment account",
       "createProduct": "Create my offer",
-      "connectChannel": "Connect my Telegram channel",
+      "connectChannel": "Connect my Telegram channel (add @SublynkBot)",
       "promoteProduct": "Promote my offer"
     }
   },
@@ -771,7 +771,7 @@
       "important": {
         "prefix": "⚠️",
         "label": "Important:",
-        "text": "Make sure your Telegram bot (configured in environment variables) is an admin of this channel with the permissions required to invite users."
+        "text": "Add @SublynkBot as an administrator of this channel with the permissions required to invite users."
       }
     }
   },

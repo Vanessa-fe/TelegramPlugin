@@ -30,15 +30,6 @@ function formatPrice(cents: number, currency: string, locale: string): string {
   }).format(cents / 100);
 }
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-}
-
 export default function PromotePage() {
   const t = useTranslations('promote');
   const locale = useLocale();
@@ -96,12 +87,10 @@ export default function PromotePage() {
     return plans.filter(p => p.productId === selectedProductId && p.isActive);
   }, [plans, selectedProductId]);
 
-  // Generate payment link (placeholder - would be replaced with actual Stripe link)
+  // Generate payment link
   const paymentLink = useMemo(() => {
     if (!selectedProduct) return '';
-    const slug = slugify(selectedProduct.name);
-    // This should be the actual payment URL from your backend
-    return `${window.location.origin}/pay/${slug}`;
+    return `${window.location.origin}/checkout/${selectedProduct.id}`;
   }, [selectedProduct]);
 
   // Generate share message

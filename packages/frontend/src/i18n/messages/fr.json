@@ -176,7 +176,7 @@
       "accountCreated": "Compte créé",
       "connectPayment": "Connecter mon compte de paiement",
       "createProduct": "Créer mon offre",
-      "connectChannel": "Connecter mon canal Telegram",
+      "connectChannel": "Connecter mon canal Telegram (ajouter @SublynkBot)",
       "promoteProduct": "Promouvoir mon offre"
     }
   },
@@ -790,7 +790,7 @@
       "important": {
         "prefix": "⚠️",
         "label": "Important :",
-        "text": "Assurez-vous que votre bot Telegram (configuré dans les variables d'environnement) est administrateur de ce canal avec les permissions nécessaires pour inviter des utilisateurs."
+        "text": "Ajoutez @SublynkBot comme administrateur de ce canal avec les permissions nécessaires pour inviter des utilisateurs."
       }
     }
   },
