@@ -72,6 +72,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @Public()
   @UseInterceptors(CookieClearInterceptor)
   @ClearAuthCookies()
   logout(): { message: string } {

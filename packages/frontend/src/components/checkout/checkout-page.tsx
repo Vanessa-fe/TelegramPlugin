@@ -48,6 +48,21 @@ export function CheckoutPageContent({
   const [paymentMethod, setPaymentMethod] = useState<
     "stripe" | "telegram_stars"
   >("stripe");
+  const brandColor = "#990FFA";
+  const brandHover = "#7D0CC8";
+  const brandDisabledBg = "#E8D9FB";
+  const brandDisabledText = "#6E35C9";
+  const [focusedField, setFocusedField] = useState<
+    "telegram" | "displayName" | "email" | null
+  >(null);
+  const inputFocusStyle =
+    focusedField === null
+      ? undefined
+      : {
+          outline: "none",
+          borderColor: brandColor,
+          boxShadow: `0 0 0 3px ${brandColor}33`,
+        };
 
   useEffect(() => {
     loadProduct();
@@ -152,7 +167,7 @@ export function CheckoutPageContent({
 
   if (error || !product) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-slate-50 to-slate-100">
         <Card className="p-8 max-w-md text-center">
           <div className="text-6xl mb-4">🔒</div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -172,7 +187,7 @@ export function CheckoutPageContent({
         {/* Header */}
         <div className="text-center mb-10">
           <p className="text-sm text-gray-500 mb-2">
-            {t("offeredBy")} {product.organization.name}
+            {t("offeredBy", { name: product.organization.name })}
           </p>
           <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
           {product.description && (
@@ -186,7 +201,7 @@ export function CheckoutPageContent({
               {product.channels.map((channel) => (
                 <span
                   key={channel.id}
-                  className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium"
+                  className="inline-flex items-center gap-1 bg-[#F3E8FF] text-[#990FFA] px-2 py-1 rounded-full text-xs font-medium"
                 >
                   {channel.provider === "TELEGRAM" ? "📱" : "💬"}
                   {channel.title || t("channelFallback")}
@@ -208,18 +223,31 @@ export function CheckoutPageContent({
                 {t("choosePlan")}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
-                {product.plans.map((plan, index) => (
-                  <Card
-                    key={plan.id}
-                    className={`p-6 cursor-pointer transition-all relative ${
-                      selectedPlan?.id === plan.id
-                        ? "ring-2 ring-blue-500 bg-blue-50 shadow-lg"
-                        : "hover:shadow-md hover:border-gray-300"
-                    }`}
-                    onClick={() => setSelectedPlan(plan)}
-                  >
+                {product.plans.map((plan, index) => {
+                  const isSelected = selectedPlan?.id === plan.id;
+                  return (
+                    <Card
+                      key={plan.id}
+                      className={`p-6 cursor-pointer transition-all relative ${
+                        isSelected
+                          ? "bg-[#F7F1FF] shadow-lg"
+                          : "hover:shadow-md hover:border-[#990FFA]"
+                      }`}
+                      style={
+                        isSelected
+                          ? {
+                              borderColor: brandColor,
+                              boxShadow: `0 0 0 2px ${brandColor}, 0 16px 30px rgba(17, 24, 39, 0.12)`,
+                            }
+                          : undefined
+                      }
+                      onClick={() => setSelectedPlan(plan)}
+                    >
                     {index === 0 && product.plans.length > 1 && (
-                      <div className="absolute -top-3 left-4 bg-blue-600 text-white text-xs px-3 py-1 rounded-full font-medium">
+                      <div
+                        className="absolute -top-3 left-4 text-white text-xs px-3 py-1 rounded-full font-medium"
+                        style={{ backgroundColor: brandColor }}
+                      >
                         {t("popular")}
                       </div>
                     )}
@@ -229,8 +257,8 @@ export function CheckoutPageContent({
                           <h3 className="text-lg font-semibold text-gray-900">
                             {plan.name}
                           </h3>
-                          {selectedPlan?.id === plan.id && (
-                            <Check className="h-5 w-5 text-blue-600" />
+                          {isSelected && (
+                            <Check className="h-5 w-5 text-[#990FFA]" />
                           )}
                         </div>
                         {plan.description && (
@@ -260,8 +288,9 @@ export function CheckoutPageContent({
                         )}
                       </div>
                     </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             </div>
 
@@ -279,6 +308,11 @@ export function CheckoutPageContent({
                     onChange={(e) => setTelegramUsername(e.target.value)}
                     placeholder={t("form.telegramPlaceholder")}
                     required
+                    onFocus={() => setFocusedField("telegram")}
+                    onBlur={() => setFocusedField(null)}
+                    style={
+                      focusedField === "telegram" ? inputFocusStyle : undefined
+                    }
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     {t("form.telegramHelp")}
@@ -292,6 +326,13 @@ export function CheckoutPageContent({
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder={t("form.namePlaceholder")}
+                    onFocus={() => setFocusedField("displayName")}
+                    onBlur={() => setFocusedField(null)}
+                    style={
+                      focusedField === "displayName"
+                        ? inputFocusStyle
+                        : undefined
+                    }
                   />
                 </div>
 
@@ -303,6 +344,11 @@ export function CheckoutPageContent({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t("form.emailPlaceholder")}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={() => setFocusedField(null)}
+                    style={
+                      focusedField === "email" ? inputFocusStyle : undefined
+                    }
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     {t("form.emailHelp")}
@@ -317,8 +363,8 @@ export function CheckoutPageContent({
                     <div
                       className={`border rounded-lg p-3 cursor-pointer transition-all ${
                         paymentMethod === "stripe"
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "border-[#990FFA] bg-[#F7F1FF]"
+                          : "border-gray-200 hover:border-[#990FFA]"
                       }`}
                       onClick={() => setPaymentMethod("stripe")}
                     >
@@ -329,7 +375,8 @@ export function CheckoutPageContent({
                           value="stripe"
                           checked={paymentMethod === "stripe"}
                           onChange={() => setPaymentMethod("stripe")}
-                          className="h-4 w-4 text-blue-600"
+                          className="h-4 w-4"
+                          style={{ accentColor: brandColor }}
                         />
                         <div className="flex-1">
                           <div className="font-medium text-sm">
@@ -342,8 +389,8 @@ export function CheckoutPageContent({
                     <div
                       className={`border rounded-lg p-3 cursor-pointer transition-all ${
                         paymentMethod === "telegram_stars"
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "border-[#990FFA] bg-[#F7F1FF]"
+                          : "border-gray-200 hover:border-[#990FFA]"
                       }`}
                       onClick={() => setPaymentMethod("telegram_stars")}
                     >
@@ -354,7 +401,8 @@ export function CheckoutPageContent({
                           value="telegram_stars"
                           checked={paymentMethod === "telegram_stars"}
                           onChange={() => setPaymentMethod("telegram_stars")}
-                          className="h-4 w-4 text-blue-600"
+                          className="h-4 w-4"
+                          style={{ accentColor: brandColor }}
                         />
                         <div className="flex-1">
                           <div className="font-medium text-sm flex items-center gap-1">
@@ -367,34 +415,57 @@ export function CheckoutPageContent({
                   </div>
                 </div>
 
+                {selectedPlan && (
+                  <div className="rounded-lg border border-slate-200 bg-white/70 px-3 py-2 text-sm text-slate-700">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-medium">{selectedPlan.name}</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatPrice(
+                          selectedPlan.priceCents,
+                          selectedPlan.currency,
+                        )}
+                        <span className="ml-1 text-xs text-slate-500">
+                          {intervalLabels[selectedPlan.interval]}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {(!selectedPlan || !telegramUsername) && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    {!selectedPlan
+                      ? t("errors.selectPlan")
+                      : t("form.telegramRequired")}
+                  </div>
+                )}
+
                 <Button
                   onClick={handleCheckout}
                   disabled={!selectedPlan || submitting || !telegramUsername}
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold transition-colors hover:brightness-95 disabled:opacity-100"
                   size="lg"
+                  style={
+                    selectedPlan && telegramUsername && !submitting
+                      ? { backgroundColor: brandColor, color: "#FFFFFF" }
+                      : {
+                          backgroundColor: brandDisabledBg,
+                          color: brandDisabledText,
+                        }
+                  }
                 >
-                  {submitting ? (
-                    t("cta.processing")
-                  ) : selectedPlan ? (
-                    paymentMethod === "stripe" ? (
-                      <>
-                        {t("cta.pay", {
-                          amount: formatPrice(
-                            selectedPlan.priceCents,
-                            selectedPlan.currency
-                          ),
-                        })}
-                        {formatPrice(
-                          selectedPlan.priceCents,
-                          selectedPlan.currency
-                        )}
-                      </>
-                    ) : (
-                      t("cta.continueWithTelegram")
-                    )
-                  ) : (
-                    t("cta.selectPlan")
-                  )}
+                  {submitting
+                    ? t("cta.processing")
+                    : !selectedPlan
+                      ? t("cta.selectPlan")
+                      : paymentMethod === "stripe"
+                        ? t("cta.pay", {
+                            amount: formatPrice(
+                              selectedPlan.priceCents,
+                              selectedPlan.currency,
+                            ),
+                          })
+                        : t("cta.continueWithTelegram")}
                 </Button>
 
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-500">

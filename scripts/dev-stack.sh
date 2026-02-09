@@ -26,21 +26,38 @@ is_port_in_use() {
 
 find_available_port() {
   local start_port="$1"
+  local reserved_port="${2:-}"
   local port="$start_port"
-  while is_port_in_use "$port"; do
+  while is_port_in_use "$port" || { [[ -n "$reserved_port" ]] && [[ "$port" -eq "$reserved_port" ]]; }; do
     port=$((port + 1))
   done
   echo "$port"
 }
 
-API_PORT="${PORT:-3001}"
+API_PORT="${API_PORT:-${PORT:-3001}}"
 if is_port_in_use "$API_PORT"; then
   NEW_PORT="$(find_available_port "$API_PORT")"
   echo "⚠️  Port $API_PORT is in use, switching API to $NEW_PORT"
   API_PORT="$NEW_PORT"
 fi
 
-export PORT="$API_PORT"
+FRONTEND_PORT="${FRONTEND_PORT:-3000}"
+if [[ "$FRONTEND_PORT" -ne 3000 ]]; then
+  echo "⚠️  Frontend is set to $FRONTEND_PORT (expected 3000). Update CORS_ORIGIN/OAuth URLs if you keep this."
+fi
+if is_port_in_use "$FRONTEND_PORT"; then
+  echo "❌ Port $FRONTEND_PORT is already in use. Telegram-plugin frontend requires 3000."
+  echo "   Stop the other server or choose a different port and update env URLs accordingly."
+  exit 1
+fi
+if [[ "$FRONTEND_PORT" -eq "$API_PORT" ]]; then
+  echo "❌ FRONTEND_PORT ($FRONTEND_PORT) conflicts with API_PORT ($API_PORT)."
+  exit 1
+fi
+
+export API_PORT="$API_PORT"
+export FRONTEND_PORT="$FRONTEND_PORT"
+export PORT="$FRONTEND_PORT"
 if [[ -z "${NEXT_PUBLIC_API_URL:-}" || "${NEXT_PUBLIC_API_URL:-}" == http://localhost:* ]]; then
   export NEXT_PUBLIC_API_URL="http://localhost:$API_PORT"
 fi
@@ -95,7 +112,7 @@ fi
 
 echo "🚀 Starting dev stack (API + Frontend + Bot + Worker)..."
 echo ""
-echo "   Frontend: http://localhost:3000"
+echo "   Frontend: http://localhost:$FRONTEND_PORT"
 echo "   API:      http://localhost:$API_PORT"
 echo ""
 exec pnpm dev

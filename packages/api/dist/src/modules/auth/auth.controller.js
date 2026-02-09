@@ -80,6 +80,7 @@ __decorate([
 ], AuthController.prototype, "refresh", null);
 __decorate([
     (0, common_1.Post)('logout'),
+    (0, public_decorator_1.Public)(),
     (0, common_1.UseInterceptors)(cookie_clear_interceptor_1.CookieClearInterceptor),
     (0, clear_auth_cookies_decorator_1.ClearAuthCookies)(),
     __metadata("design:type", Function),

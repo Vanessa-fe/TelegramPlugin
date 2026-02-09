@@ -973,7 +973,7 @@
   },
 
   "checkout": {
-    "offeredBy": "Offert par {name}",
+    "offeredBy": "{name}",
     "accessTo": "Accès à :",
     "channelFallback": "Canal",
     "choosePlan": "Choisir votre formule",

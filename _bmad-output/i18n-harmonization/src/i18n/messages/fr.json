@@ -460,7 +460,7 @@
   },
 
   "checkout": {
-    "offeredBy": "Offert par {name}",
+    "offeredBy": "{name}",
     "accessTo": "Accès à :",
     "choosePlan": "Choisir votre formule",
     "popular": "Populaire",
