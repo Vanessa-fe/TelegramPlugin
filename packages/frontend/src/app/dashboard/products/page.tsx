@@ -12,7 +12,7 @@ import type { Product, ProductStatus } from "@/types/product";
 import { List, MoreHorizontal, Package, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const statusClassNames: Record<ProductStatus, string> = {
@@ -32,11 +32,7 @@ export default function ProductsPage() {
     ARCHIVED: t("statusLabels.ARCHIVED"),
   };
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  async function loadProducts() {
+  const loadProducts = useCallback(async () => {
     try {
       const data = await productsApi.findAll();
       setProducts(data);
@@ -50,7 +46,11 @@ export default function ProductsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   if (isLoading) {
     return (

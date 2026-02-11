@@ -22,7 +22,7 @@ import { ArrowLeft, Plus, CheckCircle, XCircle, Clock, Loader2 } from "lucide-re
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const statusClassNames: Record<PayoutStatus, string> = {
@@ -64,11 +64,7 @@ export default function AffiliatePayoutsPage() {
     FAILED: t("payouts.statusLabels.FAILED"),
   };
 
-  useEffect(() => {
-    loadData();
-  }, [params.id]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const id = params.id as string;
       const [affiliateData, payoutsData] = await Promise.all([
@@ -90,7 +86,11 @@ export default function AffiliatePayoutsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [params.id, router, t]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   async function handleCreatePayout() {
     if (!affiliate) return;

@@ -9,7 +9,7 @@ import type { Organization } from "@/types/organization";
 import type { CreateAffiliateDto } from "@/types/affiliate";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function NewAffiliatePage() {
@@ -20,18 +20,7 @@ export default function NewAffiliatePage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) return;
-
-    if (user.role !== UserRole.SUPERADMIN) {
-      setIsLoading(false);
-      return;
-    }
-
-    loadOrganizations();
-  }, [user]);
-
-  async function loadOrganizations() {
+  const loadOrganizations = useCallback(async () => {
     try {
       const data = await organizationsApi.findAll();
       setOrganizations(data);
@@ -45,7 +34,18 @@ export default function NewAffiliatePage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.role !== UserRole.SUPERADMIN) {
+      setIsLoading(false);
+      return;
+    }
+
+    loadOrganizations();
+  }, [user, loadOrganizations]);
 
   async function handleSubmit(data: CreateAffiliateDto) {
     try {

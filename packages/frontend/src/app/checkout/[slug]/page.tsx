@@ -10,7 +10,6 @@ export default function CheckoutPage() {
 
   return (
     <CheckoutPageContent
-      productKey={productId}
       fetchProduct={() => storefrontApi.getProduct(productId)}
     />
   );

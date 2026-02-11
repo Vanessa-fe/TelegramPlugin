@@ -12,7 +12,7 @@ import type { Affiliate, AffiliateStatus } from "@/types/affiliate";
 import { MoreHorizontal, Plus, Users, DollarSign } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const statusClassNames: Record<AffiliateStatus, string> = {
@@ -35,11 +35,7 @@ export default function AffiliatesPage() {
     DEACTIVATED: t("statusLabels.DEACTIVATED"),
   };
 
-  useEffect(() => {
-    loadAffiliates();
-  }, []);
-
-  async function loadAffiliates() {
+  const loadAffiliates = useCallback(async () => {
     try {
       const data = await affiliatesApi.findAll();
       setAffiliates(data);
@@ -51,7 +47,11 @@ export default function AffiliatesPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadAffiliates();
+  }, [loadAffiliates]);
 
   async function handleDeactivate(id: string) {
     try {

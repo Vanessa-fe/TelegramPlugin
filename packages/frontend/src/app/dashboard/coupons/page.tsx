@@ -12,7 +12,7 @@ import type { Coupon, CouponStatus, CouponType } from "@/types/coupon";
 import { MoreHorizontal, Percent, Plus, Tag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const statusClassNames: Record<CouponStatus, string> = {
@@ -38,11 +38,7 @@ export default function CouponsPage() {
     DISABLED: t("statusLabels.DISABLED"),
   };
 
-  useEffect(() => {
-    loadCoupons();
-  }, []);
-
-  async function loadCoupons() {
+  const loadCoupons = useCallback(async () => {
     try {
       const data = await couponsApi.findAll();
       setCoupons(data);
@@ -54,7 +50,11 @@ export default function CouponsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadCoupons();
+  }, [loadCoupons]);
 
   async function handleDisable(id: string) {
     try {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { organizationsApi } from '@/lib/api/organizations';
 import type { Organization } from '@/types/organization';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,11 +21,7 @@ export default function BillingPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadOrganizations();
-  }, []);
-
-  async function loadOrganizations() {
+  const loadOrganizations = useCallback(async () => {
     try {
       const data = await organizationsApi.findAll();
       setOrganizations(data);
@@ -37,7 +33,11 @@ export default function BillingPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadOrganizations();
+  }, [loadOrganizations]);
 
   const connectedStripeCount = useMemo(
     () => organizations.filter((org) => Boolean(org.stripeAccountId)).length,

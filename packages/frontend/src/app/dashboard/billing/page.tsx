@@ -11,7 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export default function BillingPage() {
@@ -21,11 +21,7 @@ export default function BillingPage() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isOpeningStripe, setIsOpeningStripe] = useState(false);
 
-  useEffect(() => {
-    loadStatus();
-  }, []);
-
-  async function loadStatus() {
+  const loadStatus = useCallback(async () => {
     try {
       const data = await billingApi.getStripeStatus();
       setStatus(data);
@@ -37,7 +33,11 @@ export default function BillingPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
 
   async function handleConnectStripe() {
     try {

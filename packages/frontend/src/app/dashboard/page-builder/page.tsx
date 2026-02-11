@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, FileText } from "lucide-react";
 
@@ -17,11 +17,7 @@ export default function PageBuilderPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
-  useEffect(() => {
-    loadLandingPage();
-  }, []);
-
-  async function loadLandingPage() {
+  const loadLandingPage = useCallback(async () => {
     try {
       const [data, slugData] = await Promise.all([
         landingPagesApi.getMyLandingPage(),
@@ -40,7 +36,11 @@ export default function PageBuilderPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadLandingPage();
+  }, [loadLandingPage]);
 
   async function handleCreateLandingPage() {
     setIsCreating(true);

@@ -288,6 +288,7 @@
       "password": "Mot de passe",
       "passwordPlaceholder": "••••••••",
       "passwordHint": "10 caractères minimum avec majuscule, chiffre et caractère spécial",
+      "useSuggested": "Utiliser le mot de passe suggéré",
       "submit": "Créer mon compte",
       "submitting": "Création du compte...",
       "trialBadge": "14 jours d'essai gratuit • Sans carte bancaire",
@@ -298,6 +299,7 @@
       "and": "et",
       "privacy": "Politique de confidentialité",
       "success": "Compte créé avec succès",
+      "suggestedApplied": "Mot de passe suggéré appliqué",
       "error": "Erreur lors de la création du compte"
     },
     "forgotPassword": {
@@ -323,6 +325,7 @@
       "confirmPassword": "Confirmer le mot de passe",
       "confirmPlaceholder": "••••••••",
       "passwordHint": "10 caractères minimum avec majuscule, chiffre et caractère spécial",
+      "useSuggested": "Utiliser le mot de passe suggéré",
       "submit": "Réinitialiser",
       "submitting": "Réinitialisation...",
       "backToLogin": "Retour à la connexion",
@@ -331,6 +334,7 @@
       "successTitle": "Mot de passe mis à jour",
       "successDescription": "Ton mot de passe a été mis à jour.",
       "successCta": "Aller au dashboard",
+      "suggestedApplied": "Mot de passe suggéré appliqué",
       "toastSuccess": "Mot de passe mis à jour",
       "toastError": "Impossible de réinitialiser le mot de passe. Réessaie."
     },

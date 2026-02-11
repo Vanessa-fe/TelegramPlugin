@@ -81,13 +81,15 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
           <li
             key={req.key}
             className={cn(
-              'flex items-center gap-1.5',
-              req.met ? 'text-green-600' : 'text-text-secondary',
+              'flex items-center gap-1.5 rounded-md px-2 py-1',
+              req.met
+                ? 'bg-green-50 text-green-800 font-medium'
+                : 'bg-gray-100 text-gray-700',
             )}
           >
             {req.met ? (
               <svg
-                className="h-3.5 w-3.5"
+                className="h-3.5 w-3.5 text-green-700"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 aria-hidden="true"
@@ -100,7 +102,7 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
               </svg>
             ) : (
               <svg
-                className="h-3.5 w-3.5"
+                className="h-3.5 w-3.5 text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

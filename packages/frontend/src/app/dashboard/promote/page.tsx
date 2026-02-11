@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { productsApi } from '@/lib/api/products';
 import { plansApi } from '@/lib/api/plans';
 import type { Product } from '@/types/product';
@@ -56,11 +56,7 @@ export default function PromotePage() {
     [t]
   );
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const [productsData, plansData] = await Promise.all([
         productsApi.findAll(),
@@ -82,7 +78,11 @@ export default function PromotePage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const selectedProduct = useMemo(() => {
     return products.find(p => p.id === selectedProductId);

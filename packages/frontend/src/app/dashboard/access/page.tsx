@@ -19,7 +19,7 @@ import type {
 import { Filter, Key, Lock, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type AccessStatus = "active" | "suspended" | "revoked" | "expired";
@@ -91,11 +91,7 @@ export default function AccessPage() {
     return map;
   }, [channels]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       const [entData, chData] = await Promise.all([
         entitlementsApi.findAll(),
@@ -111,7 +107,11 @@ export default function AccessPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Compute status for each entitlement
   const entitlementsWithStatus = useMemo(() => {

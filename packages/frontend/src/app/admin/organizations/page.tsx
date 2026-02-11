@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { organizationsApi } from '@/lib/api/organizations';
 import type { Organization } from '@/types/organization';
@@ -23,11 +23,7 @@ export default function OrganizationsPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadOrganizations();
-  }, []);
-
-  async function loadOrganizations() {
+  const loadOrganizations = useCallback(async () => {
     try {
       const data = await organizationsApi.findAll();
       setOrganizations(data);
@@ -39,7 +35,11 @@ export default function OrganizationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    loadOrganizations();
+  }, [loadOrganizations]);
 
   if (isLoading) {
     return (

@@ -12,6 +12,72 @@ import { useTranslations } from 'next-intl';
 import { OAuthButtons } from '@/components/auth/oauth-buttons';
 import { OAuthDivider } from '@/components/auth/oauth-divider';
 import { PasswordStrengthIndicator } from '@/components/auth/password-strength';
+import { CheckCircle2 } from 'lucide-react';
+
+type ErrorMessage =
+  | string
+  | string[]
+  | { _errors?: string[]; [key: string]: unknown }
+  | undefined;
+
+function extractZodErrors(message: ErrorMessage): string[] {
+  if (!message) return [];
+  if (typeof message === 'string') return [message];
+  if (Array.isArray(message)) return message.filter(Boolean);
+  if (typeof message !== 'object') return [];
+
+  const errors: string[] = [];
+  const asRecord = message as Record<string, unknown>;
+  const rootErrors = (asRecord._errors as string[] | undefined) ?? [];
+  if (rootErrors.length > 0) {
+    errors.push(...rootErrors);
+  }
+
+  Object.values(asRecord).forEach((value) => {
+    if (
+      value &&
+      typeof value === 'object' &&
+      '_errors' in value &&
+      Array.isArray((value as { _errors?: string[] })._errors)
+    ) {
+      errors.push(...((value as { _errors?: string[] })._errors ?? []));
+    }
+  });
+
+  return errors;
+}
+
+function getRandomInt(max: number): number {
+  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
+    const buffer = new Uint32Array(1);
+    window.crypto.getRandomValues(buffer);
+    return buffer[0] % max;
+  }
+  return Math.floor(Math.random() * max);
+}
+
+function generateSuggestedPassword(): string {
+  const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijkmnopqrstuvwxyz';
+  const numbers = '23456789';
+  const specials = '!@#$%^&*()-_=+[]{}';
+  const all = `${uppercase}${lowercase}${numbers}${specials}`;
+
+  const pick = (chars: string) =>
+    chars[getRandomInt(chars.length)];
+
+  const required = [
+    pick(uppercase),
+    pick(lowercase),
+    pick(numbers),
+    pick(specials),
+  ];
+
+  const remainingLength = 12;
+  const rest = Array.from({ length: remainingLength }, () => pick(all));
+  const password = [...required, ...rest].sort(() => 0.5 - Math.random());
+  return password.join('');
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -60,13 +126,31 @@ export default function RegisterPage() {
       toast.success(t('success'));
       router.push('/dashboard');
     } catch (err) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      const msg = axiosError.response?.data?.message || t('error');
+      const axiosError = err as {
+        response?: { data?: { message?: ErrorMessage } };
+      };
+      const serverMessage = axiosError.response?.data?.message;
+      const zodErrors = extractZodErrors(serverMessage);
+      const msg =
+        zodErrors.length > 0
+          ? zodErrors.join(' ')
+          : typeof serverMessage === 'string'
+            ? serverMessage
+            : t('error');
       setError(msg);
       toast.error(msg);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleUseSuggestedPassword() {
+    const suggestion = generateSuggestedPassword();
+    setFormData((prev) => ({
+      ...prev,
+      password: suggestion,
+    }));
+    toast.success(t('suggestedApplied'));
   }
 
   return (
@@ -176,6 +260,19 @@ export default function RegisterPage() {
                   aria-describedby="password-strength"
                   className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                 />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-text-secondary">
+                    {t('passwordHint')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleUseSuggestedPassword}
+                    className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {t('useSuggested')}
+                  </button>
+                </div>
                 <PasswordStrengthIndicator password={formData.password} />
               </div>
 

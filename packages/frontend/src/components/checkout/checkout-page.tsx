@@ -13,18 +13,16 @@ import type { ValidateAffiliateResult } from "@/types/affiliate";
 import { Check, ShieldCheck, Star, Tag, Loader2, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type PlanInterval = PublicPlan["interval"];
 
 type CheckoutPageContentProps = {
-  productKey: string;
   fetchProduct: () => Promise<PublicProduct>;
 };
 
 export function CheckoutPageContent({
-  productKey,
   fetchProduct,
 }: CheckoutPageContentProps) {
   const searchParams = useSearchParams();
@@ -65,10 +63,28 @@ export function CheckoutPageContent({
     selectedPlan && telegramUsername && !submitting
   );
 
+  const loadProduct = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchProduct();
+      setProduct(data);
+
+      // Auto-select if only one plan
+      if (data.plans.length === 1) {
+        setSelectedPlan(data.plans[0]);
+      }
+    } catch (err) {
+      console.error(err);
+      setError(t("errors.productNotFound"));
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchProduct, t]);
+
   useEffect(() => {
     loadProduct();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productKey]);
+  }, [loadProduct]);
 
   useEffect(() => {
     // Pre-fill from URL params if available
@@ -92,21 +108,7 @@ export function CheckoutPageContent({
     }
   }, [searchParams, product]);
 
-  // Auto-validate affiliate code when pre-filled from URL
-  useEffect(() => {
-    if (affiliateCode && product && !affiliateResult) {
-      validateAffiliateCode();
-    }
-  }, [affiliateCode, product]);
-
-  // Auto-validate coupon when pre-filled from URL and plan is selected
-  useEffect(() => {
-    if (couponCode && selectedPlan && product && !couponResult) {
-      validateCouponCode();
-    }
-  }, [couponCode, selectedPlan, product]);
-
-  async function validateCouponCode() {
+  const validateCouponCode = useCallback(async () => {
     if (!couponCode || !selectedPlan || !product) return;
 
     setValidatingCoupon(true);
@@ -125,9 +127,9 @@ export function CheckoutPageContent({
     } finally {
       setValidatingCoupon(false);
     }
-  }
+  }, [couponCode, selectedPlan, product, t]);
 
-  async function validateAffiliateCode() {
+  const validateAffiliateCode = useCallback(async () => {
     if (!affiliateCode || !product) return;
 
     setValidatingAffiliate(true);
@@ -145,30 +147,25 @@ export function CheckoutPageContent({
     } finally {
       setValidatingAffiliate(false);
     }
-  }
+  }, [affiliateCode, product, t]);
+
+  // Auto-validate affiliate code when pre-filled from URL
+  useEffect(() => {
+    if (affiliateCode && product && !affiliateResult) {
+      validateAffiliateCode();
+    }
+  }, [affiliateCode, product, affiliateResult, validateAffiliateCode]);
+
+  // Auto-validate coupon when pre-filled from URL and plan is selected
+  useEffect(() => {
+    if (couponCode && selectedPlan && product && !couponResult) {
+      validateCouponCode();
+    }
+  }, [couponCode, selectedPlan, product, couponResult, validateCouponCode]);
 
   function clearCoupon() {
     setCouponCode("");
     setCouponResult(null);
-  }
-
-  async function loadProduct() {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchProduct();
-      setProduct(data);
-
-      // Auto-select if only one plan
-      if (data.plans.length === 1) {
-        setSelectedPlan(data.plans[0]);
-      }
-    } catch (err) {
-      console.error(err);
-      setError(t("errors.productNotFound"));
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function handleCheckout() {

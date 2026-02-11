@@ -7,7 +7,7 @@ import type { Customer } from "@/types/customer";
 import { Eye, Search, Users } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function CustomersPage() {
@@ -18,9 +18,24 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const t = useTranslations("customers");
 
+  const loadCustomers = useCallback(async () => {
+    try {
+      const data = await customersApi.findAll();
+      setCustomers(data);
+      setFilteredCustomers(data);
+    } catch (error) {
+      const axiosError = error as {
+        response?: { data?: { message?: string } };
+      };
+      toast.error(axiosError.response?.data?.message || t("error"));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [t]);
+
   useEffect(() => {
     loadCustomers();
-  }, []);
+  }, [loadCustomers]);
 
   useEffect(() => {
     if (search) {
@@ -35,21 +50,6 @@ export default function CustomersPage() {
       setFilteredCustomers(customers);
     }
   }, [search, customers]);
-
-  async function loadCustomers() {
-    try {
-      const data = await customersApi.findAll();
-      setCustomers(data);
-      setFilteredCustomers(data);
-    } catch (error) {
-      const axiosError = error as {
-        response?: { data?: { message?: string } };
-      };
-      toast.error(axiosError.response?.data?.message || t("error"));
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   if (isLoading) {
     return (

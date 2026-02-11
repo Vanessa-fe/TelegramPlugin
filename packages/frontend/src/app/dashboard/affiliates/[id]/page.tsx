@@ -12,7 +12,7 @@ import { ArrowLeft, Edit, Ban, Users, DollarSign, TrendingUp, Clock } from "luci
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const statusClassNames: Record<AffiliateStatus, string> = {
@@ -39,11 +39,7 @@ export default function AffiliateDetailPage() {
     DEACTIVATED: t("statusLabels.DEACTIVATED"),
   };
 
-  useEffect(() => {
-    loadAffiliate();
-  }, [params.id]);
-
-  async function loadAffiliate() {
+  const loadAffiliate = useCallback(async () => {
     try {
       const id = params.id as string;
       const [affiliateData, referralsData] = await Promise.all([
@@ -61,7 +57,11 @@ export default function AffiliateDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [params.id, router, t]);
+
+  useEffect(() => {
+    loadAffiliate();
+  }, [loadAffiliate]);
 
   async function handleDeactivate() {
     if (!affiliate) return;

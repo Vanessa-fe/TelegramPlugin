@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { KeyRound, ArrowLeft } from 'lucide-react';
+import { KeyRound, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,72 @@ import { Label } from '@/components/ui/label';
 import { authApi } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/auth-context';
 
+type ErrorMessage =
+  | string
+  | string[]
+  | { _errors?: string[]; [key: string]: unknown }
+  | undefined;
+
+function extractZodErrors(message: ErrorMessage): string[] {
+  if (!message) return [];
+  if (typeof message === 'string') return [message];
+  if (Array.isArray(message)) return message.filter(Boolean);
+  if (typeof message !== 'object') return [];
+
+  const errors: string[] = [];
+  const asRecord = message as Record<string, unknown>;
+  const rootErrors = (asRecord._errors as string[] | undefined) ?? [];
+  if (rootErrors.length > 0) {
+    errors.push(...rootErrors);
+  }
+
+  const fields = ['token', 'newPassword'];
+  fields.forEach((field) => {
+    const fieldErrors = (asRecord[field] as { _errors?: string[] } | undefined)
+      ?._errors;
+    if (fieldErrors?.length) {
+      errors.push(...fieldErrors);
+    }
+  });
+
+  return errors;
+}
+
+function getRandomInt(max: number): number {
+  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
+    const buffer = new Uint32Array(1);
+    window.crypto.getRandomValues(buffer);
+    return buffer[0] % max;
+  }
+  return Math.floor(Math.random() * max);
+}
+
+function generateSuggestedPassword(): string {
+  const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijkmnopqrstuvwxyz';
+  const numbers = '23456789';
+  const specials = '!@#$%^&*()-_=+[]{}';
+  const all = `${uppercase}${lowercase}${numbers}${specials}`;
+
+  const pick = (chars: string) =>
+    chars[getRandomInt(chars.length)];
+
+  const required = [
+    pick(uppercase),
+    pick(lowercase),
+    pick(numbers),
+    pick(specials),
+  ];
+
+  const remainingLength = 12;
+  const rest = Array.from({ length: remainingLength }, () => pick(all));
+  const password = [...required, ...rest].sort(() => 0.5 - Math.random());
+  return password.join('');
+}
+
 export default function ResetPasswordPage() {
   const t = useTranslations('auth.resetPassword');
+  const tRequirements = useTranslations('auth.passwordStrength.requirements');
   const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -27,6 +91,38 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
+
+  const requirements = useMemo(() => {
+    const tests = [
+      {
+        id: 'minLength',
+        label: tRequirements('minLength'),
+        valid: password.length >= 10,
+      },
+      {
+        id: 'uppercase',
+        label: tRequirements('uppercase'),
+        valid: /[A-Z]/.test(password),
+      },
+      {
+        id: 'lowercase',
+        label: tRequirements('lowercase'),
+        valid: /[a-z]/.test(password),
+      },
+      {
+        id: 'number',
+        label: tRequirements('number'),
+        valid: /[0-9]/.test(password),
+      },
+      {
+        id: 'special',
+        label: tRequirements('special'),
+        valid: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\\/`~;']/.test(password),
+      },
+    ];
+
+    return tests;
+  }, [password, tRequirements]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,13 +146,26 @@ export default function ResetPasswordPage() {
       setIsSubmitted(true);
       toast.success(t('toastSuccess'));
     } catch (err) {
-      const axiosError = err as { response?: { data?: { message?: string } } };
-      const msg = axiosError.response?.data?.message || t('toastError');
+      const axiosError = err as {
+        response?: { data?: { message?: ErrorMessage } };
+      };
+      const serverMessage = axiosError.response?.data?.message;
+      const zodErrors = extractZodErrors(serverMessage);
+      const msg =
+        zodErrors[0] ||
+        (typeof serverMessage === 'string' ? serverMessage : t('toastError'));
       setError(msg);
       toast.error(msg);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function handleUseSuggested() {
+    const suggestion = generateSuggestedPassword();
+    setPassword(suggestion);
+    setConfirmPassword(suggestion);
+    toast.success(t('suggestedApplied'));
   }
 
   return (
@@ -116,7 +225,35 @@ export default function ResetPasswordPage() {
                       placeholder={t('passwordPlaceholder')}
                       className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                     />
-                    <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
+                      <button
+                        type="button"
+                        onClick={handleUseSuggested}
+                        className="text-xs font-medium text-purple-600 hover:text-purple-700"
+                      >
+                        {t('useSuggested')}
+                      </button>
+                    </div>
+                    <div className="space-y-1">
+                      {requirements.map((req) => (
+                        <div
+                          key={req.id}
+                          className={
+                            req.valid
+                              ? 'flex items-center gap-2 text-xs rounded-md px-2 py-1 bg-green-50 text-green-800 font-medium'
+                              : 'flex items-center gap-2 text-xs rounded-md px-2 py-1 bg-gray-100 text-gray-700'
+                          }
+                        >
+                          {req.valid ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-700" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5 text-gray-500" />
+                          )}
+                          <span>{req.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="space-y-2">

@@ -31,7 +31,7 @@ export default function OrganizationDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, t]);
 
   useEffect(() => {
     loadOrganization();

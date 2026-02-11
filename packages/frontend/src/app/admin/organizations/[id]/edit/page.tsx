@@ -31,7 +31,7 @@ export default function EditOrganizationPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, t]);
 
   useEffect(() => {
     loadOrganization();

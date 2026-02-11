@@ -3,12 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { couponsApi } from "@/lib/api/coupons";
-import type { Coupon, CouponUsage, CouponStatus, CouponType } from "@/types/coupon";
+import type { Coupon, CouponUsage, CouponStatus } from "@/types/coupon";
 import { ArrowLeft, Percent, Tag, Edit, Ban } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const statusClassNames: Record<CouponStatus, string> = {
@@ -33,11 +33,7 @@ export default function CouponDetailPage() {
     DISABLED: t("statusLabels.DISABLED"),
   };
 
-  useEffect(() => {
-    loadCoupon();
-  }, [params.id]);
-
-  async function loadCoupon() {
+  const loadCoupon = useCallback(async () => {
     try {
       const id = params.id as string;
       const [couponData, usagesData] = await Promise.all([
@@ -55,7 +51,11 @@ export default function CouponDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [params.id, router, t]);
+
+  useEffect(() => {
+    loadCoupon();
+  }, [loadCoupon]);
 
   async function handleDisable() {
     if (!coupon) return;
