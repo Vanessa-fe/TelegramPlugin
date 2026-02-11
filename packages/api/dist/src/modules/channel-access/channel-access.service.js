@@ -85,6 +85,7 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
             for (const link of productChannels) {
                 const channelId = link.channelId;
                 const currentAccess = existingAccessByChannel.get(channelId);
+                const channelProvider = link.channel?.provider ?? client_1.$Enums.ChannelProvider.TELEGRAM;
                 if (currentAccess?.status === client_1.$Enums.AccessStatus.GRANTED) {
                     this.logger.debug(`Channel ${channelId} already granted for subscription ${subscriptionId}, skipping`);
                     continue;
@@ -93,20 +94,24 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
                     await tx.channelAccess.update({
                         where: { id: currentAccess.id },
                         data: {
-                            status: client_1.$Enums.AccessStatus.GRANTED,
+                            status: channelProvider === client_1.$Enums.ChannelProvider.WHATSAPP
+                                ? client_1.$Enums.AccessStatus.PENDING
+                                : client_1.$Enums.AccessStatus.GRANTED,
                             revokedAt: null,
                             revokeReason: null,
                         },
                     });
                     continue;
                 }
-                const payload = {
-                    subscriptionId: subscription.id,
-                    channelId,
-                    customerId: subscription.customerId,
-                    provider: provider.toLowerCase(),
-                };
-                jobs.push(payload);
+                if (channelProvider !== client_1.$Enums.ChannelProvider.WHATSAPP) {
+                    const payload = {
+                        subscriptionId: subscription.id,
+                        channelId,
+                        customerId: subscription.customerId,
+                        provider: provider.toLowerCase(),
+                    };
+                    jobs.push(payload);
+                }
                 if (currentAccess) {
                     await tx.channelAccess.update({
                         where: { id: currentAccess.id },
@@ -204,6 +209,17 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
         const activeAccesses = subscription.channelAccesses.filter((access) => access.status === client_1.$Enums.AccessStatus.PENDING ||
             access.status === client_1.$Enums.AccessStatus.GRANTED ||
             access.status === client_1.$Enums.AccessStatus.REVOKE_PENDING);
+        const graceEligibleAccesses = subscription.channelAccesses.filter((access) => access.status === client_1.$Enums.AccessStatus.PENDING ||
+            access.status === client_1.$Enums.AccessStatus.GRANTED);
+        const nonWhatsappGraceIds = graceEligibleAccesses
+            .filter((access) => access.channel?.provider !== client_1.$Enums.ChannelProvider.WHATSAPP)
+            .map((access) => access.id);
+        const whatsappAccessIds = activeAccesses
+            .filter((access) => access.channel?.provider === client_1.$Enums.ChannelProvider.WHATSAPP)
+            .map((access) => access.id);
+        const nonWhatsappAccessIds = activeAccesses
+            .filter((access) => access.channel?.provider !== client_1.$Enums.ChannelProvider.WHATSAPP)
+            .map((access) => access.id);
         const shouldNotifyPaymentFailed = reason === 'payment_failed' && !subscription.lastPaymentFailedAt;
         if (reason === 'payment_failed') {
             const gracePeriodDays = this.getGracePeriodDays();
@@ -216,19 +232,18 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
                 : false;
             if (!graceExpired) {
                 await this.prisma.$transaction(async (tx) => {
-                    await tx.channelAccess.updateMany({
-                        where: {
-                            subscriptionId,
-                            status: {
-                                in: [client_1.$Enums.AccessStatus.PENDING, client_1.$Enums.AccessStatus.GRANTED],
+                    if (nonWhatsappGraceIds.length > 0) {
+                        await tx.channelAccess.updateMany({
+                            where: {
+                                id: { in: nonWhatsappGraceIds },
                             },
-                        },
-                        data: {
-                            status: client_1.$Enums.AccessStatus.REVOKE_PENDING,
-                            revokedAt: null,
-                            revokeReason: null,
-                        },
-                    });
+                            data: {
+                                status: client_1.$Enums.AccessStatus.REVOKE_PENDING,
+                                revokedAt: null,
+                                revokeReason: null,
+                            },
+                        });
+                    }
                     await tx.subscription.update({
                         where: { id: subscriptionId },
                         data: {
@@ -249,23 +264,30 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
             }
         }
         await this.prisma.$transaction(async (tx) => {
-            await tx.channelAccess.updateMany({
-                where: {
-                    subscriptionId,
-                    status: {
-                        in: [
-                            client_1.$Enums.AccessStatus.PENDING,
-                            client_1.$Enums.AccessStatus.GRANTED,
-                            client_1.$Enums.AccessStatus.REVOKE_PENDING,
-                        ],
+            if (nonWhatsappAccessIds.length > 0) {
+                await tx.channelAccess.updateMany({
+                    where: {
+                        id: { in: nonWhatsappAccessIds },
                     },
-                },
-                data: {
-                    status: client_1.$Enums.AccessStatus.REVOKED,
-                    revokedAt: now,
-                    revokeReason: reason,
-                },
-            });
+                    data: {
+                        status: client_1.$Enums.AccessStatus.REVOKED,
+                        revokedAt: now,
+                        revokeReason: reason,
+                    },
+                });
+            }
+            if (whatsappAccessIds.length > 0) {
+                await tx.channelAccess.updateMany({
+                    where: {
+                        id: { in: whatsappAccessIds },
+                    },
+                    data: {
+                        status: client_1.$Enums.AccessStatus.REVOKE_PENDING,
+                        revokedAt: now,
+                        revokeReason: reason,
+                    },
+                });
+            }
             await tx.entitlement.updateMany({
                 where: {
                     subscriptionId,
@@ -325,6 +347,71 @@ let ChannelAccessService = ChannelAccessService_1 = class ChannelAccessService {
         catch (error) {
             this.logger.error(`Failed to send revocation notification for subscription ${subscriptionId}`, error);
         }
+    }
+    async confirmManualGrant(accessId, organizationId) {
+        const access = await this.prisma.channelAccess.findUnique({
+            where: { id: accessId },
+            include: {
+                channel: true,
+            },
+        });
+        if (!access) {
+            throw new common_1.NotFoundException('Channel access not found');
+        }
+        if (organizationId && access.channel.organizationId !== organizationId) {
+            throw new common_1.NotFoundException('Channel access not found');
+        }
+        if (access.channel.provider !== client_1.$Enums.ChannelProvider.WHATSAPP) {
+            throw new common_1.BadRequestException('Manual confirmation is only available for WhatsApp channels');
+        }
+        if (access.status === client_1.$Enums.AccessStatus.GRANTED) {
+            return access;
+        }
+        const now = new Date();
+        return this.prisma.channelAccess.update({
+            where: { id: accessId },
+            data: {
+                status: client_1.$Enums.AccessStatus.GRANTED,
+                grantedAt: now,
+                revokedAt: null,
+                revokeReason: null,
+            },
+            include: {
+                channel: true,
+            },
+        });
+    }
+    async confirmManualRevoke(accessId, organizationId) {
+        const access = await this.prisma.channelAccess.findUnique({
+            where: { id: accessId },
+            include: {
+                channel: true,
+            },
+        });
+        if (!access) {
+            throw new common_1.NotFoundException('Channel access not found');
+        }
+        if (organizationId && access.channel.organizationId !== organizationId) {
+            throw new common_1.NotFoundException('Channel access not found');
+        }
+        if (access.channel.provider !== client_1.$Enums.ChannelProvider.WHATSAPP) {
+            throw new common_1.BadRequestException('Manual confirmation is only available for WhatsApp channels');
+        }
+        if (access.status === client_1.$Enums.AccessStatus.REVOKED) {
+            return access;
+        }
+        const now = new Date();
+        return this.prisma.channelAccess.update({
+            where: { id: accessId },
+            data: {
+                status: client_1.$Enums.AccessStatus.REVOKED,
+                revokedAt: now,
+                revokeReason: access.revokeReason ?? 'manual',
+            },
+            include: {
+                channel: true,
+            },
+        });
     }
 };
 exports.ChannelAccessService = ChannelAccessService;

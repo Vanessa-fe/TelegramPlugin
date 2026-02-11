@@ -143,6 +143,31 @@ let ChannelAccessController = class ChannelAccessController {
             message: 'Support replay initiated successfully',
         };
     }
+    async confirmManualGrant(user, body) {
+        const updated = await this.channelAccessService.confirmManualGrant(body.accessId, user.organizationId);
+        await this.auditLogService.create({
+            organizationId: updated.channel.organizationId,
+            actorId: user.userId,
+            action: 'access.manual_grant',
+            resourceType: 'channel_access',
+            resourceId: updated.id,
+        });
+        return updated;
+    }
+    async confirmManualRevoke(user, body) {
+        const updated = await this.channelAccessService.confirmManualRevoke(body.accessId, user.organizationId);
+        await this.auditLogService.create({
+            organizationId: updated.channel.organizationId,
+            actorId: user.userId,
+            action: 'access.manual_revoke',
+            resourceType: 'channel_access',
+            resourceId: updated.id,
+            metadata: {
+                reason: updated.revokeReason,
+            },
+        });
+        return updated;
+    }
     parseSubscriptionId(jobId) {
         const segments = jobId.split(':');
         if (segments.length < 2) {
@@ -227,6 +252,24 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object, String, String]),
     __metadata("design:returntype", Promise)
 ], ChannelAccessController.prototype, "supportReplayDeadLetter", null);
+__decorate([
+    (0, common_1.Post)('manual/grant'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ChannelAccessController.prototype, "confirmManualGrant", null);
+__decorate([
+    (0, common_1.Post)('manual/revoke'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ChannelAccessController.prototype, "confirmManualRevoke", null);
 exports.ChannelAccessController = ChannelAccessController = __decorate([
     (0, common_1.Controller)('access'),
     __metadata("design:paramtypes", [channel_access_service_1.ChannelAccessService,

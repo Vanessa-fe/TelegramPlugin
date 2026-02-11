@@ -49,6 +49,16 @@ export const channelsApi = {
     return data;
   },
 
+  async confirmManualGrant(accessId: string) {
+    const { data } = await apiClient.post('/access/manual/grant', { accessId });
+    return data;
+  },
+
+  async confirmManualRevoke(accessId: string) {
+    const { data } = await apiClient.post('/access/manual/revoke', { accessId });
+    return data;
+  },
+
   // Verification methods
   async startVerification(type: ChannelType, provider: ChannelProvider = ChannelProvider.TELEGRAM) {
     const { data } = await apiClient.post<ChannelVerification>(

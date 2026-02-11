@@ -249,15 +249,18 @@ export function DiscordConnectWizard({
     <div className="max-w-xl mx-auto">
       {/* Progress indicator */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {steps.map((s, i) => (
-            <div key={s.number} className="flex items-center">
+        <div className="flex items-start justify-between gap-2">
+          {steps.map((s) => (
+            <div
+              key={s.number}
+              className="flex-1 flex flex-col items-center text-center"
+            >
               <div
                 className={`
                   flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors
                   ${
                     step >= s.number
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-purple-600 text-white"
                       : "bg-gray-200 text-gray-500"
                   }
                 `}
@@ -268,27 +271,14 @@ export function DiscordConnectWizard({
                   s.number
                 )}
               </div>
-              {i < steps.length - 1 && (
-                <div
-                  className={`w-8 h-0.5 mx-1 transition-colors ${
-                    step > s.number ? "bg-indigo-600" : "bg-gray-200"
-                  }`}
-                />
-              )}
+              <span
+                className={`mt-2 text-xs font-medium leading-snug ${
+                  step >= s.number ? "text-purple-600" : "text-gray-400"
+                }`}
+              >
+                {s.label}
+              </span>
             </div>
-          ))}
-        </div>
-        <div className="flex justify-between mt-2">
-          {steps.map((s) => (
-            <span
-              key={s.number}
-              className={`text-xs font-medium ${
-                step >= s.number ? "text-indigo-600" : "text-gray-400"
-              }`}
-              style={{ maxWidth: "60px", textAlign: "center" }}
-            >
-              {s.label}
-            </span>
           ))}
         </div>
       </div>
@@ -297,7 +287,7 @@ export function DiscordConnectWizard({
       {step === 1 && (
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <DiscordIcon className="w-8 h-8 text-[#5865F2]" />
+            <DiscordIcon className="w-8 h-8 text-purple-600" />
             <h2 className="text-xl font-semibold">{t("step1.title")}</h2>
           </div>
 
@@ -308,7 +298,7 @@ export function DiscordConnectWizard({
               href={inviteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 px-4 !bg-[#5865F2] hover:!bg-[#4752C4] !text-white rounded-lg font-medium transition-colors"
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
             >
               <DiscordIcon className="w-5 h-5" />
               {t("step1.addBotButton")}
@@ -318,15 +308,15 @@ export function DiscordConnectWizard({
               {t("step1.permissionsNote")}
             </p>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-blue-800 text-sm">{t("step1.note")}</p>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <p className="text-purple-800 text-sm">{t("step1.note")}</p>
             </div>
           </div>
 
           <div className="flex justify-end mt-6">
             <Button
               onClick={() => setStep(2)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6"
             >
               {t("buttons.next")}
             </Button>
@@ -338,7 +328,7 @@ export function DiscordConnectWizard({
       {step === 2 && (
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-medium">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-medium">
               2
             </div>
             <h2 className="text-xl font-semibold">{t("step2.title")}</h2>
@@ -362,8 +352,8 @@ export function DiscordConnectWizard({
               </div>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <p className="text-amber-800 text-sm">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <p className="text-purple-800 text-sm">
                 <span className="font-medium">{t("step2.important")}</span>{" "}
                 {t("step2.rolePositionNote")}
               </p>
@@ -377,7 +367,7 @@ export function DiscordConnectWizard({
             <Button
               onClick={handleStartVerification}
               disabled={isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 disabled:opacity-70"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 disabled:opacity-70"
             >
               {isLoading ? (
                 <>
@@ -396,7 +386,7 @@ export function DiscordConnectWizard({
       {step === 3 && verification && (
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-medium">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-medium">
               3
             </div>
             <h2 className="text-xl font-semibold">{t("step3.title")}</h2>
@@ -460,7 +450,7 @@ export function DiscordConnectWizard({
             <Button
               onClick={() => setStep(4)}
               disabled={!isVerified}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 disabled:bg-gray-300 disabled:text-gray-500"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 disabled:bg-gray-300 disabled:text-gray-500"
             >
               {t("buttons.next")}
             </Button>
@@ -472,7 +462,7 @@ export function DiscordConnectWizard({
       {step === 4 && verification && (
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-medium">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-medium">
               4
             </div>
             <h2 className="text-xl font-semibold">{t("step4.title")}</h2>
@@ -501,8 +491,8 @@ export function DiscordConnectWizard({
               </p>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-blue-800 text-sm">{t("step4.note")}</p>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <p className="text-purple-800 text-sm">{t("step4.note")}</p>
             </div>
           </div>
 
@@ -513,7 +503,7 @@ export function DiscordConnectWizard({
             <Button
               onClick={handleSetRole}
               disabled={!selectedRole?.id || isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 disabled:bg-gray-300 disabled:text-gray-500"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 disabled:bg-gray-300 disabled:text-gray-500"
             >
               {isLoading ? (
                 <>
@@ -532,7 +522,7 @@ export function DiscordConnectWizard({
       {step === 5 && verification && (
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-medium">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-medium">
               5
             </div>
             <h2 className="text-xl font-semibold">{t("step5.title")}</h2>
@@ -568,7 +558,7 @@ export function DiscordConnectWizard({
             <Button
               onClick={handleConfirm}
               disabled={isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 disabled:opacity-70"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 disabled:opacity-70"
             >
               {isLoading ? (
                 <>

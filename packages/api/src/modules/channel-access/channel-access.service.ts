@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { $Enums, AuditActorType, EntitlementType } from '@prisma/client';
 import type { ChannelAccess } from '@prisma/client';
@@ -95,6 +95,8 @@ export class ChannelAccessService {
       for (const link of productChannels) {
         const channelId = link.channelId;
         const currentAccess = existingAccessByChannel.get(channelId);
+        const channelProvider =
+          link.channel?.provider ?? $Enums.ChannelProvider.TELEGRAM;
 
         if (currentAccess?.status === $Enums.AccessStatus.GRANTED) {
           this.logger.debug(
@@ -107,7 +109,10 @@ export class ChannelAccessService {
           await tx.channelAccess.update({
             where: { id: currentAccess.id },
             data: {
-              status: $Enums.AccessStatus.GRANTED,
+              status:
+                channelProvider === $Enums.ChannelProvider.WHATSAPP
+                  ? $Enums.AccessStatus.PENDING
+                  : $Enums.AccessStatus.GRANTED,
               revokedAt: null,
               revokeReason: null,
             },
@@ -115,14 +120,16 @@ export class ChannelAccessService {
           continue;
         }
 
-        const payload: GrantAccessPayload = {
-          subscriptionId: subscription.id,
-          channelId,
-          customerId: subscription.customerId,
-          provider: provider.toLowerCase() as GrantAccessPayload['provider'],
-        };
+        if (channelProvider !== $Enums.ChannelProvider.WHATSAPP) {
+          const payload: GrantAccessPayload = {
+            subscriptionId: subscription.id,
+            channelId,
+            customerId: subscription.customerId,
+            provider: provider.toLowerCase() as GrantAccessPayload['provider'],
+          };
 
-        jobs.push(payload);
+          jobs.push(payload);
+        }
 
         if (currentAccess) {
           await tx.channelAccess.update({
@@ -256,6 +263,29 @@ export class ChannelAccessService {
         access.status === $Enums.AccessStatus.GRANTED ||
         access.status === $Enums.AccessStatus.REVOKE_PENDING,
     );
+    const graceEligibleAccesses = subscription.channelAccesses.filter(
+      (access) =>
+        access.status === $Enums.AccessStatus.PENDING ||
+        access.status === $Enums.AccessStatus.GRANTED,
+    );
+    const nonWhatsappGraceIds = graceEligibleAccesses
+      .filter(
+        (access) =>
+          access.channel?.provider !== $Enums.ChannelProvider.WHATSAPP,
+      )
+      .map((access) => access.id);
+    const whatsappAccessIds = activeAccesses
+      .filter(
+        (access) =>
+          access.channel?.provider === $Enums.ChannelProvider.WHATSAPP,
+      )
+      .map((access) => access.id);
+    const nonWhatsappAccessIds = activeAccesses
+      .filter(
+        (access) =>
+          access.channel?.provider !== $Enums.ChannelProvider.WHATSAPP,
+      )
+      .map((access) => access.id);
     const shouldNotifyPaymentFailed =
       reason === 'payment_failed' && !subscription.lastPaymentFailedAt;
 
@@ -272,19 +302,18 @@ export class ChannelAccessService {
 
       if (!graceExpired) {
         await this.prisma.$transaction(async (tx) => {
-          await tx.channelAccess.updateMany({
-            where: {
-              subscriptionId,
-              status: {
-                in: [$Enums.AccessStatus.PENDING, $Enums.AccessStatus.GRANTED],
+          if (nonWhatsappGraceIds.length > 0) {
+            await tx.channelAccess.updateMany({
+              where: {
+                id: { in: nonWhatsappGraceIds },
               },
-            },
-            data: {
-              status: $Enums.AccessStatus.REVOKE_PENDING,
-              revokedAt: null,
-              revokeReason: null,
-            },
-          });
+              data: {
+                status: $Enums.AccessStatus.REVOKE_PENDING,
+                revokedAt: null,
+                revokeReason: null,
+              },
+            });
+          }
 
           await tx.subscription.update({
             where: { id: subscriptionId },
@@ -315,24 +344,32 @@ export class ChannelAccessService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      // Revoke channel accesses
-      await tx.channelAccess.updateMany({
-        where: {
-          subscriptionId,
-          status: {
-            in: [
-              $Enums.AccessStatus.PENDING,
-              $Enums.AccessStatus.GRANTED,
-              $Enums.AccessStatus.REVOKE_PENDING,
-            ],
+      // Revoke channel accesses (manual for WhatsApp)
+      if (nonWhatsappAccessIds.length > 0) {
+        await tx.channelAccess.updateMany({
+          where: {
+            id: { in: nonWhatsappAccessIds },
           },
-        },
-        data: {
-          status: $Enums.AccessStatus.REVOKED,
-          revokedAt: now,
-          revokeReason: reason,
-        },
-      });
+          data: {
+            status: $Enums.AccessStatus.REVOKED,
+            revokedAt: now,
+            revokeReason: reason,
+          },
+        });
+      }
+
+      if (whatsappAccessIds.length > 0) {
+        await tx.channelAccess.updateMany({
+          where: {
+            id: { in: whatsappAccessIds },
+          },
+          data: {
+            status: $Enums.AccessStatus.REVOKE_PENDING,
+            revokedAt: now,
+            revokeReason: reason,
+          },
+        });
+      }
 
       // Revoke all entitlements for this subscription
       await tx.entitlement.updateMany({
@@ -420,5 +457,88 @@ export class ChannelAccessService {
         error as Error,
       );
     }
+  }
+
+  async confirmManualGrant(accessId: string, organizationId?: string | null) {
+    const access = await this.prisma.channelAccess.findUnique({
+      where: { id: accessId },
+      include: {
+        channel: true,
+      },
+    });
+
+    if (!access) {
+      throw new NotFoundException('Channel access not found');
+    }
+
+    if (organizationId && access.channel.organizationId !== organizationId) {
+      throw new NotFoundException('Channel access not found');
+    }
+
+    if (access.channel.provider !== $Enums.ChannelProvider.WHATSAPP) {
+      throw new BadRequestException(
+        'Manual confirmation is only available for WhatsApp channels',
+      );
+    }
+
+    if (access.status === $Enums.AccessStatus.GRANTED) {
+      return access;
+    }
+
+    const now = new Date();
+
+    return this.prisma.channelAccess.update({
+      where: { id: accessId },
+      data: {
+        status: $Enums.AccessStatus.GRANTED,
+        grantedAt: now,
+        revokedAt: null,
+        revokeReason: null,
+      },
+      include: {
+        channel: true,
+      },
+    });
+  }
+
+  async confirmManualRevoke(accessId: string, organizationId?: string | null) {
+    const access = await this.prisma.channelAccess.findUnique({
+      where: { id: accessId },
+      include: {
+        channel: true,
+      },
+    });
+
+    if (!access) {
+      throw new NotFoundException('Channel access not found');
+    }
+
+    if (organizationId && access.channel.organizationId !== organizationId) {
+      throw new NotFoundException('Channel access not found');
+    }
+
+    if (access.channel.provider !== $Enums.ChannelProvider.WHATSAPP) {
+      throw new BadRequestException(
+        'Manual confirmation is only available for WhatsApp channels',
+      );
+    }
+
+    if (access.status === $Enums.AccessStatus.REVOKED) {
+      return access;
+    }
+
+    const now = new Date();
+
+    return this.prisma.channelAccess.update({
+      where: { id: accessId },
+      data: {
+        status: $Enums.AccessStatus.REVOKED,
+        revokedAt: now,
+        revokeReason: access.revokeReason ?? 'manual',
+      },
+      include: {
+        channel: true,
+      },
+    });
   }
 }

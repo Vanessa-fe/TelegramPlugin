@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import type { AuthUser } from '../auth/auth.types';
 import { ChannelAccessService } from './channel-access.service';
 import { ChannelAccessQueue } from './channel-access.queue';
@@ -42,6 +43,70 @@ export declare class ChannelAccessController {
         jobId: string;
     }, correlationId?: string, requestId?: string): Promise<{
         message: string;
+    }>;
+    confirmManualGrant(user: AuthUser, body: {
+        accessId: string;
+    }): Promise<{
+        channel: {
+            id: string;
+            metadata: Prisma.JsonValue | null;
+            createdAt: Date;
+            updatedAt: Date;
+            organizationId: string;
+            provider: import("@prisma/client").$Enums.ChannelProvider;
+            type: import("@prisma/client").$Enums.ChannelType;
+            externalId: string;
+            title: string | null;
+            username: string | null;
+            inviteLink: string | null;
+            isActive: boolean;
+        };
+    } & {
+        id: string;
+        subscriptionId: string;
+        channelId: string;
+        customerId: string;
+        inviteId: string | null;
+        discordRoleId: string | null;
+        status: import("@prisma/client").$Enums.AccessStatus;
+        grantedAt: Date | null;
+        revokedAt: Date | null;
+        revokeReason: string | null;
+        metadata: Prisma.JsonValue | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    confirmManualRevoke(user: AuthUser, body: {
+        accessId: string;
+    }): Promise<{
+        channel: {
+            id: string;
+            metadata: Prisma.JsonValue | null;
+            createdAt: Date;
+            updatedAt: Date;
+            organizationId: string;
+            provider: import("@prisma/client").$Enums.ChannelProvider;
+            type: import("@prisma/client").$Enums.ChannelType;
+            externalId: string;
+            title: string | null;
+            username: string | null;
+            inviteLink: string | null;
+            isActive: boolean;
+        };
+    } & {
+        id: string;
+        subscriptionId: string;
+        channelId: string;
+        customerId: string;
+        inviteId: string | null;
+        discordRoleId: string | null;
+        status: import("@prisma/client").$Enums.AccessStatus;
+        grantedAt: Date | null;
+        revokedAt: Date | null;
+        revokeReason: string | null;
+        metadata: Prisma.JsonValue | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     private parseSubscriptionId;
     private resolveCorrelationId;

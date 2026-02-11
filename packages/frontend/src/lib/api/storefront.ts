@@ -24,7 +24,7 @@ export interface PublicPlan {
 export interface PublicChannel {
   id: string;
   title: string | null;
-  provider: 'TELEGRAM' | 'DISCORD';
+  provider: 'TELEGRAM' | 'DISCORD' | 'WHATSAPP';
 }
 
 export interface PublicProduct {

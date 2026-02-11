@@ -837,9 +837,27 @@
         "title": "Chargement des accès..."
       },
 
+      "success": {
+        "granted": "Accès accordé avec succès",
+        "revoked": "Accès révoqué avec succès",
+        "manualGranted": "Accès marqué comme ajouté",
+        "manualRevoked": "Accès marqué comme retiré"
+      },
+
+      "errors": {
+        "load": "Erreur lors du chargement des accès",
+        "grant": "Erreur lors de l'accord de l'accès",
+        "revoke": "Erreur lors de la révocation de l'accès",
+        "missingSelection": "Veuillez sélectionner un client et un abonnement",
+        "noSubscriptionSelected": "Erreur : abonnement non sélectionné",
+        "manualGrant": "Erreur lors de la confirmation de l'ajout",
+        "manualRevoke": "Erreur lors de la confirmation de la suppression"
+      },
+
       "ctaGrant": "Accorder un accès",
       "actions": {
-        "grant": "Accorder un accès"
+        "grant": "Accorder un accès",
+        "revoke": "Révoquer"
       },
 
       "cards": {
@@ -850,7 +868,9 @@
       "stats": {
         "total": "Total accès",
         "granted": "Accordés",
-        "revoked": "Révoqués"
+        "revoked": "Révoqués",
+        "pendingAdd": "À ajouter",
+        "pendingRemove": "À retirer"
       },
 
       "activeAccessesTitle": "Accès actifs",
@@ -858,6 +878,7 @@
 
       "table": {
         "title": "Accès actifs",
+        "historyTitle": "Historique des accès",
         "empty": "Aucun accès configuré pour ce canal",
         "customer": "Client",
         "status": "Statut",
@@ -865,12 +886,21 @@
         "revokedAt": "Révoqué le",
         "reason": "Raison",
         "actions": "Actions",
-        "revoke": "Révoquer"
+        "revoke": "Révoquer",
+        "columns": {
+          "customer": "Client",
+          "status": "Statut",
+          "grantedAt": "Accordé le",
+          "revokedAt": "Révoqué le",
+          "reason": "Raison",
+          "actions": "Actions"
+        }
       },
 
       "status": {
         "PENDING": "En attente",
         "GRANTED": "Accordé",
+        "REVOKE_PENDING": "À retirer",
         "REVOKED": "Révoqué"
       },
 
@@ -878,7 +908,28 @@
         "manual": "Révocation manuelle",
         "payment_failed": "Paiement échoué",
         "canceled": "Abonnement annulé",
-        "refund": "Remboursement"
+        "refund": "Remboursement",
+        "expired": "Abonnement expiré"
+      },
+
+      "manual": {
+        "title": "Gestion manuelle WhatsApp",
+        "description": "WhatsApp ne permet pas l'ajout ou la suppression automatique des membres. Utilisez ces listes pour ajouter ou retirer les abonnés dans votre groupe.",
+        "toAddTitle": "À ajouter",
+        "toRemoveTitle": "À retirer",
+        "toAddEmpty": "Aucun membre à ajouter pour le moment.",
+        "toRemoveEmpty": "Aucun membre à retirer pour le moment.",
+        "columns": {
+          "customer": "Client",
+          "subscription": "Abonnement",
+          "requestedAt": "Demandé le",
+          "reason": "Raison",
+          "action": "Action"
+        },
+        "actions": {
+          "confirmAdded": "Marquer ajouté",
+          "confirmRemoved": "Marquer retiré"
+        }
       },
 
       "grantDialog": {
@@ -918,9 +969,12 @@
       "subtitle": "Connectez un canal Telegram à votre organisation",
       "discordTitle": "Ajouter un serveur",
       "discordSubtitle": "Connectez un serveur Discord à votre organisation",
+      "whatsappTitle": "Ajouter un groupe WhatsApp",
+      "whatsappSubtitle": "Connectez un groupe WhatsApp à votre organisation",
       "selectProvider": "Choisissez une plateforme à connecter",
       "telegramDescription": "Canaux et groupes avec liens d'invitation pour les abonnés",
       "discordDescription": "Serveurs avec rôles payants pour les membres",
+      "whatsappDescription": "Groupes WhatsApp avec gestion manuelle des accès",
       "back": "Retour aux canaux"
     },
 
@@ -929,7 +983,7 @@
 
       "providerLabel": "Plateforme *",
       "providerPlaceholder": "Sélectionner une plateforme",
-      "providerHelp": "Plateforme du canal (Telegram ou Discord)",
+      "providerHelp": "Plateforme du canal (Telegram, Discord ou WhatsApp)",
 
       "externalIdLabel": "ID externe du canal *",
       "externalIdPlaceholder": "-1003487441463",
@@ -962,7 +1016,8 @@
 
       "providers": {
         "telegram": "Telegram",
-        "discord": "Discord"
+        "discord": "Discord",
+        "whatsapp": "WhatsApp"
       }
     },
 
@@ -1129,6 +1184,34 @@
         "server": "Serveur",
         "role": "Rôle d'accès payant",
         "readyNote": "Tout semble bon ! Cliquez sur Connecter pour terminer la configuration. Les abonnés payants recevront automatiquement le rôle."
+      }
+    },
+
+    "whatsappWizard": {
+      "title": "Connecter WhatsApp",
+      "description": "Connectez un groupe WhatsApp. Les accès sont gérés manuellement via votre tableau de bord.",
+      "stepsTitle": "Avant de commencer",
+      "steps": {
+        "1": "Créez un groupe WhatsApp réservé à vos abonnés payants",
+        "2": "Générez un lien d'invitation du groupe",
+        "3": "Utilisez ce lien pour identifier votre groupe"
+      },
+      "formTitle": "Informations du groupe",
+      "fields": {
+        "nameLabel": "Nom du groupe *",
+        "namePlaceholder": "Mon groupe VIP",
+        "linkLabel": "Lien d'invitation du groupe *",
+        "linkPlaceholder": "https://chat.whatsapp.com/xxxx",
+        "linkHelp": "Ce lien sert d'identifiant unique pour votre groupe."
+      },
+      "buttons": {
+        "connect": "Connecter le groupe",
+        "loading": "Connexion..."
+      },
+      "success": "Groupe WhatsApp connecté",
+      "errors": {
+        "missing": "Veuillez renseigner le nom du groupe et le lien d'invitation",
+        "createFailed": "Erreur lors de la connexion du groupe"
       }
     }
   },

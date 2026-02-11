@@ -9,8 +9,8 @@ export declare const startVerificationSchema: z.ZodObject<{
         DISCORD: "DISCORD";
     }>>>;
 }, "strip", z.ZodTypeAny, {
-    provider: "TELEGRAM" | "DISCORD";
     type: "CHANNEL" | "GROUP";
+    provider: "TELEGRAM" | "DISCORD";
 }, {
     type: "CHANNEL" | "GROUP";
     provider?: "TELEGRAM" | "DISCORD" | undefined;
@@ -23,16 +23,16 @@ export declare const verifyChannelSchema: z.ZodObject<{
     telegramUsername: z.ZodNullable<z.ZodString>;
     chatType: z.ZodEnum<["CHANNEL", "GROUP"]>;
 }, "strip", z.ZodTypeAny, {
-    telegramUsername: string | null;
     code: string;
     telegramChatId: string;
     telegramTitle: string;
+    telegramUsername: string | null;
     chatType: "CHANNEL" | "GROUP";
 }, {
-    telegramUsername: string | null;
     code: string;
     telegramChatId: string;
     telegramTitle: string;
+    telegramUsername: string | null;
     chatType: "CHANNEL" | "GROUP";
 }>;
 export type VerifyChannelDto = z.infer<typeof verifyChannelSchema>;
@@ -103,6 +103,10 @@ export declare const createChannelSchema: z.ZodObject<{
         TELEGRAM: "TELEGRAM";
         DISCORD: "DISCORD";
     }>;
+    type: z.ZodOptional<z.ZodNativeEnum<{
+        CHANNEL: "CHANNEL";
+        GROUP: "GROUP";
+    }>>;
     externalId: z.ZodString;
     title: z.ZodOptional<z.ZodString>;
     username: z.ZodOptional<z.ZodString>;
@@ -110,55 +114,63 @@ export declare const createChannelSchema: z.ZodObject<{
     isActive: z.ZodOptional<z.ZodBoolean>;
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
 }, "strip", z.ZodTypeAny, {
+    provider: "TELEGRAM" | "DISCORD";
     organizationId: string;
     externalId: string;
-    provider: "TELEGRAM" | "DISCORD";
-    isActive?: boolean | undefined;
-    metadata?: Record<string, any> | undefined;
-    inviteLink?: string | undefined;
+    type?: "CHANNEL" | "GROUP" | undefined;
     title?: string | undefined;
     username?: string | undefined;
+    inviteLink?: string | undefined;
+    isActive?: boolean | undefined;
+    metadata?: Record<string, any> | undefined;
 }, {
+    provider: "TELEGRAM" | "DISCORD";
     organizationId: string;
     externalId: string;
-    provider: "TELEGRAM" | "DISCORD";
-    isActive?: boolean | undefined;
-    metadata?: Record<string, any> | undefined;
-    inviteLink?: string | undefined;
+    type?: "CHANNEL" | "GROUP" | undefined;
     title?: string | undefined;
     username?: string | undefined;
+    inviteLink?: string | undefined;
+    isActive?: boolean | undefined;
+    metadata?: Record<string, any> | undefined;
 }>;
 export type CreateChannelDto = z.infer<typeof createChannelSchema>;
 export declare const updateChannelSchema: z.ZodObject<{
-    isActive: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
-    metadata: z.ZodOptional<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>>;
-    inviteLink: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     title: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     username: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    inviteLink: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    isActive: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+    metadata: z.ZodOptional<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>>;
 } & {
     organizationId: z.ZodOptional<z.ZodString>;
     provider: z.ZodOptional<z.ZodNativeEnum<{
         TELEGRAM: "TELEGRAM";
         DISCORD: "DISCORD";
     }>>;
+    type: z.ZodOptional<z.ZodNativeEnum<{
+        CHANNEL: "CHANNEL";
+        GROUP: "GROUP";
+    }>>;
     externalId: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    isActive?: boolean | undefined;
-    organizationId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
-    externalId?: string | undefined;
+    type?: "CHANNEL" | "GROUP" | undefined;
     provider?: "TELEGRAM" | "DISCORD" | undefined;
-    inviteLink?: string | undefined;
+    organizationId?: string | undefined;
+    externalId?: string | undefined;
     title?: string | undefined;
     username?: string | undefined;
+    inviteLink?: string | undefined;
+    isActive?: boolean | undefined;
+    metadata?: Record<string, any> | undefined;
 }, {
-    isActive?: boolean | undefined;
-    organizationId?: string | undefined;
-    metadata?: Record<string, any> | undefined;
-    externalId?: string | undefined;
+    type?: "CHANNEL" | "GROUP" | undefined;
     provider?: "TELEGRAM" | "DISCORD" | undefined;
-    inviteLink?: string | undefined;
+    organizationId?: string | undefined;
+    externalId?: string | undefined;
     title?: string | undefined;
     username?: string | undefined;
+    inviteLink?: string | undefined;
+    isActive?: boolean | undefined;
+    metadata?: Record<string, any> | undefined;
 }>;
 export type UpdateChannelDto = z.infer<typeof updateChannelSchema>;

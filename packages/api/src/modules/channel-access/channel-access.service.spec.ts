@@ -360,7 +360,13 @@ describe('ChannelAccessService', () => {
         id: 'sub-123',
         customerId: 'cust-123',
         graceUntil: null,
-        channelAccesses: [],
+        channelAccesses: [
+          {
+            id: 'access-1',
+            status: $Enums.AccessStatus.GRANTED,
+            channel: { provider: $Enums.ChannelProvider.TELEGRAM },
+          },
+        ],
         plan: null,
       } as any);
       prisma.subscription.update.mockResolvedValue({} as any);
@@ -369,10 +375,7 @@ describe('ChannelAccessService', () => {
 
       expect(prisma.channelAccess.updateMany).toHaveBeenCalledWith({
         where: {
-          subscriptionId: 'sub-123',
-          status: {
-            in: [$Enums.AccessStatus.PENDING, $Enums.AccessStatus.GRANTED],
-          },
+          id: { in: ['access-1'] },
         },
         data: {
           status: $Enums.AccessStatus.REVOKE_PENDING,
@@ -407,7 +410,13 @@ describe('ChannelAccessService', () => {
         id: 'sub-123',
         customerId: 'cust-123',
         graceUntil: new Date('2025-12-31T00:00:00Z'),
-        channelAccesses: [],
+        channelAccesses: [
+          {
+            id: 'access-1',
+            status: $Enums.AccessStatus.GRANTED,
+            channel: { provider: $Enums.ChannelProvider.TELEGRAM },
+          },
+        ],
         plan: null,
       } as any);
       prisma.channelAccess.updateMany.mockResolvedValue({ count: 2 } as any);
@@ -418,14 +427,7 @@ describe('ChannelAccessService', () => {
 
       expect(prisma.channelAccess.updateMany).toHaveBeenCalledWith({
         where: {
-          subscriptionId: 'sub-123',
-          status: {
-            in: [
-              $Enums.AccessStatus.PENDING,
-              $Enums.AccessStatus.GRANTED,
-              $Enums.AccessStatus.REVOKE_PENDING,
-            ],
-          },
+          id: { in: ['access-1'] },
         },
         data: {
           status: $Enums.AccessStatus.REVOKED,
@@ -444,7 +446,13 @@ describe('ChannelAccessService', () => {
     it('should handle canceled reason', async () => {
       prisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-123',
-        channelAccesses: [],
+        channelAccesses: [
+          {
+            id: 'access-1',
+            status: $Enums.AccessStatus.GRANTED,
+            channel: { provider: $Enums.ChannelProvider.TELEGRAM },
+          },
+        ],
       } as any);
       prisma.channelAccess.updateMany.mockResolvedValue({ count: 1 } as any);
       queue.enqueueRevokeAccess.mockResolvedValue(undefined);
@@ -462,7 +470,13 @@ describe('ChannelAccessService', () => {
     it('should handle refund reason', async () => {
       prisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-123',
-        channelAccesses: [],
+        channelAccesses: [
+          {
+            id: 'access-1',
+            status: $Enums.AccessStatus.GRANTED,
+            channel: { provider: $Enums.ChannelProvider.TELEGRAM },
+          },
+        ],
       } as any);
       prisma.channelAccess.updateMany.mockResolvedValue({ count: 1 } as any);
       queue.enqueueRevokeAccess.mockResolvedValue(undefined);
@@ -489,7 +503,13 @@ describe('ChannelAccessService', () => {
     it('should continue even if queue enqueue fails', async () => {
       prisma.subscription.findUnique.mockResolvedValue({
         id: 'sub-123',
-        channelAccesses: [],
+        channelAccesses: [
+          {
+            id: 'access-1',
+            status: $Enums.AccessStatus.GRANTED,
+            channel: { provider: $Enums.ChannelProvider.TELEGRAM },
+          },
+        ],
       } as any);
       prisma.channelAccess.updateMany.mockResolvedValue({ count: 1 } as any);
       queue.enqueueRevokeAccess.mockRejectedValue(new Error('Queue error'));

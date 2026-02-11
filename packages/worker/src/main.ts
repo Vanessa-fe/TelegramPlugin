@@ -279,6 +279,18 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
     return;
   }
 
+  if (channelAccess.channel.provider === $Enums.ChannelProvider.WHATSAPP) {
+    logger.info(
+      {
+        jobId: job.id,
+        subscriptionId: data.subscriptionId,
+        channelId: data.channelId,
+      },
+      "WhatsApp access requires manual confirmation, skipping grant job"
+    );
+    return;
+  }
+
   if (channelAccess.channel.provider !== $Enums.ChannelProvider.TELEGRAM) {
     logger.warn(
       {
@@ -831,6 +843,18 @@ async function processRevokeAccess(
     // Handle Discord channels
     if (access.channel.provider === $Enums.ChannelProvider.DISCORD) {
       await processDiscordRevoke(job, access as ChannelAccessWithDiscord, data.reason);
+      continue;
+    }
+
+    if (access.channel.provider === $Enums.ChannelProvider.WHATSAPP) {
+      logger.info(
+        {
+          jobId: job.id,
+          channelId: access.channelId,
+          subscriptionId: data.subscriptionId,
+        },
+        "WhatsApp access requires manual confirmation, skipping revoke job"
+      );
       continue;
     }
 

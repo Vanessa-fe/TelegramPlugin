@@ -194,9 +194,12 @@ export function TelegramConnectWizard({
     <div className="max-w-xl mx-auto">
       {/* Progress indicator */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {steps.map((s, i) => (
-            <div key={s.number} className="flex items-center">
+        <div className="flex items-start justify-between gap-2">
+          {steps.map((s) => (
+            <div
+              key={s.number}
+              className="flex-1 flex flex-col items-center text-center"
+            >
               <div
                 className={`
                   flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-colors
@@ -213,26 +216,14 @@ export function TelegramConnectWizard({
                   s.number
                 )}
               </div>
-              {i < steps.length - 1 && (
-                <div
-                  className={`w-16 h-0.5 mx-2 transition-colors ${
-                    step > s.number ? "bg-purple-600" : "bg-gray-200"
-                  }`}
-                />
-              )}
+              <span
+                className={`mt-2 text-xs font-medium leading-snug ${
+                  step >= s.number ? "text-purple-600" : "text-gray-400"
+                }`}
+              >
+                {s.label}
+              </span>
             </div>
-          ))}
-        </div>
-        <div className="flex justify-between mt-2">
-          {steps.map((s) => (
-            <span
-              key={s.number}
-              className={`text-xs font-medium ${
-                step >= s.number ? "text-purple-600" : "text-gray-400"
-              }`}
-            >
-              {s.label}
-            </span>
           ))}
         </div>
       </div>

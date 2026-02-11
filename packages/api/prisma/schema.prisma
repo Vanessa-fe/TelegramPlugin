@@ -41,6 +41,7 @@ enum SubscriptionStatus {
 enum ChannelProvider {
   TELEGRAM
   DISCORD
+  WHATSAPP
 }
 
 enum ChannelType {

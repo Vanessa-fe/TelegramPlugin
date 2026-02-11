@@ -818,9 +818,27 @@
         "title": "Loading access..."
       },
 
+      "success": {
+        "granted": "Access granted successfully",
+        "revoked": "Access revoked successfully",
+        "manualGranted": "Access marked as added",
+        "manualRevoked": "Access marked as removed"
+      },
+
+      "errors": {
+        "load": "Error loading access",
+        "grant": "Error granting access",
+        "revoke": "Error revoking access",
+        "missingSelection": "Please select a customer and a subscription",
+        "noSubscriptionSelected": "Error: subscription not selected",
+        "manualGrant": "Error confirming the add",
+        "manualRevoke": "Error confirming the removal"
+      },
+
       "ctaGrant": "Grant access",
       "actions": {
-        "grant": "Grant access"
+        "grant": "Grant access",
+        "revoke": "Revoke"
       },
 
       "cards": {
@@ -831,7 +849,9 @@
       "stats": {
         "total": "Total access",
         "granted": "Granted",
-        "revoked": "Revoked"
+        "revoked": "Revoked",
+        "pendingAdd": "To add",
+        "pendingRemove": "To remove"
       },
 
       "activeAccessesTitle": "Active access",
@@ -839,6 +859,7 @@
 
       "table": {
         "title": "Active access",
+        "historyTitle": "Access history",
         "empty": "No access configured for this channel",
         "customer": "Customer",
         "status": "Status",
@@ -846,12 +867,21 @@
         "revokedAt": "Revoked on",
         "reason": "Reason",
         "actions": "Actions",
-        "revoke": "Revoke"
+        "revoke": "Revoke",
+        "columns": {
+          "customer": "Customer",
+          "status": "Status",
+          "grantedAt": "Granted on",
+          "revokedAt": "Revoked on",
+          "reason": "Reason",
+          "actions": "Actions"
+        }
       },
 
       "status": {
         "PENDING": "Pending",
         "GRANTED": "Granted",
+        "REVOKE_PENDING": "To remove",
         "REVOKED": "Revoked"
       },
 
@@ -859,7 +889,28 @@
         "manual": "Manual revoke",
         "payment_failed": "Payment failed",
         "canceled": "Subscription canceled",
-        "refund": "Refund"
+        "refund": "Refund",
+        "expired": "Subscription expired"
+      },
+
+      "manual": {
+        "title": "WhatsApp manual management",
+        "description": "WhatsApp does not allow automatic member changes. Use these lists to add or remove subscribers in your group.",
+        "toAddTitle": "To add",
+        "toRemoveTitle": "To remove",
+        "toAddEmpty": "No members to add right now.",
+        "toRemoveEmpty": "No members to remove right now.",
+        "columns": {
+          "customer": "Customer",
+          "subscription": "Subscription",
+          "requestedAt": "Requested on",
+          "reason": "Reason",
+          "action": "Action"
+        },
+        "actions": {
+          "confirmAdded": "Mark as added",
+          "confirmRemoved": "Mark as removed"
+        }
       },
 
       "grantDialog": {
@@ -899,9 +950,12 @@
       "subtitle": "Connect a Telegram channel to your organization",
       "discordTitle": "Add a server",
       "discordSubtitle": "Connect a Discord server to your organization",
+      "whatsappTitle": "Add a WhatsApp group",
+      "whatsappSubtitle": "Connect a WhatsApp group to your organization",
       "selectProvider": "Choose a platform to connect",
       "telegramDescription": "Channels and groups with invite links for subscribers",
       "discordDescription": "Servers with paid roles for members",
+      "whatsappDescription": "WhatsApp groups with manual access management",
       "back": "Back to channels"
     },
 
@@ -910,7 +964,7 @@
 
       "providerLabel": "Platform *",
       "providerPlaceholder": "Select a platform",
-      "providerHelp": "Channel platform (Telegram or Discord)",
+      "providerHelp": "Channel platform (Telegram, Discord, or WhatsApp)",
 
       "externalIdLabel": "Channel external ID *",
       "externalIdPlaceholder": "-1003487441463",
@@ -943,7 +997,8 @@
 
       "providers": {
         "telegram": "Telegram",
-        "discord": "Discord"
+        "discord": "Discord",
+        "whatsapp": "WhatsApp"
       }
     },
 
@@ -1110,6 +1165,34 @@
         "server": "Server",
         "role": "Paid access role",
         "readyNote": "Everything looks good! Click Connect to finish the setup. Paying subscribers will automatically receive the role."
+      }
+    },
+
+    "whatsappWizard": {
+      "title": "Connect WhatsApp",
+      "description": "Connect a WhatsApp group. Access is managed manually from your dashboard.",
+      "stepsTitle": "Before you start",
+      "steps": {
+        "1": "Create a WhatsApp group reserved for paying subscribers",
+        "2": "Generate an invite link for the group",
+        "3": "Use this link to identify your group"
+      },
+      "formTitle": "Group information",
+      "fields": {
+        "nameLabel": "Group name *",
+        "namePlaceholder": "My VIP group",
+        "linkLabel": "Group invite link *",
+        "linkPlaceholder": "https://chat.whatsapp.com/xxxx",
+        "linkHelp": "This link is used as the unique identifier for your group."
+      },
+      "buttons": {
+        "connect": "Connect the group",
+        "loading": "Connecting..."
+      },
+      "success": "WhatsApp group connected",
+      "errors": {
+        "missing": "Please enter the group name and invite link",
+        "createFailed": "Error connecting the group"
       }
     }
   },

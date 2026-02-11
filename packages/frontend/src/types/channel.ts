@@ -1,6 +1,7 @@
 export enum ChannelProvider {
   TELEGRAM = 'TELEGRAM',
   DISCORD = 'DISCORD',
+  WHATSAPP = 'WHATSAPP',
 }
 
 export enum ChannelType {
@@ -18,6 +19,7 @@ export enum VerificationStatus {
 export enum AccessStatus {
   PENDING = 'PENDING',
   GRANTED = 'GRANTED',
+  REVOKE_PENDING = 'REVOKE_PENDING',
   REVOKED = 'REVOKED',
 }
 
@@ -68,6 +70,7 @@ export interface Channel {
   id: string;
   organizationId: string;
   provider: ChannelProvider;
+  type?: ChannelType;
   externalId: string;
   title?: string | null;
   username?: string | null;
@@ -97,6 +100,7 @@ export interface CreateChannelDto {
   organizationId: string;
   provider: ChannelProvider;
   externalId: string;
+  type?: ChannelType;
   title?: string;
   username?: string;
   inviteLink?: string;
@@ -108,6 +112,7 @@ export interface UpdateChannelDto {
   organizationId?: string;
   provider?: ChannelProvider;
   externalId?: string;
+  type?: ChannelType;
   title?: string;
   username?: string;
   inviteLink?: string;

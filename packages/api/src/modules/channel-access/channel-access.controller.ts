@@ -239,6 +239,59 @@ export class ChannelAccessController {
     };
   }
 
+  @Post('manual/grant')
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
+  async confirmManualGrant(
+    @CurrentUser() user: AuthUser,
+    @Body()
+    body: {
+      accessId: string;
+    },
+  ) {
+    const updated = await this.channelAccessService.confirmManualGrant(
+      body.accessId,
+      user.organizationId,
+    );
+
+    await this.auditLogService.create({
+      organizationId: updated.channel.organizationId,
+      actorId: user.userId,
+      action: 'access.manual_grant',
+      resourceType: 'channel_access',
+      resourceId: updated.id,
+    });
+
+    return updated;
+  }
+
+  @Post('manual/revoke')
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
+  async confirmManualRevoke(
+    @CurrentUser() user: AuthUser,
+    @Body()
+    body: {
+      accessId: string;
+    },
+  ) {
+    const updated = await this.channelAccessService.confirmManualRevoke(
+      body.accessId,
+      user.organizationId,
+    );
+
+    await this.auditLogService.create({
+      organizationId: updated.channel.organizationId,
+      actorId: user.userId,
+      action: 'access.manual_revoke',
+      resourceType: 'channel_access',
+      resourceId: updated.id,
+      metadata: {
+        reason: updated.revokeReason,
+      },
+    });
+
+    return updated;
+  }
+
   private parseSubscriptionId(jobId: string): string | null {
     const segments = jobId.split(':');
     if (segments.length < 2) {

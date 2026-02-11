@@ -69,7 +69,7 @@ export function ChannelForm({
       { value: ChannelProvider.TELEGRAM, label: t("providers.telegram") },
       // Discord désactivé pour le moment
       // { value: ChannelProvider.DISCORD, label: t("providers.discord") },
-      // si tu ajoutes Whatsapp plus tard : { value: ChannelProvider.WHATSAPP, label: t("providers.whatsapp") }
+      { value: ChannelProvider.WHATSAPP, label: t("providers.whatsapp") },
     ],
     [t],
   );

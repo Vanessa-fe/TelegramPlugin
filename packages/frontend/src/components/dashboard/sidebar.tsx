@@ -1,7 +1,9 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
+import { channelsApi } from "@/lib/api/channels";
 import { cn } from "@/lib/utils";
+import { ChannelProvider } from "@/types/channel";
 import { UserRole } from "@/types/auth";
 import {
   CreditCard,
@@ -20,6 +22,7 @@ import {
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const navigation = [
   { key: "dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -48,12 +51,61 @@ export function Sidebar() {
   const tNav = useTranslations("nav");
   const tSidebar = useTranslations("sidebar");
   const trialDaysLeft = 14;
+  const [pendingRemoveCount, setPendingRemoveCount] = useState(0);
 
   // Filter navigation based on user role
   const filteredNavigation = navigation.filter((item) => {
     if (!item.roles) return true; // No role restriction
     return user?.role && item.roles.includes(user.role);
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPendingRemovals = async () => {
+      if (!user) return;
+      try {
+        const channels = await channelsApi.findAll();
+        const whatsappChannels = channels.filter(
+          (channel) => channel.provider === ChannelProvider.WHATSAPP,
+        );
+
+        if (whatsappChannels.length === 0) {
+          if (!cancelled) {
+            setPendingRemoveCount(0);
+          }
+          return;
+        }
+
+        const counts = await Promise.all(
+          whatsappChannels.map(async (channel) => {
+            try {
+              const accesses = await channelsApi.getAccesses(channel.id);
+              return accesses.filter(
+                (access) => access.status === "REVOKE_PENDING",
+              ).length;
+            } catch {
+              return 0;
+            }
+          }),
+        );
+
+        if (!cancelled) {
+          setPendingRemoveCount(counts.reduce((sum, value) => sum + value, 0));
+        }
+      } catch {
+        if (!cancelled) {
+          setPendingRemoveCount(0);
+        }
+      }
+    };
+
+    loadPendingRemovals();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   return (
     <div className="hidden lg:flex h-full w-64 flex-col border-r border-border-custom bg-white">
@@ -84,6 +136,11 @@ export function Sidebar() {
             >
               <item.icon className="h-5 w-5" />
               {tNav(item.key)}
+              {item.key === "channels" && pendingRemoveCount > 0 && (
+                <span className="ml-auto inline-flex items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
+                  {pendingRemoveCount}
+                </span>
+              )}
             </Link>
           );
         })}

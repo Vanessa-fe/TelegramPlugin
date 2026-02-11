@@ -36,6 +36,7 @@ exports.confirmVerificationSchema = zod_1.z.object({
 exports.createChannelSchema = zod_1.z.object({
     organizationId: zod_1.z.string().uuid(),
     provider: zod_1.z.nativeEnum(client_1.ChannelProvider),
+    type: zod_1.z.nativeEnum(client_1.ChannelType).optional(),
     externalId: zod_1.z.string().min(1),
     title: zod_1.z.string().min(1).optional(),
     username: zod_1.z.string().min(1).optional(),
@@ -49,6 +50,7 @@ exports.updateChannelSchema = exports.createChannelSchema
     .extend({
     organizationId: zod_1.z.string().uuid().optional(),
     provider: zod_1.z.nativeEnum(client_1.ChannelProvider).optional(),
+    type: zod_1.z.nativeEnum(client_1.ChannelType).optional(),
     externalId: zod_1.z.string().min(1).optional(),
 });
 //# sourceMappingURL=channels.schema.js.map

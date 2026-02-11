@@ -27,7 +27,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      "flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:!bg-red-500 focus:!bg-red-500 data-highlighted:!bg-red-500 data-[state=open]:!bg-red-500 hover:!text-white data-highlighted:!text-white [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      "flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:!bg-purple-200 focus:!bg-purple-200 data-highlighted:!bg-purple-200 data-[state=open]:!bg-purple-200 hover:!text-purple-800 data-highlighted:!text-purple-800 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
       inset && "pl-8",
       className,
     )}
@@ -83,7 +83,7 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:!bg-red-500 focus:!bg-red-500 hover:!text-white focus:!text-white data-highlighted:!bg-red-500 data-highlighted:!text-white data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:!bg-purple-200 focus:!bg-purple-200 hover:!text-purple-800 focus:!text-purple-800 data-highlighted:!bg-purple-200 data-highlighted:!text-purple-800 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
       inset && "pl-8",
       className,
     )}
@@ -99,7 +99,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:!bg-red-500 focus:!bg-red-500 hover:!text-white focus:!text-white data-highlighted:!bg-red-500 data-highlighted:!text-white data-disabled:pointer-events-none data-disabled:opacity-50",
+      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:!bg-purple-200 focus:!bg-purple-200 hover:!text-purple-800 focus:!text-purple-800 data-highlighted:!bg-purple-200 data-highlighted:!text-purple-800 data-disabled:pointer-events-none data-disabled:opacity-50",
       className,
     )}
     checked={checked}
@@ -123,7 +123,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:!bg-red-500 focus:!bg-red-500 hover:!text-white focus:!text-white data-highlighted:!bg-red-500 data-highlighted:!text-white data-disabled:pointer-events-none data-disabled:opacity-50",
+      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:!bg-purple-200 focus:!bg-purple-200 hover:!text-purple-800 focus:!text-purple-800 data-highlighted:!bg-purple-200 data-highlighted:!text-purple-800 data-disabled:pointer-events-none data-disabled:opacity-50",
       className,
     )}
     {...props}

@@ -270,7 +270,11 @@ export function CheckoutPageContent({
                   key={channel.id}
                   className="inline-flex items-center gap-1 bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-xs font-medium"
                 >
-                  {channel.provider === "TELEGRAM" ? "📱" : "💬"}
+                  {channel.provider === "TELEGRAM"
+                    ? "📱"
+                    : channel.provider === "DISCORD"
+                      ? "💬"
+                      : "🟢"}
                   {channel.title || t("channelFallback")}
                 </span>
               ))}

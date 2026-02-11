@@ -54,6 +54,7 @@ export type ConfirmVerificationDto = z.infer<typeof confirmVerificationSchema>;
 export const createChannelSchema = z.object({
   organizationId: z.string().uuid(),
   provider: z.nativeEnum(ChannelProvider),
+  type: z.nativeEnum(ChannelType).optional(),
   externalId: z.string().min(1),
   title: z.string().min(1).optional(),
   username: z.string().min(1).optional(),
@@ -70,6 +71,7 @@ export const updateChannelSchema = createChannelSchema
   .extend({
     organizationId: z.string().uuid().optional(),
     provider: z.nativeEnum(ChannelProvider).optional(),
+    type: z.nativeEnum(ChannelType).optional(),
     externalId: z.string().min(1).optional(),
   });
 
