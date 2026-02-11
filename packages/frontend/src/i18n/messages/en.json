@@ -315,6 +315,25 @@
       "toastSuccess": "Reset link sent",
       "toastError": "Failed to send reset link. Please try again."
     },
+    "resetPassword": {
+      "title": "Reset your password",
+      "subtitle": "Choose a new password for your account",
+      "password": "New password",
+      "passwordPlaceholder": "••••••••",
+      "confirmPassword": "Confirm password",
+      "confirmPlaceholder": "••••••••",
+      "passwordHint": "At least 10 characters with uppercase, number and special character",
+      "submit": "Reset password",
+      "submitting": "Resetting...",
+      "backToLogin": "Back to login",
+      "missingToken": "Reset link is invalid or expired. Please request a new one.",
+      "passwordMismatch": "Passwords do not match",
+      "successTitle": "Password updated",
+      "successDescription": "Your password has been updated.",
+      "successCta": "Go to dashboard",
+      "toastSuccess": "Password updated",
+      "toastError": "Failed to reset password. Please try again."
+    },
     "oauth": {
       "continueWithGoogle": "Continue with Google",
       "signUpWithGoogle": "Sign up with Google",
@@ -742,10 +761,10 @@
   },
 
   "channels": {
-    "title": "My channels",
+    "title": "My platforms",
     "subtitle": "Manage your connected Telegram, Discord and WhatsApp channels",
 
-    "add": "Add channel",
+    "add": "Add",
     "addFirst": "Add my first channel",
 
     "loading": {

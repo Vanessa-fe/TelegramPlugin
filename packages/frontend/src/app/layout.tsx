@@ -2,7 +2,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -32,14 +32,16 @@ const softwareJsonLd = {
   },
 };
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "../../public/fonts/inter-roman.var.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../../public/fonts/inter-roman.var.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {

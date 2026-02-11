@@ -5,6 +5,8 @@ import type {
   RegisterData,
   UpdateProfileData,
   UpdatePasswordData,
+  ForgotPasswordData,
+  ResetPasswordData,
 } from '@/types/auth';
 
 export const authApi = {
@@ -40,6 +42,22 @@ export const authApi = {
   async updatePassword(dto: UpdatePasswordData) {
     const { data } = await apiClient.patch<{ user: User }>(
       '/auth/password',
+      dto
+    );
+    return data;
+  },
+
+  async forgotPassword(dto: ForgotPasswordData) {
+    const { data } = await apiClient.post<{ message: string }>(
+      '/auth/forgot-password',
+      dto
+    );
+    return data;
+  },
+
+  async resetPassword(dto: ResetPasswordData) {
+    const { data } = await apiClient.post<{ user: User }>(
+      '/auth/reset-password',
       dto
     );
     return data;

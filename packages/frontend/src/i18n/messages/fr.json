@@ -315,6 +315,25 @@
       "toastSuccess": "Lien de réinitialisation envoyé",
       "toastError": "Échec de l'envoi du lien. Réessaie."
     },
+    "resetPassword": {
+      "title": "Réinitialiser ton mot de passe",
+      "subtitle": "Choisis un nouveau mot de passe",
+      "password": "Nouveau mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmPlaceholder": "••••••••",
+      "passwordHint": "10 caractères minimum avec majuscule, chiffre et caractère spécial",
+      "submit": "Réinitialiser",
+      "submitting": "Réinitialisation...",
+      "backToLogin": "Retour à la connexion",
+      "missingToken": "Le lien est invalide ou expiré. Demande un nouveau lien.",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "successTitle": "Mot de passe mis à jour",
+      "successDescription": "Ton mot de passe a été mis à jour.",
+      "successCta": "Aller au dashboard",
+      "toastSuccess": "Mot de passe mis à jour",
+      "toastError": "Impossible de réinitialiser le mot de passe. Réessaie."
+    },
     "oauth": {
       "continueWithGoogle": "Continuer avec Google",
       "signUpWithGoogle": "S'inscrire avec Google",
@@ -761,18 +780,18 @@
   },
 
   "channels": {
-    "title": "Mes canaux",
-    "subtitle": "Gère tes canaux Telegram, Discord et WhatsApp connectés",
+    "title": "Mes plateformes",
+    "subtitle": "Gère tes platefomes Telegram, Discord et WhatsApp connectés",
 
-    "add": "Ajouter un canal",
+    "add": "Ajouter",
     "addFirst": "Ajouter mon premier canal",
 
     "loading": {
-      "title": "Chargement des canaux..."
+      "title": "Chargement des plateformes..."
     },
 
     "success": {
-      "created": "Canal ajouté avec succès",
+      "created": "Plateforme ajoutée avec succès",
       "accessGranted": "Accès accordé avec succès",
       "accessRevoked": "Accès révoqué avec succès"
     },

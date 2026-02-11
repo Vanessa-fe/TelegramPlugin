@@ -2,14 +2,21 @@
 > api@0.0.1 test /Users/vanessa/Sites/localhost/TelegramPlugin/packages/api
 > jest
 
-PASS src/app.controller.spec.ts
+PASS src/modules/audit-log/audit-log.service.spec.ts
 PASS src/modules/organizations/organizations.service.spec.ts
+PASS src/modules/data-exports/data-exports.service.spec.ts
+PASS src/modules/metrics/metrics.service.spec.ts
+PASS src/app.controller.spec.ts
+PASS src/modules/auth/rbac.spec.ts
 PASS src/modules/channel-access/channel-access.service.spec.ts
+PASS src/modules/channel-access/channel-access.controller.spec.ts
+PASS src/modules/scheduler/scheduler.service.spec.ts
+PASS src/modules/data-deletions/data-deletions.service.spec.ts
 PASS src/modules/payments/stripe-webhook.service.spec.ts
 PASS src/modules/auth/auth.service.spec.ts
 
-Test Suites: 5 passed, 5 total
-Tests:       54 passed, 54 total
+Test Suites: 12 passed, 12 total
+Tests:       95 passed, 95 total
 Snapshots:   0 total
-Time:        1.253 s, estimated 2 s
+Time:        3.07 s
 Ran all test suites.

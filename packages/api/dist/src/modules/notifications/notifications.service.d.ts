@@ -39,6 +39,7 @@ export declare class NotificationsService implements OnModuleInit {
     sendAccessRevoked(customerId: string, channelTitle: string, reason: string): Promise<void>;
     sendSubscriptionCanceled(customerId: string, planName: string): Promise<void>;
     sendSubscriptionRenewed(customerId: string, planName: string, nextBillingDate: Date): Promise<void>;
+    sendPasswordResetEmail(to: string, resetLink: string, firstName?: string): Promise<void>;
     private sendEmail;
     private wrapEmailTemplate;
     private htmlToText;

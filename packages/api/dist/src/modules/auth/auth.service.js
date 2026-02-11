@@ -41,21 +41,27 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var AuthService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcryptjs"));
+const node_crypto_1 = require("node:crypto");
 const prisma_service_1 = require("../../prisma/prisma.service");
-let AuthService = class AuthService {
+const notifications_service_1 = require("../notifications/notifications.service");
+let AuthService = AuthService_1 = class AuthService {
     prisma;
     jwtService;
     config;
-    constructor(prisma, jwtService, config) {
+    notifications;
+    logger = new common_1.Logger(AuthService_1.name);
+    constructor(prisma, jwtService, config, notifications) {
         this.prisma = prisma;
         this.jwtService = jwtService;
         this.config = config;
+        this.notifications = notifications;
     }
     async register(data) {
         const normalizedEmail = data.email.trim().toLowerCase();
@@ -264,6 +270,79 @@ let AuthService = class AuthService {
             user: this.sanitizeUser(updatedUser),
         };
     }
+    async requestPasswordReset(email) {
+        const normalizedEmail = email.trim().toLowerCase();
+        if (!normalizedEmail) {
+            return;
+        }
+        const user = await this.prisma.user.findUnique({
+            where: { email: normalizedEmail },
+        });
+        if (!user || !user.isActive) {
+            return;
+        }
+        const frontendUrl = this.getFrontendBaseUrl();
+        if (!frontendUrl) {
+            this.logger.warn('Password reset requested but frontend URL is not configured');
+            return;
+        }
+        const token = this.generateResetToken();
+        const tokenHash = this.hashResetToken(token);
+        const expiresAt = new Date(Date.now() + this.getPasswordResetTtlMinutes() * 60 * 1000);
+        await this.prisma.passwordResetToken.deleteMany({
+            where: { userId: user.id, usedAt: null },
+        });
+        await this.prisma.passwordResetToken.create({
+            data: {
+                userId: user.id,
+                tokenHash,
+                expiresAt,
+            },
+        });
+        const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+        await this.notifications.sendPasswordResetEmail(user.email, resetLink, user.firstName ?? undefined);
+    }
+    async resetPassword(token, newPassword) {
+        const tokenHash = this.hashResetToken(token);
+        const now = new Date();
+        const resetToken = await this.prisma.passwordResetToken.findFirst({
+            where: {
+                tokenHash,
+                usedAt: null,
+                expiresAt: { gt: now },
+            },
+        });
+        if (!resetToken) {
+            throw new common_1.BadRequestException('Token invalide ou expiré');
+        }
+        const user = await this.prisma.user.findUnique({
+            where: { id: resetToken.userId },
+        });
+        if (!user || !user.isActive) {
+            throw new common_1.ForbiddenException('Utilisateur introuvable');
+        }
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+        const updatedUser = await this.prisma.$transaction(async (tx) => {
+            const updated = await tx.user.update({
+                where: { id: user.id },
+                data: { passwordHash },
+            });
+            await tx.passwordResetToken.update({
+                where: { id: resetToken.id },
+                data: { usedAt: now },
+            });
+            await tx.passwordResetToken.updateMany({
+                where: { userId: user.id, usedAt: null },
+                data: { usedAt: now },
+            });
+            return updated;
+        });
+        const tokens = await this.signTokens(this.buildPayload(updatedUser));
+        return {
+            ...tokens,
+            user: this.sanitizeUser(updatedUser),
+        };
+    }
     async validateUser(email, password) {
         const normalizedEmail = email.trim().toLowerCase();
         const user = await this.prisma.user.findUnique({
@@ -325,12 +404,39 @@ let AuthService = class AuthService {
         }
         return fallback;
     }
+    getPasswordResetTtlMinutes() {
+        const rawValue = this.config.get('PASSWORD_RESET_TTL_MINUTES');
+        if (!rawValue) {
+            return 60;
+        }
+        const parsed = Number(rawValue);
+        if (Number.isFinite(parsed) && parsed > 0) {
+            return parsed;
+        }
+        return 60;
+    }
+    getFrontendBaseUrl() {
+        const raw = this.config.get('FRONTEND_URL') ??
+            this.config.get('NEXT_PUBLIC_SITE_URL') ??
+            this.config.get('CORS_ORIGIN');
+        if (!raw) {
+            return null;
+        }
+        return raw.replace(/\/+$/, '');
+    }
+    generateResetToken() {
+        return (0, node_crypto_1.randomBytes)(32).toString('base64url');
+    }
+    hashResetToken(token) {
+        return (0, node_crypto_1.createHash)('sha256').update(token).digest('hex');
+    }
 };
 exports.AuthService = AuthService;
-exports.AuthService = AuthService = __decorate([
+exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        notifications_service_1.NotificationsService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

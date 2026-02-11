@@ -10,6 +10,7 @@ import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -21,6 +22,10 @@ describe('AuthService', () => {
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+    },
+    organization: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
     },
   };
 
@@ -40,6 +45,10 @@ describe('AuthService', () => {
     get: jest.fn(),
   };
 
+  const mockNotificationsService = {
+    sendPasswordResetEmail: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -47,12 +56,16 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
     prismaService = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
+
+    mockPrismaService.organization.findUnique.mockResolvedValue(null);
+    mockPrismaService.organization.create.mockResolvedValue({ id: 'org-1' });
   });
 
   afterEach(() => {
@@ -161,7 +174,19 @@ describe('AuthService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      mockPrismaService.user.update.mockResolvedValue({});
+      mockPrismaService.user.update.mockResolvedValue({
+        id: '1',
+        email,
+        passwordHash: hashedPassword,
+        isActive: true,
+        role: UserRole.VIEWER,
+        firstName: null,
+        lastName: null,
+        organizationId: 'org-1',
+        lastLoginAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
       mockJwtService.signAsync.mockResolvedValue('token');
 
       const result = await service.login(email, password);

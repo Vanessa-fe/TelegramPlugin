@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updatePasswordSchema = exports.updateProfileSchema = exports.registerSchema = exports.refreshSchema = exports.loginSchema = exports.passwordSchema = void 0;
+exports.resetPasswordSchema = exports.forgotPasswordSchema = exports.updatePasswordSchema = exports.updateProfileSchema = exports.registerSchema = exports.refreshSchema = exports.loginSchema = exports.passwordSchema = void 0;
 const zod_1 = require("zod");
 exports.passwordSchema = zod_1.z
     .string()
@@ -34,6 +34,13 @@ exports.updateProfileSchema = zod_1.z.object({
 });
 exports.updatePasswordSchema = zod_1.z.object({
     currentPassword: zod_1.z.string().min(1).optional(),
+    newPassword: exports.passwordSchema,
+});
+exports.forgotPasswordSchema = zod_1.z.object({
+    email: zod_1.z.string().email('Email invalide'),
+});
+exports.resetPasswordSchema = zod_1.z.object({
+    token: zod_1.z.string().min(1, 'Token invalide'),
     newPassword: exports.passwordSchema,
 });
 //# sourceMappingURL=auth.schema.js.map

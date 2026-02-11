@@ -12,6 +12,8 @@ import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { StripeWebhookService } from './stripe-webhook.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { MetricsService } from '../metrics/metrics.service';
+import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 describe('StripeWebhookService', () => {
   let service: StripeWebhookService;
@@ -19,6 +21,8 @@ describe('StripeWebhookService', () => {
   let channelAccessService: jest.Mocked<ChannelAccessService>;
   let configService: jest.Mocked<ConfigService>;
   let auditLogService: jest.Mocked<AuditLogService>;
+  let platformSubscriptionService: jest.Mocked<PlatformSubscriptionService>;
+  let analyticsService: jest.Mocked<AnalyticsService>;
 
   const mockStripe = {
     webhooks: {
@@ -88,6 +92,18 @@ describe('StripeWebhookService', () => {
             recordWebhookDuration: jest.fn(),
           },
         },
+        {
+          provide: PlatformSubscriptionService,
+          useValue: {
+            handleWebhookEvent: jest.fn(),
+          },
+        },
+        {
+          provide: AnalyticsService,
+          useValue: {
+            trackPurchase: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -96,6 +112,8 @@ describe('StripeWebhookService', () => {
     channelAccessService = module.get(ChannelAccessService);
     configService = module.get(ConfigService);
     auditLogService = module.get(AuditLogService);
+    platformSubscriptionService = module.get(PlatformSubscriptionService);
+    analyticsService = module.get(AnalyticsService);
     prisma.organization.findFirst.mockResolvedValue(null);
 
     // Mock Stripe client
@@ -420,6 +438,11 @@ describe('StripeWebhookService', () => {
       prisma.subscription.findUnique.mockResolvedValue({
         id: subscriptionId,
         organizationId: 'org-123',
+        customerId: 'cust-123',
+        plan: {
+          priceCents: 1000,
+          currency: 'eur',
+        },
       } as any);
       prisma.paymentEvent.upsert.mockResolvedValue({
         id: 'pe-123',

@@ -8,58 +8,58 @@ export declare class OrganizationsController {
     constructor(organizationsService: OrganizationsService, dataDeletionsService: DataDeletionsService);
     findAll(): Promise<{
         id: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
         pageSlug: string | null;
         billingEmail: string;
         stripeAccountId: string | null;
         saasActive: boolean;
         timezone: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         deletedAt: Date | null;
     }[]>;
     findOne(user: AuthUser, id: string): Promise<{
         id: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
         pageSlug: string | null;
         billingEmail: string;
         stripeAccountId: string | null;
         saasActive: boolean;
         timezone: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         deletedAt: Date | null;
     }>;
     create(body: CreateOrganizationDto): Promise<{
         id: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
         pageSlug: string | null;
         billingEmail: string;
         stripeAccountId: string | null;
         saasActive: boolean;
         timezone: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         deletedAt: Date | null;
     }>;
     update(user: AuthUser, id: string, body: UpdateOrganizationDto): Promise<{
         id: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         slug: string;
         pageSlug: string | null;
         billingEmail: string;
         stripeAccountId: string | null;
         saasActive: boolean;
         timezone: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         deletedAt: Date | null;
     }>;
     deleteOrganization(user: AuthUser, id: string, correlationId?: string, requestId?: string): Promise<{

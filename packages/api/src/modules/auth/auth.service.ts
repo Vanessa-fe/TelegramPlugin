@@ -3,11 +3,14 @@ import {
   UnauthorizedException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   AuthTokens,
@@ -21,13 +24,17 @@ import type {
   UpdatePasswordDto,
   UpdateProfileDto,
 } from './auth.schema';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async register(data: RegisterDto): Promise<AuthResult> {
@@ -323,6 +330,111 @@ export class AuthService {
     };
   }
 
+  async requestPasswordReset(email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      return;
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user || !user.isActive) {
+      return;
+    }
+
+    const frontendUrl = this.getFrontendBaseUrl();
+    if (!frontendUrl) {
+      this.logger.warn(
+        'Password reset requested but frontend URL is not configured',
+      );
+      return;
+    }
+
+    const token = this.generateResetToken();
+    const tokenHash = this.hashResetToken(token);
+    const expiresAt = new Date(
+      Date.now() + this.getPasswordResetTtlMinutes() * 60 * 1000,
+    );
+
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id, usedAt: null },
+    });
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+      },
+    });
+
+    const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(
+      token,
+    )}`;
+
+    await this.notifications.sendPasswordResetEmail(
+      user.email,
+      resetLink,
+      user.firstName ?? undefined,
+    );
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<AuthResult> {
+    const tokenHash = this.hashResetToken(token);
+    const now = new Date();
+
+    const resetToken = await this.prisma.passwordResetToken.findFirst({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: now },
+      },
+    });
+
+    if (!resetToken) {
+      throw new BadRequestException('Token invalide ou expiré');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: resetToken.userId },
+    });
+
+    if (!user || !user.isActive) {
+      throw new ForbiddenException('Utilisateur introuvable');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    const updatedUser = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      });
+
+      await tx.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { usedAt: now },
+      });
+
+      await tx.passwordResetToken.updateMany({
+        where: { userId: user.id, usedAt: null },
+        data: { usedAt: now },
+      });
+
+      return updated;
+    });
+
+    const tokens = await this.signTokens(this.buildPayload(updatedUser));
+
+    return {
+      ...tokens,
+      user: this.sanitizeUser(updatedUser),
+    };
+  }
+
   private async validateUser(email: string, password: string): Promise<User> {
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -400,5 +512,40 @@ export class AuthService {
     }
 
     return fallback;
+  }
+
+  private getPasswordResetTtlMinutes(): number {
+    const rawValue = this.config.get<string>('PASSWORD_RESET_TTL_MINUTES');
+    if (!rawValue) {
+      return 60;
+    }
+
+    const parsed = Number(rawValue);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+
+    return 60;
+  }
+
+  private getFrontendBaseUrl(): string | null {
+    const raw =
+      this.config.get<string>('FRONTEND_URL') ??
+      this.config.get<string>('NEXT_PUBLIC_SITE_URL') ??
+      this.config.get<string>('CORS_ORIGIN');
+
+    if (!raw) {
+      return null;
+    }
+
+    return raw.replace(/\/+$/, '');
+  }
+
+  private generateResetToken(): string {
+    return randomBytes(32).toString('base64url');
+  }
+
+  private hashResetToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

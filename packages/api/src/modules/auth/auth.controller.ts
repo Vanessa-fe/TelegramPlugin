@@ -22,11 +22,15 @@ import {
   loginSchema,
   refreshSchema,
   registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   updatePasswordSchema,
   updateProfileSchema,
   type LoginDto,
   type RefreshDto,
   type RegisterDto,
+  type ForgotPasswordDto,
+  type ResetPasswordDto,
   type UpdatePasswordDto,
   type UpdateProfileDto,
 } from './auth.schema';
@@ -82,6 +86,29 @@ export class AuthController {
   @ClearAuthCookies()
   logout(): { message: string } {
     return { message: 'Déconnexion réussie' };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  async forgotPassword(
+    @Body(new ZodValidationPipe(forgotPasswordSchema))
+    body: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    await this.authService.requestPasswordReset(body.email);
+    return {
+      message:
+        "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.",
+    };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @SetAuthCookies()
+  resetPassword(
+    @Body(new ZodValidationPipe(resetPasswordSchema))
+    body: ResetPasswordDto,
+  ): Promise<AuthResult> {
+    return this.authService.resetPassword(body.token, body.newPassword);
   }
 
   @Get('me')

@@ -19,6 +19,7 @@ const jwt_access_strategy_1 = require("./strategies/jwt-access.strategy");
 const google_strategy_1 = require("./strategies/google.strategy");
 const cookie_response_interceptor_1 = require("./interceptors/cookie-response.interceptor");
 const cookie_clear_interceptor_1 = require("./interceptors/cookie-clear.interceptor");
+const notifications_module_1 = require("../notifications/notifications.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -27,6 +28,7 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             config_1.ConfigModule,
             passport_1.PassportModule.register({ defaultStrategy: 'jwt' }),
+            notifications_module_1.NotificationsModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],

@@ -45,6 +45,15 @@ let AuthController = class AuthController {
     logout() {
         return { message: 'Déconnexion réussie' };
     }
+    async forgotPassword(body) {
+        await this.authService.requestPasswordReset(body.email);
+        return {
+            message: "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.",
+        };
+    }
+    resetPassword(body) {
+        return this.authService.resetPassword(body.token, body.newPassword);
+    }
     me(user) {
         return this.authService.profile(user.userId);
     }
@@ -93,6 +102,23 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Object)
 ], AuthController.prototype, "logout", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('forgot-password'),
+    __param(0, (0, common_1.Body)(new common_2.ZodValidationPipe(auth_schema_1.forgotPasswordSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('reset-password'),
+    (0, set_auth_cookies_decorator_1.SetAuthCookies)(),
+    __param(0, (0, common_1.Body)(new common_2.ZodValidationPipe(auth_schema_1.resetPasswordSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
 __decorate([
     (0, common_1.Get)('me'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

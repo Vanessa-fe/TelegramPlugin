@@ -10,11 +10,13 @@ import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { CookieResponseInterceptor } from './interceptors/cookie-response.interceptor';
 import { CookieClearInterceptor } from './interceptors/cookie-clear.interceptor';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     ConfigModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    NotificationsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

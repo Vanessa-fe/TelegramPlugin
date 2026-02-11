@@ -53,3 +53,16 @@ export const updatePasswordSchema = z.object({
 });
 
 export type UpdatePasswordDto = z.infer<typeof updatePasswordSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Email invalide'),
+});
+
+export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token invalide'),
+  newPassword: passwordSchema,
+});
+
+export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;

@@ -67,3 +67,22 @@ export declare const updatePasswordSchema: z.ZodObject<{
     currentPassword?: string | undefined;
 }>;
 export type UpdatePasswordDto = z.infer<typeof updatePasswordSchema>;
+export declare const forgotPasswordSchema: z.ZodObject<{
+    email: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    email: string;
+}, {
+    email: string;
+}>;
+export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
+export declare const resetPasswordSchema: z.ZodObject<{
+    token: z.ZodString;
+    newPassword: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    newPassword: string;
+    token: string;
+}, {
+    newPassword: string;
+    token: string;
+}>;
+export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;

@@ -188,6 +188,18 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             },
         });
     }
+    async sendPasswordResetEmail(to, resetLink, firstName) {
+        const subject = 'Réinitialisation de votre mot de passe';
+        const greeting = firstName ? `Bonjour ${firstName},` : 'Bonjour,';
+        const body = `
+      <h1>Réinitialiser votre mot de passe</h1>
+      <p>${greeting}</p>
+      <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+      <p><a href="${resetLink}">Réinitialiser mon mot de passe</a></p>
+      <p>Ce lien expirera bientôt.</p>
+    `;
+        await this.sendEmail(to, subject, body);
+    }
     async sendEmail(to, subject, body) {
         if (!this.brevoApi || !this.brevoEnabled) {
             this.logger.log(`[EMAIL - DEV MODE] To: ${to}, Subject: ${subject}`);

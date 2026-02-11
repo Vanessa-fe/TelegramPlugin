@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { CouponType, type Coupon, type CreateCouponDto } from "@/types/coupon";
 import type { Organization } from "@/types/organization";
-import { CouponType, type CreateCouponDto, type Coupon } from "@/types/coupon";
 import type { Plan } from "@/types/plan";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo } from "react";
-import { useForm, Controller, type Resolver } from "react-hook-form";
+import { Controller, useForm, type Resolver } from "react-hook-form";
 import { z } from "zod";
 
 type FormData = {
@@ -63,19 +63,19 @@ export function CouponForm({
           .positive(t("form.errors.discountRequired")),
         currency: z.preprocess(
           (v) => (v === "" ? undefined : v),
-          z.string().length(3).optional()
+          z.string().length(3).optional(),
         ),
         maxUses: z.preprocess(
           (v) => (v === "" || v === undefined ? undefined : Number(v)),
-          z.number().int().positive().optional()
+          z.number().int().positive().optional(),
         ),
         expiresAt: z.preprocess(
           (v) => (v === "" ? undefined : v),
-          z.string().optional()
+          z.string().optional(),
         ),
         planIds: z.array(z.string()).default([]),
       }),
-    [t]
+    [t],
   );
 
   const typeLabels: Record<CouponType, string> = {
@@ -93,7 +93,11 @@ export function CouponForm({
   } = useForm<FormData>({
     resolver: zodResolver(couponSchema) as Resolver<FormData>,
     defaultValues: {
-      organizationId: initialData?.organizationId ?? organizationId ?? organizations?.[0]?.id ?? "",
+      organizationId:
+        initialData?.organizationId ??
+        organizationId ??
+        organizations?.[0]?.id ??
+        "",
       code: initialData?.code ?? "",
       type: initialData?.type ?? CouponType.PERCENTAGE,
       discountValue: initialData?.discountValue ?? 10,
@@ -123,7 +127,8 @@ export function CouponForm({
       code: data.code,
       type: data.type,
       discountValue: data.discountValue,
-      currency: data.type === CouponType.FIXED_AMOUNT ? data.currency : undefined,
+      currency:
+        data.type === CouponType.FIXED_AMOUNT ? data.currency : undefined,
       maxUses: data.maxUses || undefined,
       expiresAt: data.expiresAt || undefined,
       planIds: data.planIds,
@@ -153,7 +158,7 @@ export function CouponForm({
                 className={cn(
                   "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  "disabled:cursor-not-allowed disabled:opacity-50"
+                  "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
               >
                 {organizations?.map((org) => (
@@ -200,7 +205,7 @@ export function CouponForm({
               className={cn(
                 "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                "disabled:cursor-not-allowed disabled:opacity-50"
+                "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >
               {(Object.keys(typeLabels) as CouponType[]).map((type) => (
@@ -214,7 +219,9 @@ export function CouponForm({
           {/* Discount Value */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="discountValue">{t("form.discountValue.label")}</Label>
+              <Label htmlFor="discountValue">
+                {t("form.discountValue.label")}
+              </Label>
               <div className="relative">
                 <Input
                   id="discountValue"
@@ -235,7 +242,7 @@ export function CouponForm({
               )}
               <p className="text-xs text-muted-foreground">
                 {selectedType === CouponType.PERCENTAGE
-                  ? t("form.discountValue.helpPercentage")
+                  ? t("form.discountValue.help")
                   : t("form.discountValue.helpFixed")}
               </p>
             </div>
@@ -314,7 +321,7 @@ export function CouponForm({
                                 field.onChange([...field.value, plan.id]);
                               } else {
                                 field.onChange(
-                                  field.value.filter((id) => id !== plan.id)
+                                  field.value.filter((id) => id !== plan.id),
                                 );
                               }
                             }}
