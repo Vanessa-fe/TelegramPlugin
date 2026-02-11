@@ -3,10 +3,65 @@ export enum ChannelProvider {
   DISCORD = 'DISCORD',
 }
 
+export enum ChannelType {
+  CHANNEL = 'CHANNEL',
+  GROUP = 'GROUP',
+}
+
+export enum VerificationStatus {
+  PENDING = 'PENDING',
+  VERIFIED = 'VERIFIED',
+  EXPIRED = 'EXPIRED',
+  USED = 'USED',
+}
+
 export enum AccessStatus {
   PENDING = 'PENDING',
   GRANTED = 'GRANTED',
   REVOKED = 'REVOKED',
+}
+
+export interface ChannelVerification {
+  id: string;
+  code: string;
+  type: ChannelType;
+  provider: ChannelProvider;
+  expiresAt: string;
+}
+
+export interface VerificationStatusResponse {
+  status: VerificationStatus;
+  provider: ChannelProvider;
+  type?: ChannelType;
+  // Telegram fields
+  telegramChatId?: string | null;
+  telegramTitle?: string | null;
+  telegramUsername?: string | null;
+  // Discord fields
+  discordGuildId?: string | null;
+  discordGuildName?: string | null;
+  discordRoleId?: string | null;
+  discordRoleName?: string | null;
+}
+
+export interface DiscordGuild {
+  id: string;
+  channelId: string;
+  guildId: string;
+  guildName?: string | null;
+  roleId?: string | null;
+  roleName?: string | null;
+  botJoinedAt?: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DiscordRole {
+  id: string;
+  name: string;
+  color?: string;
+  position?: number;
 }
 
 export interface Channel {

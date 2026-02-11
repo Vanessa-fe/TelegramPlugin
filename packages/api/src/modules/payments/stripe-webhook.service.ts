@@ -421,14 +421,133 @@ export class StripeWebhookService {
       update.externalCustomerId = session.customer;
     }
 
-    if (Object.keys(update).length === 0) {
+    if (Object.keys(update).length > 0) {
+      await this.prisma.subscription.update({
+        where: { id: subscriptionId },
+        data: update,
+      });
+    }
+
+    // Process affiliate referral and coupon usage from metadata
+    const metadata = session.metadata ?? {};
+    await this.processAffiliateAndCoupon(subscriptionId, metadata);
+  }
+
+  private async processAffiliateAndCoupon(
+    subscriptionId: string,
+    metadata: Record<string, string>,
+  ): Promise<void> {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        plan: true,
+      },
+    });
+
+    if (!subscription) {
+      this.logger.warn(
+        `Subscription ${subscriptionId} not found for affiliate/coupon processing`,
+      );
       return;
     }
 
-    await this.prisma.subscription.update({
-      where: { id: subscriptionId },
-      data: update,
-    });
+    // Process coupon usage
+    const couponId = metadata.couponId;
+    const discountCents = metadata.discountCents
+      ? parseInt(metadata.discountCents, 10)
+      : 0;
+    const originalPriceCents = metadata.originalPriceCents
+      ? parseInt(metadata.originalPriceCents, 10)
+      : subscription.plan.priceCents;
+
+    if (couponId && discountCents > 0) {
+      try {
+        // Check if coupon usage already exists
+        const existingUsage = await this.prisma.couponUsage.findUnique({
+          where: { subscriptionId },
+        });
+
+        if (!existingUsage) {
+          await this.prisma.$transaction([
+            this.prisma.couponUsage.create({
+              data: {
+                couponId,
+                subscriptionId,
+                customerId: subscription.customerId,
+                discountCents,
+                originalCents: originalPriceCents,
+              },
+            }),
+            this.prisma.coupon.update({
+              where: { id: couponId },
+              data: { usedCount: { increment: 1 } },
+            }),
+          ]);
+
+          this.logger.debug(
+            `Recorded coupon usage for subscription ${subscriptionId}, discount: ${discountCents} cents`,
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to record coupon usage for subscription ${subscriptionId}`,
+          error as Error,
+        );
+      }
+    }
+
+    // Process affiliate referral
+    const affiliateId = metadata.affiliateId;
+    if (affiliateId) {
+      try {
+        // Check if referral already exists
+        const existingReferral = await this.prisma.affiliateReferral.findUnique(
+          { where: { subscriptionId } },
+        );
+
+        if (!existingReferral) {
+          const affiliate = await this.prisma.affiliate.findUnique({
+            where: { id: affiliateId },
+          });
+
+          if (affiliate) {
+            const finalAmount = originalPriceCents - discountCents;
+            const commissionCents = Math.round(
+              (finalAmount * affiliate.commissionRate) / 100,
+            );
+
+            await this.prisma.$transaction([
+              this.prisma.affiliateReferral.create({
+                data: {
+                  affiliateId,
+                  subscriptionId,
+                  customerId: subscription.customerId,
+                  amountCents: finalAmount,
+                  commissionCents,
+                  currency: subscription.plan.currency.toLowerCase(),
+                },
+              }),
+              this.prisma.affiliate.update({
+                where: { id: affiliateId },
+                data: {
+                  totalEarnings: { increment: commissionCents },
+                  pendingEarnings: { increment: commissionCents },
+                },
+              }),
+            ]);
+
+            this.logger.debug(
+              `Recorded affiliate referral for subscription ${subscriptionId}, commission: ${commissionCents} cents`,
+            );
+          }
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to record affiliate referral for subscription ${subscriptionId}`,
+          error as Error,
+        );
+      }
+    }
   }
 
   private isUuid(value: string): boolean {

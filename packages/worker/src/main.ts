@@ -1,5 +1,6 @@
 import { Queue, Worker, type Job } from "bullmq";
 import { Bot, GrammyError, HttpError } from "grammy";
+import { Client, GatewayIntentBits } from "discord.js";
 import { Redis } from "ioredis";
 import dotenv from "dotenv";
 import fs from "node:fs";
@@ -31,6 +32,7 @@ const BaseEnvSchema = z.object({
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   DATABASE_URL: z.string().min(1),
   TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN requis"),
+  DISCORD_BOT_TOKEN: z.string().optional(),
   TELEGRAM_INVITE_TTL_SECONDS: z.string().optional(),
   TELEGRAM_INVITE_MAX_USES: z.string().optional(),
   ACCESS_LATENCY_ALERT_MS: z.string().optional(),
@@ -155,6 +157,17 @@ let connection: Redis;
 const prisma = new PrismaClient();
 const bot = new Bot(env.TELEGRAM_BOT_TOKEN);
 
+// Discord client (optional, only initialized if token is provided)
+let discordClient: Client | null = null;
+if (env.DISCORD_BOT_TOKEN) {
+  discordClient = new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMembers,
+    ],
+  });
+}
+
 const workers: Worker[] = [];
 let grantDlq: Queue | null = null;
 let revokeDlq: Queue | null = null;
@@ -238,7 +251,11 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
       },
     },
     include: {
-      channel: true,
+      channel: {
+        include: {
+          discordGuild: true,
+        },
+      },
       invite: true,
       customer: true,
     },
@@ -256,6 +273,12 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
     return;
   }
 
+  // Route to appropriate handler based on provider
+  if (channelAccess.channel.provider === $Enums.ChannelProvider.DISCORD) {
+    await processDiscordGrant(job, channelAccess);
+    return;
+  }
+
   if (channelAccess.channel.provider !== $Enums.ChannelProvider.TELEGRAM) {
     logger.warn(
       {
@@ -264,7 +287,7 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
         channelId: data.channelId,
         provider: channelAccess.channel.provider,
       },
-      "Channel provider is not Telegram, skipping grant job"
+      "Unknown channel provider, skipping grant job"
     );
     return;
   }
@@ -468,6 +491,312 @@ async function sendTelegramNotification(
   }
 }
 
+// ========== Discord Functions ==========
+
+async function grantDiscordRole(
+  guildId: string,
+  roleId: string,
+  discordUserId: string
+): Promise<boolean> {
+  if (!discordClient) {
+    logger.error("Discord client not initialized");
+    return false;
+  }
+
+  try {
+    const guild = await discordClient.guilds.fetch(guildId);
+    const member = await guild.members.fetch(discordUserId);
+    const role = await guild.roles.fetch(roleId);
+
+    if (!role) {
+      logger.error({ guildId, roleId }, "Discord role not found");
+      return false;
+    }
+
+    await member.roles.add(role, "Paid access granted via monetization platform");
+    logger.info(
+      { guildId, roleId, discordUserId },
+      "Discord role granted to member"
+    );
+    return true;
+  } catch (error) {
+    logger.error(
+      {
+        guildId,
+        roleId,
+        discordUserId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to grant Discord role"
+    );
+    return false;
+  }
+}
+
+async function revokeDiscordRole(
+  guildId: string,
+  roleId: string,
+  discordUserId: string
+): Promise<boolean> {
+  if (!discordClient) {
+    logger.error("Discord client not initialized");
+    return false;
+  }
+
+  try {
+    const guild = await discordClient.guilds.fetch(guildId);
+    const member = await guild.members.fetch(discordUserId);
+    const role = await guild.roles.fetch(roleId);
+
+    if (!role) {
+      logger.error({ guildId, roleId }, "Discord role not found");
+      return false;
+    }
+
+    await member.roles.remove(role, "Access revoked via monetization platform");
+    logger.info(
+      { guildId, roleId, discordUserId },
+      "Discord role revoked from member"
+    );
+    return true;
+  } catch (error) {
+    logger.error(
+      {
+        guildId,
+        roleId,
+        discordUserId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Failed to revoke Discord role"
+    );
+    return false;
+  }
+}
+
+async function sendDiscordNotification(
+  discordUserId: string,
+  message: string
+): Promise<boolean> {
+  if (!discordClient) {
+    return false;
+  }
+
+  try {
+    const user = await discordClient.users.fetch(discordUserId);
+    await user.send(message);
+    logger.info({ discordUserId }, "Discord DM sent");
+    return true;
+  } catch (error) {
+    logger.warn(
+      {
+        discordUserId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "Could not send Discord DM"
+    );
+    return false;
+  }
+}
+
+// ========== Discord Grant/Revoke Processing ==========
+
+type ChannelAccessWithDiscord = Awaited<ReturnType<typeof prisma.channelAccess.findUnique>> & {
+  channel: {
+    id: string;
+    provider: $Enums.ChannelProvider;
+    externalId: string;
+    title: string | null;
+    discordGuild: {
+      guildId: string;
+      roleId: string | null;
+      roleName: string | null;
+    } | null;
+  };
+  customer: {
+    id: string;
+    discordUserId: string | null;
+    telegramUserId: string | null;
+  };
+};
+
+async function processDiscordGrant(
+  job: Job<GrantAccessPayload>,
+  channelAccess: NonNullable<ChannelAccessWithDiscord>
+): Promise<void> {
+  const discordGuild = channelAccess.channel.discordGuild;
+
+  if (!discordGuild) {
+    throw new Error(
+      `Missing Discord guild info for channel ${channelAccess.channelId}`
+    );
+  }
+
+  if (!discordGuild.roleId) {
+    throw new Error(
+      `Missing Discord role ID for channel ${channelAccess.channelId}`
+    );
+  }
+
+  const discordUserId = channelAccess.customer.discordUserId;
+
+  if (!discordUserId) {
+    logger.warn(
+      {
+        jobId: job.id,
+        customerId: channelAccess.customerId,
+      },
+      "Customer has no Discord user ID linked, cannot grant Discord access"
+    );
+    // Don't throw - just mark as pending, waiting for customer to link Discord
+    return;
+  }
+
+  const now = new Date();
+  const granted = await grantDiscordRole(
+    discordGuild.guildId,
+    discordGuild.roleId,
+    discordUserId
+  );
+
+  if (!granted) {
+    throw new Error(
+      `Failed to grant Discord role for channel ${channelAccess.channelId}`
+    );
+  }
+
+  // Update channel access status
+  await prisma.channelAccess.update({
+    where: { id: channelAccess.id },
+    data: {
+      status: $Enums.AccessStatus.GRANTED,
+      grantedAt: now,
+      discordRoleId: discordGuild.roleId,
+      revokedAt: null,
+      revokeReason: null,
+    },
+  });
+
+  // Send Discord notification
+  const serverName = channelAccess.channel.title || "le serveur";
+  const roleName = discordGuild.roleName || "le rôle";
+  const message =
+    `🎉 **Accès accordé !**\n\n` +
+    `Votre accès à "${serverName}" a été activé.\n\n` +
+    `Le rôle "${roleName}" vous a été attribué.\n\n` +
+    `_Vous pouvez maintenant accéder au contenu réservé aux membres._`;
+
+  const sent = await sendDiscordNotification(discordUserId, message);
+
+  if (sent) {
+    logger.info(
+      {
+        jobId: job.id,
+        customerId: channelAccess.customerId,
+        discordUserId,
+      },
+      "Discord access notification sent to customer"
+    );
+  }
+
+  logger.info(
+    {
+      jobId: job.id,
+      subscriptionId: channelAccess.subscriptionId,
+      channelId: channelAccess.channelId,
+      guildId: discordGuild.guildId,
+      roleId: discordGuild.roleId,
+    },
+    "Discord role granted and channel access updated"
+  );
+}
+
+async function processDiscordRevoke(
+  job: Job<RevokeAccessPayload>,
+  access: NonNullable<ChannelAccessWithDiscord>,
+  reason: string
+): Promise<void> {
+  const discordGuild = access.channel.discordGuild;
+
+  if (!discordGuild) {
+    logger.error(
+      {
+        jobId: job.id,
+        channelId: access.channelId,
+      },
+      "Cannot revoke Discord access: missing guild info"
+    );
+    return;
+  }
+
+  const roleId = access.discordRoleId || discordGuild.roleId;
+
+  if (!roleId) {
+    logger.error(
+      {
+        jobId: job.id,
+        channelId: access.channelId,
+      },
+      "Cannot revoke Discord access: missing role ID"
+    );
+    return;
+  }
+
+  const discordUserId = access.customer.discordUserId;
+
+  if (!discordUserId) {
+    logger.warn(
+      {
+        jobId: job.id,
+        customerId: access.customerId,
+      },
+      "Customer has no Discord user ID, skipping Discord revoke"
+    );
+    return;
+  }
+
+  const now = new Date();
+
+  // Revoke the role
+  await revokeDiscordRole(discordGuild.guildId, roleId, discordUserId);
+
+  // Update access status
+  await prisma.channelAccess.update({
+    where: { id: access.id },
+    data: {
+      status: $Enums.AccessStatus.REVOKED,
+      revokedAt: now,
+      revokeReason: reason,
+    },
+  });
+
+  // Send Discord notification
+  const reasonMessages: Record<string, string> = {
+    payment_failed: "Échec du paiement",
+    canceled: "Abonnement annulé",
+    refund: "Remboursement effectué",
+    expired: "Abonnement expiré",
+    manual: "Révocation manuelle",
+  };
+  const serverName = access.channel.title || "le serveur";
+  const message =
+    `🚫 **Accès révoqué**\n\n` +
+    `Votre accès à "${serverName}" a été révoqué.\n\n` +
+    `Raison : ${reasonMessages[reason] || reason}`;
+
+  await sendDiscordNotification(discordUserId, message);
+
+  logger.info(
+    {
+      jobId: job.id,
+      channelId: access.channelId,
+      guildId: discordGuild.guildId,
+      roleId,
+      discordUserId,
+    },
+    "Discord access revoked"
+  );
+}
+
 async function processRevokeAccess(
   job: Job<RevokeAccessPayload>
 ): Promise<void> {
@@ -475,7 +804,11 @@ async function processRevokeAccess(
   const channelAccesses = await prisma.channelAccess.findMany({
     where: { subscriptionId: data.subscriptionId },
     include: {
-      channel: true,
+      channel: {
+        include: {
+          discordGuild: true,
+        },
+      },
       invite: true,
       customer: true,
     },
@@ -495,6 +828,13 @@ async function processRevokeAccess(
   const now = new Date();
 
   for (const access of channelAccesses) {
+    // Handle Discord channels
+    if (access.channel.provider === $Enums.ChannelProvider.DISCORD) {
+      await processDiscordRevoke(job, access as ChannelAccessWithDiscord, data.reason);
+      continue;
+    }
+
+    // Handle non-Telegram channels
     if (access.channel.provider !== $Enums.ChannelProvider.TELEGRAM) {
       continue;
     }
@@ -630,6 +970,13 @@ async function shutdown(signal?: NodeJS.Signals): Promise<void> {
     grantDlq?.close(),
     revokeDlq?.close(),
   ]);
+
+  // Destroy Discord client if initialized
+  if (discordClient) {
+    discordClient.destroy();
+    logger.info("Discord client destroyed");
+  }
+
   await prisma.$disconnect().catch((error: unknown) => {
     logger.error({ error: error as Error }, "Failed to disconnect Prisma client");
   });
@@ -695,6 +1042,19 @@ export async function bootstrapWorkers(): Promise<void> {
     },
     "Telegram API client initialised"
   );
+
+  // Initialize Discord client if token is provided
+  if (discordClient) {
+    await discordClient.login(env.DISCORD_BOT_TOKEN);
+    logger.info(
+      {
+        username: discordClient.user?.tag,
+      },
+      "Discord client initialised"
+    );
+  } else {
+    logger.info("Discord client not configured (DISCORD_BOT_TOKEN not set)");
+  }
 
   const grantWorker = new Worker<GrantAccessPayload>(
     queueNames.grantAccess,

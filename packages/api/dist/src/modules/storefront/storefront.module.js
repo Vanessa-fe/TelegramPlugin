@@ -10,11 +10,13 @@ exports.StorefrontModule = void 0;
 const common_1 = require("@nestjs/common");
 const storefront_controller_1 = require("./storefront.controller");
 const storefront_service_1 = require("./storefront.service");
+const landing_pages_module_1 = require("../landing-pages/landing-pages.module");
 let StorefrontModule = class StorefrontModule {
 };
 exports.StorefrontModule = StorefrontModule;
 exports.StorefrontModule = StorefrontModule = __decorate([
     (0, common_1.Module)({
+        imports: [landing_pages_module_1.LandingPagesModule],
         controllers: [storefront_controller_1.StorefrontController],
         providers: [storefront_service_1.StorefrontService],
         exports: [storefront_service_1.StorefrontService],

@@ -57,7 +57,7 @@ export default function ProductsPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading")}</p>
+          <p className="mt-3 text-sm text-text-secondary">{t("loading")}</p>
         </div>
       </div>
     );
@@ -68,10 +68,10 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
+          <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">
             {t("title")}
           </h1>
-          <p className="mt-1 text-[#6F6E77]">{t("subtitle")}</p>
+          <p className="mt-1 text-text-secondary">{t("subtitle")}</p>
         </div>
         <Link href="/dashboard/products/new">
           <Button className="bg-purple-600 hover:bg-purple-700 text-white">
@@ -83,14 +83,14 @@ export default function ProductsPage() {
 
       {/* Products list */}
       {products.length === 0 ? (
-        <div className="bg-white rounded-xl border-border-[#E9E3EF] p-12 text-center">
+        <div className="bg-white rounded-xl border-border-custom p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
             <Package className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-semibold text-[#1A1523] mb-2">
+          <h3 className="text-lg font-semibold text-text-primary mb-2">
             {t("empty.title")}
           </h3>
-          <p className="text-[#6F6E77] mb-6 max-w-sm mx-auto">
+          <p className="text-text-secondary mb-6 max-w-sm mx-auto">
             {t("empty.description")}
           </p>
           <Link href="/dashboard/products/new">
@@ -101,20 +101,20 @@ export default function ProductsPage() {
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-border-[#E9E3EF] overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-custom overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border-[#E9E3EF] bg-surface">
-                <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
+              <tr className="border-b border-border-custom bg-surface">
+                <th className="text-left text-sm font-medium text-text-secondary px-6 py-4">
                   {t("table.name")}
                 </th>
-                <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
+                <th className="text-left text-sm font-medium text-text-secondary px-6 py-4">
                   {t("table.status")}
                 </th>
-                <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
+                <th className="text-left text-sm font-medium text-text-secondary px-6 py-4">
                   {t("table.created")}
                 </th>
-                <th className="text-right text-sm font-medium text-[#6F6E77] px-6 py-4">
+                <th className="text-right text-sm font-medium text-text-secondary px-6 py-4">
                   {t("table.actions")}
                 </th>
               </tr>
@@ -123,12 +123,12 @@ export default function ProductsPage() {
               {products.map((product) => (
                 <tr
                   key={product.id}
-                  className="border-b border-border-[#E9E3EF] last:border-0 hover:bg-surface transition-colors"
+                  className="border-b border-border-custom last:border-0 hover:bg-surface transition-colors"
                 >
                   <td className="px-6 py-4">
-                    <p className="font-medium text-[#1A1523]">{product.name}</p>
+                    <p className="font-medium text-text-primary">{product.name}</p>
                     {product.description && (
-                      <p className="text-sm text-[#6F6E77] truncate max-w-xs">
+                      <p className="text-sm text-text-secondary truncate max-w-xs">
                         {product.description}
                       </p>
                     )}
@@ -140,7 +140,7 @@ export default function ProductsPage() {
                       {statusLabels[product.status]}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[#6F6E77]">
+                  <td className="px-6 py-4 text-sm text-text-secondary">
                     {new Date(product.createdAt).toLocaleDateString(locale, {
                       month: "short",
                       day: "numeric",
@@ -153,7 +153,7 @@ export default function ProductsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="border-border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+                          className="border-border-custom hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
                         >
                           <List className="mr-2 h-4 w-4" />
                           {t("table.plans")}

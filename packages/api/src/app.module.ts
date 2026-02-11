@@ -29,6 +29,9 @@ import { DataExportsModule } from './modules/data-exports/data-exports.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ContactModule } from './modules/contact/contact.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
+import { AffiliatesModule } from './modules/affiliates/affiliates.module';
+import { LandingPagesModule } from './modules/landing-pages/landing-pages.module';
 
 function findRepoRoot(startDir: string): string {
   let dir = startDir;
@@ -116,6 +119,9 @@ function resolveEnvFiles(): string[] {
     MetricsModule,
     AnalyticsModule,
     ContactModule,
+    CouponsModule,
+    AffiliatesModule,
+    LandingPagesModule,
   ],
   controllers: [AppController],
   providers: [

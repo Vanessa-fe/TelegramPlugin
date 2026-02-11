@@ -38,6 +38,9 @@ const data_exports_module_1 = require("./modules/data-exports/data-exports.modul
 const metrics_module_1 = require("./modules/metrics/metrics.module");
 const analytics_module_1 = require("./modules/analytics/analytics.module");
 const contact_module_1 = require("./modules/contact/contact.module");
+const coupons_module_1 = require("./modules/coupons/coupons.module");
+const affiliates_module_1 = require("./modules/affiliates/affiliates.module");
+const landing_pages_module_1 = require("./modules/landing-pages/landing-pages.module");
 function findRepoRoot(startDir) {
     let dir = startDir;
     while (true) {
@@ -122,6 +125,9 @@ exports.AppModule = AppModule = __decorate([
             metrics_module_1.MetricsModule,
             analytics_module_1.AnalyticsModule,
             contact_module_1.ContactModule,
+            coupons_module_1.CouponsModule,
+            affiliates_module_1.AffiliatesModule,
+            landing_pages_module_1.LandingPagesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

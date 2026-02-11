@@ -2,7 +2,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '@/lib/api/auth';
-import type { User, LoginCredentials, RegisterData } from '@/types/auth';
+import type {
+  User,
+  LoginCredentials,
+  RegisterData,
+  UpdateProfileData,
+  UpdatePasswordData,
+} from '@/types/auth';
 
 interface AuthContextValue {
   user: User | null;
@@ -11,6 +17,9 @@ interface AuthContextValue {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: UpdateProfileData) => Promise<void>;
+  updatePassword: (data: UpdatePasswordData) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -49,6 +58,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
+  async function updateProfile(data: UpdateProfileData) {
+    const { user: userData } = await authApi.updateProfile(data);
+    setUser(userData);
+  }
+
+  async function updatePassword(data: UpdatePasswordData) {
+    const { user: userData } = await authApi.updatePassword(data);
+    setUser(userData);
+  }
+
+  async function refreshProfile() {
+    const userData = await authApi.getProfile();
+    setUser(userData);
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -58,6 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         register,
         logout,
+        updateProfile,
+        updatePassword,
+        refreshProfile,
       }}
     >
       {children}

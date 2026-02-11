@@ -6,6 +6,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  AffiliateStatus,
+  CouponStatus,
+  CouponType,
   PlanInterval,
   ProductStatus,
   Prisma,
@@ -194,6 +197,89 @@ export class BillingService {
       );
     }
 
+    // Validate coupon code if provided
+    let validatedCoupon: {
+      id: string;
+      code: string;
+      discountCents: number;
+      type: CouponType;
+    } | null = null;
+
+    if (payload.couponCode) {
+      const coupon = await this.prisma.coupon.findUnique({
+        where: {
+          organizationId_code: {
+            organizationId: organization.id,
+            code: payload.couponCode.toUpperCase(),
+          },
+        },
+      });
+
+      if (!coupon) {
+        throw new BadRequestException('Coupon invalide');
+      }
+
+      if (coupon.status !== CouponStatus.ACTIVE) {
+        throw new BadRequestException('Ce coupon est désactivé');
+      }
+
+      if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+        throw new BadRequestException('Ce coupon a expiré');
+      }
+
+      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+        throw new BadRequestException(
+          "Ce coupon a atteint sa limite d'utilisation",
+        );
+      }
+
+      if (coupon.planIds.length > 0 && !coupon.planIds.includes(plan.id)) {
+        throw new BadRequestException(
+          "Ce coupon n'est pas valide pour ce plan",
+        );
+      }
+
+      let discountCents: number;
+      if (coupon.type === CouponType.PERCENTAGE) {
+        discountCents = Math.round((plan.priceCents * coupon.discountValue) / 100);
+      } else {
+        discountCents = Math.min(coupon.discountValue, plan.priceCents);
+      }
+
+      validatedCoupon = {
+        id: coupon.id,
+        code: coupon.code,
+        discountCents,
+        type: coupon.type,
+      };
+    }
+
+    // Validate affiliate code if provided
+    let validatedAffiliate: { id: string; code: string } | null = null;
+
+    if (payload.affiliateCode) {
+      const affiliate = await this.prisma.affiliate.findUnique({
+        where: { referralCode: payload.affiliateCode.toUpperCase() },
+      });
+
+      if (!affiliate) {
+        throw new BadRequestException('Code affilié invalide');
+      }
+
+      if (affiliate.organizationId !== organization.id) {
+        throw new BadRequestException('Code affilié invalide');
+      }
+
+      if (affiliate.status !== AffiliateStatus.ACTIVE) {
+        throw new BadRequestException("Cet affilié n'est pas actif");
+      }
+
+      validatedAffiliate = {
+        id: affiliate.id,
+        code: affiliate.referralCode,
+      };
+    }
+
     const { customer } = payload;
     const telegramUsername = customer.telegramUsername
       ?.toLowerCase()
@@ -262,6 +348,8 @@ export class BillingService {
         customerId: storedCustomer.id,
         planId: plan.id,
         status: SubscriptionStatus.INCOMPLETE,
+        couponCode: validatedCoupon?.code ?? null,
+        affiliateCode: validatedAffiliate?.code ?? null,
         metadata: {
           checkoutMode:
             plan.interval === PlanInterval.ONE_TIME
@@ -270,6 +358,12 @@ export class BillingService {
         },
       },
     });
+
+    // Calculate final price after discount
+    const originalPriceCents = plan.priceCents;
+    const finalPriceCents = validatedCoupon
+      ? Math.max(0, originalPriceCents - validatedCoupon.discountCents)
+      : originalPriceCents;
 
     const quantity = payload.quantity ?? 1;
     const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
@@ -285,7 +379,7 @@ export class BillingService {
             planId: plan.id,
           },
         },
-        unit_amount: plan.priceCents,
+        unit_amount: finalPriceCents,
         ...(plan.interval !== PlanInterval.ONE_TIME && {
           recurring: this.mapRecurring(plan.interval),
         }),
@@ -299,12 +393,24 @@ export class BillingService {
       throw new BadRequestException('Stripe checkout URLs are not configured');
     }
 
-    const metadata = {
+    const metadata: Record<string, string> = {
       organizationId: organization.id,
       subscriptionId: subscription.id,
       planId: plan.id,
       customerId: storedCustomer.id,
+      originalPriceCents: String(originalPriceCents),
     };
+
+    if (validatedCoupon) {
+      metadata.couponId = validatedCoupon.id;
+      metadata.couponCode = validatedCoupon.code;
+      metadata.discountCents = String(validatedCoupon.discountCents);
+    }
+
+    if (validatedAffiliate) {
+      metadata.affiliateId = validatedAffiliate.id;
+      metadata.affiliateCode = validatedAffiliate.code;
+    }
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode:

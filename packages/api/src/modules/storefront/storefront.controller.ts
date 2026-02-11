@@ -2,10 +2,14 @@ import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { ParseUUIDPipe } from '@nestjs/common/pipes';
 import { Public } from '../auth/decorators/public.decorator';
 import { StorefrontService } from './storefront.service';
+import { LandingPagesService } from '../landing-pages/landing-pages.service';
 
 @Controller('storefront')
 export class StorefrontController {
-  constructor(private readonly storefrontService: StorefrontService) {}
+  constructor(
+    private readonly storefrontService: StorefrontService,
+    private readonly landingPagesService: LandingPagesService,
+  ) {}
 
   @Get('products/:id')
   @Public()
@@ -48,5 +52,31 @@ export class StorefrontController {
   @Public()
   async getOrganizationProducts(@Param('slug') slug: string) {
     return this.storefrontService.getPublicProductsByOrganization(slug);
+  }
+
+  @Get('pages/:creator')
+  @Public()
+  async getPublicLandingPage(@Param('creator') creator: string) {
+    const page = await this.landingPagesService.getPublicPage(creator);
+    if (!page) {
+      throw new NotFoundException('Page introuvable');
+    }
+    return page;
+  }
+
+  @Get('pages/:creator/:pageSlug')
+  @Public()
+  async getPublicLandingPageWithSlug(
+    @Param('creator') creator: string,
+    @Param('pageSlug') pageSlug: string,
+  ) {
+    const page = await this.landingPagesService.getPublicPage(
+      creator,
+      pageSlug,
+    );
+    if (!page) {
+      throw new NotFoundException('Page introuvable');
+    }
+    return page;
   }
 }

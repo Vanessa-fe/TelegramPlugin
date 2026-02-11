@@ -1,7 +1,7 @@
 import type { FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import type { AuthUser, AuthResult, AuthProfile } from './auth.types';
-import { type LoginDto, type RefreshDto, type RegisterDto } from './auth.schema';
+import { type LoginDto, type RefreshDto, type RegisterDto, type UpdatePasswordDto, type UpdateProfileDto } from './auth.schema';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -12,4 +12,6 @@ export declare class AuthController {
         message: string;
     };
     me(user: AuthUser): Promise<AuthProfile>;
+    updateProfile(user: AuthUser, body: UpdateProfileDto): Promise<AuthResult>;
+    updatePassword(user: AuthUser, body: UpdatePasswordDto): Promise<AuthResult>;
 }

@@ -22,9 +22,16 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   );
 }
 
-export function DialogContent({ children }: { children: React.ReactNode }) {
+interface DialogContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function DialogContent({ children, className }: DialogContentProps) {
+  const baseClasses = "bg-white rounded-lg p-6 shadow-lg max-w-md w-full mx-4";
+  const combinedClasses = className ? `${baseClasses} ${className}` : baseClasses;
   return (
-    <div className="bg-white rounded-lg p-6 shadow-lg max-w-md w-full mx-4">
+    <div className={combinedClasses}>
       {children}
     </div>
   );
@@ -44,4 +51,17 @@ export function DialogDescription({ children }: { children: React.ReactNode }) {
 
 export function DialogFooter({ children }: { children: React.ReactNode }) {
   return <div className="flex justify-end gap-3 mt-6">{children}</div>;
+}
+
+interface DialogTriggerProps {
+  children: React.ReactNode;
+  asChild?: boolean;
+  onClick?: () => void;
+}
+
+export function DialogTrigger({ children, asChild, onClick }: DialogTriggerProps) {
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, { onClick } as React.HTMLAttributes<HTMLElement>);
+  }
+  return <button onClick={onClick}>{children}</button>;
 }

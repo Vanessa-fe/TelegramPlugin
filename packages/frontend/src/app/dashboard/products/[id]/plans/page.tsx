@@ -75,7 +75,7 @@ export default function ProductPlansPage() {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
           <p className="mt-2 text-sm text-muted-foreground">{t("loading")}</p>
         </div>
       </div>

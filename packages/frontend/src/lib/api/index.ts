@@ -8,3 +8,6 @@ export { subscriptionsApi } from './subscriptions';
 export { paymentEventsApi } from './payment-events';
 export { channelsApi } from './channels';
 export { contactApi } from './contact';
+export { couponsApi } from './coupons';
+export { affiliatesApi } from './affiliates';
+export { landingPagesApi } from './landing-pages';

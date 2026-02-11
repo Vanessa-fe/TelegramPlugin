@@ -10,6 +10,7 @@
     "test": "turbo test",
     "dev:api": "pnpm --filter api start:dev",
     "dev:bot": "pnpm --filter bot dev",
+    "dev:discord-bot": "pnpm --filter discord-bot dev",
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:worker": "pnpm --filter worker dev",
     "dev:stack:old": "bash scripts/dev-stack.sh",

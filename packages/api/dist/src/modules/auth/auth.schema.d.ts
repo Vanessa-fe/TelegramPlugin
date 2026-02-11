@@ -39,3 +39,31 @@ export declare const registerSchema: z.ZodObject<{
     organizationId?: string | undefined;
 }>;
 export type RegisterDto = z.infer<typeof registerSchema>;
+export declare const updateProfileSchema: z.ZodObject<{
+    firstName: z.ZodOptional<z.ZodString>;
+    lastName: z.ZodOptional<z.ZodString>;
+    email: z.ZodOptional<z.ZodString>;
+    currentPassword: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    email?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
+    currentPassword?: string | undefined;
+}, {
+    email?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
+    currentPassword?: string | undefined;
+}>;
+export type UpdateProfileDto = z.infer<typeof updateProfileSchema>;
+export declare const updatePasswordSchema: z.ZodObject<{
+    currentPassword: z.ZodOptional<z.ZodString>;
+    newPassword: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    newPassword: string;
+    currentPassword?: string | undefined;
+}, {
+    newPassword: string;
+    currentPassword?: string | undefined;
+}>;
+export type UpdatePasswordDto = z.infer<typeof updatePasswordSchema>;

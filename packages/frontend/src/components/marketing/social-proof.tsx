@@ -21,13 +21,13 @@ export async function SocialProof() {
   ];
 
   return (
-    <section className="py-12 lg:py-16 bg-[#F6EEFF] border-b border-[#E9E3EF]">
+    <section className="py-12 lg:py-16 bg-purple-50 border-b border-border-custom">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         <div className="grid gap-6 md:grid-cols-3">
           {items.map((item) => (
             <div
               key={item.title}
-              className="bg-white rounded-2xl border border-[#E9E3EF] p-6 text-center shadow-sm"
+              className="bg-white rounded-2xl border border-border-custom p-6 text-center shadow-sm"
             >
               <div
                 className="text-3xl mb-3"
@@ -35,10 +35,10 @@ export async function SocialProof() {
               >
                 {item.icon}
               </div>
-              <h3 className="text-xl font-semibold text-[#1A1523] mb-1">
+              <h3 className="text-xl font-semibold text-text-primary mb-1">
                 {item.title}
               </h3>
-              <p className="text-[#6F6E77]">{item.description}</p>
+              <p className="text-text-secondary">{item.description}</p>
             </div>
           ))}
         </div>

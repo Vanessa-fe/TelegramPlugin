@@ -9,14 +9,14 @@ export async function Hero() {
       <div className="max-w-6xl mx-auto px-4 lg:px-6 py-20 lg:py-32">
         <div className="max-w-3xl mx-auto text-center">
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#1A1523] mb-6">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-text-primary mb-6">
             {t('title.line1')}
             <br />
             <span className="text-purple-600">{t('title.line2')}</span>
           </h1>
 
           {/* Subheadline */}
-          <p className="text-lg lg:text-xl text-[#6F6E77] mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg lg:text-xl text-text-secondary mb-10 max-w-2xl mx-auto leading-relaxed">
             {t('subtitle')}
           </p>
 
@@ -30,14 +30,14 @@ export async function Hero() {
             </Link>
             <Link
               href="/pricing"
-              className="bg-white hover:bg-purple-50 text-[#1A1523] font-semibold px-8 py-4 rounded-lg border border-[#E9E3EF] hover:border-purple-200 transition-colors duration-150 text-base"
+              className="bg-white hover:bg-purple-50 text-text-primary font-semibold px-8 py-4 rounded-lg border border-border-custom hover:border-purple-200 transition-colors duration-150 text-base"
             >
               {t('cta.secondary')}
             </Link>
           </div>
 
           {/* Trust signal */}
-          <p className="mt-8 text-sm text-[#6F6E77]">
+          <p className="mt-8 text-sm text-text-secondary">
             {t('trust')}
           </p>
         </div>

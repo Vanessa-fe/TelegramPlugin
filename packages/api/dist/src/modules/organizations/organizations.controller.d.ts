@@ -12,6 +12,7 @@ export declare class OrganizationsController {
         createdAt: Date;
         updatedAt: Date;
         slug: string;
+        pageSlug: string | null;
         billingEmail: string;
         stripeAccountId: string | null;
         saasActive: boolean;
@@ -25,6 +26,7 @@ export declare class OrganizationsController {
         createdAt: Date;
         updatedAt: Date;
         slug: string;
+        pageSlug: string | null;
         billingEmail: string;
         stripeAccountId: string | null;
         saasActive: boolean;
@@ -38,6 +40,7 @@ export declare class OrganizationsController {
         createdAt: Date;
         updatedAt: Date;
         slug: string;
+        pageSlug: string | null;
         billingEmail: string;
         stripeAccountId: string | null;
         saasActive: boolean;
@@ -51,6 +54,7 @@ export declare class OrganizationsController {
         createdAt: Date;
         updatedAt: Date;
         slug: string;
+        pageSlug: string | null;
         billingEmail: string;
         stripeAccountId: string | null;
         saasActive: boolean;

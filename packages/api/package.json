@@ -47,6 +47,7 @@
     "dotenv": "^16.4.5",
     "fastify-raw-body": "^5.0.0",
     "ioredis": "^5.4.1",
+    "nanoid": "^5.1.6",
     "nestjs-pino": "^4.2.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",

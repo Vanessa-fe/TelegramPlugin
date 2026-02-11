@@ -26,3 +26,15 @@ export interface RegisterData {
   lastName?: string;
   organizationId?: string;
 }
+
+export interface UpdateProfileData {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  currentPassword?: string;
+}
+
+export interface UpdatePasswordData {
+  currentPassword?: string;
+  newPassword: string;
+}

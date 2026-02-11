@@ -931,3 +931,100 @@ fly logs -a telegram-plugin-api
 ```
 
 *Session du 2026-01-28 — Debug production terminé ✅*
+
+---
+
+## Session du 2026-02-09
+
+### Objectif
+
+Analyse comparative avec **Sublaunch.com** et implémentation d'un onboarding Telegram guidé similaire.
+
+### Analyse Sublaunch vs TelegramPlugin
+
+| Fonctionnalité | Sublaunch | TelegramPlugin |
+|----------------|-----------|----------------|
+| Onboarding Telegram | Guidé (4 étapes avec code) | ✅ Implémenté aujourd'hui |
+| Canaux + Groupes | ✅ | ✅ Implémenté aujourd'hui |
+| Affiliés | ✅ (commission %) | ❌ À faire |
+| Coupons | ✅ (codes promo) | ❌ À faire |
+| Pricing | Free 15%, $99/4%, $169/3% | €39/mois fixe |
+
+### Implémentation : Wizard Connexion Telegram
+
+#### 1. Schéma Prisma
+
+```prisma
+enum ChannelType { CHANNEL, GROUP }
+enum VerificationStatus { PENDING, VERIFIED, EXPIRED, USED }
+
+model ChannelVerification {
+  id, organizationId, code, type, status,
+  telegramChatId, telegramTitle, telegramUsername,
+  expiresAt, verifiedAt, createdAt, updatedAt
+}
+```
+
+#### 2. API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /channels/verification/start` | Démarre vérification, génère code |
+| `POST /channels/verification/verify` | Appelé par bot (public) |
+| `GET /channels/verification/:id/status` | Poll statut |
+| `POST /channels/verification/:id/confirm` | Confirme et crée canal |
+
+#### 3. Bot Telegram (`packages/bot/src/main.ts`)
+
+- Pattern: `TGPLUGIN-xxxxxxxx`
+- Listeners: `channel_post` (canaux) + `message` (groupes)
+- Appel API pour validation
+
+#### 4. Frontend Wizard (4 étapes)
+
+1. **Type** — Choix Canal/Groupe
+2. **Création** — Instructions création privée
+3. **Bot** — Ajouter bot comme admin
+4. **Vérification** — Poster code + confirmer
+
+### Bugs corrigés
+
+| Bug | Cause | Fix |
+|-----|-------|-----|
+| Routes `/verification/*` non matchées | `:id` interceptait avant | Réordonner routes dans controller |
+| Accès refusé pour rôles | Seuls SUPERADMIN/ORG_ADMIN | Ajouter SUPPORT/VIEWER |
+| Couleurs invisibles | Classes `purple-*` non générées (Tailwind 4) | Remplacer par `primary` (shadcn/ui) |
+| 403 "pas d'organisation" | Utilisateurs sans organizationId | Auto-création organisation à login/register |
+
+### Fichiers modifiés
+
+**API:**
+- `packages/api/prisma/schema.prisma` — ChannelVerification model
+- `packages/api/src/modules/channels/channels.controller.ts` — Endpoints verification
+- `packages/api/src/modules/channels/channels.service.ts` — Méthodes verification
+- `packages/api/src/modules/channels/channels.schema.ts` — Schémas Zod
+- `packages/api/src/modules/auth/auth.service.ts` — Auto-création organisation
+
+**Bot:**
+- `packages/bot/src/main.ts` — Listeners codes vérification
+
+**Frontend:**
+- `packages/frontend/src/components/channels/telegram-connect-wizard.tsx` — Wizard 4 étapes
+- `packages/frontend/src/lib/api/channels.ts` — Méthodes API
+- `packages/frontend/src/types/channel.ts` — Types TS
+- `packages/frontend/src/i18n/messages/fr.json` — Traductions
+- `packages/frontend/src/i18n/messages/en.json` — Traductions
+
+### Action requise
+
+**Pour que la vérification fonctionne :** Se déconnecter et se reconnecter. L'auto-création d'organisation se déclenche au login.
+
+### Prochaines étapes
+
+| Priorité | Fonctionnalité |
+|----------|----------------|
+| P1 | Système d'affiliation |
+| P1 | Système de coupons |
+| P2 | Nouveau modèle tarifaire (free + commission) |
+
+*Session du 2026-02-09 — Wizard Telegram implémenté ✅*

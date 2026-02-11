@@ -63,10 +63,10 @@ export async function Differentiators() {
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-[#FDFAFF]">
+    <section className="py-20 lg:py-28 bg-surface">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
-        <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#1A1523] mb-16">
+        <h2 className="text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
           {t('title')}
         </h2>
 
@@ -80,10 +80,10 @@ export async function Differentiators() {
               </div>
 
               {/* Content */}
-              <h3 className="text-xl font-semibold text-[#1A1523] mb-3">
+              <h3 className="text-xl font-semibold text-text-primary mb-3">
                 {item.title}
               </h3>
-              <p className="text-[#6F6E77] leading-relaxed">{item.description}</p>
+              <p className="text-text-secondary leading-relaxed">{item.description}</p>
             </div>
           ))}
         </div>

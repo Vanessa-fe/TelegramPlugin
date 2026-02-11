@@ -7,7 +7,9 @@ import {
   Hash,
   Megaphone,
   Package,
+  Ticket,
   TrendingUp,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -82,16 +84,28 @@ export default async function DashboardPage() {
       href: "/dashboard/billing",
       icon: CreditCard,
     },
+    {
+      name: t("quickActions.coupons.title"),
+      description: t("quickActions.coupons.description"),
+      href: "/dashboard/coupons",
+      icon: Ticket,
+    },
+    {
+      name: t("quickActions.affiliates.title"),
+      description: t("quickActions.affiliates.description"),
+      href: "/dashboard/affiliates",
+      icon: UserPlus,
+    },
   ];
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
+        <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">
           {t("title")}
         </h1>
-        <p className="mt-1 text-[#6F6E77]">{t("welcome")}</p>
+        <p className="mt-1 text-text-secondary">{t("welcome")}</p>
       </div>
 
       {/* Stats grid */}
@@ -99,7 +113,7 @@ export default async function DashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.name}
-            className="bg-white rounded-xl border-border-[#E9E3EF] p-5 lg:p-6"
+            className="bg-white rounded-xl border-border-custom p-5 lg:p-6"
           >
             <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -111,7 +125,7 @@ export default async function DashboardPage() {
                     ? "text-green-600"
                     : stat.changeType === "negative"
                       ? "text-red-600"
-                      : "text-[#6F6E77]"
+                      : "text-text-secondary"
                 }`}
               >
                 {stat.changeType === "positive" && (
@@ -123,17 +137,17 @@ export default async function DashboardPage() {
                 {stat.change}
               </span>
             </div>
-            <p className="mt-4 text-2xl font-bold text-[#1A1523]">
+            <p className="mt-4 text-2xl font-bold text-text-primary">
               {stat.value}
             </p>
-            <p className="mt-1 text-sm text-[#6F6E77]">{stat.name}</p>
+            <p className="mt-1 text-sm text-text-secondary">{stat.name}</p>
           </div>
         ))}
       </div>
 
       {/* Quick actions */}
       <div>
-        <h2 className="text-lg font-semibold text-[#1A1523] mb-4">
+        <h2 className="text-lg font-semibold text-text-primary mb-4">
           Actions rapides
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
@@ -144,7 +158,7 @@ export default async function DashboardPage() {
               className={`group bg-white rounded-xl border p-5 lg:p-6 hover:shadow-md transition-all ${
                 action.highlight
                   ? "border-purple-300 bg-purple-50/50 hover:border-purple-400"
-                  : "border-border-[#E9E3EF] hover:border-purple-200"
+                  : "border-border-custom hover:border-purple-200"
               }`}
             >
               <div
@@ -156,10 +170,10 @@ export default async function DashboardPage() {
               >
                 <action.icon className="h-5 w-5" />
               </div>
-              <h3 className="mt-4 font-semibold text-[#1A1523] group-hover:text-purple-600 transition-colors">
+              <h3 className="mt-4 font-semibold text-text-primary group-hover:text-purple-600 transition-colors">
                 {action.name}
               </h3>
-              <p className="mt-1 text-sm text-[#6F6E77]">
+              <p className="mt-1 text-sm text-text-secondary">
                 {action.description}
               </p>
             </Link>

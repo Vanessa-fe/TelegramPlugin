@@ -11,5 +11,7 @@ exports.createCheckoutSchema = zod_1.z.object({
         displayName: zod_1.z.string().optional(),
         email: zod_1.z.string().email().optional().or(zod_1.z.literal('')),
     }),
+    couponCode: zod_1.z.string().max(32).optional(),
+    affiliateCode: zod_1.z.string().max(32).optional(),
 });
 //# sourceMappingURL=billing.schema.js.map

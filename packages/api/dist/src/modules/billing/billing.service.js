@@ -140,6 +140,64 @@ let BillingService = class BillingService {
         if (!stripeAccount.charges_enabled) {
             throw new common_1.ForbiddenException("Compte Stripe incomplet, finalisez l'onboarding");
         }
+        let validatedCoupon = null;
+        if (payload.couponCode) {
+            const coupon = await this.prisma.coupon.findUnique({
+                where: {
+                    organizationId_code: {
+                        organizationId: organization.id,
+                        code: payload.couponCode.toUpperCase(),
+                    },
+                },
+            });
+            if (!coupon) {
+                throw new common_1.BadRequestException('Coupon invalide');
+            }
+            if (coupon.status !== client_1.CouponStatus.ACTIVE) {
+                throw new common_1.BadRequestException('Ce coupon est désactivé');
+            }
+            if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+                throw new common_1.BadRequestException('Ce coupon a expiré');
+            }
+            if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+                throw new common_1.BadRequestException("Ce coupon a atteint sa limite d'utilisation");
+            }
+            if (coupon.planIds.length > 0 && !coupon.planIds.includes(plan.id)) {
+                throw new common_1.BadRequestException("Ce coupon n'est pas valide pour ce plan");
+            }
+            let discountCents;
+            if (coupon.type === client_1.CouponType.PERCENTAGE) {
+                discountCents = Math.round((plan.priceCents * coupon.discountValue) / 100);
+            }
+            else {
+                discountCents = Math.min(coupon.discountValue, plan.priceCents);
+            }
+            validatedCoupon = {
+                id: coupon.id,
+                code: coupon.code,
+                discountCents,
+                type: coupon.type,
+            };
+        }
+        let validatedAffiliate = null;
+        if (payload.affiliateCode) {
+            const affiliate = await this.prisma.affiliate.findUnique({
+                where: { referralCode: payload.affiliateCode.toUpperCase() },
+            });
+            if (!affiliate) {
+                throw new common_1.BadRequestException('Code affilié invalide');
+            }
+            if (affiliate.organizationId !== organization.id) {
+                throw new common_1.BadRequestException('Code affilié invalide');
+            }
+            if (affiliate.status !== client_1.AffiliateStatus.ACTIVE) {
+                throw new common_1.BadRequestException("Cet affilié n'est pas actif");
+            }
+            validatedAffiliate = {
+                id: affiliate.id,
+                code: affiliate.referralCode,
+            };
+        }
         const { customer } = payload;
         const telegramUsername = customer.telegramUsername
             ?.toLowerCase()
@@ -199,6 +257,8 @@ let BillingService = class BillingService {
                 customerId: storedCustomer.id,
                 planId: plan.id,
                 status: client_1.SubscriptionStatus.INCOMPLETE,
+                couponCode: validatedCoupon?.code ?? null,
+                affiliateCode: validatedAffiliate?.code ?? null,
                 metadata: {
                     checkoutMode: plan.interval === client_1.PlanInterval.ONE_TIME
                         ? 'payment'
@@ -206,6 +266,10 @@ let BillingService = class BillingService {
                 },
             },
         });
+        const originalPriceCents = plan.priceCents;
+        const finalPriceCents = validatedCoupon
+            ? Math.max(0, originalPriceCents - validatedCoupon.discountCents)
+            : originalPriceCents;
         const quantity = payload.quantity ?? 1;
         const lineItem = {
             quantity,
@@ -219,7 +283,7 @@ let BillingService = class BillingService {
                         planId: plan.id,
                     },
                 },
-                unit_amount: plan.priceCents,
+                unit_amount: finalPriceCents,
                 ...(plan.interval !== client_1.PlanInterval.ONE_TIME && {
                     recurring: this.mapRecurring(plan.interval),
                 }),
@@ -235,7 +299,17 @@ let BillingService = class BillingService {
             subscriptionId: subscription.id,
             planId: plan.id,
             customerId: storedCustomer.id,
+            originalPriceCents: String(originalPriceCents),
         };
+        if (validatedCoupon) {
+            metadata.couponId = validatedCoupon.id;
+            metadata.couponCode = validatedCoupon.code;
+            metadata.discountCents = String(validatedCoupon.discountCents);
+        }
+        if (validatedAffiliate) {
+            metadata.affiliateId = validatedAffiliate.id;
+            metadata.affiliateCode = validatedAffiliate.code;
+        }
         const sessionParams = {
             mode: plan.interval === client_1.PlanInterval.ONE_TIME ? 'payment' : 'subscription',
             line_items: [lineItem],

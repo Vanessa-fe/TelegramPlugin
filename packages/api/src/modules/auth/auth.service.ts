@@ -16,7 +16,11 @@ import {
   AuthProfile,
   AuthResult,
 } from './auth.types';
-import type { RegisterDto } from './auth.schema';
+import type {
+  RegisterDto,
+  UpdatePasswordDto,
+  UpdateProfileDto,
+} from './auth.schema';
 
 @Injectable()
 export class AuthService {
@@ -41,8 +45,31 @@ export class AuthService {
     // Hash password
     const passwordHash = await bcrypt.hash(data.password, 10);
 
-    // Determine role based on organizationId
-    const role: UserRole = data.organizationId ? 'ORG_ADMIN' : 'VIEWER';
+    // Auto-create organization if not provided
+    let organizationId = data.organizationId;
+    if (!organizationId) {
+      const slug = await this.generateOrgSlug(
+        normalizedEmail,
+        data.firstName,
+        data.lastName,
+      );
+      const orgName =
+        data.firstName && data.lastName
+          ? `${data.firstName} ${data.lastName}`
+          : normalizedEmail.split('@')[0];
+
+      const org = await this.prisma.organization.create({
+        data: {
+          name: orgName,
+          slug,
+          billingEmail: normalizedEmail,
+        },
+      });
+      organizationId = org.id;
+    }
+
+    // All users with organizations are ORG_ADMIN
+    const role: UserRole = 'ORG_ADMIN';
 
     // Create user
     const user = await this.prisma.user.create({
@@ -51,7 +78,7 @@ export class AuthService {
         passwordHash,
         firstName: data.firstName,
         lastName: data.lastName,
-        organizationId: data.organizationId,
+        organizationId,
         role,
       },
     });
@@ -65,8 +92,43 @@ export class AuthService {
     };
   }
 
+  private slugify(value: string): string {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '')
+      .slice(0, 50);
+  }
+
+  private async generateOrgSlug(
+    email: string,
+    firstName?: string | null,
+    lastName?: string | null,
+  ): Promise<string> {
+    const baseName = [firstName, lastName].filter(Boolean).join(' ');
+    const fallback = email.split('@')[0] || 'creator';
+    const base = this.slugify(baseName || fallback) || 'creator';
+    let slug = base;
+    let counter = 1;
+
+    while (
+      await this.prisma.organization.findUnique({
+        where: { slug },
+        select: { id: true },
+      })
+    ) {
+      slug = `${base}-${counter}`;
+      counter += 1;
+    }
+
+    return slug;
+  }
+
   async login(email: string, password: string): Promise<AuthResult> {
-    const user = await this.validateUser(email, password);
+    let user = await this.validateUser(email, password);
+
+    // Ensure user has an organization
+    user = await this.ensureOrganization(user);
 
     // Update lastLoginAt
     await this.prisma.user.update({
@@ -81,6 +143,38 @@ export class AuthService {
       ...tokens,
       user: this.sanitizeUser(user),
     };
+  }
+
+  private async ensureOrganization(user: User): Promise<User> {
+    if (user.organizationId) {
+      return user;
+    }
+
+    const slug = await this.generateOrgSlug(
+      user.email,
+      user.firstName,
+      user.lastName,
+    );
+    const orgName =
+      user.firstName && user.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user.email.split('@')[0];
+
+    const org = await this.prisma.organization.create({
+      data: {
+        name: orgName,
+        slug,
+        billingEmail: user.email,
+      },
+    });
+
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        organizationId: org.id,
+        role: 'ORG_ADMIN',
+      },
+    });
   }
 
   async refresh(refreshToken: string): Promise<AuthResult> {
@@ -120,6 +214,113 @@ export class AuthService {
     }
 
     return this.sanitizeUser(user);
+  }
+
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<AuthResult> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.isActive) {
+      throw new ForbiddenException('Utilisateur introuvable');
+    }
+
+    const dataToUpdate: {
+      email?: string;
+      firstName?: string | null;
+      lastName?: string | null;
+    } = {};
+
+    if (dto.email) {
+      const normalizedEmail = dto.email.trim().toLowerCase();
+      if (normalizedEmail !== user.email) {
+        if (user.passwordHash) {
+          if (!dto.currentPassword) {
+            throw new UnauthorizedException('Mot de passe actuel requis');
+          }
+          const passwordValid = await bcrypt.compare(
+            dto.currentPassword,
+            user.passwordHash,
+          );
+          if (!passwordValid) {
+            throw new UnauthorizedException('Mot de passe actuel invalide');
+          }
+        }
+
+        const existing = await this.prisma.user.findUnique({
+          where: { email: normalizedEmail },
+          select: { id: true },
+        });
+        if (existing && existing.id !== user.id) {
+          throw new ConflictException('Cet email est déjà utilisé');
+        }
+        dataToUpdate.email = normalizedEmail;
+      }
+    }
+
+    if (dto.firstName !== undefined) {
+      const trimmed = dto.firstName.trim();
+      dataToUpdate.firstName = trimmed ? trimmed : null;
+    }
+
+    if (dto.lastName !== undefined) {
+      const trimmed = dto.lastName.trim();
+      dataToUpdate.lastName = trimmed ? trimmed : null;
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: dataToUpdate,
+    });
+
+    const tokens = await this.signTokens(this.buildPayload(updatedUser));
+
+    return {
+      ...tokens,
+      user: this.sanitizeUser(updatedUser),
+    };
+  }
+
+  async updatePassword(
+    userId: string,
+    dto: UpdatePasswordDto,
+  ): Promise<AuthResult> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.isActive) {
+      throw new ForbiddenException('Utilisateur introuvable');
+    }
+
+    if (user.passwordHash) {
+      if (!dto.currentPassword) {
+        throw new UnauthorizedException('Mot de passe actuel requis');
+      }
+      const passwordValid = await bcrypt.compare(
+        dto.currentPassword,
+        user.passwordHash,
+      );
+      if (!passwordValid) {
+        throw new UnauthorizedException('Mot de passe actuel invalide');
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    const tokens = await this.signTokens(this.buildPayload(updatedUser));
+
+    return {
+      ...tokens,
+      user: this.sanitizeUser(updatedUser),
+    };
   }
 
   private async validateUser(email: string, password: string): Promise<User> {

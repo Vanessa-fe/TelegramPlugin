@@ -9,6 +9,8 @@ export const createCheckoutSchema = z.object({
     displayName: z.string().optional(),
     email: z.string().email().optional().or(z.literal('')),
   }),
+  couponCode: z.string().max(32).optional(),
+  affiliateCode: z.string().max(32).optional(),
 });
 
 export type CreateCheckoutDto = z.infer<typeof createCheckoutSchema>;

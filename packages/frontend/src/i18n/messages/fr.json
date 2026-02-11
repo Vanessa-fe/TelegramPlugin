@@ -45,6 +45,7 @@
 
   "nav": {
     "dashboard": "Tableau de bord",
+    "pageBuilder": "Ma page",
     "products": "Mes offres",
     "customers": "Mes clients",
     "subscriptions": "Mes abonnés",
@@ -52,13 +53,207 @@
     "payments": "Paiements",
     "channels": "Mes canaux",
     "access": "Gestion des accès",
-    "billing": "Facturation"
+    "billing": "Facturation",
+    "coupons": "Coupons",
+    "affiliates": "Affiliés"
   },
 
   "sidebar": {
     "proPlan": "Plan Pro",
     "trialDaysLeft": "{count} jours d'essai restants",
     "upgradeNow": "Passer au plan payant"
+  },
+
+  "landingPages": {
+    "title": "Ma page",
+    "subtitle": "Personnalise ta page publique",
+    "loading": "Chargement...",
+    "created": "Page créée avec succès",
+    "creating": "Création en cours...",
+    "errors": {
+      "load": "Erreur lors du chargement de la page",
+      "create": "Erreur lors de la création de la page"
+    },
+    "empty": {
+      "title": "Pas encore de page",
+      "description": "Crée ta page publique pour présenter tes offres et toucher ton audience.",
+      "cta": "Créer ma page"
+    },
+    "editor": {
+      "preview": "Aperçu",
+      "viewLive": "Voir en ligne",
+      "publish": "Publier",
+      "unpublish": "Dépublier",
+      "published": "Page publiée !",
+      "unpublished": "Page dépubliée",
+      "statusPublished": "Publiée",
+      "statusDraft": "Brouillon",
+      "settings": "Paramètres",
+      "themeColor": "Couleur du thème",
+      "metaTitle": "Titre SEO",
+      "metaTitlePlaceholder": "Titre de la page pour les moteurs de recherche",
+      "metaDescription": "Description SEO",
+      "metaDescriptionPlaceholder": "Description pour les moteurs de recherche",
+      "saveSettings": "Enregistrer les paramètres",
+      "settingsSaved": "Paramètres enregistrés",
+      "customUrl": "URL personnalisée",
+      "customUrlHelp": "Personnalise l'URL de ta page (laisse vide pour garder l'URL par défaut)",
+      "slugTooShort": "L'URL doit contenir au moins 3 caractères",
+      "slugTooLong": "L'URL ne peut pas dépasser 30 caractères",
+      "slugInvalidFormat": "Uniquement des lettres minuscules, chiffres et tirets",
+      "slugTaken": "Cette URL est déjà utilisée",
+      "elements": "Éléments",
+      "socialLinks": "Liens sociaux",
+      "addElement": "Ajouter un élément",
+      "elementSaved": "Élément enregistré",
+      "elementDeleted": "Élément supprimé",
+      "elementAdded": "Élément ajouté",
+      "socialLinksSaved": "Liens sociaux enregistrés",
+      "saveError": "Erreur lors de l'enregistrement"
+    },
+    "elements": {
+      "types": {
+        "image": "Avatar/Logo",
+        "heading1": "Titre (H1)",
+        "heading2": "Sous-titre (H2)",
+        "heading3": "Titre de section (H3)",
+        "text": "Texte",
+        "link": "Lien",
+        "socialLinks": "Liens sociaux",
+        "products": "Produits",
+        "divider": "Séparateur"
+      },
+      "noImage": "Pas d'image",
+      "noContent": "Pas de contenu",
+      "noLink": "Pas de lien",
+      "productsAuto": "Affiche tes produits automatiquement",
+      "socialLinksAuto": "Affiche tes liens sociaux"
+    },
+    "elementEditor": {
+      "imageUrl": "URL de l'image",
+      "imageUrlPlaceholder": "https://exemple.com/image.jpg",
+      "imageUrlHelp": "Colle l'URL de ton avatar ou logo",
+      "preview": "Aperçu",
+      "heading1Content": "Titre principal",
+      "heading1Placeholder": "Ton nom ou ta marque",
+      "heading2Content": "Sous-titre",
+      "heading2Placeholder": "Ton slogan",
+      "heading3Content": "Titre de section",
+      "heading3Placeholder": "Titre de section",
+      "textContent": "Contenu texte",
+      "textPlaceholder": "Écris quelque chose sur toi...",
+      "textStyle": "Style",
+      "textStyleText": "Texte",
+      "textStyleH1": "H1",
+      "textStyleH2": "H2",
+      "textStyleH3": "H3",
+      "textAlignment": "Alignement",
+      "textAlignLeft": "Gauche",
+      "textAlignCenter": "Centre",
+      "textWidth": "Largeur",
+      "textMargins": "Marges",
+      "textMarginTop": "Haut",
+      "textMarginBottom": "Bas",
+      "textPosition": "Position",
+      "linkText": "Texte du lien",
+      "linkTextPlaceholder": "Visite mon site",
+      "linkUrl": "URL du lien",
+      "linkUrlPlaceholder": "https://tonsite.com",
+      "productsInfo": "Tes produits seront affichés automatiquement",
+      "socialLinksInfo": "Modifie les liens sociaux avec le bouton dédié",
+      "dividerInfo": "Un séparateur visuel entre les sections",
+      "titles": {
+        "image": "Modifier l'avatar/logo",
+        "heading1": "Modifier le titre principal",
+        "heading2": "Modifier le sous-titre",
+        "heading3": "Modifier le titre de section",
+        "text": "Modifier le texte",
+        "link": "Modifier le lien",
+        "products": "Produits",
+        "socialLinks": "Liens sociaux",
+        "divider": "Séparateur"
+      },
+      "cancel": "Annuler",
+      "save": "Enregistrer"
+    },
+    "addElement": {
+      "title": "Ajouter un élément",
+      "types": {
+        "image": "Avatar/Logo",
+        "heading1": "Titre principal",
+        "heading2": "Sous-titre",
+        "heading3": "Titre de section",
+        "text": "Paragraphe texte",
+        "link": "Bouton lien",
+        "socialLinks": "Liens sociaux",
+        "products": "Liste des produits",
+        "divider": "Séparateur"
+      },
+      "descriptions": {
+        "image": "Ta photo de profil ou ton logo",
+        "heading1": "Grand titre en gras",
+        "heading2": "Titre secondaire",
+        "heading3": "Titre de section ou catégorie",
+        "text": "Texte descriptif ou bio",
+        "link": "Bouton qui renvoie vers une URL externe",
+        "socialLinks": "Liens vers tes profils sur les réseaux sociaux",
+        "products": "Affiche tes produits et offres",
+        "divider": "Ligne de séparation visuelle"
+      },
+      "alreadyAdded": "Déjà ajouté"
+    },
+    "socialLinksEditor": {
+      "title": "Liens sociaux",
+      "noLinks": "Pas encore de liens sociaux. Ajoute le premier !",
+      "urlPlaceholder": "https://...",
+      "addLink": "Ajouter un lien",
+      "website": "Site web",
+      "cancel": "Annuler",
+      "save": "Enregistrer"
+    },
+    "preview": {
+      "noPreview": "Aucun aperçu disponible",
+      "placeholders": {
+        "heading1": "Ton nom",
+        "heading2": "Ton sous-titre",
+        "heading3": "Section",
+        "text": "Ta description apparaîtra ici",
+        "link": "Ton lien",
+        "productName": "Nom du produit",
+        "productDescription": "Description du produit",
+        "productPrice": "9,99€"
+      }
+    }
+  },
+
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Gère tes informations de compte et ton identité publique",
+    "personalTitle": "Informations personnelles",
+    "personalDescription": "Nom, prénom et email",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "emailPasswordHelp": "Mot de passe actuel requis pour changer l'email",
+    "currentPassword": "Mot de passe actuel",
+    "saveProfile": "Enregistrer le profil",
+    "creatorTitle": "Identifiant créateur (URL)",
+    "creatorDescription": "Cet identifiant apparaît dans l'URL publique",
+    "creatorSlug": "Nom du créateur",
+    "creatorHelp": "Exemple: /page/ton-nom/ton-slug",
+    "saveCreator": "Enregistrer l'URL",
+    "slugRequired": "Le slug est requis",
+    "slugInvalid": "Seules les lettres minuscules, chiffres et tirets sont autorisés",
+    "slugTaken": "Ce slug est déjà utilisé",
+    "creatorUpdated": "URL mise à jour",
+    "profileUpdated": "Profil mis à jour",
+    "passwordTitle": "Mot de passe",
+    "passwordDescription": "Change ton mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "passwordUpdated": "Mot de passe mis à jour",
+    "savePassword": "Enregistrer le mot de passe"
   },
 
   "auth": {
@@ -169,6 +364,14 @@
       "billing": {
         "title": "Facturation",
         "description": "Connecte ton compte Stripe"
+      },
+      "coupons": {
+        "title": "Coupons",
+        "description": "Crée des codes de réduction pour tes clients"
+      },
+      "affiliates": {
+        "title": "Affiliés",
+        "description": "Gère tes partenaires affiliés"
       }
     },
     "gettingStarted": {
@@ -713,6 +916,11 @@
     "new": {
       "title": "Ajouter un canal",
       "subtitle": "Connectez un canal Telegram à votre organisation",
+      "discordTitle": "Ajouter un serveur",
+      "discordSubtitle": "Connectez un serveur Discord à votre organisation",
+      "selectProvider": "Choisissez une plateforme à connecter",
+      "telegramDescription": "Canaux et groupes avec liens d'invitation pour les abonnés",
+      "discordDescription": "Serveurs avec rôles payants pour les membres",
       "back": "Retour aux canaux"
     },
 
@@ -791,6 +999,136 @@
         "prefix": "⚠️",
         "label": "Important :",
         "text": "Ajoutez @SublynkBot comme administrateur de ce canal avec les permissions nécessaires pour inviter des utilisateurs."
+      }
+    },
+
+    "wizard": {
+      "steps": {
+        "type": "Type",
+        "create": "Création",
+        "addBot": "Bot",
+        "verify": "Vérification"
+      },
+      "copied": "Copié !",
+      "success": "Canal connecté avec succès !",
+      "errors": {
+        "expired": "Le code de vérification a expiré. Veuillez recommencer.",
+        "copyFailed": "Erreur lors de la copie",
+        "startFailed": "Erreur lors du démarrage de la vérification",
+        "confirmFailed": "Erreur lors de la connexion du canal"
+      },
+      "buttons": {
+        "next": "Continuer",
+        "back": "Retour",
+        "connect": "Connecter le canal",
+        "loading": "Chargement..."
+      },
+      "step1": {
+        "title": "Connecter Telegram",
+        "description": "Connectez un canal ou un groupe Telegram pour donner un accès exclusif à vos abonnés payants.",
+        "channel": {
+          "title": "Canal",
+          "description": "Seuls les administrateurs peuvent publier du contenu. Idéal pour diffuser du contenu."
+        },
+        "group": {
+          "title": "Groupe",
+          "description": "Tous les membres peuvent participer. Idéal pour créer une communauté."
+        }
+      },
+      "step2": {
+        "titleChannel": "Créer votre canal",
+        "titleGroup": "Créer votre groupe",
+        "intro": "Si vous n'avez pas encore de canal/groupe, créez-en un maintenant :",
+        "steps": {
+          "open": "Ouvrez",
+          "createChannel": "Créez un nouveau canal ou utilisez un canal existant",
+          "createGroup": "Créez un nouveau groupe ou utilisez un groupe existant",
+          "makePrivate": "Assurez-vous qu'il est privé"
+        },
+        "important": "Important :",
+        "privateChannelNote": "Le canal doit être privé pour que nous puissions gérer les accès automatiquement.",
+        "privateGroupNote": "Le groupe doit être privé pour que nous puissions gérer les accès automatiquement."
+      },
+      "step3": {
+        "title": "Ajouter le bot",
+        "description": "Ajoutez",
+        "asAdmin": "comme administrateur de votre canal/groupe avec les permissions par défaut.",
+        "note": "Assurez-vous de sélectionner le bon bot. Le bot doit avoir les permissions pour inviter des utilisateurs et gérer les membres."
+      },
+      "step4": {
+        "title": "Vérifier la connexion",
+        "connected": "Connecté !",
+        "waiting": "En attente de vérification...",
+        "channelFound": "Canal détecté",
+        "groupFound": "Groupe détecté",
+        "instructions": "Copiez ce code et postez-le dans votre canal/groupe Telegram :",
+        "postInstructions": "Une fois le code posté, la connexion sera automatiquement détectée."
+      }
+    },
+
+    "discordWizard": {
+      "steps": {
+        "addBot": "Bot",
+        "permissions": "Permissions",
+        "verify": "Vérification",
+        "selectRole": "Rôle",
+        "confirm": "Confirmer"
+      },
+      "copied": "Copié !",
+      "success": "Serveur Discord connecté avec succès !",
+      "errors": {
+        "expired": "Le code de vérification a expiré. Veuillez recommencer.",
+        "copyFailed": "Erreur lors de la copie",
+        "startFailed": "Erreur lors du démarrage de la vérification",
+        "confirmFailed": "Erreur lors de la connexion du serveur",
+        "setRoleFailed": "Erreur lors de la sélection du rôle"
+      },
+      "buttons": {
+        "next": "Continuer",
+        "back": "Retour",
+        "connect": "Connecter le serveur",
+        "loading": "Chargement..."
+      },
+      "step1": {
+        "title": "Ajouter le bot Discord",
+        "description": "Commencez par ajouter notre bot Discord à votre serveur. Le bot gérera les rôles payants pour vos abonnés.",
+        "addBotButton": "Ajouter à Discord",
+        "permissionsNote": "Permissions requises : Gérer les rôles, Voir les salons, Envoyer des messages, Lire l'historique des messages.",
+        "note": "Après avoir cliqué, sélectionnez le serveur où vous souhaitez gérer l'accès payant. Assurez-vous d'avoir les permissions administrateur sur ce serveur."
+      },
+      "step2": {
+        "title": "Vérifier les permissions",
+        "description": "Assurez-vous que le bot dispose de ces permissions sur votre serveur :",
+        "permissions": {
+          "manageRoles": "Gérer les rôles - pour attribuer/retirer les rôles d'accès",
+          "sendMessages": "Envoyer des messages - pour confirmer la vérification",
+          "viewChannels": "Voir les salons - pour voir les messages de vérification"
+        },
+        "important": "Important :",
+        "rolePositionNote": "Le rôle du bot doit être positionné plus haut que le rôle d'accès payant dans les paramètres de votre serveur."
+      },
+      "step3": {
+        "title": "Vérifier la connexion",
+        "verified": "Serveur connecté !",
+        "waiting": "En attente de vérification...",
+        "serverFound": "Serveur détecté",
+        "instructions": "Copiez ce code et postez-le dans n'importe quel salon de votre serveur Discord :",
+        "postInstructions": "Une fois le code posté, la connexion sera automatiquement détectée. Vous pouvez supprimer le message après."
+      },
+      "step4": {
+        "title": "Sélectionner le rôle payant",
+        "description": "Choisissez le rôle Discord qui sera attribué aux abonnés payants. Ce rôle devrait donner accès à vos salons premium.",
+        "roleLabel": "ID du rôle",
+        "roleIdPlaceholder": "Entrez l'ID du rôle Discord",
+        "roleIdHelp": "Clic droit sur le rôle dans les paramètres Discord et sélectionnez 'Copier l'identifiant' (activez le mode développeur dans les paramètres)",
+        "note": "Assurez-vous que le rôle existe et est positionné en dessous du rôle du bot dans la hiérarchie de votre serveur."
+      },
+      "step5": {
+        "title": "Confirmer la connexion",
+        "description": "Vérifiez la configuration de votre serveur Discord avant de finaliser :",
+        "server": "Serveur",
+        "role": "Rôle d'accès payant",
+        "readyNote": "Tout semble bon ! Cliquez sur Connecter pour terminer la configuration. Les abonnés payants recevront automatiquement le rôle."
       }
     }
   },
@@ -992,6 +1330,24 @@
       "emailPlaceholder": "votre@email.com",
       "emailHelp": "Pour recevoir les confirmations par email"
     },
+    "coupon": {
+      "label": "Code coupon",
+      "placeholder": "Entrer un code coupon",
+      "apply": "Appliquer",
+      "applying": "Vérification...",
+      "applied": "Coupon appliqué !",
+      "discount": "Réduction",
+      "remove": "Retirer",
+      "invalid": "Code coupon invalide",
+      "expired": "Ce coupon a expiré",
+      "maxUsesReached": "Ce coupon n'est plus disponible"
+    },
+    "affiliate": {
+      "label": "Code parrainage (optionnel)",
+      "placeholder": "Entrer un code parrainage",
+      "applied": "Code parrainage appliqué !",
+      "invalid": "Code parrainage invalide"
+    },
     "payment": {
       "title": "Paiement",
       "card": "Carte bancaire",
@@ -1014,7 +1370,9 @@
     "unavailable": {
       "title": "Produit indisponible",
       "description": "Ce produit n'existe pas ou n'est plus disponible"
-    }
+    },
+    "originalPrice": "Prix original",
+    "finalPrice": "Total"
   },
 
   "checkoutSuccess": {
@@ -2248,6 +2606,282 @@
     "title": "Cette page n'existe pas",
     "description": "La page que vous cherchez est introuvable. Essayez de revenir à l'accueil.",
     "cta": "Retour à l'accueil"
+  },
+
+  "coupons": {
+    "loading": "Chargement...",
+    "title": "Coupons",
+    "subtitle": "Crée et gère tes codes de réduction pour tes clients",
+    "create": "Créer un coupon",
+    "empty": {
+      "title": "Aucun coupon",
+      "description": "Crée ton premier coupon pour offrir des réductions à tes clients.",
+      "cta": "Créer mon premier coupon"
+    },
+    "table": {
+      "code": "Code",
+      "type": "Type",
+      "discount": "Réduction",
+      "status": "Statut",
+      "uses": "Utilisations",
+      "expires": "Expire",
+      "actions": "Actions"
+    },
+    "typeLabels": {
+      "PERCENTAGE": "Pourcentage",
+      "FIXED_AMOUNT": "Montant fixe"
+    },
+    "statusLabels": {
+      "ACTIVE": "Actif",
+      "EXPIRED": "Expiré",
+      "DISABLED": "Désactivé"
+    },
+    "usesDisplay": "{used} / {max}",
+    "usesUnlimited": "{used} / ∞",
+    "noExpiry": "Sans expiration",
+    "new": {
+      "title": "Nouveau coupon",
+      "subtitle": "Créer un nouveau code de réduction"
+    },
+    "detail": {
+      "back": "Retour",
+      "edit": "Modifier",
+      "disable": "Désactiver",
+      "stats": {
+        "uses": "Fois utilisé",
+        "discount": "Total des réductions",
+        "remaining": "Utilisations restantes"
+      },
+      "usages": {
+        "title": "Historique d'utilisation",
+        "empty": "Ce coupon n'a pas encore été utilisé",
+        "customer": "Client",
+        "original": "Prix original",
+        "discount": "Réduction",
+        "date": "Date"
+      }
+    },
+    "form": {
+      "title": "Détails du coupon",
+      "titleEdit": "Modifier le coupon",
+      "organization": {
+        "label": "Organisation"
+      },
+      "code": {
+        "label": "Code coupon",
+        "placeholder": "ETE20",
+        "help": "Lettres, chiffres, tirets et underscores uniquement. Sera converti en majuscules."
+      },
+      "type": {
+        "label": "Type de réduction"
+      },
+      "discountValue": {
+        "label": "Valeur de la réduction",
+        "help": "Entre un pourcentage (1-100) ou un montant fixe en centimes"
+      },
+      "currency": {
+        "label": "Devise",
+        "help": "Requise pour les réductions en montant fixe"
+      },
+      "status": {
+        "label": "Statut"
+      },
+      "maxUses": {
+        "label": "Utilisations maximum",
+        "placeholder": "Laisser vide pour illimité",
+        "help": "Nombre maximum d'utilisations de ce coupon"
+      },
+      "expiresAt": {
+        "label": "Date d'expiration",
+        "help": "Laisser vide pour pas d'expiration"
+      },
+      "planIds": {
+        "label": "Restreindre aux plans",
+        "help": "Laisser vide pour autoriser sur tous les plans"
+      },
+      "submit": {
+        "create": "Créer le coupon",
+        "update": "Mettre à jour le coupon",
+        "saving": "Enregistrement..."
+      },
+      "errors": {
+        "organizationRequired": "Organisation requise",
+        "codeRequired": "Le code est requis",
+        "codeTooShort": "Le code doit faire au moins 3 caractères",
+        "codeTooLong": "Le code ne peut pas dépasser 32 caractères",
+        "codeInvalid": "Le code ne peut contenir que des lettres, chiffres, tirets et underscores",
+        "discountMin": "La réduction doit être d'au moins 1",
+        "discountMax": "La réduction en pourcentage ne peut pas dépasser 100",
+        "currencyRequired": "La devise est requise pour les réductions en montant fixe"
+      }
+    },
+    "toast": {
+      "loadError": "Erreur lors du chargement des coupons",
+      "organizationsLoadError": "Erreur lors du chargement des organisations",
+      "createSuccess": "Coupon créé avec succès",
+      "createError": "Erreur lors de la création du coupon",
+      "updateSuccess": "Coupon mis à jour avec succès",
+      "updateError": "Erreur lors de la mise à jour du coupon",
+      "disableSuccess": "Coupon désactivé avec succès",
+      "disableError": "Erreur lors de la désactivation du coupon"
+    }
+  },
+
+  "affiliates": {
+    "loading": "Chargement...",
+    "title": "Affiliés",
+    "subtitle": "Gère tes partenaires affiliés et leurs commissions",
+    "create": "Ajouter un affilié",
+    "empty": {
+      "title": "Aucun affilié",
+      "description": "Ajoute ton premier partenaire affilié pour gagner grâce aux parrainages.",
+      "cta": "Ajouter mon premier affilié"
+    },
+    "table": {
+      "affiliate": "Affilié",
+      "code": "Code parrainage",
+      "commission": "Commission",
+      "earnings": "Gains",
+      "status": "Statut",
+      "referrals": "Parrainages",
+      "actions": "Actions"
+    },
+    "statusLabels": {
+      "PENDING": "En attente",
+      "ACTIVE": "Actif",
+      "SUSPENDED": "Suspendu",
+      "DEACTIVATED": "Désactivé"
+    },
+    "new": {
+      "title": "Nouvel affilié",
+      "subtitle": "Ajouter un nouveau partenaire affilié"
+    },
+    "detail": {
+      "back": "Retour",
+      "edit": "Modifier",
+      "deactivate": "Désactiver",
+      "payouts": "Versements",
+      "stats": {
+        "referrals": "Total parrainages",
+        "commission": "Taux de commission",
+        "totalEarnings": "Gains totaux",
+        "pending": "Versement en attente"
+      },
+      "referralCode": {
+        "title": "Code parrainage",
+        "copy": "Copier",
+        "copied": "Copié !",
+        "help": "Partage ce code avec ton affilié. Les clients peuvent l'utiliser au paiement."
+      },
+      "referrals": {
+        "title": "Parrainages",
+        "empty": "Aucun parrainage",
+        "customer": "Client",
+        "plan": "Offre",
+        "amount": "Montant vente",
+        "commission": "Commission",
+        "status": "Statut",
+        "date": "Date",
+        "paid": "Payé",
+        "pending": "En attente"
+      }
+    },
+    "form": {
+      "title": "Détails de l'affilié",
+      "titleEdit": "Modifier l'affilié",
+      "organization": {
+        "label": "Organisation"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "affilié@exemple.com"
+      },
+      "name": {
+        "label": "Nom (optionnel)",
+        "placeholder": "Jean Dupont"
+      },
+      "referralCode": {
+        "label": "Code parrainage (optionnel)",
+        "placeholder": "JEAN10",
+        "help": "Laisser vide pour générer automatiquement. Lettres, chiffres, tirets et underscores uniquement."
+      },
+      "commissionRate": {
+        "label": "Taux de commission",
+        "help": "Pourcentage de chaque vente que l'affilié gagne (1-100%)"
+      },
+      "status": {
+        "label": "Statut"
+      },
+      "submit": {
+        "create": "Ajouter l'affilié",
+        "update": "Mettre à jour l'affilié",
+        "saving": "Enregistrement..."
+      },
+      "errors": {
+        "organizationRequired": "Organisation requise",
+        "emailInvalid": "Veuillez entrer un email valide",
+        "codeTooShort": "Le code doit faire au moins 3 caractères",
+        "codeTooLong": "Le code ne peut pas dépasser 32 caractères",
+        "codeInvalid": "Le code ne peut contenir que des lettres, chiffres, tirets et underscores",
+        "commissionMin": "La commission doit être d'au moins 1%",
+        "commissionMax": "La commission ne peut pas dépasser 100%"
+      }
+    },
+    "payouts": {
+      "title": "Versements",
+      "back": "Retour",
+      "create": "Créer un versement",
+      "summary": {
+        "pending": "Versement en attente",
+        "paid": "Total versé",
+        "total": "Total gagné"
+      },
+      "list": {
+        "title": "Historique des versements",
+        "empty": "Aucun versement",
+        "amount": "Montant",
+        "method": "Méthode",
+        "status": "Statut",
+        "date": "Date",
+        "actions": "Actions",
+        "markCompleted": "Marquer complété",
+        "markFailed": "Marquer échoué"
+      },
+      "statusLabels": {
+        "PENDING": "En attente",
+        "PROCESSING": "En cours",
+        "COMPLETED": "Complété",
+        "FAILED": "Échoué"
+      },
+      "createDialog": {
+        "title": "Créer un versement",
+        "amount": "Montant",
+        "maxAmount": "Maximum : {amount}",
+        "method": "Méthode de paiement (optionnel)",
+        "methodPlaceholder": "PayPal, Virement bancaire, etc.",
+        "notes": "Notes (optionnel)",
+        "notesPlaceholder": "Numéro de référence, détails supplémentaires...",
+        "submit": "Créer le versement",
+        "creating": "Création..."
+      },
+      "toast": {
+        "createSuccess": "Versement créé avec succès",
+        "createError": "Erreur lors de la création du versement",
+        "completedSuccess": "Versement marqué comme complété",
+        "failedSuccess": "Versement marqué comme échoué",
+        "updateError": "Erreur lors de la mise à jour du versement"
+      }
+    },
+    "toast": {
+      "loadError": "Erreur lors du chargement des affiliés",
+      "organizationsLoadError": "Erreur lors du chargement des organisations",
+      "createSuccess": "Affilié ajouté avec succès",
+      "createError": "Erreur lors de l'ajout de l'affilié",
+      "updateSuccess": "Affilié mis à jour avec succès",
+      "updateError": "Erreur lors de la mise à jour de l'affilié",
+      "deactivateSuccess": "Affilié désactivé avec succès",
+      "deactivateError": "Erreur lors de la désactivation de l'affilié"
+    }
   },
 
   "faq": {

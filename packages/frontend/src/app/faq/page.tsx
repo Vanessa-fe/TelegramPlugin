@@ -115,10 +115,10 @@ export default async function FaqPage() {
       <section className="py-16 lg:py-24">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
           <div className="max-w-3xl">
-            <h1 className="text-4xl lg:text-5xl font-bold text-[#1A1523] mb-6">
+            <h1 className="text-4xl lg:text-5xl font-bold text-text-primary mb-6">
               {t('hero.title')}
             </h1>
-            <p className="text-lg text-[#6F6E77] leading-relaxed">
+            <p className="text-lg text-text-secondary leading-relaxed">
               {t('hero.subtitle')}
             </p>
           </div>
@@ -126,12 +126,12 @@ export default async function FaqPage() {
       </section>
 
       {/* Getting Started */}
-      <section className="py-16 lg:py-20 bg-[#FDFAFF]">
+      <section className="py-16 lg:py-20 bg-surface">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
-          <h2 className="text-2xl lg:text-3xl font-bold text-[#1A1523] mb-4">
+          <h2 className="text-2xl lg:text-3xl font-bold text-text-primary mb-4">
             {t('gettingStarted.title')}
           </h2>
-          <p className="text-[#6F6E77] mb-10 max-w-2xl">
+          <p className="text-text-secondary mb-10 max-w-2xl">
             {t('gettingStarted.subtitle')}
           </p>
 
@@ -139,7 +139,7 @@ export default async function FaqPage() {
             {gettingStartedSteps.map((step, index) => (
               <div
                 key={step.title}
-                className="flex items-start gap-4 bg-white rounded-xl border border-[#E9E3EF] p-6"
+                className="flex items-start gap-4 bg-white rounded-xl border border-border-custom p-6"
               >
                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-semibold">
                   {index + 1}
@@ -147,11 +147,11 @@ export default async function FaqPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <step.icon className="w-5 h-5 text-purple-600" />
-                    <h3 className="text-lg font-semibold text-[#1A1523]">
+                    <h3 className="text-lg font-semibold text-text-primary">
                       {step.title}
                     </h3>
                   </div>
-                  <p className="text-[#6F6E77]">{step.description}</p>
+                  <p className="text-text-secondary">{step.description}</p>
                 </div>
               </div>
             ))}
@@ -168,10 +168,10 @@ export default async function FaqPage() {
                 <Bot className="w-4 h-4" />
                 {t('botSetup.badge')}
               </div>
-              <h2 className="text-2xl lg:text-3xl font-bold text-[#1A1523] mb-4">
+              <h2 className="text-2xl lg:text-3xl font-bold text-text-primary mb-4">
                 {t('botSetup.title')}
               </h2>
-              <p className="text-[#6F6E77] mb-6">
+              <p className="text-text-secondary mb-6">
                 {t('botSetup.subtitle')}
               </p>
 
@@ -179,26 +179,26 @@ export default async function FaqPage() {
                 {botSetupSteps.map((step, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <ChevronRight className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-[#1A1523]">{step}</p>
+                    <p className="text-text-primary">{step}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-[#FDFAFF] rounded-2xl border border-[#E9E3EF] p-6">
-              <h3 className="font-semibold text-[#1A1523] mb-4">
+            <div className="bg-surface rounded-2xl border border-border-custom p-6">
+              <h3 className="font-semibold text-text-primary mb-4">
                 {t('botSetup.permissions.title')}
               </h3>
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
                   <span className="text-green-600">✓</span>
-                  <span className="text-[#6F6E77]">
+                  <span className="text-text-secondary">
                     {t('botSetup.permissions.invite')}
                   </span>
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="text-green-600">✓</span>
-                  <span className="text-[#6F6E77]">
+                  <span className="text-text-secondary">
                     {t('botSetup.permissions.ban')}
                   </span>
                 </li>
@@ -216,11 +216,11 @@ export default async function FaqPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-16 lg:py-20 bg-[#FDFAFF]">
+      <section className="py-16 lg:py-20 bg-surface">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
           <div className="flex items-center gap-3 mb-8">
             <HelpCircle className="w-8 h-8 text-purple-600" />
-            <h2 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
+            <h2 className="text-2xl lg:text-3xl font-bold text-text-primary">
               {t('questions.title')}
             </h2>
           </div>
@@ -229,12 +229,12 @@ export default async function FaqPage() {
             {faqs.map((faq) => (
               <div
                 key={faq.question}
-                className="bg-white rounded-xl border border-[#E9E3EF] p-6"
+                className="bg-white rounded-xl border border-border-custom p-6"
               >
-                <h3 className="font-semibold text-[#1A1523] mb-3">
+                <h3 className="font-semibold text-text-primary mb-3">
                   {faq.question}
                 </h3>
-                <p className="text-[#6F6E77] text-sm leading-relaxed">
+                <p className="text-text-secondary text-sm leading-relaxed">
                   {faq.answer}
                 </p>
               </div>

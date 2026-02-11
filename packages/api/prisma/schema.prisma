@@ -43,6 +43,18 @@ enum ChannelProvider {
   DISCORD
 }
 
+enum ChannelType {
+  CHANNEL
+  GROUP
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  USED
+}
+
 enum AccessStatus {
   PENDING
   GRANTED
@@ -98,10 +110,59 @@ enum OAuthProvider {
   APPLE
 }
 
+enum AffiliateStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum CouponType {
+  PERCENTAGE    // ex: 20% off
+  FIXED_AMOUNT  // ex: 5€ off
+}
+
+enum CouponStatus {
+  ACTIVE
+  EXPIRED
+  DISABLED
+}
+
+enum LandingPageElementType {
+  SOCIAL_LINKS    // Liens réseaux sociaux
+  IMAGE           // Avatar/Logo
+  HEADING_1       // Titre principal
+  HEADING_2       // Sous-titre
+  HEADING_3       // Section title
+  TEXT            // Paragraphe descriptif
+  PRODUCTS        // Liste des produits/accès
+  LINK            // Lien personnalisé
+  DIVIDER         // Séparateur
+}
+
+enum SocialPlatform {
+  INSTAGRAM
+  YOUTUBE
+  TWITTER
+  TIKTOK
+  TELEGRAM
+  DISCORD
+  LINKEDIN
+  WEBSITE
+}
+
 model Organization {
   id              String   @id @default(uuid())
   name            String
   slug            String   @unique
+  pageSlug        String?  // Custom slug for public landing page (e.g., "vanessa" instead of "ferrand-vf-0dxwfh")
   billingEmail    String
   stripeAccountId String?  @unique
   saasActive      Boolean  @default(false)
@@ -111,15 +172,19 @@ model Organization {
   updatedAt       DateTime @updatedAt
   deletedAt       DateTime?
 
-  users                User[]
-  customers            Customer[]
-  products             Product[]
-  channels             Channel[]
-  subscriptions        Subscription[]
-  paymentEvents        PaymentEvent[]
-  auditLogs            AuditLog[]
-  dataExports          DataExport[]
-  platformSubscription PlatformSubscription?
+  users                 User[]
+  customers             Customer[]
+  products              Product[]
+  channels              Channel[]
+  channelVerifications  ChannelVerification[]
+  subscriptions         Subscription[]
+  paymentEvents         PaymentEvent[]
+  auditLogs             AuditLog[]
+  dataExports           DataExport[]
+  platformSubscription  PlatformSubscription?
+  affiliates            Affiliate[]
+  coupons               Coupon[]
+  landingPage           LandingPage?
 
   @@index([slug])
 }
@@ -150,18 +215,23 @@ model Customer {
   displayName      String?
   telegramUserId   String?
   telegramUsername String?
+  discordUserId    String?
+  discordUsername  String?
   externalId       String?      @unique
   metadata         Json?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   deletedAt        DateTime?
 
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  subscriptions   Subscription[]
-  channelAccesses ChannelAccess[]
-  entitlements    Entitlement[]
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  subscriptions       Subscription[]
+  channelAccesses     ChannelAccess[]
+  entitlements        Entitlement[]
+  affiliateReferrals  AffiliateReferral[]
+  discordAccount      CustomerDiscordAccount?
 
   @@index([organizationId, telegramUserId])
+  @@index([organizationId, discordUserId])
 }
 
 model Product {
@@ -207,6 +277,7 @@ model Channel {
   id               String           @id @default(uuid())
   organizationId   String
   provider         ChannelProvider  @default(TELEGRAM)
+  type             ChannelType      @default(CHANNEL)
   externalId       String
   title            String?
   username         String?
@@ -220,8 +291,37 @@ model Channel {
   productLinks    ProductChannel[]
   channelAccesses ChannelAccess[]
   invites         TelegramInvite[]
+  discordGuild    DiscordGuild?
 
   @@unique([organizationId, provider, externalId])
+}
+
+model ChannelVerification {
+  id               String             @id @default(uuid())
+  organizationId   String
+  provider         ChannelProvider    @default(TELEGRAM)
+  code             String             @unique
+  type             ChannelType        @default(CHANNEL)
+  status           VerificationStatus @default(PENDING)
+  // Telegram fields
+  telegramChatId   String?
+  telegramTitle    String?
+  telegramUsername String?
+  // Discord fields
+  discordGuildId   String?
+  discordGuildName String?
+  discordRoleId    String?
+  discordRoleName  String?
+  expiresAt        DateTime
+  verifiedAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([code])
+  @@index([organizationId])
+  @@index([status, expiresAt])
 }
 
 model ProductChannel {
@@ -238,33 +338,37 @@ model ProductChannel {
 }
 
 model Subscription {
-  id                 String              @id @default(uuid())
-  organizationId     String
-  customerId         String
-  planId             String
-  slug               String?
-  status             SubscriptionStatus  @default(ACTIVE)
-  externalId         String?             @unique
-  externalCustomerId String?
-  externalPriceId    String?
-  startedAt          DateTime            @default(now())
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
-  trialEndsAt        DateTime?
-  canceledAt         DateTime?
-  endedAt            DateTime?
-  graceUntil         DateTime?
+  id                  String              @id @default(uuid())
+  organizationId      String
+  customerId          String
+  planId              String
+  slug                String?
+  status              SubscriptionStatus  @default(ACTIVE)
+  externalId          String?             @unique
+  externalCustomerId  String?
+  externalPriceId     String?
+  startedAt           DateTime            @default(now())
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+  trialEndsAt         DateTime?
+  canceledAt          DateTime?
+  endedAt             DateTime?
+  graceUntil          DateTime?
   lastPaymentFailedAt DateTime?
-  metadata           Json?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  affiliateCode       String?
+  couponCode          String?
+  metadata            Json?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
-  organization    Organization   @relation(fields: [organizationId], references: [id])
-  customer        Customer       @relation(fields: [customerId], references: [id])
-  plan            Plan           @relation(fields: [planId], references: [id])
-  channelAccesses ChannelAccess[]
-  paymentEvents   PaymentEvent[]
-  entitlements    Entitlement[]
+  organization       Organization        @relation(fields: [organizationId], references: [id])
+  customer           Customer            @relation(fields: [customerId], references: [id])
+  plan               Plan                @relation(fields: [planId], references: [id])
+  channelAccesses    ChannelAccess[]
+  paymentEvents      PaymentEvent[]
+  entitlements       Entitlement[]
+  affiliateReferral  AffiliateReferral?
+  couponUsage        CouponUsage?
 
   @@unique([organizationId, slug])
   @@index([organizationId, status])
@@ -306,7 +410,8 @@ model ChannelAccess {
   subscriptionId String
   channelId      String
   customerId     String
-  inviteId       String?
+  inviteId       String?      // For Telegram - links to TelegramInvite
+  discordRoleId  String?      // For Discord - the role that was assigned
   status         AccessStatus @default(PENDING)
   grantedAt      DateTime?
   revokedAt      DateTime?
@@ -459,4 +564,189 @@ model OAuthAccount {
 
   @@unique([provider, providerUserId])
   @@index([userId])
+}
+
+model Affiliate {
+  id              String          @id @default(uuid())
+  organizationId  String
+  email           String
+  name            String?
+  referralCode    String          @unique
+  commissionRate  Int             // Percentage (10 = 10%)
+  status          AffiliateStatus @default(PENDING)
+  totalEarnings   Int             @default(0)
+  pendingEarnings Int             @default(0)
+  paidEarnings    Int             @default(0)
+  metadata        Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  referrals    AffiliateReferral[]
+  payouts      AffiliatePayout[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId, status])
+  @@index([referralCode])
+}
+
+model AffiliateReferral {
+  id              String   @id @default(uuid())
+  affiliateId     String
+  subscriptionId  String   @unique
+  customerId      String
+  amountCents     Int
+  commissionCents Int
+  currency        String   @default("eur")
+  isPaid          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  affiliate    Affiliate    @relation(fields: [affiliateId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+
+  @@index([affiliateId, isPaid])
+}
+
+model AffiliatePayout {
+  id          String       @id @default(uuid())
+  affiliateId String
+  amountCents Int
+  currency    String       @default("eur")
+  status      PayoutStatus @default(PENDING)
+  method      String?
+  notes       String?
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+
+  affiliate Affiliate @relation(fields: [affiliateId], references: [id])
+
+  @@index([affiliateId, status])
+}
+
+model Coupon {
+  id             String       @id @default(uuid())
+  organizationId String
+  code           String
+  type           CouponType
+  discountValue  Int          // % or cents depending on type
+  currency       String?      // Required for FIXED_AMOUNT
+  status         CouponStatus @default(ACTIVE)
+  maxUses        Int?
+  usedCount      Int          @default(0)
+  expiresAt      DateTime?
+  planIds        String[]     // Empty = all plans
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  usages       CouponUsage[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@index([code])
+}
+
+model CouponUsage {
+  id             String   @id @default(uuid())
+  couponId       String
+  subscriptionId String   @unique
+  customerId     String
+  discountCents  Int
+  originalCents  Int
+  createdAt      DateTime @default(now())
+
+  coupon       Coupon       @relation(fields: [couponId], references: [id])
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([couponId])
+}
+
+model LandingPage {
+  id             String   @id @default(uuid())
+  organizationId String   @unique
+
+  // Config générale
+  isPublished    Boolean  @default(false)
+  themeColor     String?  @default("#7c3aed")  // Purple par défaut
+
+  // Metadata SEO
+  metaTitle      String?
+  metaDescription String?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  elements       LandingPageElement[]
+  socialLinks    SocialLink[]
+
+  @@index([organizationId])
+}
+
+model LandingPageElement {
+  id            String                @id @default(uuid())
+  landingPageId String
+  type          LandingPageElementType
+  order         Int
+
+  // Contenu (selon le type)
+  content       String?               // Pour TEXT, HEADING, LINK text
+  imageUrl      String?               // Pour IMAGE
+  linkUrl       String?               // Pour LINK
+
+  // Config spécifique
+  settings      Json?                 // Options additionnelles (couleur, style, etc.)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  landingPage   LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+
+  @@index([landingPageId, order])
+}
+
+model SocialLink {
+  id            String         @id @default(uuid())
+  landingPageId String
+  platform      SocialPlatform
+  url           String
+  order         Int
+
+  landingPage   LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+
+  @@index([landingPageId, order])
+}
+
+// ========== Discord Integration Models ==========
+
+model DiscordGuild {
+  id             String       @id @default(uuid())
+  channelId      String       @unique
+  guildId        String       // Discord server ID
+  guildName      String?      // Server name for display
+  roleId         String?      // Role to assign for paid access
+  roleName       String?      // Role name for display
+  botJoinedAt    DateTime?    // When the bot joined the guild
+  status         InviteStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  channel        Channel      @relation(fields: [channelId], references: [id])
+
+  @@index([guildId])
+}
+
+model CustomerDiscordAccount {
+  id              String   @id @default(uuid())
+  customerId      String   @unique // One Discord account per customer
+  discordUserId   String   @unique
+  discordUsername String?
+  accessToken     String?  // Encrypted - for API calls on behalf of user
+  refreshToken    String?  // Encrypted - for token refresh
+  tokenExpiresAt  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  customer        Customer @relation(fields: [customerId], references: [id])
 }

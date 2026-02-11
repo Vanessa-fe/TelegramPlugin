@@ -70,11 +70,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFAFF] flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
-          <Link href="/" className="text-xl font-bold text-[#1A1523]">
+          <Link href="/" className="text-xl font-bold text-text-primary">
             {tCommon('appName')}
           </Link>
         </div>
@@ -84,12 +84,12 @@ export default function RegisterPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           {/* Card */}
-          <div className="bg-white rounded-2xl border border-[#E9E3EF] shadow-sm p-8">
+          <div className="bg-white rounded-2xl border border-border-custom shadow-sm p-8">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-[#1A1523] mb-2">
+              <h1 className="text-2xl font-bold text-text-primary mb-2">
                 {t('title')}
               </h1>
-              <p className="text-[#6F6E77]">
+              <p className="text-text-secondary">
                 {t('subtitle')}
               </p>
             </div>
@@ -108,7 +108,7 @@ export default function RegisterPage() {
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-[#1A1523]">
+                  <Label htmlFor="firstName" className="text-text-primary">
                     {t('firstName')}
                   </Label>
                   <Input
@@ -120,11 +120,11 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     disabled={isLoading}
                     placeholder={t('firstNamePlaceholder')}
-                    className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+                    className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-[#1A1523]">
+                  <Label htmlFor="lastName" className="text-text-primary">
                     {t('lastName')}
                   </Label>
                   <Input
@@ -136,13 +136,13 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     disabled={isLoading}
                     placeholder={t('lastNamePlaceholder')}
-                    className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+                    className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-[#1A1523]">
+                <Label htmlFor="email" className="text-text-primary">
                   {t('email')}
                 </Label>
                 <Input
@@ -155,12 +155,12 @@ export default function RegisterPage() {
                   required
                   disabled={isLoading}
                   placeholder={t('emailPlaceholder')}
-                  className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+                  className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-[#1A1523]">
+                <Label htmlFor="password" className="text-text-primary">
                   {t('password')}
                 </Label>
                 <Input
@@ -174,7 +174,7 @@ export default function RegisterPage() {
                   disabled={isLoading}
                   placeholder={t('passwordPlaceholder')}
                   aria-describedby="password-strength"
-                  className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+                  className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                 />
                 <PasswordStrengthIndicator password={formData.password} />
               </div>
@@ -190,7 +190,7 @@ export default function RegisterPage() {
 
             {/* Trial badge */}
             <div className="mt-6 text-center">
-              <span className="inline-flex items-center gap-2 text-sm text-[#6F6E77]">
+              <span className="inline-flex items-center gap-2 text-sm text-text-secondary">
                 <svg
                   className="w-4 h-4 text-purple-600"
                   fill="currentColor"
@@ -208,7 +208,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="mt-6 text-center">
-              <p className="text-[#6F6E77]">
+              <p className="text-text-secondary">
                 {t('hasAccount')}{' '}
                 <Link
                   href="/login"
@@ -221,13 +221,13 @@ export default function RegisterPage() {
           </div>
 
           {/* Footer note */}
-          <p className="text-center text-sm text-[#6F6E77] mt-6">
+          <p className="text-center text-sm text-text-secondary mt-6">
             {t('termsNotice')}{' '}
-            <Link href="/terms" className="underline hover:text-[#1A1523]">
+            <Link href="/terms" className="underline hover:text-text-primary">
               {t('terms')}
             </Link>{' '}
             {t('and')}{' '}
-            <Link href="/privacy" className="underline hover:text-[#1A1523]">
+            <Link href="/privacy" className="underline hover:text-text-primary">
               {t('privacy')}
             </Link>
           </p>

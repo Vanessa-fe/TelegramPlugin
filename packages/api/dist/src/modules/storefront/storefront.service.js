@@ -101,9 +101,7 @@ let StorefrontService = class StorefrontService {
                 stripeAccountId: true,
             },
         });
-        if (!organization ||
-            !organization.saasActive ||
-            !organization.stripeAccountId) {
+        if (!organization) {
             return null;
         }
         const products = await this.prisma.product.findMany({

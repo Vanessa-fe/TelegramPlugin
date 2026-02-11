@@ -61,7 +61,7 @@ export function ChannelForm({
           .or(z.literal("")),
         isActive: z.boolean().optional(),
       }),
-    [t]
+    [t],
   );
 
   const providerOptions = useMemo(
@@ -71,7 +71,7 @@ export function ChannelForm({
       // { value: ChannelProvider.DISCORD, label: t("providers.discord") },
       // si tu ajoutes Whatsapp plus tard : { value: ChannelProvider.WHATSAPP, label: t("providers.whatsapp") }
     ],
-    [t]
+    [t],
   );
 
   const {

@@ -34,7 +34,7 @@ find_available_port() {
   echo "$port"
 }
 
-API_PORT="${API_PORT:-${PORT:-3001}}"
+API_PORT="${API_PORT:-${PORT:-3002}}"
 if is_port_in_use "$API_PORT"; then
   NEW_PORT="$(find_available_port "$API_PORT")"
   echo "⚠️  Port $API_PORT is in use, switching API to $NEW_PORT"

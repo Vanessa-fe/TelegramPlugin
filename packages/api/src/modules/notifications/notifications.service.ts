@@ -32,12 +32,14 @@ interface NotificationTemplate {
   subject: string;
   emailBody: string;
   telegramMessage: string;
+  discordMessage: string;
 }
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
   private readonly logger = new Logger(NotificationsService.name);
   private readonly telegramBotToken: string | undefined;
+  private readonly discordBotToken: string | undefined;
   private readonly brevoEnabled: boolean;
   private readonly brevoFromEmail: string;
   private readonly brevoFromName: string;
@@ -48,6 +50,7 @@ export class NotificationsService implements OnModuleInit {
     private readonly prisma: PrismaService,
   ) {
     this.telegramBotToken = this.config.get<string>('TELEGRAM_BOT_TOKEN');
+    this.discordBotToken = this.config.get<string>('DISCORD_BOT_TOKEN');
     this.brevoFromEmail =
       this.config.get<string>('BREVO_FROM_EMAIL') || 'noreply@example.com';
     this.brevoFromName =
@@ -103,6 +106,11 @@ export class NotificationsService implements OnModuleInit {
         customer.telegramUserId,
         template.telegramMessage,
       );
+    }
+
+    // Send Discord notification if customer has discordUserId
+    if (customer.discordUserId && this.discordBotToken) {
+      await this.sendDiscord(customer.discordUserId, template.discordMessage);
     }
 
     // Log the notification
@@ -322,6 +330,65 @@ export class NotificationsService implements OnModuleInit {
     }
   }
 
+  private async sendDiscord(
+    discordUserId: string,
+    message: string,
+  ): Promise<void> {
+    if (!this.discordBotToken) {
+      this.logger.warn(
+        'Discord bot token not configured, skipping notification',
+      );
+      return;
+    }
+
+    try {
+      // First, create a DM channel with the user
+      const createDmUrl = 'https://discord.com/api/v10/users/@me/channels';
+      const dmResponse = await fetch(createDmUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bot ${this.discordBotToken}`,
+        },
+        body: JSON.stringify({
+          recipient_id: discordUserId,
+        }),
+      });
+
+      if (!dmResponse.ok) {
+        const error = await dmResponse.text();
+        this.logger.error(`Failed to create Discord DM channel: ${error}`);
+        return;
+      }
+
+      const dmChannel = (await dmResponse.json()) as { id: string };
+
+      // Then send the message to the DM channel
+      const sendMessageUrl = `https://discord.com/api/v10/channels/${dmChannel.id}/messages`;
+      const messageResponse = await fetch(sendMessageUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bot ${this.discordBotToken}`,
+        },
+        body: JSON.stringify({
+          content: message,
+        }),
+      });
+
+      if (!messageResponse.ok) {
+        const error = await messageResponse.text();
+        this.logger.error(`Failed to send Discord DM: ${error}`);
+      } else {
+        this.logger.log(`Discord DM sent to user ${discordUserId}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send Discord notification: ${(error as Error).message}`,
+      );
+    }
+  }
+
   private getTemplate(
     type: NotificationType,
     data?: Record<string, unknown>,
@@ -335,6 +402,7 @@ export class NotificationsService implements OnModuleInit {
           <p>Merci pour votre confiance !</p>
         `,
         telegramMessage: `✅ <b>Paiement confirmé</b>\n\nVotre paiement de ${data?.formattedAmount || ''} pour le plan "${data?.planName || ''}" a été traité avec succès.\n\nMerci pour votre confiance !`,
+        discordMessage: `✅ **Paiement confirmé**\n\nVotre paiement de ${data?.formattedAmount || ''} pour le plan "${data?.planName || ''}" a été traité avec succès.\n\nMerci pour votre confiance !`,
       },
 
       [NotificationType.PAYMENT_FAILED]: {
@@ -346,6 +414,7 @@ export class NotificationsService implements OnModuleInit {
           <p>Veuillez mettre à jour vos informations de paiement pour maintenir votre accès.</p>
         `,
         telegramMessage: `❌ <b>Échec du paiement</b>\n\nNous n'avons pas pu traiter votre paiement.\nRaison : ${data?.reason || 'Erreur inconnue'}\n\nVeuillez mettre à jour vos informations de paiement.`,
+        discordMessage: `❌ **Échec du paiement**\n\nNous n'avons pas pu traiter votre paiement.\nRaison : ${data?.reason || 'Erreur inconnue'}\n\nVeuillez mettre à jour vos informations de paiement.`,
       },
 
       [NotificationType.SUBSCRIPTION_RENEWED]: {
@@ -356,6 +425,7 @@ export class NotificationsService implements OnModuleInit {
           <p>Prochaine facturation : ${data?.nextBillingDate || ''}</p>
         `,
         telegramMessage: `🔄 <b>Abonnement renouvelé</b>\n\nVotre abonnement "${data?.planName || ''}" a été renouvelé avec succès.\n\nProchaine facturation : ${data?.nextBillingDate || ''}`,
+        discordMessage: `🔄 **Abonnement renouvelé**\n\nVotre abonnement "${data?.planName || ''}" a été renouvelé avec succès.\n\nProchaine facturation : ${data?.nextBillingDate || ''}`,
       },
 
       [NotificationType.SUBSCRIPTION_CANCELED]: {
@@ -366,6 +436,7 @@ export class NotificationsService implements OnModuleInit {
           <p>Vous conservez votre accès jusqu'à la fin de la période payée.</p>
         `,
         telegramMessage: `⚠️ <b>Abonnement annulé</b>\n\nVotre abonnement "${data?.planName || ''}" a été annulé.\n\nVous conservez votre accès jusqu'à la fin de la période payée.`,
+        discordMessage: `⚠️ **Abonnement annulé**\n\nVotre abonnement "${data?.planName || ''}" a été annulé.\n\nVous conservez votre accès jusqu'à la fin de la période payée.`,
       },
 
       [NotificationType.REFUND_PROCESSED]: {
@@ -376,6 +447,7 @@ export class NotificationsService implements OnModuleInit {
           <p>Le montant sera crédité sur votre compte dans les 5 à 10 jours ouvrés.</p>
         `,
         telegramMessage: `💸 <b>Remboursement effectué</b>\n\nVotre remboursement a été traité avec succès.\n\nLe montant sera crédité sur votre compte dans les 5 à 10 jours ouvrés.`,
+        discordMessage: `💸 **Remboursement effectué**\n\nVotre remboursement a été traité avec succès.\n\nLe montant sera crédité sur votre compte dans les 5 à 10 jours ouvrés.`,
       },
 
       [NotificationType.CHANNEL_ACCESS_GRANTED]: {
@@ -386,6 +458,7 @@ export class NotificationsService implements OnModuleInit {
           ${data?.inviteLink ? `<p><a href="${data.inviteLink}">Cliquez ici pour rejoindre</a></p>` : ''}
         `,
         telegramMessage: `🎉 <b>Accès accordé</b>\n\nVotre accès au channel "${data?.channelTitle || ''}" a été activé.${data?.inviteLink ? `\n\n👉 <a href="${data.inviteLink}">Rejoindre le channel</a>` : ''}`,
+        discordMessage: `🎉 **Accès accordé**\n\nVotre accès au serveur "${data?.channelTitle || ''}" a été activé.\n\nVotre rôle a été attribué automatiquement.`,
       },
 
       [NotificationType.CHANNEL_ACCESS_REVOKED]: {
@@ -396,6 +469,7 @@ export class NotificationsService implements OnModuleInit {
           <p>Raison : ${data?.reason || 'Non spécifiée'}</p>
         `,
         telegramMessage: `🚫 <b>Accès révoqué</b>\n\nVotre accès au channel "${data?.channelTitle || ''}" a été révoqué.\n\nRaison : ${data?.reason || 'Non spécifiée'}`,
+        discordMessage: `🚫 **Accès révoqué**\n\nVotre accès au serveur "${data?.channelTitle || ''}" a été révoqué.\n\nRaison : ${data?.reason || 'Non spécifiée'}`,
       },
 
       [NotificationType.INVITE_LINK_SENT]: {
@@ -407,6 +481,7 @@ export class NotificationsService implements OnModuleInit {
           <p><em>Ce lien est personnel et à usage unique.</em></p>
         `,
         telegramMessage: `📨 <b>Lien d'invitation</b>\n\nVoici votre lien pour rejoindre le channel "${data?.channelTitle || ''}":\n\n👉 <a href="${data?.inviteLink || '#'}">Rejoindre maintenant</a>\n\n<i>Ce lien est personnel et à usage unique.</i>`,
+        discordMessage: `📨 **Lien d'invitation**\n\nVoici votre lien pour rejoindre le channel "${data?.channelTitle || ''}":\n\n👉 ${data?.inviteLink || ''}\n\n*Ce lien est personnel et à usage unique.*`,
       },
 
       [NotificationType.SUBSCRIPTION_EXPIRING]: {
@@ -417,6 +492,7 @@ export class NotificationsService implements OnModuleInit {
           <p>Renouvelez-le maintenant pour continuer à profiter de votre accès.</p>
         `,
         telegramMessage: `⏰ <b>Abonnement bientôt expiré</b>\n\nVotre abonnement expire dans quelques jours.\n\nRenouvelez-le maintenant pour continuer à profiter de votre accès.`,
+        discordMessage: `⏰ **Abonnement bientôt expiré**\n\nVotre abonnement expire dans quelques jours.\n\nRenouvelez-le maintenant pour continuer à profiter de votre accès.`,
       },
 
       [NotificationType.PAYMENT_REMINDER]: {
@@ -427,6 +503,7 @@ export class NotificationsService implements OnModuleInit {
           <p>Veuillez mettre à jour vos informations de paiement pour éviter toute interruption de service.</p>
         `,
         telegramMessage: `💳 <b>Rappel de paiement</b>\n\nNous n'avons pas pu traiter votre paiement.\n\nVeuillez mettre à jour vos informations de paiement.`,
+        discordMessage: `💳 **Rappel de paiement**\n\nNous n'avons pas pu traiter votre paiement.\n\nVeuillez mettre à jour vos informations de paiement.`,
       },
     };
 

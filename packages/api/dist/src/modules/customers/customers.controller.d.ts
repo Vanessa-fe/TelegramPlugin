@@ -24,6 +24,8 @@ export declare class CustomersController {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         }[];
@@ -33,6 +35,7 @@ export declare class CustomersController {
             createdAt: Date;
             updatedAt: Date;
             slug: string;
+            pageSlug: string | null;
             billingEmail: string;
             stripeAccountId: string | null;
             saasActive: boolean;
@@ -50,6 +53,7 @@ export declare class CustomersController {
             subscriptionId: string;
             channelId: string;
             inviteId: string | null;
+            discordRoleId: string | null;
             grantedAt: Date | null;
             revokedAt: Date | null;
             revokeReason: string | null;
@@ -65,6 +69,8 @@ export declare class CustomersController {
         deletedAt: Date | null;
         telegramUserId: string | null;
         telegramUsername: string | null;
+        discordUserId: string | null;
+        discordUsername: string | null;
         externalId: string | null;
     })[]>;
     findOne(user: AuthUser, id: string): Promise<{
@@ -87,6 +93,8 @@ export declare class CustomersController {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         }[];
@@ -96,6 +104,7 @@ export declare class CustomersController {
             createdAt: Date;
             updatedAt: Date;
             slug: string;
+            pageSlug: string | null;
             billingEmail: string;
             stripeAccountId: string | null;
             saasActive: boolean;
@@ -113,6 +122,7 @@ export declare class CustomersController {
             subscriptionId: string;
             channelId: string;
             inviteId: string | null;
+            discordRoleId: string | null;
             grantedAt: Date | null;
             revokedAt: Date | null;
             revokeReason: string | null;
@@ -128,6 +138,8 @@ export declare class CustomersController {
         deletedAt: Date | null;
         telegramUserId: string | null;
         telegramUsername: string | null;
+        discordUserId: string | null;
+        discordUsername: string | null;
         externalId: string | null;
     }>;
     create(user: AuthUser, body: CreateCustomerDto): Promise<{
@@ -141,6 +153,8 @@ export declare class CustomersController {
         deletedAt: Date | null;
         telegramUserId: string | null;
         telegramUsername: string | null;
+        discordUserId: string | null;
+        discordUsername: string | null;
         externalId: string | null;
     }>;
     update(user: AuthUser, id: string, body: UpdateCustomerDto): Promise<{
@@ -154,6 +168,8 @@ export declare class CustomersController {
         deletedAt: Date | null;
         telegramUserId: string | null;
         telegramUsername: string | null;
+        discordUserId: string | null;
+        discordUsername: string | null;
         externalId: string | null;
     }>;
 }

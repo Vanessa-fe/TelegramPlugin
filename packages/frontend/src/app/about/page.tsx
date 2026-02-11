@@ -62,10 +62,10 @@ export default async function AboutPage() {
       <section className="py-16 lg:py-24">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
           <div className="max-w-3xl">
-            <h1 className="text-4xl lg:text-5xl font-bold text-[#1A1523] mb-6">
+            <h1 className="text-4xl lg:text-5xl font-bold text-text-primary mb-6">
               {t('hero.title')}
             </h1>
-            <p className="text-lg text-[#6F6E77] leading-relaxed">
+            <p className="text-lg text-text-secondary leading-relaxed">
               {t('hero.body')}
             </p>
           </div>
@@ -73,27 +73,27 @@ export default async function AboutPage() {
       </section>
 
       {/* Story */}
-      <section className="py-16 lg:py-20 bg-[#FDFAFF]">
+      <section className="py-16 lg:py-20 bg-surface">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-2xl lg:text-3xl font-bold text-[#1A1523] mb-6">
+              <h2 className="text-2xl lg:text-3xl font-bold text-text-primary mb-6">
                 {t('story.title')}
               </h2>
-              <div className="space-y-4 text-[#6F6E77]">
+              <div className="space-y-4 text-text-secondary">
                 <p>{t('story.paragraphs.p1')}</p>
                 <p>{t('story.paragraphs.p2')}</p>
                 <p>{t('story.paragraphs.p3')}</p>
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-[#E9E3EF] p-8">
+            <div className="bg-white rounded-2xl border border-border-custom p-8">
               <div className="grid grid-cols-2 gap-6">
                 {stats.map((stat) => (
                   <div key={stat.label} className="text-center">
                     <p className="text-4xl font-bold text-purple-600">
                       {stat.value}
                     </p>
-                    <p className="text-sm text-[#6F6E77] mt-1">
+                    <p className="text-sm text-text-secondary mt-1">
                       {stat.label}
                     </p>
                   </div>
@@ -107,7 +107,7 @@ export default async function AboutPage() {
       {/* Values */}
       <section className="py-16 lg:py-20">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
-          <h2 className="text-2xl lg:text-3xl font-bold text-[#1A1523] text-center mb-12">
+          <h2 className="text-2xl lg:text-3xl font-bold text-text-primary text-center mb-12">
             {t('values.title')}
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -116,10 +116,10 @@ export default async function AboutPage() {
                 <div className="w-14 h-14 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
                   <value.icon className="w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-semibold text-[#1A1523] mb-2">
+                <h3 className="text-xl font-semibold text-text-primary mb-2">
                   {value.title}
                 </h3>
-                <p className="text-[#6F6E77]">{value.description}</p>
+                <p className="text-text-secondary">{value.description}</p>
               </div>
             ))}
           </div>

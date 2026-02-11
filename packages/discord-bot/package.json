@@ -1,0 +1,29 @@
+{
+  "name": "@telegram-plugin/discord-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Bot Discord pour la plateforme de monétisation",
+  "main": "dist/main.js",
+  "types": "dist/main.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"src/**/*.ts\"",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {
+    "@telegram-plugin/shared": "workspace:*",
+    "discord.js": "^14.17.3",
+    "dotenv": "^16.4.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "@typescript-eslint/eslint-plugin": "^8.20.0",
+    "@typescript-eslint/parser": "^8.20.0",
+    "eslint": "^9.18.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.7.3"
+  }
+}

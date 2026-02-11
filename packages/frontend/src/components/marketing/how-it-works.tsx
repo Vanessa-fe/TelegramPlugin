@@ -26,10 +26,10 @@ export async function HowItWorks() {
   ];
 
   return (
-    <section className="py-20 lg:py-28 bg-[#FDFAFF]">
+    <section className="py-20 lg:py-28 bg-surface">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
-        <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#1A1523] mb-16">
+        <h2 className="text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
           {t('title')}
         </h2>
 
@@ -39,7 +39,7 @@ export async function HowItWorks() {
             <div key={step.number} className="relative text-center">
               {/* Connector line (desktop only) */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-6 left-1/2 w-full h-px bg-[#E9E3EF]" />
+              <div className="hidden lg:block absolute top-6 left-1/2 w-full h-px bg-border-custom" />
               )}
 
               {/* Step number */}
@@ -48,10 +48,10 @@ export async function HowItWorks() {
               </div>
 
               {/* Step content */}
-              <h3 className="text-xl font-semibold text-[#1A1523] mb-2">
+              <h3 className="text-xl font-semibold text-text-primary mb-2">
                 {step.title}
               </h3>
-              <p className="text-[#6F6E77] text-sm leading-relaxed">
+              <p className="text-text-secondary text-sm leading-relaxed">
                 {step.description}
               </p>
             </div>

@@ -21,7 +21,7 @@ export function OAuthButtons({ mode, disabled }: OAuthButtonsProps) {
       <Button
         type="button"
         variant="outline"
-        className="h-12 w-full border-[#E9E3EF] hover:bg-gray-50"
+        className="h-12 w-full border-border-custom hover:bg-gray-50"
         onClick={handleGoogleAuth}
         disabled={disabled}
       >

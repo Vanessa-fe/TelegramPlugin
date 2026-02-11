@@ -45,6 +45,7 @@
 
   "nav": {
     "dashboard": "Dashboard",
+    "pageBuilder": "My page",
     "products": "My offers",
     "customers": "My customers",
     "subscriptions": "My subscribers",
@@ -52,13 +53,207 @@
     "payments": "Payments",
     "channels": "My channels",
     "access": "Access management",
-    "billing": "Billing"
+    "billing": "Billing",
+    "coupons": "Coupons",
+    "affiliates": "Affiliates"
   },
 
   "sidebar": {
     "proPlan": "Pro Plan",
     "trialDaysLeft": "{count} days left in trial",
     "upgradeNow": "Upgrade now"
+  },
+
+  "landingPages": {
+    "title": "My page",
+    "subtitle": "Customize your public landing page",
+    "loading": "Loading...",
+    "created": "Page created successfully",
+    "creating": "Creating...",
+    "errors": {
+      "load": "Error loading page",
+      "create": "Error creating page"
+    },
+    "empty": {
+      "title": "No landing page yet",
+      "description": "Create your public page to showcase your offers and reach your audience.",
+      "cta": "Create my page"
+    },
+    "editor": {
+      "preview": "Preview",
+      "viewLive": "View live",
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "published": "Page published!",
+      "unpublished": "Page unpublished",
+      "statusPublished": "Published",
+      "statusDraft": "Draft",
+      "settings": "Settings",
+      "themeColor": "Theme color",
+      "metaTitle": "SEO Title",
+      "metaTitlePlaceholder": "Page title for search engines",
+      "metaDescription": "SEO Description",
+      "metaDescriptionPlaceholder": "Description for search engines",
+      "saveSettings": "Save settings",
+      "settingsSaved": "Settings saved",
+      "customUrl": "Custom URL",
+      "customUrlHelp": "Customize your page URL (leave empty for default)",
+      "slugTooShort": "URL must be at least 3 characters",
+      "slugTooLong": "URL cannot exceed 30 characters",
+      "slugInvalidFormat": "Only lowercase letters, numbers, and hyphens allowed",
+      "slugTaken": "This URL is already taken",
+      "elements": "Elements",
+      "socialLinks": "Social links",
+      "addElement": "Add element",
+      "elementSaved": "Element saved",
+      "elementDeleted": "Element deleted",
+      "elementAdded": "Element added",
+      "socialLinksSaved": "Social links saved",
+      "saveError": "Error saving"
+    },
+    "elements": {
+      "types": {
+        "image": "Avatar/Logo",
+        "heading1": "Title (H1)",
+        "heading2": "Subtitle (H2)",
+        "heading3": "Section title (H3)",
+        "text": "Text",
+        "link": "Link",
+        "socialLinks": "Social links",
+        "products": "Products",
+        "divider": "Divider"
+      },
+      "noImage": "No image",
+      "noContent": "No content",
+      "noLink": "No link",
+      "productsAuto": "Displays your products automatically",
+      "socialLinksAuto": "Displays your social links"
+    },
+    "elementEditor": {
+      "imageUrl": "Image URL",
+      "imageUrlPlaceholder": "https://example.com/image.jpg",
+      "imageUrlHelp": "Paste a URL to your avatar or logo",
+      "preview": "Preview",
+      "heading1Content": "Main title",
+      "heading1Placeholder": "Your name or brand",
+      "heading2Content": "Subtitle",
+      "heading2Placeholder": "Your tagline",
+      "heading3Content": "Section title",
+      "heading3Placeholder": "Section title",
+      "textContent": "Text content",
+      "textPlaceholder": "Write something about yourself...",
+      "textStyle": "Style",
+      "textStyleText": "Text",
+      "textStyleH1": "H1",
+      "textStyleH2": "H2",
+      "textStyleH3": "H3",
+      "textAlignment": "Alignment",
+      "textAlignLeft": "Left",
+      "textAlignCenter": "Center",
+      "textWidth": "Width",
+      "textMargins": "Margins",
+      "textMarginTop": "Top",
+      "textMarginBottom": "Bottom",
+      "textPosition": "Position",
+      "linkText": "Link text",
+      "linkTextPlaceholder": "Check out my website",
+      "linkUrl": "Link URL",
+      "linkUrlPlaceholder": "https://yourwebsite.com",
+      "productsInfo": "Your products will be displayed automatically",
+      "socialLinksInfo": "Edit social links using the dedicated button",
+      "dividerInfo": "A visual separator between sections",
+      "titles": {
+        "image": "Edit avatar/logo",
+        "heading1": "Edit main title",
+        "heading2": "Edit subtitle",
+        "heading3": "Edit section title",
+        "text": "Edit text",
+        "link": "Edit link",
+        "products": "Products",
+        "socialLinks": "Social links",
+        "divider": "Divider"
+      },
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "addElement": {
+      "title": "Add an element",
+      "types": {
+        "image": "Avatar/Logo",
+        "heading1": "Main title",
+        "heading2": "Subtitle",
+        "heading3": "Section title",
+        "text": "Text paragraph",
+        "link": "Link button",
+        "socialLinks": "Social links",
+        "products": "Products list",
+        "divider": "Divider"
+      },
+      "descriptions": {
+        "image": "Your profile picture or brand logo",
+        "heading1": "Large, bold title",
+        "heading2": "Secondary title",
+        "heading3": "Section or category title",
+        "text": "Descriptive text or bio",
+        "link": "Button linking to external URL",
+        "socialLinks": "Links to your social media profiles",
+        "products": "Display your products and offers",
+        "divider": "Visual separator line"
+      },
+      "alreadyAdded": "Already added"
+    },
+    "socialLinksEditor": {
+      "title": "Social links",
+      "noLinks": "No social links yet. Add your first one!",
+      "urlPlaceholder": "https://...",
+      "addLink": "Add link",
+      "website": "Website",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "preview": {
+      "noPreview": "No preview available",
+      "placeholders": {
+        "heading1": "Your name",
+        "heading2": "Your subtitle",
+        "heading3": "Section",
+        "text": "Your description will appear here",
+        "link": "Your link",
+        "productName": "Product name",
+        "productDescription": "Product description",
+        "productPrice": "9.99€"
+      }
+    }
+  },
+
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your account details and public identity",
+    "personalTitle": "Personal information",
+    "personalDescription": "Name and email",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "emailPasswordHelp": "Current password required to change email",
+    "currentPassword": "Current password",
+    "saveProfile": "Save profile",
+    "creatorTitle": "Creator identifier (URL)",
+    "creatorDescription": "This identifier appears in your public URL",
+    "creatorSlug": "Creator handle",
+    "creatorHelp": "Example: /page/your-name/your-slug",
+    "saveCreator": "Save URL",
+    "slugRequired": "Slug is required",
+    "slugInvalid": "Only lowercase letters, numbers, and hyphens are allowed",
+    "slugTaken": "This slug is already used",
+    "creatorUpdated": "URL updated",
+    "profileUpdated": "Profile updated",
+    "passwordTitle": "Password",
+    "passwordDescription": "Change your password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "passwordMismatch": "Passwords do not match",
+    "passwordUpdated": "Password updated",
+    "savePassword": "Save password"
   },
 
   "auth": {
@@ -169,6 +364,14 @@
       "billing": {
         "title": "Billing",
         "description": "Connect your Stripe account"
+      },
+      "coupons": {
+        "title": "Coupons",
+        "description": "Create discount codes for your customers"
+      },
+      "affiliates": {
+        "title": "Affiliates",
+        "description": "Manage your affiliate partners"
       }
     },
     "gettingStarted": {
@@ -694,6 +897,11 @@
     "new": {
       "title": "Add a channel",
       "subtitle": "Connect a Telegram channel to your organization",
+      "discordTitle": "Add a server",
+      "discordSubtitle": "Connect a Discord server to your organization",
+      "selectProvider": "Choose a platform to connect",
+      "telegramDescription": "Channels and groups with invite links for subscribers",
+      "discordDescription": "Servers with paid roles for members",
       "back": "Back to channels"
     },
 
@@ -772,6 +980,136 @@
         "prefix": "⚠️",
         "label": "Important:",
         "text": "Add @SublynkBot as an administrator of this channel with the permissions required to invite users."
+      }
+    },
+
+    "wizard": {
+      "steps": {
+        "type": "Type",
+        "create": "Create",
+        "addBot": "Bot",
+        "verify": "Verify"
+      },
+      "copied": "Copied!",
+      "success": "Channel connected successfully!",
+      "errors": {
+        "expired": "Verification code expired. Please start over.",
+        "copyFailed": "Failed to copy",
+        "startFailed": "Failed to start verification",
+        "confirmFailed": "Failed to connect channel"
+      },
+      "buttons": {
+        "next": "Continue",
+        "back": "Back",
+        "connect": "Connect channel",
+        "loading": "Loading..."
+      },
+      "step1": {
+        "title": "Connect Telegram",
+        "description": "Connect a Telegram channel or group to give exclusive access to your paying subscribers.",
+        "channel": {
+          "title": "Channel",
+          "description": "Only admins can post content. Ideal for broadcasting content."
+        },
+        "group": {
+          "title": "Group",
+          "description": "All members can participate. Ideal for building a community."
+        }
+      },
+      "step2": {
+        "titleChannel": "Create your channel",
+        "titleGroup": "Create your group",
+        "intro": "If you don't have a channel/group yet, create one now:",
+        "steps": {
+          "open": "Open",
+          "createChannel": "Create a new channel or use an existing one",
+          "createGroup": "Create a new group or use an existing one",
+          "makePrivate": "Make sure it's private"
+        },
+        "important": "Important:",
+        "privateChannelNote": "The channel must be private so we can manage access automatically.",
+        "privateGroupNote": "The group must be private so we can manage access automatically."
+      },
+      "step3": {
+        "title": "Add the bot",
+        "description": "Add",
+        "asAdmin": "as an administrator of your channel/group with default permissions.",
+        "note": "Make sure to select the correct bot. The bot needs permissions to invite users and manage members."
+      },
+      "step4": {
+        "title": "Verify connection",
+        "connected": "Connected!",
+        "waiting": "Waiting for verification...",
+        "channelFound": "Channel detected",
+        "groupFound": "Group detected",
+        "instructions": "Copy this code and post it in your Telegram channel/group:",
+        "postInstructions": "Once you post the code, the connection will be automatically detected."
+      }
+    },
+
+    "discordWizard": {
+      "steps": {
+        "addBot": "Bot",
+        "permissions": "Permissions",
+        "verify": "Verify",
+        "selectRole": "Role",
+        "confirm": "Confirm"
+      },
+      "copied": "Copied!",
+      "success": "Discord server connected successfully!",
+      "errors": {
+        "expired": "Verification code expired. Please start over.",
+        "copyFailed": "Failed to copy",
+        "startFailed": "Failed to start verification",
+        "confirmFailed": "Failed to connect server",
+        "setRoleFailed": "Failed to set role"
+      },
+      "buttons": {
+        "next": "Continue",
+        "back": "Back",
+        "connect": "Connect server",
+        "loading": "Loading..."
+      },
+      "step1": {
+        "title": "Add bot to Discord",
+        "description": "First, add our Discord bot to your server. The bot will manage paid roles for your subscribers.",
+        "addBotButton": "Add to Discord",
+        "permissionsNote": "Required permissions: Manage Roles, View Channels, Send Messages, Read Message History.",
+        "note": "After clicking, select the server where you want to manage paid access. Make sure you have admin permissions on that server."
+      },
+      "step2": {
+        "title": "Verify permissions",
+        "description": "Make sure the bot has these permissions on your server:",
+        "permissions": {
+          "manageRoles": "Manage Roles - to grant/revoke access roles",
+          "sendMessages": "Send Messages - to confirm verification",
+          "viewChannels": "View Channels - to see verification messages"
+        },
+        "important": "Important:",
+        "rolePositionNote": "The bot's role must be positioned higher than the paid access role in your server settings."
+      },
+      "step3": {
+        "title": "Verify connection",
+        "verified": "Server connected!",
+        "waiting": "Waiting for verification...",
+        "serverFound": "Server detected",
+        "instructions": "Copy this code and post it in any channel on your Discord server:",
+        "postInstructions": "Once you post the code, the connection will be automatically detected. You can delete the message after."
+      },
+      "step4": {
+        "title": "Select paid role",
+        "description": "Choose the Discord role that will be granted to paying subscribers. This role should give access to your premium channels.",
+        "roleLabel": "Role ID",
+        "roleIdPlaceholder": "Enter the Discord role ID",
+        "roleIdHelp": "Right-click the role in Discord settings and select 'Copy ID' (enable Developer Mode in settings first)",
+        "note": "Make sure the role exists and is positioned below the bot's role in your server hierarchy."
+      },
+      "step5": {
+        "title": "Confirm connection",
+        "description": "Review your Discord server setup before finalizing:",
+        "server": "Server",
+        "role": "Paid access role",
+        "readyNote": "Everything looks good! Click Connect to finish the setup. Paying subscribers will automatically receive the role."
       }
     }
   },
@@ -965,6 +1303,24 @@
       "emailPlaceholder": "your@email.com",
       "emailHelp": "To receive email confirmations"
     },
+    "coupon": {
+      "label": "Coupon code",
+      "placeholder": "Enter coupon code",
+      "apply": "Apply",
+      "applying": "Applying...",
+      "applied": "Coupon applied!",
+      "discount": "Discount",
+      "remove": "Remove",
+      "invalid": "Invalid coupon code",
+      "expired": "This coupon has expired",
+      "maxUsesReached": "This coupon is no longer available"
+    },
+    "affiliate": {
+      "label": "Referral code (optional)",
+      "placeholder": "Enter referral code",
+      "applied": "Referral code applied!",
+      "invalid": "Invalid referral code"
+    },
     "payment": {
       "title": "Payment",
       "card": "Credit card",
@@ -987,7 +1343,9 @@
     "unavailable": {
       "title": "Product unavailable",
       "description": "This product doesn't exist or is no longer available"
-    }
+    },
+    "originalPrice": "Original price",
+    "finalPrice": "Total"
   },
 
   "checkoutSuccess": {
@@ -2220,6 +2578,282 @@
     "title": "This page doesn't exist",
     "description": "The page you're looking for can't be found. Try going back home.",
     "cta": "Back to home"
+  },
+
+  "coupons": {
+    "loading": "Loading...",
+    "title": "Coupons",
+    "subtitle": "Create and manage discount codes for your customers",
+    "create": "Create coupon",
+    "empty": {
+      "title": "No coupons yet",
+      "description": "Create your first coupon to offer discounts to your customers.",
+      "cta": "Create my first coupon"
+    },
+    "table": {
+      "code": "Code",
+      "type": "Type",
+      "discount": "Discount",
+      "status": "Status",
+      "uses": "Uses",
+      "expires": "Expires",
+      "actions": "Actions"
+    },
+    "typeLabels": {
+      "PERCENTAGE": "Percentage",
+      "FIXED_AMOUNT": "Fixed amount"
+    },
+    "statusLabels": {
+      "ACTIVE": "Active",
+      "EXPIRED": "Expired",
+      "DISABLED": "Disabled"
+    },
+    "usesDisplay": "{used} / {max}",
+    "usesUnlimited": "{used} / ∞",
+    "noExpiry": "No expiry",
+    "new": {
+      "title": "New coupon",
+      "subtitle": "Create a new discount code"
+    },
+    "detail": {
+      "back": "Back",
+      "edit": "Edit",
+      "disable": "Disable",
+      "stats": {
+        "uses": "Times used",
+        "discount": "Total discount given",
+        "remaining": "Uses remaining"
+      },
+      "usages": {
+        "title": "Usage history",
+        "empty": "This coupon has not been used yet",
+        "customer": "Customer",
+        "original": "Original price",
+        "discount": "Discount",
+        "date": "Date"
+      }
+    },
+    "form": {
+      "title": "Coupon details",
+      "titleEdit": "Edit coupon",
+      "organization": {
+        "label": "Organization"
+      },
+      "code": {
+        "label": "Coupon code",
+        "placeholder": "SUMMER20",
+        "help": "Letters, numbers, hyphens and underscores only. Will be converted to uppercase."
+      },
+      "type": {
+        "label": "Discount type"
+      },
+      "discountValue": {
+        "label": "Discount value",
+        "help": "Enter percentage (1-100) or fixed amount in cents"
+      },
+      "currency": {
+        "label": "Currency",
+        "help": "Required for fixed amount discounts"
+      },
+      "status": {
+        "label": "Status"
+      },
+      "maxUses": {
+        "label": "Maximum uses",
+        "placeholder": "Leave empty for unlimited",
+        "help": "Maximum number of times this coupon can be used"
+      },
+      "expiresAt": {
+        "label": "Expiration date",
+        "help": "Leave empty for no expiration"
+      },
+      "planIds": {
+        "label": "Restrict to plans",
+        "help": "Leave empty to allow for all plans"
+      },
+      "submit": {
+        "create": "Create coupon",
+        "update": "Update coupon",
+        "saving": "Saving..."
+      },
+      "errors": {
+        "organizationRequired": "Organization is required",
+        "codeRequired": "Code is required",
+        "codeTooShort": "Code must be at least 3 characters",
+        "codeTooLong": "Code must be at most 32 characters",
+        "codeInvalid": "Code can only contain letters, numbers, hyphens and underscores",
+        "discountMin": "Discount must be at least 1",
+        "discountMax": "Percentage discount cannot exceed 100",
+        "currencyRequired": "Currency is required for fixed amount discounts"
+      }
+    },
+    "toast": {
+      "loadError": "Failed to load coupons",
+      "organizationsLoadError": "Failed to load organizations",
+      "createSuccess": "Coupon created successfully",
+      "createError": "Failed to create coupon",
+      "updateSuccess": "Coupon updated successfully",
+      "updateError": "Failed to update coupon",
+      "disableSuccess": "Coupon disabled successfully",
+      "disableError": "Failed to disable coupon"
+    }
+  },
+
+  "affiliates": {
+    "loading": "Loading...",
+    "title": "Affiliates",
+    "subtitle": "Manage your affiliate partners and their commissions",
+    "create": "Add affiliate",
+    "empty": {
+      "title": "No affiliates yet",
+      "description": "Add your first affiliate partner to start earning through referrals.",
+      "cta": "Add my first affiliate"
+    },
+    "table": {
+      "affiliate": "Affiliate",
+      "code": "Referral code",
+      "commission": "Commission",
+      "earnings": "Earnings",
+      "status": "Status",
+      "referrals": "Referrals",
+      "actions": "Actions"
+    },
+    "statusLabels": {
+      "PENDING": "Pending",
+      "ACTIVE": "Active",
+      "SUSPENDED": "Suspended",
+      "DEACTIVATED": "Deactivated"
+    },
+    "new": {
+      "title": "New affiliate",
+      "subtitle": "Add a new affiliate partner"
+    },
+    "detail": {
+      "back": "Back",
+      "edit": "Edit",
+      "deactivate": "Deactivate",
+      "payouts": "Payouts",
+      "stats": {
+        "referrals": "Total referrals",
+        "commission": "Commission rate",
+        "totalEarnings": "Total earnings",
+        "pending": "Pending payout"
+      },
+      "referralCode": {
+        "title": "Referral code",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "help": "Share this code with your affiliate. Customers can use it at checkout."
+      },
+      "referrals": {
+        "title": "Referrals",
+        "empty": "No referrals yet",
+        "customer": "Customer",
+        "plan": "Plan",
+        "amount": "Sale amount",
+        "commission": "Commission",
+        "status": "Status",
+        "date": "Date",
+        "paid": "Paid",
+        "pending": "Pending"
+      }
+    },
+    "form": {
+      "title": "Affiliate details",
+      "titleEdit": "Edit affiliate",
+      "organization": {
+        "label": "Organization"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "affiliate@example.com"
+      },
+      "name": {
+        "label": "Name (optional)",
+        "placeholder": "John Doe"
+      },
+      "referralCode": {
+        "label": "Referral code (optional)",
+        "placeholder": "JOHN10",
+        "help": "Leave empty to auto-generate. Letters, numbers, hyphens and underscores only."
+      },
+      "commissionRate": {
+        "label": "Commission rate",
+        "help": "Percentage of each sale the affiliate earns (1-100%)"
+      },
+      "status": {
+        "label": "Status"
+      },
+      "submit": {
+        "create": "Add affiliate",
+        "update": "Update affiliate",
+        "saving": "Saving..."
+      },
+      "errors": {
+        "organizationRequired": "Organization is required",
+        "emailInvalid": "Please enter a valid email",
+        "codeTooShort": "Code must be at least 3 characters",
+        "codeTooLong": "Code must be at most 32 characters",
+        "codeInvalid": "Code can only contain letters, numbers, hyphens and underscores",
+        "commissionMin": "Commission must be at least 1%",
+        "commissionMax": "Commission cannot exceed 100%"
+      }
+    },
+    "payouts": {
+      "title": "Payouts",
+      "back": "Back",
+      "create": "Create payout",
+      "summary": {
+        "pending": "Pending payout",
+        "paid": "Total paid",
+        "total": "Total earned"
+      },
+      "list": {
+        "title": "Payout history",
+        "empty": "No payouts yet",
+        "amount": "Amount",
+        "method": "Method",
+        "status": "Status",
+        "date": "Date",
+        "actions": "Actions",
+        "markCompleted": "Mark completed",
+        "markFailed": "Mark failed"
+      },
+      "statusLabels": {
+        "PENDING": "Pending",
+        "PROCESSING": "Processing",
+        "COMPLETED": "Completed",
+        "FAILED": "Failed"
+      },
+      "createDialog": {
+        "title": "Create payout",
+        "amount": "Amount",
+        "maxAmount": "Maximum: {amount}",
+        "method": "Payment method (optional)",
+        "methodPlaceholder": "PayPal, Bank transfer, etc.",
+        "notes": "Notes (optional)",
+        "notesPlaceholder": "Reference number, additional details...",
+        "submit": "Create payout",
+        "creating": "Creating..."
+      },
+      "toast": {
+        "createSuccess": "Payout created successfully",
+        "createError": "Failed to create payout",
+        "completedSuccess": "Payout marked as completed",
+        "failedSuccess": "Payout marked as failed",
+        "updateError": "Failed to update payout"
+      }
+    },
+    "toast": {
+      "loadError": "Failed to load affiliates",
+      "organizationsLoadError": "Failed to load organizations",
+      "createSuccess": "Affiliate added successfully",
+      "createError": "Failed to add affiliate",
+      "updateSuccess": "Affiliate updated successfully",
+      "updateError": "Failed to update affiliate",
+      "deactivateSuccess": "Affiliate deactivated successfully",
+      "deactivateError": "Failed to deactivate affiliate"
+    }
   },
 
   "faq": {

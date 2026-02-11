@@ -24,6 +24,8 @@ export declare class PlansController {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         }[];
@@ -72,6 +74,8 @@ export declare class PlansController {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         }[];

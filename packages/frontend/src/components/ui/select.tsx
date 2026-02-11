@@ -30,15 +30,23 @@ export function Select({ value, onValueChange, children }: SelectProps) {
   );
 }
 
-export function SelectTrigger({ children }: { children: React.ReactNode }) {
+interface SelectTriggerProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function SelectTrigger({ children, className }: SelectTriggerProps) {
   const context = React.useContext(SelectContext);
   if (!context) throw new Error('SelectTrigger must be used within Select');
+
+  const baseClasses = "flex h-10 w-full items-center justify-between rounded-md border border-border-custom bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-purple-600/30 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+  const combinedClasses = className ? `${baseClasses} ${className}` : baseClasses;
 
   return (
     <button
       type="button"
       onClick={() => context.setIsOpen(!context.isOpen)}
-      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      className={combinedClasses}
     >
       {children}
       <svg

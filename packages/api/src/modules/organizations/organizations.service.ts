@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Organization } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -57,11 +57,13 @@ export class OrganizationsService {
         data: update,
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
-      ) {
-        throw new NotFoundException('Organization not found');
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException('Organization not found');
+        }
+        if (error.code === 'P2002') {
+          throw new ConflictException('Ce slug est déjà utilisé');
+        }
       }
 
       throw error;

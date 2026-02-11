@@ -85,7 +85,7 @@ export async function Features() {
     <section id="features" className="py-20 lg:py-28">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
-        <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#1A1523] mb-16">
+        <h2 className="text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
           {t('title')}
         </h2>
 
@@ -94,7 +94,7 @@ export async function Features() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="flex gap-4 p-6 rounded-xl border border-[#E9E3EF] bg-white hover:shadow-md transition-shadow duration-200"
+              className="flex gap-4 p-6 rounded-xl border border-border-custom bg-white hover:shadow-md transition-shadow duration-200"
             >
               {/* Icon */}
               <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
@@ -103,10 +103,10 @@ export async function Features() {
 
               {/* Content */}
               <div>
-                <h3 className="text-lg font-semibold text-[#1A1523] mb-1">
+                <h3 className="text-lg font-semibold text-text-primary mb-1">
                   {feature.title}
                 </h3>
-                <p className="text-[#6F6E77] text-sm leading-relaxed">
+                <p className="text-text-secondary text-sm leading-relaxed">
                   {feature.description}
                 </p>
               </div>

@@ -1,5 +1,11 @@
 import apiClient from '../api-client';
-import type { User, LoginCredentials, RegisterData } from '@/types/auth';
+import type {
+  User,
+  LoginCredentials,
+  RegisterData,
+  UpdateProfileData,
+  UpdatePasswordData,
+} from '@/types/auth';
 
 export const authApi = {
   async login(credentials: LoginCredentials) {
@@ -23,6 +29,19 @@ export const authApi = {
 
   async refresh() {
     const { data } = await apiClient.post<{ user: User }>('/auth/refresh');
+    return data;
+  },
+
+  async updateProfile(dto: UpdateProfileData) {
+    const { data } = await apiClient.patch<{ user: User }>('/auth/me', dto);
+    return data;
+  },
+
+  async updatePassword(dto: UpdatePasswordData) {
+    const { data } = await apiClient.patch<{ user: User }>(
+      '/auth/password',
+      dto
+    );
     return data;
   },
 };

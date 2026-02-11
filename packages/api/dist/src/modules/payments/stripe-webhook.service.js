@@ -314,13 +314,99 @@ let StripeWebhookService = StripeWebhookService_1 = class StripeWebhookService {
         if (typeof session.customer === 'string') {
             update.externalCustomerId = session.customer;
         }
-        if (Object.keys(update).length === 0) {
+        if (Object.keys(update).length > 0) {
+            await this.prisma.subscription.update({
+                where: { id: subscriptionId },
+                data: update,
+            });
+        }
+        const metadata = session.metadata ?? {};
+        await this.processAffiliateAndCoupon(subscriptionId, metadata);
+    }
+    async processAffiliateAndCoupon(subscriptionId, metadata) {
+        const subscription = await this.prisma.subscription.findUnique({
+            where: { id: subscriptionId },
+            include: {
+                plan: true,
+            },
+        });
+        if (!subscription) {
+            this.logger.warn(`Subscription ${subscriptionId} not found for affiliate/coupon processing`);
             return;
         }
-        await this.prisma.subscription.update({
-            where: { id: subscriptionId },
-            data: update,
-        });
+        const couponId = metadata.couponId;
+        const discountCents = metadata.discountCents
+            ? parseInt(metadata.discountCents, 10)
+            : 0;
+        const originalPriceCents = metadata.originalPriceCents
+            ? parseInt(metadata.originalPriceCents, 10)
+            : subscription.plan.priceCents;
+        if (couponId && discountCents > 0) {
+            try {
+                const existingUsage = await this.prisma.couponUsage.findUnique({
+                    where: { subscriptionId },
+                });
+                if (!existingUsage) {
+                    await this.prisma.$transaction([
+                        this.prisma.couponUsage.create({
+                            data: {
+                                couponId,
+                                subscriptionId,
+                                customerId: subscription.customerId,
+                                discountCents,
+                                originalCents: originalPriceCents,
+                            },
+                        }),
+                        this.prisma.coupon.update({
+                            where: { id: couponId },
+                            data: { usedCount: { increment: 1 } },
+                        }),
+                    ]);
+                    this.logger.debug(`Recorded coupon usage for subscription ${subscriptionId}, discount: ${discountCents} cents`);
+                }
+            }
+            catch (error) {
+                this.logger.error(`Failed to record coupon usage for subscription ${subscriptionId}`, error);
+            }
+        }
+        const affiliateId = metadata.affiliateId;
+        if (affiliateId) {
+            try {
+                const existingReferral = await this.prisma.affiliateReferral.findUnique({ where: { subscriptionId } });
+                if (!existingReferral) {
+                    const affiliate = await this.prisma.affiliate.findUnique({
+                        where: { id: affiliateId },
+                    });
+                    if (affiliate) {
+                        const finalAmount = originalPriceCents - discountCents;
+                        const commissionCents = Math.round((finalAmount * affiliate.commissionRate) / 100);
+                        await this.prisma.$transaction([
+                            this.prisma.affiliateReferral.create({
+                                data: {
+                                    affiliateId,
+                                    subscriptionId,
+                                    customerId: subscription.customerId,
+                                    amountCents: finalAmount,
+                                    commissionCents,
+                                    currency: subscription.plan.currency.toLowerCase(),
+                                },
+                            }),
+                            this.prisma.affiliate.update({
+                                where: { id: affiliateId },
+                                data: {
+                                    totalEarnings: { increment: commissionCents },
+                                    pendingEarnings: { increment: commissionCents },
+                                },
+                            }),
+                        ]);
+                        this.logger.debug(`Recorded affiliate referral for subscription ${subscriptionId}, commission: ${commissionCents} cents`);
+                    }
+                }
+            }
+            catch (error) {
+                this.logger.error(`Failed to record affiliate referral for subscription ${subscriptionId}`, error);
+            }
+        }
     }
     isUuid(value) {
         return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);

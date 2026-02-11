@@ -28,8 +28,12 @@ const mobileNav = [
   { key: 'products', href: '/dashboard/products' },
   { key: 'customers', href: '/dashboard/customers' },
   { key: 'subscriptions', href: '/dashboard/subscriptions' },
+  { key: 'promote', href: '/dashboard/promote' },
+  { key: 'coupons', href: '/dashboard/coupons' },
+  { key: 'affiliates', href: '/dashboard/affiliates' },
   { key: 'payments', href: '/dashboard/payments' },
   { key: 'channels', href: '/dashboard/channels' },
+  { key: 'access', href: '/dashboard/access' },
   { key: 'billing', href: '/dashboard/billing' },
 ];
 
@@ -70,12 +74,12 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between border-b border-[#E9E3EF] bg-white px-4 lg:px-6">
+      <header className="flex h-16 items-center justify-between border-b border-border-custom bg-white px-4 lg:px-6">
         {/* Mobile: Logo + Menu button */}
         <div className="flex items-center gap-4 lg:hidden">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-[#6F6E77] hover:text-[#1A1523] transition-colors"
+            className="p-2 text-text-secondary hover:text-text-primary transition-colors"
           >
             {mobileMenuOpen ? (
               <X className="h-6 w-6" />
@@ -83,7 +87,7 @@ export function Header() {
               <Menu className="h-6 w-6" />
             )}
           </button>
-          <Link href="/" className="text-lg font-bold text-[#1A1523]">
+          <Link href="/" className="text-lg font-bold text-text-primary">
             {tCommon('appName')}
           </Link>
         </div>
@@ -107,13 +111,13 @@ export function Header() {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" sideOffset={12} className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium text-[#1A1523]">
+                  <p className="text-sm font-medium text-text-primary">
                     {displayName}
                   </p>
-                  <p className="text-xs text-[#6F6E77]">{user?.email}</p>
+                  <p className="text-xs text-text-secondary">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -123,7 +127,7 @@ export function Header() {
                   {tHeader('adminPanel')}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/dashboard/profile')}>
                 <User className="mr-2 h-4 w-4" />
                 {tCommon('profile')}
               </DropdownMenuItem>
@@ -142,7 +146,7 @@ export function Header() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-b border-[#E9E3EF] bg-white">
+        <div className="lg:hidden border-b border-border-custom bg-white">
           <nav className="px-4 py-4 space-y-1">
             {mobileNav.map((item) => (
               <Link
@@ -151,7 +155,7 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
                   'block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  'text-[#6F6E77] hover:bg-purple-50 hover:text-purple-600'
+                  'text-text-secondary hover:bg-purple-50 hover:text-purple-600'
                 )}
               >
                 {tNav(item.key)}

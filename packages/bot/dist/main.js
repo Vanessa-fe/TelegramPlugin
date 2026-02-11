@@ -53,6 +53,8 @@ const EnvSchema = z.object({
     TELEGRAM_STARS_WEBHOOK_SECRET: z.string().optional(),
     NEXT_PUBLIC_API_URL: z.string().url().optional(),
 });
+// Pattern pour détecter les codes de vérification (ex: TGPLUGIN-a1b2c3d4)
+const VERIFICATION_CODE_PATTERN = /^TGPLUGIN-[a-z0-9]{8}$/i;
 function log(level, message, data) {
     const timestamp = new Date().toISOString();
     const logData = data ? ` ${JSON.stringify(data)}` : '';
@@ -206,6 +208,117 @@ export function createBot(config) {
             });
             // On error, reject the payment to be safe
             await ctx.answerPreCheckoutQuery(false, "Erreur de validation. Veuillez réessayer.");
+        }
+    });
+    // Handle channel verification codes posted in channels
+    bot.on("channel_post", async (ctx) => {
+        const text = ctx.channelPost?.text?.trim();
+        if (!text || !VERIFICATION_CODE_PATTERN.test(text))
+            return;
+        const code = text.toUpperCase();
+        const chatId = ctx.chat.id.toString();
+        const chatTitle = ctx.chat.title || "";
+        const chatUsername = ctx.chat.username || null;
+        const chatType = ctx.chat.type; // "channel"
+        log('info', 'Received verification code in channel', {
+            code,
+            chatId,
+            chatTitle,
+            chatType,
+        });
+        try {
+            // Vérifier que le bot a les droits admin
+            const botMember = await ctx.api.getChatMember(ctx.chat.id, ctx.me.id);
+            const isAdmin = ["administrator", "creator"].includes(botMember.status);
+            if (!isAdmin) {
+                log('warn', 'Bot is not admin in channel', { chatId, status: botMember.status });
+                return;
+            }
+            // Envoyer la vérification à l'API
+            const result = await postApi("/channels/verification/verify", {
+                code,
+                telegramChatId: chatId,
+                telegramTitle: chatTitle,
+                telegramUsername: chatUsername,
+                chatType: "CHANNEL",
+            });
+            if (result.success) {
+                log('info', 'Channel verification successful', { code, chatId });
+                // Supprimer le message de vérification pour plus de propreté
+                try {
+                    await ctx.deleteMessage();
+                }
+                catch {
+                    // Ignorer si on ne peut pas supprimer
+                }
+            }
+            else {
+                log('warn', 'Channel verification failed', { code, chatId, message: result.message });
+            }
+        }
+        catch (error) {
+            log('error', 'Error verifying channel', {
+                code,
+                chatId,
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    });
+    // Handle verification codes posted in groups/supergroups
+    bot.on("message", async (ctx) => {
+        // Ignorer les messages privés (les channels ne déclenchent pas cet événement)
+        if (ctx.chat.type === "private")
+            return;
+        const text = ctx.message?.text?.trim();
+        if (!text || !VERIFICATION_CODE_PATTERN.test(text))
+            return;
+        const code = text.toUpperCase();
+        const chatId = ctx.chat.id.toString();
+        const chatTitle = ctx.chat.title || "";
+        const chatUsername = ctx.chat.username || null;
+        const chatType = ctx.chat.type; // "group" | "supergroup"
+        log('info', 'Received verification code in group', {
+            code,
+            chatId,
+            chatTitle,
+            chatType,
+        });
+        try {
+            // Vérifier que le bot a les droits admin
+            const botMember = await ctx.api.getChatMember(ctx.chat.id, ctx.me.id);
+            const isAdmin = ["administrator", "creator"].includes(botMember.status);
+            if (!isAdmin) {
+                log('warn', 'Bot is not admin in group', { chatId, status: botMember.status });
+                return;
+            }
+            // Envoyer la vérification à l'API
+            const result = await postApi("/channels/verification/verify", {
+                code,
+                telegramChatId: chatId,
+                telegramTitle: chatTitle,
+                telegramUsername: chatUsername,
+                chatType: "GROUP",
+            });
+            if (result.success) {
+                log('info', 'Group verification successful', { code, chatId });
+                // Supprimer le message de vérification
+                try {
+                    await ctx.deleteMessage();
+                }
+                catch {
+                    // Ignorer si on ne peut pas supprimer
+                }
+            }
+            else {
+                log('warn', 'Group verification failed', { code, chatId, message: result.message });
+            }
+        }
+        catch (error) {
+            log('error', 'Error verifying group', {
+                code,
+                chatId,
+                error: error instanceof Error ? error.message : String(error),
+            });
         }
     });
     bot.catch((err) => {

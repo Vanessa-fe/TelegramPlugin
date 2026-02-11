@@ -59,9 +59,13 @@ let OrganizationsService = class OrganizationsService {
             });
         }
         catch (error) {
-            if (error instanceof client_1.Prisma.PrismaClientKnownRequestError &&
-                error.code === 'P2025') {
-                throw new common_1.NotFoundException('Organization not found');
+            if (error instanceof client_1.Prisma.PrismaClientKnownRequestError) {
+                if (error.code === 'P2025') {
+                    throw new common_1.NotFoundException('Organization not found');
+                }
+                if (error.code === 'P2002') {
+                    throw new common_1.ConflictException('Ce slug est déjà utilisé');
+                }
             }
             throw error;
         }

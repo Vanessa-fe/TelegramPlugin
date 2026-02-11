@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Req,
   UnauthorizedException,
@@ -21,9 +22,13 @@ import {
   loginSchema,
   refreshSchema,
   registerSchema,
+  updatePasswordSchema,
+  updateProfileSchema,
   type LoginDto,
   type RefreshDto,
   type RegisterDto,
+  type UpdatePasswordDto,
+  type UpdateProfileDto,
 } from './auth.schema';
 
 @Controller('auth')
@@ -82,5 +87,25 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthUser): Promise<AuthProfile> {
     return this.authService.profile(user.userId);
+  }
+
+  @Patch('me')
+  @SetAuthCookies()
+  updateProfile(
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(updateProfileSchema))
+    body: UpdateProfileDto,
+  ): Promise<AuthResult> {
+    return this.authService.updateProfile(user.userId, body);
+  }
+
+  @Patch('password')
+  @SetAuthCookies()
+  updatePassword(
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(updatePasswordSchema))
+    body: UpdatePasswordDto,
+  ): Promise<AuthResult> {
+    return this.authService.updatePassword(user.userId, body);
   }
 }

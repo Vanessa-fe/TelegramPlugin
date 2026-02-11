@@ -56,10 +56,10 @@ export default function ContactPage() {
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
           {/* Header */}
           <div className="text-center mb-16">
-            <h1 className="text-4xl lg:text-5xl font-bold text-[#1A1523] mb-4">
+            <h1 className="text-4xl lg:text-5xl font-bold text-text-primary mb-4">
               {t('title')}
             </h1>
-            <p className="text-lg text-[#6F6E77] max-w-2xl mx-auto">
+            <p className="text-lg text-text-secondary max-w-2xl mx-auto">
               {t('subtitle')}
             </p>
           </div>
@@ -67,10 +67,10 @@ export default function ContactPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
             {/* Contact form */}
             <div>
-              <div className="bg-white rounded-2xl border border-[#E9E3EF] p-8">
+              <div className="bg-white rounded-2xl border border-border-custom p-8">
                 {!isSubmitted ? (
                   <>
-                    <h2 className="text-xl font-semibold text-[#1A1523] mb-6">
+                    <h2 className="text-xl font-semibold text-text-primary mb-6">
                       {t('form.title')}
                     </h2>
                     <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isSubmitting}>
@@ -81,7 +81,7 @@ export default function ContactPage() {
                       )}
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="name" className="text-[#1A1523]">
+                          <Label htmlFor="name" className="text-text-primary">
                             {t('form.fields.name')}
                           </Label>
                           <Input
@@ -93,11 +93,11 @@ export default function ContactPage() {
                             required
                             disabled={isSubmitting}
                             placeholder={t('form.fields.namePlaceholder')}
-                            className="h-11 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+                            className="h-11 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="email" className="text-[#1A1523]">
+                          <Label htmlFor="email" className="text-text-primary">
                             {t('form.fields.email')}
                           </Label>
                           <Input
@@ -109,13 +109,13 @@ export default function ContactPage() {
                             required
                             disabled={isSubmitting}
                             placeholder={t('form.fields.emailPlaceholder')}
-                            className="h-11 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+                            className="h-11 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="subject" className="text-[#1A1523]">
+                        <Label htmlFor="subject" className="text-text-primary">
                           {t('form.fields.subject')}
                         </Label>
                         <Input
@@ -127,12 +127,12 @@ export default function ContactPage() {
                           required
                           disabled={isSubmitting}
                           placeholder={t('form.fields.subjectPlaceholder')}
-                          className="h-11 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+                          className="h-11 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="message" className="text-[#1A1523]">
+                        <Label htmlFor="message" className="text-text-primary">
                           {t('form.fields.message')}
                         </Label>
                         <textarea
@@ -144,7 +144,7 @@ export default function ContactPage() {
                           disabled={isSubmitting}
                           placeholder={t('form.fields.messagePlaceholder')}
                           rows={5}
-                          className="w-full rounded-lg border border-[#E9E3EF] px-3 py-2 text-sm focus:border-purple-600 focus:ring-purple-600 focus:outline-none focus:ring-1 disabled:opacity-50"
+                          className="w-full rounded-lg border border-border-custom px-3 py-2 text-sm focus:border-purple-600 focus:ring-purple-600 focus:outline-none focus:ring-1 disabled:opacity-50"
                         />
                       </div>
 
@@ -181,10 +181,10 @@ export default function ContactPage() {
                         />
                       </svg>
                     </div>
-                    <h3 className="text-xl font-semibold text-[#1A1523] mb-2">
+                    <h3 className="text-xl font-semibold text-text-primary mb-2">
                       {t('success.title')}
                     </h3>
-                    <p className="text-[#6F6E77] mb-6">
+                    <p className="text-text-secondary mb-6">
                       {t('success.description')}
                     </p>
                     <Button
@@ -193,7 +193,7 @@ export default function ContactPage() {
                         setIsSubmitted(false);
                         setFormData({ name: '', email: '', subject: '', message: '' });
                       }}
-                      className="border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600"
+                      className="border-border-custom hover:bg-purple-50 hover:text-purple-600"
                     >
                       {t('success.cta')}
                     </Button>
@@ -204,8 +204,8 @@ export default function ContactPage() {
 
             {/* FAQ link */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl border border-[#E9E3EF] p-6 text-center">
-                <p className="text-[#6F6E77] mb-3">
+              <div className="bg-white rounded-xl border border-border-custom p-6 text-center">
+                <p className="text-text-secondary mb-3">
                   {t('faq.prompt')}
                 </p>
                 <a

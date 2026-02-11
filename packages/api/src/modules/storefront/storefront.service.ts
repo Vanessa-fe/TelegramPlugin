@@ -98,11 +98,7 @@ export class StorefrontService {
       },
     });
 
-    if (
-      !organization ||
-      !organization.saasActive ||
-      !organization.stripeAccountId
-    ) {
+    if (!organization) {
       return null;
     }
 

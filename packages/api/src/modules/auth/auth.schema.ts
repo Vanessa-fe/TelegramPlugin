@@ -37,3 +37,19 @@ export const registerSchema = z.object({
 });
 
 export type RegisterDto = z.infer<typeof registerSchema>;
+
+export const updateProfileSchema = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().email('Email invalide').optional(),
+  currentPassword: z.string().min(1).optional(),
+});
+
+export type UpdateProfileDto = z.infer<typeof updateProfileSchema>;
+
+export const updatePasswordSchema = z.object({
+  currentPassword: z.string().min(1).optional(),
+  newPassword: passwordSchema,
+});
+
+export type UpdatePasswordDto = z.infer<typeof updatePasswordSchema>;

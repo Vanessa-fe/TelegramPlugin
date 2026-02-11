@@ -220,19 +220,19 @@ export default async function GDPRPage() {
 
       <h2>{t('sections.processing.title')}</h2>
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-[#E9E3EF] my-6 text-sm">
+        <table className="w-full border-collapse border border-border-custom my-6 text-sm">
           <thead>
-            <tr className="bg-[#FDFAFF]">
-              <th className="border border-[#E9E3EF] p-3 text-left">
+            <tr className="bg-surface">
+              <th className="border border-border-custom p-3 text-left">
                 {t('sections.processing.table.activity')}
               </th>
-              <th className="border border-[#E9E3EF] p-3 text-left">
+              <th className="border border-border-custom p-3 text-left">
                 {t('sections.processing.table.data')}
               </th>
-              <th className="border border-[#E9E3EF] p-3 text-left">
+              <th className="border border-border-custom p-3 text-left">
                 {t('sections.processing.table.retention')}
               </th>
-              <th className="border border-[#E9E3EF] p-3 text-left">
+              <th className="border border-border-custom p-3 text-left">
                 {t('sections.processing.table.basis')}
               </th>
             </tr>
@@ -240,10 +240,10 @@ export default async function GDPRPage() {
           <tbody>
             {processingRows.map((row) => (
               <tr key={row.activity}>
-                <td className="border border-[#E9E3EF] p-3">{row.activity}</td>
-                <td className="border border-[#E9E3EF] p-3">{row.data}</td>
-                <td className="border border-[#E9E3EF] p-3">{row.retention}</td>
-                <td className="border border-[#E9E3EF] p-3">{row.basis}</td>
+                <td className="border border-border-custom p-3">{row.activity}</td>
+                <td className="border border-border-custom p-3">{row.data}</td>
+                <td className="border border-border-custom p-3">{row.retention}</td>
+                <td className="border border-border-custom p-3">{row.basis}</td>
               </tr>
             ))}
           </tbody>
@@ -253,19 +253,19 @@ export default async function GDPRPage() {
       <h2>{t('sections.subProcessors.title')}</h2>
       <p>{t('sections.subProcessors.body')}</p>
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-[#E9E3EF] my-6 text-sm">
+        <table className="w-full border-collapse border border-border-custom my-6 text-sm">
           <thead>
-            <tr className="bg-[#FDFAFF]">
-              <th className="border border-[#E9E3EF] p-3 text-left">
+            <tr className="bg-surface">
+              <th className="border border-border-custom p-3 text-left">
                 {t('sections.subProcessors.table.name')}
               </th>
-              <th className="border border-[#E9E3EF] p-3 text-left">
+              <th className="border border-border-custom p-3 text-left">
                 {t('sections.subProcessors.table.purpose')}
               </th>
-              <th className="border border-[#E9E3EF] p-3 text-left">
+              <th className="border border-border-custom p-3 text-left">
                 {t('sections.subProcessors.table.location')}
               </th>
-              <th className="border border-[#E9E3EF] p-3 text-left">
+              <th className="border border-border-custom p-3 text-left">
                 {t('sections.subProcessors.table.safeguards')}
               </th>
             </tr>
@@ -273,10 +273,10 @@ export default async function GDPRPage() {
           <tbody>
             {subProcessors.map((sp) => (
               <tr key={sp.name}>
-                <td className="border border-[#E9E3EF] p-3 font-medium">{sp.name}</td>
-                <td className="border border-[#E9E3EF] p-3">{sp.purpose}</td>
-                <td className="border border-[#E9E3EF] p-3">{sp.location}</td>
-                <td className="border border-[#E9E3EF] p-3">{sp.safeguards}</td>
+                <td className="border border-border-custom p-3 font-medium">{sp.name}</td>
+                <td className="border border-border-custom p-3">{sp.purpose}</td>
+                <td className="border border-border-custom p-3">{sp.location}</td>
+                <td className="border border-border-custom p-3">{sp.safeguards}</td>
               </tr>
             ))}
           </tbody>
@@ -331,7 +331,7 @@ export default async function GDPRPage() {
 
       <h2>{t('sections.authority.title')}</h2>
       <p>{t('sections.authority.body')}</p>
-      <p className="bg-[#FDFAFF] p-4 rounded-lg border border-[#E9E3EF]">
+      <p className="bg-surface p-4 rounded-lg border border-border-custom">
         <strong>{t('sections.authority.cnil.name')}</strong>
         <br />
         {t('sections.authority.cnil.address')}

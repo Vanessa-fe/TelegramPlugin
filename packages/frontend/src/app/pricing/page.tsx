@@ -63,10 +63,10 @@ export default async function PricingPage() {
       {/* Hero */}
       <section className="py-16 lg:py-24">
         <div className="max-w-6xl mx-auto px-4 lg:px-6 text-center">
-          <h1 className="text-4xl lg:text-5xl font-bold text-[#1A1523] mb-4">
+          <h1 className="text-4xl lg:text-5xl font-bold text-text-primary mb-4">
             {t('hero.title')}
           </h1>
-          <p className="text-lg text-[#6F6E77] max-w-2xl mx-auto">
+          <p className="text-lg text-text-secondary max-w-2xl mx-auto">
             {t('hero.subtitle')}
           </p>
         </div>
@@ -84,18 +84,18 @@ export default async function PricingPage() {
             </div>
 
             {/* Plan name */}
-            <h2 className="text-2xl font-bold text-[#1A1523] text-center mb-2">
+            <h2 className="text-2xl font-bold text-text-primary text-center mb-2">
               {t('pricingCard.planName')}
             </h2>
-            <p className="text-[#6F6E77] text-center mb-6">
+            <p className="text-text-secondary text-center mb-6">
               {t('pricingCard.planSubtitle')}
             </p>
 
             {/* Price */}
             <div className="text-center mb-8">
-              <p className="text-5xl font-bold text-[#1A1523]">
+              <p className="text-5xl font-bold text-text-primary">
                 {t('pricingCard.price')}
-                <span className="text-lg font-normal text-[#6F6E77]">
+                <span className="text-lg font-normal text-text-secondary">
                   {t('pricingCard.perMonth')}
                 </span>
               </p>
@@ -111,12 +111,12 @@ export default async function PricingPage() {
             >
               {t('pricingCard.cta')}
             </Link>
-            <p className="text-center text-sm text-[#6F6E77]">
+            <p className="text-center text-sm text-text-secondary">
               {t('pricingCard.ctaNote')}
             </p>
 
             {/* Divider */}
-            <div className="border-t border-[#E9E3EF] my-8" />
+            <div className="border-t border-border-custom my-8" />
 
             {/* Features */}
             <ul className="space-y-3">
@@ -133,7 +133,7 @@ export default async function PricingPage() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="text-[#1A1523] text-sm">{feature}</span>
+                  <span className="text-text-primary text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
@@ -142,32 +142,32 @@ export default async function PricingPage() {
       </section>
 
       {/* Comparison note */}
-      <section className="py-16 lg:py-20 bg-[#FDFAFF]">
+      <section className="py-16 lg:py-20 bg-surface">
         <div className="max-w-4xl mx-auto px-4 lg:px-6">
-          <h2 className="text-2xl lg:text-3xl font-bold text-center text-[#1A1523] mb-12">
+          <h2 className="text-2xl lg:text-3xl font-bold text-center text-text-primary mb-12">
             {t('comparison.title')}
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-4xl font-bold text-purple-600 mb-2">0%</div>
-              <p className="text-[#6F6E77]">{t('comparison.cards.card1')}</p>
+              <p className="text-text-secondary">{t('comparison.cards.card1')}</p>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-purple-600 mb-2">€39</div>
-              <p className="text-[#6F6E77]">{t('comparison.cards.card2')}</p>
+              <p className="text-text-secondary">{t('comparison.cards.card2')}</p>
             </div>
             <div className="text-center">
               <div className="text-4xl font-bold text-purple-600 mb-2">
                 {t('comparison.cards.card3Title')}
               </div>
-              <p className="text-[#6F6E77]">{t('comparison.cards.card3')}</p>
+              <p className="text-text-secondary">{t('comparison.cards.card3')}</p>
             </div>
           </div>
 
-          <div className="mt-12 p-6 bg-white rounded-xl border border-[#E9E3EF]">
-            <p className="text-center text-[#6F6E77]">
-              <span className="font-semibold text-[#1A1523]">
+          <div className="mt-12 p-6 bg-white rounded-xl border border-border-custom">
+            <p className="text-center text-text-secondary">
+              <span className="font-semibold text-text-primary">
                 {t('comparison.example.label')}
               </span>{' '}
               {t('comparison.example.text')}{' '}
@@ -182,7 +182,7 @@ export default async function PricingPage() {
       {/* FAQ */}
       <section className="py-20 lg:py-28">
         <div className="max-w-3xl mx-auto px-4 lg:px-6">
-          <h2 className="text-2xl lg:text-3xl font-bold text-center text-[#1A1523] mb-12">
+          <h2 className="text-2xl lg:text-3xl font-bold text-center text-text-primary mb-12">
             {t('faqs.title')}
           </h2>
 
@@ -190,12 +190,12 @@ export default async function PricingPage() {
             {faqs.map((faq) => (
               <div
                 key={faq.question}
-                className="border border-[#E9E3EF] rounded-xl p-6"
+                className="border border-border-custom rounded-xl p-6"
               >
-                <h3 className="font-semibold text-[#1A1523] mb-2">
+                <h3 className="font-semibold text-text-primary mb-2">
                   {faq.question}
                 </h3>
-                <p className="text-[#6F6E77] text-sm leading-relaxed">
+                <p className="text-text-secondary text-sm leading-relaxed">
                   {faq.answer}
                 </p>
               </div>

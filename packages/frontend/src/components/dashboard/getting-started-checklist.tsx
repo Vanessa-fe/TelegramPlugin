@@ -74,13 +74,13 @@ export function GettingStartedChecklist() {
   const promoteDone = state.subscriptionsCount > 0;
 
   return (
-    <div className="bg-white rounded-xl border-border-[#E9E3EF] p-6">
-      <h2 className="text-lg font-semibold text-[#1A1523] mb-4">
+    <div className="bg-white rounded-xl border-border-custom p-6">
+      <h2 className="text-lg font-semibold text-text-primary mb-4">
         {t('gettingStarted.title')}
       </h2>
 
       {isLoading && (
-        <p className="text-sm text-[#6F6E77] mb-3">
+        <p className="text-sm text-text-secondary mb-3">
           {tCommon('loading')}
         </p>
       )}
@@ -134,7 +134,7 @@ function ChecklistItem({
         className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
           completed
             ? 'bg-purple-600 text-white'
-            : 'border-2 border-[#E9E3EF] group-hover:border-purple-300'
+            : 'border-2 border-border-custom group-hover:border-purple-300'
         }`}
       >
         {completed && (
@@ -149,13 +149,13 @@ function ChecklistItem({
       </div>
       <span
         className={`text-sm font-medium ${
-          completed ? 'text-[#6F6E77] line-through' : 'text-[#1A1523]'
+          completed ? 'text-text-secondary line-through' : 'text-text-primary'
         }`}
       >
         {label}
       </span>
       {!completed && (
-        <ArrowUpRight className="w-4 h-4 text-[#6F6E77] ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+        <ArrowUpRight className="w-4 h-4 text-text-secondary ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
       )}
     </Link>
   );

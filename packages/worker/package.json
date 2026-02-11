@@ -16,6 +16,7 @@
     "@prisma/client": "^6.2.1",
     "@telegram-plugin/shared": "workspace:*",
     "bullmq": "^5.22.2",
+    "discord.js": "^14.17.3",
     "grammy": "^1.32.0",
     "ioredis": "^5.4.1",
     "dotenv": "^16.4.5",

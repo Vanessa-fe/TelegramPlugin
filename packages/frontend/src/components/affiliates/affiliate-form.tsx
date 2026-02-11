@@ -1,0 +1,263 @@
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import type { Organization } from "@/types/organization";
+import { AffiliateStatus, type CreateAffiliateDto, type Affiliate } from "@/types/affiliate";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+type FormData = {
+  organizationId: string;
+  email: string;
+  name?: string;
+  referralCode?: string;
+  commissionRate: number;
+  status: AffiliateStatus;
+};
+
+interface AffiliateFormProps {
+  onSubmit: (data: CreateAffiliateDto) => Promise<void>;
+  organizations?: Organization[];
+  organizationId?: string;
+  lockOrganization?: boolean;
+  initialData?: Affiliate;
+  isEdit?: boolean;
+}
+
+export function AffiliateForm({
+  onSubmit,
+  organizations,
+  organizationId,
+  lockOrganization = false,
+  initialData,
+  isEdit = false,
+}: AffiliateFormProps) {
+  const t = useTranslations("affiliates");
+
+  const affiliateSchema = useMemo(
+    () =>
+      z.object({
+        organizationId: z.string().uuid(t("form.errors.organizationRequired")),
+        email: z.string().email(t("form.errors.emailInvalid")),
+        name: z.string().max(120).optional().or(z.literal("")),
+        referralCode: z
+          .string()
+          .min(3, t("form.errors.codeTooShort"))
+          .max(32, t("form.errors.codeTooLong"))
+          .regex(/^[A-Z0-9_-]+$/i, t("form.errors.codeInvalid"))
+          .transform((v) => v.toUpperCase())
+          .optional()
+          .or(z.literal("")),
+        commissionRate: z.coerce
+          .number()
+          .int()
+          .min(1, t("form.errors.commissionMin"))
+          .max(100, t("form.errors.commissionMax")),
+        status: z.nativeEnum(AffiliateStatus),
+      }),
+    [t]
+  );
+
+  const statusLabels: Record<AffiliateStatus, string> = {
+    PENDING: t("statusLabels.PENDING"),
+    ACTIVE: t("statusLabels.ACTIVE"),
+    SUSPENDED: t("statusLabels.SUSPENDED"),
+    DEACTIVATED: t("statusLabels.DEACTIVATED"),
+  };
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(affiliateSchema),
+    defaultValues: {
+      organizationId: initialData?.organizationId ?? organizationId ?? organizations?.[0]?.id ?? "",
+      email: initialData?.email ?? "",
+      name: initialData?.name ?? "",
+      referralCode: initialData?.referralCode ?? "",
+      commissionRate: initialData?.commissionRate ?? 10,
+      status: initialData?.status ?? AffiliateStatus.PENDING,
+    },
+  });
+
+  useEffect(() => {
+    const nextOrganizationId = organizationId ?? organizations?.[0]?.id;
+    if (nextOrganizationId) {
+      setValue("organizationId", nextOrganizationId);
+    }
+  }, [organizationId, organizations, setValue]);
+
+  const showOrganizationSelect = !lockOrganization && !!organizations?.length;
+
+  async function handleFormSubmit(data: FormData) {
+    const payload: CreateAffiliateDto = {
+      organizationId: data.organizationId,
+      email: data.email,
+      name: data.name || undefined,
+      referralCode: data.referralCode || undefined,
+      commissionRate: data.commissionRate,
+      status: data.status,
+    };
+    await onSubmit(payload);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{isEdit ? t("form.titleEdit") : t("form.title")}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+          {/* Organization */}
+          {lockOrganization ? (
+            <input type="hidden" {...register("organizationId")} />
+          ) : showOrganizationSelect ? (
+            <div className="space-y-2">
+              <Label htmlFor="organizationId">
+                {t("form.organization.label")}
+              </Label>
+              <select
+                id="organizationId"
+                {...register("organizationId")}
+                disabled={isSubmitting || isEdit}
+                className={cn(
+                  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  "disabled:cursor-not-allowed disabled:opacity-50"
+                )}
+              >
+                {organizations?.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name} ({org.slug})
+                  </option>
+                ))}
+              </select>
+              {errors.organizationId && (
+                <p className="text-sm text-destructive">
+                  {errors.organizationId.message as string}
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          {/* Email */}
+          <div className="space-y-2">
+            <Label htmlFor="email">{t("form.email.label")}</Label>
+            <Input
+              id="email"
+              type="email"
+              {...register("email")}
+              disabled={isSubmitting}
+              placeholder={t("form.email.placeholder")}
+            />
+            {errors.email && (
+              <p className="text-sm text-destructive">
+                {errors.email.message as string}
+              </p>
+            )}
+          </div>
+
+          {/* Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name">{t("form.name.label")}</Label>
+            <Input
+              id="name"
+              {...register("name")}
+              disabled={isSubmitting}
+              placeholder={t("form.name.placeholder")}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive">
+                {errors.name.message as string}
+              </p>
+            )}
+          </div>
+
+          {/* Referral Code */}
+          <div className="space-y-2">
+            <Label htmlFor="referralCode">{t("form.referralCode.label")}</Label>
+            <Input
+              id="referralCode"
+              {...register("referralCode")}
+              disabled={isSubmitting}
+              placeholder={t("form.referralCode.placeholder")}
+              className="uppercase"
+            />
+            {errors.referralCode && (
+              <p className="text-sm text-destructive">
+                {errors.referralCode.message as string}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {t("form.referralCode.help")}
+            </p>
+          </div>
+
+          {/* Commission Rate */}
+          <div className="space-y-2">
+            <Label htmlFor="commissionRate">{t("form.commissionRate.label")}</Label>
+            <div className="relative">
+              <Input
+                id="commissionRate"
+                type="number"
+                {...register("commissionRate")}
+                disabled={isSubmitting}
+                min={1}
+                max={100}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                %
+              </span>
+            </div>
+            {errors.commissionRate && (
+              <p className="text-sm text-destructive">
+                {errors.commissionRate.message as string}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              {t("form.commissionRate.help")}
+            </p>
+          </div>
+
+          {/* Status */}
+          <div className="space-y-2">
+            <Label htmlFor="status">{t("form.status.label")}</Label>
+            <select
+              id="status"
+              {...register("status")}
+              disabled={isSubmitting}
+              className={cn(
+                "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "disabled:cursor-not-allowed disabled:opacity-50"
+              )}
+            >
+              {(Object.keys(statusLabels) as AffiliateStatus[]).map((status) => (
+                <option key={status} value={status}>
+                  {statusLabels[status]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting
+              ? t("form.submit.saving")
+              : isEdit
+                ? t("form.submit.update")
+                : t("form.submit.create")}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}

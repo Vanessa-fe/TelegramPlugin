@@ -36,11 +36,11 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFAFF] flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
-          <Link href="/" className="text-xl font-bold text-[#1A1523]">
+          <Link href="/" className="text-xl font-bold text-text-primary">
             {tCommon('appName')}
           </Link>
         </div>
@@ -52,31 +52,31 @@ export default function ForgotPasswordPage() {
           {/* Back link */}
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 text-sm text-[#6F6E77] hover:text-[#1A1523] mb-6 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {t('backToLogin')}
           </Link>
 
           {/* Card */}
-          <div className="bg-white rounded-2xl border border-[#E9E3EF] shadow-sm p-8">
+          <div className="bg-white rounded-2xl border border-border-custom shadow-sm p-8">
             {!isSubmitted ? (
               <>
                 <div className="text-center mb-8">
                   <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
                     <Mail className="w-6 h-6" aria-hidden="true" />
                   </div>
-                  <h1 className="text-2xl font-bold text-[#1A1523] mb-2">
+                  <h1 className="text-2xl font-bold text-text-primary mb-2">
                     {t('title')}
                   </h1>
-                  <p className="text-[#6F6E77]">
+                  <p className="text-text-secondary">
                     {t('subtitle')}
                   </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-[#1A1523]">
+                    <Label htmlFor="email" className="text-text-primary">
                       {t('email')}
                     </Label>
                     <Input
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
                       required
                       disabled={isLoading}
                       placeholder={t('emailPlaceholder')}
-                      className="h-12 border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                     />
                   </div>
 
@@ -118,14 +118,14 @@ export default function ForgotPasswordPage() {
                     />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-[#1A1523] mb-2">
+                <h2 className="text-2xl font-bold text-text-primary mb-2">
                   {t('successTitle')}
                 </h2>
-                <p className="text-[#6F6E77] mb-6">
+                <p className="text-text-secondary mb-6">
                   {t('successDescription')}{' '}
-                  <span className="font-medium text-[#1A1523]">{email}</span>
+                  <span className="font-medium text-text-primary">{email}</span>
                 </p>
-                <p className="text-sm text-[#6F6E77] mb-6">
+                <p className="text-sm text-text-secondary mb-6">
                   {t('successHint')}{' '}
                   <button
                     onClick={() => setIsSubmitted(false)}

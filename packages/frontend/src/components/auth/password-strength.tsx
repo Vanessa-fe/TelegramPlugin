@@ -82,7 +82,7 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
             key={req.key}
             className={cn(
               'flex items-center gap-1.5',
-              req.met ? 'text-green-600' : 'text-[#6F6E77]',
+              req.met ? 'text-green-600' : 'text-text-secondary',
             )}
           >
             {req.met ? (

@@ -20,12 +20,64 @@ const common_2 = require("../../common");
 const channels_schema_1 = require("./channels.schema");
 const channels_service_1 = require("./channels.service");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const public_decorator_1 = require("../auth/decorators/public.decorator");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 const organization_scope_1 = require("../auth/utils/organization-scope");
 let ChannelsController = class ChannelsController {
     channelsService;
     constructor(channelsService) {
         this.channelsService = channelsService;
+    }
+    startVerification(user, body) {
+        const organizationId = (0, organization_scope_1.resolveOrganizationScope)(user);
+        if (!organizationId) {
+            throw new Error('Organization ID is required');
+        }
+        return this.channelsService.startVerification(organizationId, body);
+    }
+    verifyFromBot(body) {
+        return this.channelsService.verifyFromBot(body);
+    }
+    checkVerificationStatus(user, id) {
+        const organizationId = (0, organization_scope_1.resolveOrganizationScope)(user);
+        if (!organizationId) {
+            throw new Error('Organization ID is required');
+        }
+        return this.channelsService.checkVerificationStatus(id, organizationId);
+    }
+    confirmVerification(user, id) {
+        const organizationId = (0, organization_scope_1.resolveOrganizationScope)(user);
+        if (!organizationId) {
+            throw new Error('Organization ID is required');
+        }
+        return this.channelsService.confirmVerification(id, organizationId);
+    }
+    verifyDiscordFromBot(body) {
+        return this.channelsService.verifyDiscordFromBot(body);
+    }
+    setDiscordRole(user, id, body) {
+        const organizationId = (0, organization_scope_1.resolveOrganizationScope)(user);
+        if (!organizationId) {
+            throw new Error('Organization ID is required');
+        }
+        return this.channelsService.setDiscordRole(id, organizationId, body);
+    }
+    confirmDiscordVerification(user, id) {
+        const organizationId = (0, organization_scope_1.resolveOrganizationScope)(user);
+        if (!organizationId) {
+            throw new Error('Organization ID is required');
+        }
+        return this.channelsService.confirmDiscordVerification(id, organizationId);
+    }
+    async getDiscordGuild(user, id) {
+        const channel = await this.channelsService.findOne(id);
+        (0, organization_scope_1.resolveOrganizationScope)(user, channel.organizationId);
+        return this.channelsService.getDiscordGuild(id);
+    }
+    async updateDiscordRole(user, id, body) {
+        const channel = await this.channelsService.findOne(id);
+        (0, organization_scope_1.resolveOrganizationScope)(user, channel.organizationId);
+        return this.channelsService.updateDiscordRole(id, body);
     }
     findAll(user, organizationId) {
         const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, organizationId);
@@ -58,6 +110,87 @@ let ChannelsController = class ChannelsController {
     }
 };
 exports.ChannelsController = ChannelsController;
+__decorate([
+    (0, common_1.Post)('verification/start'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)(new common_2.ZodValidationPipe(channels_schema_1.startVerificationSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], ChannelsController.prototype, "startVerification", null);
+__decorate([
+    (0, common_1.Post)('verification/verify'),
+    (0, public_decorator_1.Public)(),
+    __param(0, (0, common_1.Body)(new common_2.ZodValidationPipe(channels_schema_1.verifyChannelSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ChannelsController.prototype, "verifyFromBot", null);
+__decorate([
+    (0, common_1.Get)('verification/:id/status'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ChannelsController.prototype, "checkVerificationStatus", null);
+__decorate([
+    (0, common_1.Post)('verification/:id/confirm'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ChannelsController.prototype, "confirmVerification", null);
+__decorate([
+    (0, common_1.Post)('verification/discord/verify'),
+    (0, public_decorator_1.Public)(),
+    __param(0, (0, common_1.Body)(new common_2.ZodValidationPipe(channels_schema_1.verifyDiscordChannelSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ChannelsController.prototype, "verifyDiscordFromBot", null);
+__decorate([
+    (0, common_1.Post)('verification/:id/discord/role'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Body)(new common_2.ZodValidationPipe(channels_schema_1.setDiscordRoleSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], ChannelsController.prototype, "setDiscordRole", null);
+__decorate([
+    (0, common_1.Post)('verification/:id/discord/confirm'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], ChannelsController.prototype, "confirmDiscordVerification", null);
+__decorate([
+    (0, common_1.Get)(':id/discord'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], ChannelsController.prototype, "getDiscordGuild", null);
+__decorate([
+    (0, common_1.Patch)(':id/discord/role'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Body)(new common_2.ZodValidationPipe(channels_schema_1.setDiscordRoleSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", Promise)
+], ChannelsController.prototype, "updateDiscordRole", null);
 __decorate([
     (0, common_1.Get)(),
     (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),

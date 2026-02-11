@@ -48,6 +48,12 @@ let AuthController = class AuthController {
     me(user) {
         return this.authService.profile(user.userId);
     }
+    updateProfile(user, body) {
+        return this.authService.updateProfile(user.userId, body);
+    }
+    updatePassword(user, body) {
+        return this.authService.updatePassword(user.userId, body);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -94,6 +100,24 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "me", null);
+__decorate([
+    (0, common_1.Patch)('me'),
+    (0, set_auth_cookies_decorator_1.SetAuthCookies)(),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)(new common_2.ZodValidationPipe(auth_schema_1.updateProfileSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Patch)('password'),
+    (0, set_auth_cookies_decorator_1.SetAuthCookies)(),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)(new common_2.ZodValidationPipe(auth_schema_1.updatePasswordSchema))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "updatePassword", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     (0, common_1.UseInterceptors)(cookie_response_interceptor_1.CookieResponseInterceptor),

@@ -56,7 +56,7 @@ export default function CustomersPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading")}</p>
+          <p className="mt-3 text-sm text-text-secondary">{t("loading")}</p>
         </div>
       </div>
     );
@@ -67,11 +67,11 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
+          <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">
             {t("title")}
           </h1>
-          <p className="mt-1 text-[#6F6E77]">{t("subtitle")}</p>
-          <p className="mt-1 text-[#6F6E77]">
+          <p className="mt-1 text-text-secondary">{t("subtitle")}</p>
+          <p className="mt-1 text-text-secondary">
             {customers.length}{" "}
             {customers.length !== 1 ? t("plural") : t("singular")}
           </p>
@@ -81,44 +81,44 @@ export default function CustomersPage() {
       {/* Search */}
       {customers.length > 0 && (
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#6F6E77]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
           <Input
             placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 h-11 border-border-[#E9E3EF] focus:border-purple-600 focus:ring-purple-600"
+            className="pl-10 h-11 border-border-custom focus:border-purple-600 focus:ring-purple-600"
           />
         </div>
       )}
 
       {/* Customers list */}
       {customers.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border-[#E9E3EF] p-12 text-center">
+        <div className="bg-white rounded-xl border border-border-custom p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
             <Users className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-semibold text-[#1A1523] mb-2">
+          <h3 className="text-lg font-semibold text-text-primary mb-2">
             {t("empty.title")}
           </h3>
-          <p className="text-[#6F6E77] max-w-sm mx-auto">
+          <p className="text-text-secondary max-w-sm mx-auto">
             {t("empty.description")}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-border-[#E9E3EF] overflow-hidden">
+        <div className="bg-white rounded-xl border border-border-custom overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border-[#E9E3EF] bg-surface">
-                <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
+              <tr className="border-b border-border-custom bg-surface">
+                <th className="text-left text-sm font-medium text-text-secondary px-6 py-4">
                   {t("table.customer")}
                 </th>
-                <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
+                <th className="text-left text-sm font-medium text-text-secondary px-6 py-4">
                   {t("table.Platform")}
                 </th>
-                <th className="text-left text-sm font-medium text-[#6F6E77] px-6 py-4">
+                <th className="text-left text-sm font-medium text-text-secondary px-6 py-4">
                   {t("table.since")}
                 </th>
-                <th className="text-right text-sm font-medium text-[#6F6E77] px-6 py-4">
+                <th className="text-right text-sm font-medium text-text-secondary px-6 py-4">
                   {t("table.actions")}
                 </th>
               </tr>
@@ -128,7 +128,7 @@ export default function CustomersPage() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-6 py-12 text-center text-[#6F6E77]"
+                    className="px-6 py-12 text-center text-text-secondary"
                   >
                     {t("noResults")}
                   </td>
@@ -137,7 +137,7 @@ export default function CustomersPage() {
                 filteredCustomers.map((customer) => (
                   <tr
                     key={customer.id}
-                    className="border-b border-border-[#E9E3EF] last:border-0 hover:bg-surface transition-colors"
+                    className="border-b border-border-custom last:border-0 hover:bg-surface transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -147,10 +147,10 @@ export default function CustomersPage() {
                             "?"}
                         </div>
                         <div>
-                          <p className="font-medium text-[#1A1523]">
+                          <p className="font-medium text-text-primary">
                             {customer.displayName || t("detail.noName")}
                           </p>
-                          <p className="text-sm text-[#6F6E77]">
+                          <p className="text-sm text-text-secondary">
                             {customer.email || t("detail.noEmail")}
                           </p>
                         </div>
@@ -162,10 +162,10 @@ export default function CustomersPage() {
                           @{customer.telegramUsername}
                         </span>
                       ) : (
-                        <span className="text-[#6F6E77]">—</span>
+                        <span className="text-text-secondary">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-[#6F6E77]">
+                    <td className="px-6 py-4 text-sm text-text-secondary">
                       {new Date(customer.createdAt).toLocaleDateString(locale, {
                         month: "short",
                         day: "numeric",

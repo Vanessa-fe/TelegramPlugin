@@ -13,18 +13,18 @@ export async function PricingTeaser() {
     <section className="py-20 lg:py-28">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
-        <h2 className="text-3xl lg:text-4xl font-bold text-center text-[#1A1523] mb-12">
+        <h2 className="text-3xl lg:text-4xl font-bold text-center text-text-primary mb-12">
           {t('title')}
         </h2>
 
         {/* Pricing card */}
         <div className="max-w-md mx-auto">
-          <div className="rounded-2xl border border-[#E9E3EF] bg-white p-8 shadow-sm">
+          <div className="rounded-2xl border border-border-custom bg-white p-8 shadow-sm">
             {/* Price */}
             <div className="text-center mb-8">
-              <p className="text-5xl font-bold text-[#1A1523]">
+              <p className="text-5xl font-bold text-text-primary">
                 {t('price')}
-                <span className="text-lg font-normal text-[#6F6E77]">
+                <span className="text-lg font-normal text-text-secondary">
                   {t('perMonth')}
                 </span>
               </p>
@@ -45,7 +45,7 @@ export async function PricingTeaser() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="text-[#1A1523]">{feature}</span>
+                  <span className="text-text-primary">{feature}</span>
                 </li>
               ))}
             </ul>
@@ -59,7 +59,7 @@ export async function PricingTeaser() {
             </Link>
 
             {/* Note */}
-            <p className="text-center text-sm text-[#6F6E77] mt-4">
+            <p className="text-center text-sm text-text-secondary mt-4">
               {t('note')}
             </p>
           </div>

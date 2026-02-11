@@ -30,6 +30,7 @@ export declare class SubscriptionsController {
             subscriptionId: string;
             channelId: string;
             inviteId: string | null;
+            discordRoleId: string | null;
             grantedAt: Date | null;
             revokedAt: Date | null;
             revokeReason: string | null;
@@ -45,6 +46,8 @@ export declare class SubscriptionsController {
             deletedAt: Date | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
+            discordUserId: string | null;
+            discordUsername: string | null;
             externalId: string | null;
         };
     } & {
@@ -66,6 +69,8 @@ export declare class SubscriptionsController {
         startedAt: Date;
         endedAt: Date | null;
         lastPaymentFailedAt: Date | null;
+        affiliateCode: string | null;
+        couponCode: string | null;
         customerId: string;
         planId: string;
     })[]>;
@@ -95,6 +100,7 @@ export declare class SubscriptionsController {
             subscriptionId: string;
             channelId: string;
             inviteId: string | null;
+            discordRoleId: string | null;
             grantedAt: Date | null;
             revokedAt: Date | null;
             revokeReason: string | null;
@@ -110,6 +116,8 @@ export declare class SubscriptionsController {
             deletedAt: Date | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
+            discordUserId: string | null;
+            discordUsername: string | null;
             externalId: string | null;
         };
     } & {
@@ -131,6 +139,8 @@ export declare class SubscriptionsController {
         startedAt: Date;
         endedAt: Date | null;
         lastPaymentFailedAt: Date | null;
+        affiliateCode: string | null;
+        couponCode: string | null;
         customerId: string;
         planId: string;
     }>;
@@ -160,6 +170,7 @@ export declare class SubscriptionsController {
             subscriptionId: string;
             channelId: string;
             inviteId: string | null;
+            discordRoleId: string | null;
             grantedAt: Date | null;
             revokedAt: Date | null;
             revokeReason: string | null;
@@ -175,6 +186,8 @@ export declare class SubscriptionsController {
             deletedAt: Date | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
+            discordUserId: string | null;
+            discordUsername: string | null;
             externalId: string | null;
         };
     } & {
@@ -196,6 +209,8 @@ export declare class SubscriptionsController {
         startedAt: Date;
         endedAt: Date | null;
         lastPaymentFailedAt: Date | null;
+        affiliateCode: string | null;
+        couponCode: string | null;
         customerId: string;
         planId: string;
     }>;
@@ -218,6 +233,8 @@ export declare class SubscriptionsController {
         startedAt: Date;
         endedAt: Date | null;
         lastPaymentFailedAt: Date | null;
+        affiliateCode: string | null;
+        couponCode: string | null;
         customerId: string;
         planId: string;
     }>;
@@ -243,6 +260,8 @@ export declare class SubscriptionsController {
         startedAt: Date;
         endedAt: Date | null;
         lastPaymentFailedAt: Date | null;
+        affiliateCode: string | null;
+        couponCode: string | null;
         customerId: string;
         planId: string;
     }>;

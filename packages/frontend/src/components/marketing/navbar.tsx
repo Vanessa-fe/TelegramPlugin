@@ -35,7 +35,7 @@ export function Navbar() {
         isScrolled
           ? 'bg-white/80 backdrop-blur-md shadow-sm'
           : 'bg-white/80 backdrop-blur-sm'
-      } border-b border-[#E9E3EF]`}
+      } border-b border-border-custom`}
     >
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-16 md:h-16">
@@ -54,24 +54,24 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-8">
             <Link
               href="/pricing"
-              className="text-[#6F6E77] hover:text-[#1A1523] font-medium transition-colors duration-150"
+              className="text-text-secondary hover:text-text-primary font-medium transition-colors duration-150"
             >
               {t('links.pricing')}
             </Link>
             <Link
               href="/login"
-              className="text-[#6F6E77] hover:text-[#1A1523] font-medium transition-colors duration-150"
+              className="text-text-secondary hover:text-text-primary font-medium transition-colors duration-150"
             >
               {t('links.login')}
             </Link>
 
             {/* Language Switcher */}
-            <div className="flex items-center gap-1.5 text-[#6F6E77]">
+            <div className="flex items-center gap-1.5 text-text-secondary">
               <Globe className="w-4 h-4" />
               <select
                 value={currentLocale}
                 onChange={(e) => handleLocaleChange(e.target.value as Locale)}
-                className="bg-transparent text-sm font-medium cursor-pointer hover:text-[#1A1523] transition-colors focus:outline-none"
+                className="bg-transparent text-sm font-medium cursor-pointer hover:text-text-primary transition-colors focus:outline-none"
               >
                 {locales.map((locale) => (
                   <option key={locale} value={locale}>
@@ -99,7 +99,7 @@ export function Navbar() {
             </Link>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-[#6F6E77] hover:text-[#1A1523] transition-colors"
+              className="p-2 text-text-secondary hover:text-text-primary transition-colors"
               aria-label={t('aria.toggleMenu')}
             >
               {isMobileMenuOpen ? (
@@ -137,30 +137,30 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-[#E9E3EF]">
+          <div className="md:hidden py-4 border-t border-border-custom">
             <div className="flex flex-col gap-4">
               <Link
                 href="/pricing"
-                className="text-[#6F6E77] hover:text-[#1A1523] font-medium py-2 transition-colors"
+                className="text-text-secondary hover:text-text-primary font-medium py-2 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {t('links.pricing')}
               </Link>
               <Link
                 href="/login"
-                className="text-[#6F6E77] hover:text-[#1A1523] font-medium py-2 transition-colors"
+                className="text-text-secondary hover:text-text-primary font-medium py-2 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {t('links.login')}
               </Link>
 
               {/* Language Switcher Mobile */}
-              <div className="flex items-center gap-2 py-2 text-[#6F6E77]">
+              <div className="flex items-center gap-2 py-2 text-text-secondary">
                 <Globe className="w-4 h-4" />
                 <select
                   value={currentLocale}
                   onChange={(e) => handleLocaleChange(e.target.value as Locale)}
-                  className="bg-transparent text-sm font-medium cursor-pointer hover:text-[#1A1523] transition-colors focus:outline-none"
+                  className="bg-transparent text-sm font-medium cursor-pointer hover:text-text-primary transition-colors focus:outline-none"
                 >
                   {locales.map((locale) => (
                     <option key={locale} value={locale}>

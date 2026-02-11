@@ -10,6 +10,8 @@ export interface CreateCheckoutDto {
     telegramUsername?: string;
   };
   quantity?: number;
+  couponCode?: string;
+  affiliateCode?: string;
 }
 
 export interface CheckoutResponse {

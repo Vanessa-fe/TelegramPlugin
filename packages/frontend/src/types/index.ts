@@ -7,3 +7,6 @@ export * from './customer';
 export * from './subscription';
 export * from './payment-event';
 export * from './channel';
+export * from './coupon';
+export * from './affiliate';
+export * from './landing-page';

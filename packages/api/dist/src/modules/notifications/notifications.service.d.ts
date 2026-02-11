@@ -24,6 +24,7 @@ export declare class NotificationsService implements OnModuleInit {
     private readonly prisma;
     private readonly logger;
     private readonly telegramBotToken;
+    private readonly discordBotToken;
     private readonly brevoEnabled;
     private readonly brevoFromEmail;
     private readonly brevoFromName;
@@ -42,6 +43,7 @@ export declare class NotificationsService implements OnModuleInit {
     private wrapEmailTemplate;
     private htmlToText;
     private sendTelegram;
+    private sendDiscord;
     private getTemplate;
     private formatAmount;
 }

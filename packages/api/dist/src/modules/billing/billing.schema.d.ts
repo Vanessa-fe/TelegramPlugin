@@ -18,6 +18,8 @@ export declare const createCheckoutSchema: z.ZodObject<{
         email?: string | undefined;
         telegramUserId?: string | undefined;
     }>;
+    couponCode: z.ZodOptional<z.ZodString>;
+    affiliateCode: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     customer: {
         telegramUsername: string;
@@ -26,6 +28,8 @@ export declare const createCheckoutSchema: z.ZodObject<{
         telegramUserId?: string | undefined;
     };
     planId: string;
+    affiliateCode?: string | undefined;
+    couponCode?: string | undefined;
     quantity?: number | undefined;
 }, {
     customer: {
@@ -35,6 +39,8 @@ export declare const createCheckoutSchema: z.ZodObject<{
         telegramUserId?: string | undefined;
     };
     planId: string;
+    affiliateCode?: string | undefined;
+    couponCode?: string | undefined;
     quantity?: number | undefined;
 }>;
 export type CreateCheckoutDto = z.infer<typeof createCheckoutSchema>;

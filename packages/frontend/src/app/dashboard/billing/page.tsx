@@ -81,7 +81,7 @@ export default function BillingPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading")}</p>
+          <p className="mt-3 text-sm text-text-secondary">{t("loading")}</p>
         </div>
       </div>
     );
@@ -95,10 +95,10 @@ export default function BillingPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
+        <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">
           {t("title")}
         </h1>
-        <p className="mt-1 text-[#6F6E77]">{t("subtitle")}</p>
+        <p className="mt-1 text-text-secondary">{t("subtitle")}</p>
       </div>
 
       {/* SaaS subscription warning */}
@@ -117,17 +117,17 @@ export default function BillingPage() {
       )}
 
       {/* Stripe Connect card */}
-      <div className="bg-white rounded-xl border border-border-[#E9E3EF] overflow-hidden">
-        <div className="p-6 border-b border-border-[#E9E3EF]">
+      <div className="bg-white rounded-xl border border-border-custom overflow-hidden">
+        <div className="p-6 border-b border-border-custom">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-[#1A1523]">
+              <h2 className="text-lg font-semibold text-text-primary">
                 {t("stripeConnect.title")}
               </h2>
-              <p className="text-sm text-[#6F6E77]">
+              <p className="text-sm text-text-secondary">
                 {t("stripeConnect.subtitle")}
               </p>
             </div>
@@ -174,7 +174,7 @@ export default function BillingPage() {
                 variant="outline"
                 onClick={handleOpenStripe}
                 disabled={isOpeningStripe}
-                className="border-border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+                className="border-border-custom hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
               >
                 {isOpeningStripe && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -187,9 +187,9 @@ export default function BillingPage() {
 
           {/* Account ID */}
           {status.connected && status.accountId && (
-            <p className="mt-4 text-xs text-[#6F6E77] hidden">
+            <p className="mt-4 text-xs text-text-secondary hidden">
               {t("stripeConnect.accountId")}:{" "}
-              <code className="bg-surface px-1.5 py-0.5 rounded text-[#1A1523]">
+              <code className="bg-surface px-1.5 py-0.5 rounded text-text-primary">
                 {status.accountId}
               </code>
             </p>
@@ -198,11 +198,11 @@ export default function BillingPage() {
       </div>
 
       {/* Info box */}
-      <div className="bg-surface rounded-xl border border-border-[#E9E3EF] p-6">
-        <h3 className="font-semibold text-[#1A1523] mb-2">
+      <div className="bg-surface rounded-xl border border-border-custom p-6">
+        <h3 className="font-semibold text-text-primary mb-2">
           {t("howItWorks.title")}
         </h3>
-        <ul className="space-y-2 text-sm text-[#6F6E77]">
+        <ul className="space-y-2 text-sm text-text-secondary">
           <li className="flex items-start gap-2">
             <span className="text-purple-600">•</span>
             {t("howItWorks.step1")}
@@ -241,7 +241,7 @@ function StatusItem({
       ) : (
         <div
           className={`w-5 h-5 rounded-full border-2 ${
-            disabled ? "border-gray-200" : "border-border-[#E9E3EF]"
+            disabled ? "border-gray-200" : "border-border-custom"
           }`}
         />
       )}
@@ -250,8 +250,8 @@ function StatusItem({
           disabled
             ? "text-gray-400"
             : isComplete
-              ? "text-[#1A1523]"
-              : "text-[#6F6E77]"
+              ? "text-text-primary"
+              : "text-text-secondary"
         }`}
       >
         {label}

@@ -25,6 +25,8 @@ export declare class EntitlementsService {
             deletedAt: Date | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
+            discordUserId: string | null;
+            discordUsername: string | null;
             externalId: string | null;
         };
         subscription: {
@@ -62,6 +64,8 @@ export declare class EntitlementsService {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         };
@@ -96,6 +100,8 @@ export declare class EntitlementsService {
             deletedAt: Date | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
+            discordUserId: string | null;
+            discordUsername: string | null;
             externalId: string | null;
         };
         subscription: {
@@ -133,6 +139,8 @@ export declare class EntitlementsService {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         };
@@ -162,6 +170,8 @@ export declare class EntitlementsService {
             deletedAt: Date | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
+            discordUserId: string | null;
+            discordUsername: string | null;
             externalId: string | null;
         };
         subscription: {
@@ -183,6 +193,8 @@ export declare class EntitlementsService {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         };
@@ -213,6 +225,8 @@ export declare class EntitlementsService {
             deletedAt: Date | null;
             telegramUserId: string | null;
             telegramUsername: string | null;
+            discordUserId: string | null;
+            discordUsername: string | null;
             externalId: string | null;
         };
         subscription: {
@@ -234,6 +248,8 @@ export declare class EntitlementsService {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         };
@@ -288,6 +304,8 @@ export declare class EntitlementsService {
             startedAt: Date;
             endedAt: Date | null;
             lastPaymentFailedAt: Date | null;
+            affiliateCode: string | null;
+            couponCode: string | null;
             customerId: string;
             planId: string;
         };

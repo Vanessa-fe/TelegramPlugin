@@ -68,7 +68,7 @@ export default function ChannelsPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-[#6F6E77]">{t("loading.title")}</p>
+          <p className="mt-3 text-sm text-text-secondary">{t("loading.title")}</p>
         </div>
       </div>
     );
@@ -79,10 +79,10 @@ export default function ChannelsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-[#1A1523]">
+          <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">
             {t("title")}
           </h1>
-          <p className="mt-1 text-[#6F6E77]">{t("subtitle")}</p>
+          <p className="mt-1 text-text-secondary">{t("subtitle")}</p>
         </div>
 
         <Link href="/dashboard/channels/new">
@@ -95,15 +95,15 @@ export default function ChannelsPage() {
 
       {/* Channels list */}
       {channels.length === 0 ? (
-        <div className="bg-white rounded-xl border border-[#E9E3EF] p-12 text-center">
+        <div className="bg-white rounded-xl border border-border-custom p-12 text-center">
           <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto mb-4">
             <Hash className="w-6 h-6" />
           </div>
 
-          <h3 className="text-lg font-semibold text-[#1A1523] mb-2">
+          <h3 className="text-lg font-semibold text-text-primary mb-2">
             {t("empty.title")}
           </h3>
-          <p className="text-[#6F6E77] mb-6 max-w-sm mx-auto">
+          <p className="text-text-secondary mb-6 max-w-sm mx-auto">
             {t("empty.description")}
           </p>
 
@@ -125,13 +125,13 @@ export default function ChannelsPage() {
             return (
               <div
                 key={channel.id}
-                className="bg-white rounded-xl border border-[#E9E3EF] p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl border border-border-custom p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between gap-4">
                   {/* Channel info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h2 className="text-lg font-semibold text-[#1A1523]">
+                      <h2 className="text-lg font-semibold text-text-primary">
                         {channel.title || t("list.untitled")}
                       </h2>
 
@@ -155,7 +155,7 @@ export default function ChannelsPage() {
                     </div>
 
                     {channel.username && (
-                      <p className="text-sm text-[#6F6E77] mt-1">
+                      <p className="text-sm text-text-secondary mt-1">
                         @{channel.username}
                       </p>
                     )}
@@ -178,7 +178,7 @@ export default function ChannelsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-[#E9E3EF] hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
+                      className="border-border-custom hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
                     >
                       <Settings className="mr-2 h-4 w-4" />
                       {t("list.manageAccess")}
@@ -187,30 +187,30 @@ export default function ChannelsPage() {
                 </div>
 
                 {/* Stats row */}
-                <div className="grid grid-cols-3 gap-4 pt-4 mt-4 border-t border-[#E9E3EF]">
+                <div className="grid grid-cols-3 gap-4 pt-4 mt-4 border-t border-border-custom">
                   <div>
-                    <p className="text-xs text-[#6F6E77] uppercase tracking-wider">
+                    <p className="text-xs text-text-secondary uppercase tracking-wider">
                       {t("stats.provider")}
                     </p>
-                    <p className="text-sm font-medium text-[#1A1523] mt-0.5">
+                    <p className="text-sm font-medium text-text-primary mt-0.5">
                       {provider.label}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs text-[#6F6E77] uppercase tracking-wider">
+                    <p className="text-xs text-text-secondary uppercase tracking-wider">
                       {t("stats.externalId")}
                     </p>
-                    <p className="text-sm font-mono text-[#1A1523] mt-0.5 truncate">
+                    <p className="text-sm font-mono text-text-primary mt-0.5 truncate">
                       {channel.externalId}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs text-[#6F6E77] uppercase tracking-wider">
+                    <p className="text-xs text-text-secondary uppercase tracking-wider">
                       {t("stats.created")}
                     </p>
-                    <p className="text-sm text-[#1A1523] mt-0.5">
+                    <p className="text-sm text-text-primary mt-0.5">
                       {new Intl.DateTimeFormat(locale, {
                         month: "short",
                         day: "numeric",

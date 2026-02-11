@@ -17,10 +17,13 @@ const common_1 = require("@nestjs/common");
 const pipes_1 = require("@nestjs/common/pipes");
 const public_decorator_1 = require("../auth/decorators/public.decorator");
 const storefront_service_1 = require("./storefront.service");
+const landing_pages_service_1 = require("../landing-pages/landing-pages.service");
 let StorefrontController = class StorefrontController {
     storefrontService;
-    constructor(storefrontService) {
+    landingPagesService;
+    constructor(storefrontService, landingPagesService) {
         this.storefrontService = storefrontService;
+        this.landingPagesService = landingPagesService;
     }
     async getProduct(id) {
         const product = await this.storefrontService.getPublicProduct(id);
@@ -45,6 +48,20 @@ let StorefrontController = class StorefrontController {
     }
     async getOrganizationProducts(slug) {
         return this.storefrontService.getPublicProductsByOrganization(slug);
+    }
+    async getPublicLandingPage(creator) {
+        const page = await this.landingPagesService.getPublicPage(creator);
+        if (!page) {
+            throw new common_1.NotFoundException('Page introuvable');
+        }
+        return page;
+    }
+    async getPublicLandingPageWithSlug(creator, pageSlug) {
+        const page = await this.landingPagesService.getPublicPage(creator, pageSlug);
+        if (!page) {
+            throw new common_1.NotFoundException('Page introuvable');
+        }
+        return page;
     }
 };
 exports.StorefrontController = StorefrontController;
@@ -81,8 +98,26 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], StorefrontController.prototype, "getOrganizationProducts", null);
+__decorate([
+    (0, common_1.Get)('pages/:creator'),
+    (0, public_decorator_1.Public)(),
+    __param(0, (0, common_1.Param)('creator')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], StorefrontController.prototype, "getPublicLandingPage", null);
+__decorate([
+    (0, common_1.Get)('pages/:creator/:pageSlug'),
+    (0, public_decorator_1.Public)(),
+    __param(0, (0, common_1.Param)('creator')),
+    __param(1, (0, common_1.Param)('pageSlug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], StorefrontController.prototype, "getPublicLandingPageWithSlug", null);
 exports.StorefrontController = StorefrontController = __decorate([
     (0, common_1.Controller)('storefront'),
-    __metadata("design:paramtypes", [storefront_service_1.StorefrontService])
+    __metadata("design:paramtypes", [storefront_service_1.StorefrontService,
+        landing_pages_service_1.LandingPagesService])
 ], StorefrontController);
 //# sourceMappingURL=storefront.controller.js.map

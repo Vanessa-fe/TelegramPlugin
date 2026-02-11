@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerSchema = exports.refreshSchema = exports.loginSchema = exports.passwordSchema = void 0;
+exports.updatePasswordSchema = exports.updateProfileSchema = exports.registerSchema = exports.refreshSchema = exports.loginSchema = exports.passwordSchema = void 0;
 const zod_1 = require("zod");
 exports.passwordSchema = zod_1.z
     .string()
@@ -25,5 +25,15 @@ exports.registerSchema = zod_1.z.object({
     firstName: zod_1.z.string().min(1).optional(),
     lastName: zod_1.z.string().min(1).optional(),
     organizationId: zod_1.z.string().uuid().optional(),
+});
+exports.updateProfileSchema = zod_1.z.object({
+    firstName: zod_1.z.string().optional(),
+    lastName: zod_1.z.string().optional(),
+    email: zod_1.z.string().email('Email invalide').optional(),
+    currentPassword: zod_1.z.string().min(1).optional(),
+});
+exports.updatePasswordSchema = zod_1.z.object({
+    currentPassword: zod_1.z.string().min(1).optional(),
+    newPassword: exports.passwordSchema,
 });
 //# sourceMappingURL=auth.schema.js.map
