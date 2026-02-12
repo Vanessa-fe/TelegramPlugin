@@ -8,8 +8,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { couponsApi } from "@/lib/api/coupons";
-import type { Coupon, CouponStatus, CouponType } from "@/types/coupon";
-import { MoreHorizontal, Percent, Plus, Tag } from "lucide-react";
+import type { Coupon, CouponStatus } from "@/types/coupon";
+import { MoreHorizontal, Plus, Tag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -19,11 +19,6 @@ const statusClassNames: Record<CouponStatus, string> = {
   ACTIVE: "bg-green-100 text-green-700",
   EXPIRED: "bg-orange-100 text-orange-700",
   DISABLED: "bg-gray-100 text-gray-500",
-};
-
-const typeIcons: Record<CouponType, React.ReactNode> = {
-  PERCENTAGE: <Percent className="h-3 w-3" />,
-  FIXED_AMOUNT: <Tag className="h-3 w-3" />,
 };
 
 export default function CouponsPage() {
@@ -165,12 +160,9 @@ export default function CouponsPage() {
                     </code>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {typeIcons[coupon.type]}
-                      <span className="font-medium text-text-primary">
-                        {formatDiscount(coupon)}
-                      </span>
-                    </div>
+                    <span className="font-medium text-text-primary">
+                      {formatDiscount(coupon)}
+                    </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-text-secondary">
                     {coupon.usedCount}

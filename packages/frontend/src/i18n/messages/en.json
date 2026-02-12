@@ -2759,12 +2759,17 @@
       "disable": "Disable",
       "stats": {
         "uses": "Times used",
+        "usage": "Usage",
         "discount": "Total discount given",
+        "totalSaved": "Total saved",
+        "expires": "Expires",
+        "never": "Never",
         "remaining": "Uses remaining"
       },
       "usages": {
         "title": "Usage history",
         "empty": "This coupon has not been used yet",
+        "plan": "Plan",
         "customer": "Customer",
         "original": "Original price",
         "discount": "Discount",
@@ -2857,6 +2862,7 @@
       "earnings": "Earnings",
       "status": "Status",
       "referrals": "Referrals",
+      "payouts": "Payouts",
       "actions": "Actions"
     },
     "statusLabels": {

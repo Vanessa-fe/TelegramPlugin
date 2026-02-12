@@ -2761,12 +2761,17 @@
       "disable": "Désactiver",
       "stats": {
         "uses": "Fois utilisé",
+        "usage": "Utilisations",
         "discount": "Total des réductions",
+        "totalSaved": "Total économisé",
+        "expires": "Expiration",
+        "never": "Jamais",
         "remaining": "Utilisations restantes"
       },
       "usages": {
         "title": "Historique d'utilisation",
         "empty": "Ce coupon n'a pas encore été utilisé",
+        "plan": "Offre",
         "customer": "Client",
         "original": "Prix original",
         "discount": "Réduction",
@@ -2859,6 +2864,7 @@
       "earnings": "Gains",
       "status": "Statut",
       "referrals": "Parrainages",
+      "payouts": "Versements",
       "actions": "Actions"
     },
     "statusLabels": {

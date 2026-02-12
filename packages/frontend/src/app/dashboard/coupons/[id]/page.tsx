@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { couponsApi } from "@/lib/api/coupons";
 import type { Coupon, CouponUsage, CouponStatus } from "@/types/coupon";
-import { ArrowLeft, Percent, Tag, Edit, Ban } from "lucide-react";
+import { ArrowLeft, Edit, Ban } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -151,14 +151,7 @@ export default function CouponDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2">
-              {coupon.type === "PERCENTAGE" ? (
-                <Percent className="h-5 w-5 text-purple-600" />
-              ) : (
-                <Tag className="h-5 w-5 text-purple-600" />
-              )}
-              <span className="text-2xl font-bold">{formatDiscount(coupon)}</span>
-            </div>
+            <span className="text-2xl font-bold">{formatDiscount(coupon)}</span>
           </CardContent>
         </Card>
 
