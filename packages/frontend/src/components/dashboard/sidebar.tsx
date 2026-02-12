@@ -2,9 +2,11 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { channelsApi } from "@/lib/api/channels";
+import { platformSubscriptionApi } from "@/lib/api/platform-subscription";
 import { cn } from "@/lib/utils";
 import { ChannelProvider } from "@/types/channel";
 import { UserRole } from "@/types/auth";
+import type { PlatformSubscriptionStatus } from "@/types/platform-subscription";
 import {
   CreditCard,
   Coins,
@@ -15,6 +17,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Package,
+  Shield,
   Ticket,
   UserPlus,
   Users,
@@ -34,6 +37,12 @@ const navigation = [
   { key: "coupons", href: "/dashboard/coupons", icon: Ticket },
   { key: "affiliates", href: "/dashboard/affiliates", icon: UserPlus },
   {
+    key: "team",
+    href: "/dashboard/team",
+    icon: Shield,
+    roles: [UserRole.SUPERADMIN, UserRole.ORG_ADMIN],
+  },
+  {
     key: "payments",
     href: "/dashboard/payments",
     icon: Coins,
@@ -50,8 +59,12 @@ export function Sidebar() {
   const tCommon = useTranslations("common");
   const tNav = useTranslations("nav");
   const tSidebar = useTranslations("sidebar");
-  const trialDaysLeft = 14;
   const [pendingRemoveCount, setPendingRemoveCount] = useState(0);
+  const [planName, setPlanName] = useState<string | null>(null);
+  const [planStatus, setPlanStatus] = useState<PlatformSubscriptionStatus | null>(
+    null,
+  );
+  const [isPlanLoading, setIsPlanLoading] = useState(true);
 
   // Filter navigation based on user role
   const filteredNavigation = navigation.filter((item) => {
@@ -107,6 +120,49 @@ export function Sidebar() {
     };
   }, [user]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPlatformSubscription = async () => {
+      if (!user) {
+        if (!cancelled) {
+          setPlanName(null);
+          setPlanStatus(null);
+          setIsPlanLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const subscription = await platformSubscriptionApi.getSubscription();
+        if (!cancelled) {
+          setPlanName(subscription?.plan?.displayName ?? null);
+          setPlanStatus(subscription?.status ?? null);
+        }
+      } catch {
+        if (!cancelled) {
+          setPlanName(null);
+          setPlanStatus(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsPlanLoading(false);
+        }
+      }
+    };
+
+    loadPlatformSubscription();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  function getPlanStatusLabel(status: PlatformSubscriptionStatus | null): string {
+    if (!status) return tSidebar("planStatusNone");
+    return tSidebar(`planStatus.${status}`);
+  }
+
   return (
     <div className="hidden lg:flex h-full w-64 flex-col border-r border-border-custom bg-white">
       {/* Logo */}
@@ -149,17 +205,21 @@ export function Sidebar() {
       {/* Footer */}
       <div className="border-t border-border-custom p-4">
         <div className="rounded-lg bg-purple-50 p-4">
-          <p className="text-sm font-medium text-purple-600">
-            {tSidebar("proPlan")}
+          <p className="text-sm font-medium text-purple-600">{tSidebar("currentPlan")}</p>
+          <p className="mt-1 text-sm font-semibold text-text-primary">
+            {isPlanLoading ? tCommon("loading") : (planName ?? tSidebar("noPlan"))}
           </p>
           <p className="mt-1 text-xs text-text-secondary">
-            {tSidebar("trialDaysLeft", { count: trialDaysLeft })}
+            {isPlanLoading ? tCommon("loading") : getPlanStatusLabel(planStatus)}
           </p>
           <Link
-            href="/dashboard/billing"
+            href="/dashboard/subscription"
             className="mt-3 block text-center text-sm font-medium text-purple-600 hover:text-purple-700"
           >
-            {tSidebar("upgradeNow")} →
+            {planStatus === "ACTIVE" || planStatus === "TRIALING"
+              ? tSidebar("manageSubscription")
+              : tSidebar("upgradeNow")}{" "}
+            →
           </Link>
         </div>
       </div>

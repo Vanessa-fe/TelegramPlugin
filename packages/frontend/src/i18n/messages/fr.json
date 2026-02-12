@@ -55,11 +55,24 @@
     "access": "Gestion des accès",
     "billing": "Facturation",
     "coupons": "Coupons",
-    "affiliates": "Affiliés"
+    "affiliates": "Affiliés",
+    "team": "Équipe"
   },
 
   "sidebar": {
+    "currentPlan": "Abonnement",
+    "noPlan": "Aucun plan actif",
+    "manageSubscription": "Gérer l'abonnement",
     "proPlan": "Plan Pro",
+    "planStatusNone": "Statut indisponible",
+    "planStatus": {
+      "TRIALING": "En essai",
+      "ACTIVE": "Actif",
+      "PAST_DUE": "Paiement en retard",
+      "CANCELED": "Annulé",
+      "INCOMPLETE": "Incomplet",
+      "EXPIRED": "Expiré"
+    },
     "trialDaysLeft": "{count} jours d'essai restants",
     "upgradeNow": "Passer au plan payant"
   },

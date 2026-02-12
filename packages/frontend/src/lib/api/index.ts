@@ -11,3 +11,5 @@ export { contactApi } from './contact';
 export { couponsApi } from './coupons';
 export { affiliatesApi } from './affiliates';
 export { landingPagesApi } from './landing-pages';
+export { teamApi } from './team';
+export { platformSubscriptionApi } from './platform-subscription';

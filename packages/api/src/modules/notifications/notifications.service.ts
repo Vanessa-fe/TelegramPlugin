@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Brevo from '@getbrevo/brevo';
+import type { UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface NotificationPayload {
@@ -240,6 +241,31 @@ export class NotificationsService implements OnModuleInit {
       <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
       <p><a href="${resetLink}">Réinitialiser mon mot de passe</a></p>
       <p>Ce lien expirera bientôt.</p>
+    `;
+
+    await this.sendEmail(to, subject, body);
+  }
+
+  async sendTeamInviteEmail(
+    to: string,
+    organizationName: string,
+    inviteLink: string,
+    role: UserRole,
+  ): Promise<void> {
+    const roleLabels: Record<UserRole, string> = {
+      SUPERADMIN: 'Super Admin',
+      ORG_ADMIN: 'Admin organisation',
+      SUPPORT: 'Support',
+      VIEWER: 'Lecture seule',
+    };
+
+    const subject = `Invitation à rejoindre ${organizationName} sur Sublynk`;
+    const body = `
+      <h1>Invitation d'équipe</h1>
+      <p>Vous avez été invité(e) à rejoindre <strong>${organizationName}</strong>.</p>
+      <p>Rôle attribué : <strong>${roleLabels[role]}</strong></p>
+      <p><a href="${inviteLink}">Accepter l'invitation</a></p>
+      <p>Ce lien est valable pendant 7 jours.</p>
     `;
 
     await this.sendEmail(to, subject, body);

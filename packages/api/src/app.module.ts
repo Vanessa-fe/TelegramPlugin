@@ -32,6 +32,7 @@ import { ContactModule } from './modules/contact/contact.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { AffiliatesModule } from './modules/affiliates/affiliates.module';
 import { LandingPagesModule } from './modules/landing-pages/landing-pages.module';
+import { TeamModule } from './modules/team/team.module';
 
 function findRepoRoot(startDir: string): string {
   let dir = startDir;
@@ -122,6 +123,7 @@ function resolveEnvFiles(): string[] {
     CouponsModule,
     AffiliatesModule,
     LandingPagesModule,
+    TeamModule,
   ],
   controllers: [AppController],
   providers: [

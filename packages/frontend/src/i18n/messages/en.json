@@ -55,11 +55,24 @@
     "access": "Access management",
     "billing": "Billing",
     "coupons": "Coupons",
-    "affiliates": "Affiliates"
+    "affiliates": "Affiliates",
+    "team": "Team"
   },
 
   "sidebar": {
+    "currentPlan": "Subscription",
+    "noPlan": "No active plan",
+    "manageSubscription": "Manage subscription",
     "proPlan": "Pro Plan",
+    "planStatusNone": "Status unavailable",
+    "planStatus": {
+      "TRIALING": "Trialing",
+      "ACTIVE": "Active",
+      "PAST_DUE": "Payment overdue",
+      "CANCELED": "Canceled",
+      "INCOMPLETE": "Incomplete",
+      "EXPIRED": "Expired"
+    },
     "trialDaysLeft": "{count} days left in trial",
     "upgradeNow": "Upgrade now"
   },
