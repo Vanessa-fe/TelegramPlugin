@@ -35,6 +35,10 @@ interface CouponFormProps {
   isEdit?: boolean;
 }
 
+function toCouponExpiryIso(date: string): string {
+  return new Date(`${date}T23:59:59.999Z`).toISOString();
+}
+
 export function CouponForm({
   onSubmit,
   organizations,
@@ -130,7 +134,7 @@ export function CouponForm({
       currency:
         data.type === CouponType.FIXED_AMOUNT ? data.currency : undefined,
       maxUses: data.maxUses || undefined,
-      expiresAt: data.expiresAt || undefined,
+      expiresAt: data.expiresAt ? toCouponExpiryIso(data.expiresAt) : undefined,
       planIds: data.planIds,
     };
     await onSubmit(payload);

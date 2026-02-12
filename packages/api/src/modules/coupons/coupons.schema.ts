@@ -1,6 +1,23 @@
 import { CouponType, CouponStatus } from '@prisma/client';
 import { z } from 'zod';
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseCouponExpiry(value: string): Date {
+  if (DATE_ONLY_REGEX.test(value)) {
+    // Date picker values are date-only. Keep them valid through the selected day.
+    return new Date(`${value}T23:59:59.999Z`);
+  }
+  return new Date(value);
+}
+
+const couponExpirySchema = z
+  .string()
+  .refine((value) => !Number.isNaN(parseCouponExpiry(value).getTime()), {
+    message: "Date d'expiration invalide",
+  })
+  .transform((value) => parseCouponExpiry(value));
+
 export const createCouponSchema = z
   .object({
     organizationId: z.string().uuid(),
@@ -17,11 +34,10 @@ export const createCouponSchema = z
     discountValue: z.number().int().positive(),
     currency: z.string().length(3).optional(),
     maxUses: z.number().int().positive().optional(),
-    expiresAt: z
-      .string()
-      .datetime()
-      .optional()
-      .transform((v) => (v ? new Date(v) : undefined)),
+    expiresAt: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      couponExpirySchema.optional(),
+    ),
     planIds: z.array(z.string().uuid()).optional().default([]),
   })
   .refine(
@@ -31,7 +47,10 @@ export const createCouponSchema = z
       }
       return true;
     },
-    { message: 'Le pourcentage ne peut pas dépasser 100%', path: ['discountValue'] },
+    {
+      message: 'Le pourcentage ne peut pas dépasser 100%',
+      path: ['discountValue'],
+    },
   )
   .refine(
     (data) => {
@@ -40,7 +59,10 @@ export const createCouponSchema = z
       }
       return true;
     },
-    { message: 'La devise est requise pour une réduction fixe', path: ['currency'] },
+    {
+      message: 'La devise est requise pour une réduction fixe',
+      path: ['currency'],
+    },
   );
 
 export type CreateCouponDto = z.infer<typeof createCouponSchema>;
@@ -60,12 +82,10 @@ export const updateCouponSchema = z.object({
   currency: z.string().length(3).optional(),
   status: z.nativeEnum(CouponStatus).optional(),
   maxUses: z.number().int().positive().nullable().optional(),
-  expiresAt: z
-    .string()
-    .datetime()
-    .nullable()
-    .optional()
-    .transform((v) => (v ? new Date(v) : v)),
+  expiresAt: z.preprocess(
+    (value) => (value === '' ? null : value),
+    z.union([couponExpirySchema, z.null()]).optional(),
+  ),
   planIds: z.array(z.string().uuid()).optional(),
 });
 

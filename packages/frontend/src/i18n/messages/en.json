@@ -2728,8 +2728,14 @@
       "discount": "Discount",
       "status": "Status",
       "uses": "Uses",
+      "usage": "Uses",
       "expires": "Expires",
       "actions": "Actions"
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "disable": "Disable"
     },
     "typeLabels": {
       "PERCENTAGE": "Percentage",

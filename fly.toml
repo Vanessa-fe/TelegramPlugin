@@ -1,7 +1,5 @@
 # fly.toml app configuration file generated for telegram-plugin-api on 2026-01-14T18:11:07+01:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
+
 
 app = 'telegram-plugin-api'
 primary_region = 'fra'

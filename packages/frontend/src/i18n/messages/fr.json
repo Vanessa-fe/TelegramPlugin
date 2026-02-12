@@ -2730,8 +2730,14 @@
       "discount": "Réduction",
       "status": "Statut",
       "uses": "Utilisations",
+      "usage": "Utilisations",
       "expires": "Expire",
       "actions": "Actions"
+    },
+    "actions": {
+      "view": "Voir",
+      "edit": "Modifier",
+      "disable": "Désactiver"
     },
     "typeLabels": {
       "PERCENTAGE": "Pourcentage",
