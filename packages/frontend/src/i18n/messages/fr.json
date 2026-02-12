@@ -439,9 +439,14 @@
       "title": "Nouveau produit",
       "subtitle": "Crée un nouveau produit d’abonnement."
     },
+    "edit": {
+      "title": "Modifier l'offre",
+      "subtitle": "Mets à jour les informations de l'offre {name}."
+    },
 
     "form": {
       "title": "Créer un produit",
+      "titleEdit": "Modifier le produit",
 
       "organization": {
         "label": "Organisation",
@@ -465,6 +470,7 @@
 
       "submit": {
         "create": "Créer",
+        "update": "Mettre à jour",
         "saving": "Enregistrement..."
       },
 
@@ -486,7 +492,9 @@
       "loadError": "Erreur lors du chargement des offres",
       "organizationsLoadError": "Erreur lors du chargement des organisations",
       "createSuccess": "Produit créé avec succès",
-      "createError": "Erreur lors de la création du produit"
+      "createError": "Erreur lors de la création du produit",
+      "updateSuccess": "Produit mis à jour avec succès",
+      "updateError": "Erreur lors de la mise à jour du produit"
     },
 
     "actions": {
@@ -2864,10 +2872,16 @@
       "code": "Code parrainage",
       "commission": "Commission",
       "earnings": "Gains",
+      "pending": "En attente",
       "status": "Statut",
       "referrals": "Parrainages",
       "payouts": "Versements",
       "actions": "Actions"
+    },
+    "actions": {
+      "view": "Voir",
+      "edit": "Modifier",
+      "deactivate": "Désactiver"
     },
     "statusLabels": {
       "PENDING": "En attente",

@@ -439,9 +439,14 @@
       "title": "New product",
       "subtitle": "Create a new subscription product."
     },
+    "edit": {
+      "title": "Edit offer",
+      "subtitle": "Update offer details for {name}."
+    },
 
     "form": {
       "title": "Create a product",
+      "titleEdit": "Edit product",
 
       "organization": {
         "label": "Organization",
@@ -465,6 +470,7 @@
 
       "submit": {
         "create": "Create",
+        "update": "Update",
         "saving": "Saving..."
       },
 
@@ -486,7 +492,9 @@
       "loadError": "Failed to load products",
       "organizationsLoadError": "Failed to load organizations",
       "createSuccess": "Product created successfully",
-      "createError": "Failed to create product"
+      "createError": "Failed to create product",
+      "updateSuccess": "Product updated successfully",
+      "updateError": "Failed to update product"
     },
 
     "actions": {
@@ -2862,10 +2870,16 @@
       "code": "Referral code",
       "commission": "Commission",
       "earnings": "Earnings",
+      "pending": "Pending",
       "status": "Status",
       "referrals": "Referrals",
       "payouts": "Payouts",
       "actions": "Actions"
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "deactivate": "Deactivate"
     },
     "statusLabels": {
       "PENDING": "Pending",

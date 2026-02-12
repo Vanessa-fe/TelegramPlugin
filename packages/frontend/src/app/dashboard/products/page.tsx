@@ -170,7 +170,11 @@ export default function ProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>{t("actions.edit")}</DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/products/${product.id}/edit`}>
+                              {t("actions.edit")}
+                            </Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem>
                             {t("actions.duplicate")}
                           </DropdownMenuItem>

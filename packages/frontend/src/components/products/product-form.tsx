@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { Organization } from "@/types/organization";
-import { ProductStatus, type CreateProductDto } from "@/types/product";
+import { ProductStatus, type CreateProductDto, type Product } from "@/types/product";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo } from "react";
@@ -25,6 +25,8 @@ interface ProductFormProps {
   organizations?: Organization[];
   organizationId?: string;
   lockOrganization?: boolean;
+  initialData?: Product;
+  isEdit?: boolean;
 }
 
 export function ProductForm({
@@ -32,6 +34,8 @@ export function ProductForm({
   organizations,
   organizationId,
   lockOrganization = false,
+  initialData,
+  isEdit = false,
 }: ProductFormProps) {
   const t = useTranslations("products");
 
@@ -67,10 +71,10 @@ export function ProductForm({
   } = useForm<FormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      organizationId: organizationId ?? organizations?.[0]?.id ?? "",
-      name: "",
-      description: "",
-      status: ProductStatus.DRAFT,
+      organizationId: initialData?.organizationId ?? organizationId ?? organizations?.[0]?.id ?? "",
+      name: initialData?.name ?? "",
+      description: initialData?.description ?? "",
+      status: initialData?.status ?? ProductStatus.DRAFT,
     },
   });
 
@@ -86,7 +90,7 @@ export function ProductForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("form.title")}</CardTitle>
+        <CardTitle>{isEdit ? t("form.titleEdit") : t("form.title")}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -184,7 +188,11 @@ export function ProductForm({
           </div>
 
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? t("form.submit.saving") : t("form.submit.create")}
+            {isSubmitting
+              ? t("form.submit.saving")
+              : isEdit
+                ? t("form.submit.update")
+                : t("form.submit.create")}
           </Button>
         </form>
       </CardContent>
