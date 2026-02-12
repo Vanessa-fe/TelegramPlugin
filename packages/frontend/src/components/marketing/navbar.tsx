@@ -85,7 +85,7 @@ export function Navbar() {
 
             <Link
               href="/register"
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors duration-150 shadow-sm hover:shadow-md"
+              className="lift-on-hover bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors duration-150 shadow-sm hover:shadow-md"
             >
               {t('cta.desktop')}
             </Link>
@@ -95,7 +95,7 @@ export function Navbar() {
           <div className="flex md:hidden items-center gap-3">
             <Link
               href="/register"
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 text-sm rounded-lg transition-colors duration-150"
+              className="lift-on-hover bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 text-sm rounded-lg transition-colors duration-150"
             >
               {t('cta.mobile')}
             </Link>
@@ -139,7 +139,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border-custom">
+          <div className="reveal-on-load md:hidden py-4 border-t border-border-custom">
             <div className="flex flex-col gap-4">
               <Link
                 href="/pricing"
@@ -174,7 +174,7 @@ export function Navbar() {
 
               <Link
                 href="/register"
-                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-3 rounded-lg text-center transition-colors duration-150"
+                className="lift-on-hover bg-purple-600 hover:bg-purple-700 text-white font-semibold px-5 py-3 rounded-lg text-center transition-colors duration-150"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {t('cta.mobileMenu')}

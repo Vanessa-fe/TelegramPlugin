@@ -24,10 +24,16 @@ export async function SocialProof() {
     <section className="py-12 lg:py-16 bg-purple-50 border-b border-border-custom">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         <div className="grid gap-6 md:grid-cols-3">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <div
               key={item.title}
-              className="bg-white rounded-2xl border border-border-custom p-6 text-center shadow-sm"
+              className={`reveal-on-load lift-on-hover bg-white rounded-2xl border border-border-custom p-6 text-center shadow-sm ${
+                index === 0
+                  ? 'reveal-delay-1'
+                  : index === 1
+                    ? 'reveal-delay-2'
+                    : 'reveal-delay-3'
+              }`}
             >
               <div
                 className="text-3xl mb-3"

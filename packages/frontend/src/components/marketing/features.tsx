@@ -85,16 +85,18 @@ export async function Features() {
     <section id="features" className="py-20 lg:py-28">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
-        <h2 className="text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
+        <h2 className="reveal-on-load text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
           {t('title')}
         </h2>
 
         {/* Features grid 2x2 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 lg:gap-12 max-w-4xl mx-auto">
-          {features.map((feature) => (
+          {features.map((feature, index) => (
             <div
               key={feature.title}
-              className="flex gap-4 p-6 rounded-xl border border-border-custom bg-white hover:shadow-md transition-shadow duration-200"
+              className={`reveal-on-load lift-on-hover flex gap-4 p-6 rounded-xl border border-border-custom bg-white hover:shadow-md transition-shadow duration-200 ${
+                index % 2 === 0 ? 'reveal-delay-1' : 'reveal-delay-2'
+              }`}
             >
               {/* Icon */}
               <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">

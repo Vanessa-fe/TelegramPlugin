@@ -66,16 +66,25 @@ export async function Differentiators() {
     <section className="py-20 lg:py-28 bg-surface">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
-        <h2 className="text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
+        <h2 className="reveal-on-load text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
           {t('title')}
         </h2>
 
         {/* 3 columns */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-          {differentiators.map((item) => (
-            <div key={item.title} className="text-center">
+          {differentiators.map((item, index) => (
+            <div
+              key={item.title}
+              className={`reveal-on-load lift-on-hover text-center ${
+                index === 0
+                  ? 'reveal-delay-1'
+                  : index === 1
+                    ? 'reveal-delay-2'
+                    : 'reveal-delay-3'
+              }`}
+            >
               {/* Icon */}
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 text-purple-600 mb-6">
+              <div className="pulse-ring-soft inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 text-purple-600 mb-6">
                 {item.icon}
               </div>
 

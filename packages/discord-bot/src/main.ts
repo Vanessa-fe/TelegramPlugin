@@ -6,11 +6,8 @@ import {
   GatewayIntentBits,
   Events,
   PermissionFlagsBits,
-  Guild,
-  GuildMember,
-  Message,
-  Role,
 } from "discord.js";
+import type { Guild, GuildMember, Message, Role } from "discord.js";
 import { fileURLToPath } from "node:url";
 import { argv, env as processEnv } from "node:process";
 import { z } from "zod";
@@ -146,22 +143,6 @@ export function createBot(config: BotConfig) {
     return response.json() as Promise<T>;
   }
 
-  async function getApi<T>(path: string): Promise<T> {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
-      method: "GET",
-      headers: apiHeaders,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `API ${response.status} ${response.statusText}: ${errorText}`
-      );
-    }
-
-    return response.json() as Promise<T>;
-  }
-
   // Check if bot has required permissions in guild
   function hasRequiredPermissions(guild: Guild): boolean {
     const botMember = guild.members.me;
@@ -248,7 +229,7 @@ export function createBot(config: BotConfig) {
   });
 
   // Handle bot joining a new guild
-  client.on(Events.GuildCreate, async (guild) => {
+  client.on(Events.GuildCreate, (guild) => {
     log("info", "Bot joined new guild", {
       guildId: guild.id,
       guildName: guild.name,
@@ -273,7 +254,7 @@ export function createBot(config: BotConfig) {
   });
 
   // Handle messages for verification code detection
-  client.on(Events.MessageCreate, async (message: Message) => {
+  async function handleMessageCreate(message: Message): Promise<void> {
     // Ignore bot messages and DMs
     if (message.author.bot || !message.guild) return;
 
@@ -370,6 +351,10 @@ export function createBot(config: BotConfig) {
         "❌ Une erreur est survenue lors de la vérification. Veuillez réessayer."
       );
     }
+  }
+
+  client.on(Events.MessageCreate, (message: Message) => {
+    void handleMessageCreate(message);
   });
 
   // Expose methods for worker to use
@@ -488,9 +473,9 @@ export async function startBot() {
   });
 
   // Handle graceful shutdown
-  const shutdown = async () => {
+  const shutdown = () => {
     log("info", "Shutting down Discord bot...");
-    bot.client.destroy();
+    void bot.client.destroy();
     process.exit(0);
   };
 

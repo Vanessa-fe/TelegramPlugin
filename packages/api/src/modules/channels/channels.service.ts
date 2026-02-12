@@ -4,9 +4,13 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ChannelType, VerificationStatus, ChannelProvider } from '@prisma/client';
-import { customAlphabet } from 'nanoid';
+import {
+  ChannelType,
+  VerificationStatus,
+  ChannelProvider,
+} from '@prisma/client';
 import type {
   CreateChannelDto,
   UpdateChannelDto,
@@ -16,7 +20,17 @@ import type {
   SetDiscordRoleDto,
 } from './channels.schema';
 
-const generateCode = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8);
+const VERIFICATION_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+function generateCode(): string {
+  const bytes = randomBytes(8);
+  let code = '';
+  for (const byte of bytes) {
+    code +=
+      VERIFICATION_CODE_ALPHABET[byte % VERIFICATION_CODE_ALPHABET.length];
+  }
+  return code;
+}
 
 @Injectable()
 export class ChannelsService {
@@ -65,7 +79,8 @@ export class ChannelsService {
 
   async startVerification(organizationId: string, dto: StartVerificationDto) {
     const provider = dto.provider ?? ChannelProvider.TELEGRAM;
-    const prefix = provider === ChannelProvider.DISCORD ? 'DISCORD' : 'TGPLUGIN';
+    const prefix =
+      provider === ChannelProvider.DISCORD ? 'DISCORD' : 'TGPLUGIN';
     const code = `${prefix}-${generateCode()}`;
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
@@ -88,7 +103,10 @@ export class ChannelsService {
     };
   }
 
-  async checkVerificationStatus(verificationId: string, organizationId: string) {
+  async checkVerificationStatus(
+    verificationId: string,
+    organizationId: string,
+  ) {
     const verification = await this.prisma.channelVerification.findUnique({
       where: { id: verificationId },
     });
@@ -110,7 +128,10 @@ export class ChannelsService {
         where: { id: verificationId },
         data: { status: VerificationStatus.EXPIRED },
       });
-      return { status: VerificationStatus.EXPIRED, provider: verification.provider };
+      return {
+        status: VerificationStatus.EXPIRED,
+        provider: verification.provider,
+      };
     }
 
     return {
@@ -214,7 +235,11 @@ export class ChannelsService {
     return { success: true, guildId: dto.discordGuildId };
   }
 
-  async setDiscordRole(verificationId: string, organizationId: string, dto: SetDiscordRoleDto) {
+  async setDiscordRole(
+    verificationId: string,
+    organizationId: string,
+    dto: SetDiscordRoleDto,
+  ) {
     const verification = await this.prisma.channelVerification.findUnique({
       where: { id: verificationId },
     });
@@ -249,7 +274,10 @@ export class ChannelsService {
     return { success: true };
   }
 
-  async confirmDiscordVerification(verificationId: string, organizationId: string) {
+  async confirmDiscordVerification(
+    verificationId: string,
+    organizationId: string,
+  ) {
     const verification = await this.prisma.channelVerification.findUnique({
       where: { id: verificationId },
     });

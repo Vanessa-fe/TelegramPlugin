@@ -3,8 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomBytes } from 'node:crypto';
 import { AffiliateStatus, PayoutStatus, Prisma } from '@prisma/client';
-import type { Affiliate, AffiliatePayout, AffiliateReferral } from '@prisma/client';
+import type {
+  Affiliate,
+  AffiliatePayout,
+  AffiliateReferral,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type {
   CreateAffiliateDto,
@@ -13,7 +18,17 @@ import type {
   UpdatePayoutDto,
   ValidateAffiliateDto,
 } from './affiliates.schema';
-import { nanoid } from 'nanoid';
+
+const REFERRAL_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+function generateReferralCode(): string {
+  const bytes = randomBytes(8);
+  let code = '';
+  for (const byte of bytes) {
+    code += REFERRAL_CODE_ALPHABET[byte % REFERRAL_CODE_ALPHABET.length];
+  }
+  return code;
+}
 
 export type AffiliateWithStats = Affiliate & {
   _count: { referrals: number; payouts: number };
@@ -45,7 +60,7 @@ export class AffiliatesService {
 
     let referralCode = data.referralCode;
     if (!referralCode) {
-      referralCode = nanoid(8).toUpperCase();
+      referralCode = generateReferralCode();
     }
 
     const existingByCode = await this.prisma.affiliate.findUnique({

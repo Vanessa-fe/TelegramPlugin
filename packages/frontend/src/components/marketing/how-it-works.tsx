@@ -29,21 +29,32 @@ export async function HowItWorks() {
     <section className="py-20 lg:py-28 bg-surface">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
-        <h2 className="text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
+        <h2 className="reveal-on-load text-3xl lg:text-4xl font-bold text-center text-text-primary mb-16">
           {t('title')}
         </h2>
 
         {/* Steps grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
           {steps.map((step, index) => (
-            <div key={step.number} className="relative text-center">
+            <div
+              key={step.number}
+              className={`reveal-on-load lift-on-hover relative text-center ${
+                index === 0
+                  ? 'reveal-delay-1'
+                  : index === 1
+                    ? 'reveal-delay-2'
+                    : index === 2
+                      ? 'reveal-delay-3'
+                      : 'reveal-delay-4'
+              }`}
+            >
               {/* Connector line (desktop only) */}
               {index < steps.length - 1 && (
               <div className="hidden lg:block absolute top-6 left-1/2 w-full h-px bg-border-custom" />
               )}
 
               {/* Step number */}
-              <div className="relative inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-600 text-white font-bold text-lg mb-4">
+              <div className="pulse-ring-soft relative inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-600 text-white font-bold text-lg mb-4">
                 {step.number}
               </div>
 

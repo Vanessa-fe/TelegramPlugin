@@ -13,13 +13,13 @@ export async function PricingTeaser() {
     <section className="py-20 lg:py-28">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Section title */}
-        <h2 className="text-3xl lg:text-4xl font-bold text-center text-text-primary mb-12">
+        <h2 className="reveal-on-load text-3xl lg:text-4xl font-bold text-center text-text-primary mb-12">
           {t('title')}
         </h2>
 
         {/* Pricing card */}
-        <div className="max-w-md mx-auto">
-          <div className="rounded-2xl border border-border-custom bg-white p-8 shadow-sm">
+        <div className="max-w-md mx-auto reveal-on-load reveal-delay-1">
+          <div className="lift-on-hover rounded-2xl border border-border-custom bg-white p-8 shadow-sm">
             {/* Price */}
             <div className="text-center mb-8">
               <p className="text-5xl font-bold text-text-primary">
@@ -53,7 +53,7 @@ export async function PricingTeaser() {
             {/* CTA */}
             <Link
               href="/pricing"
-              className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-4 rounded-lg text-center transition-colors duration-150 shadow-sm hover:shadow-md"
+              className="lift-on-hover block w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-4 rounded-lg text-center transition-colors duration-150 shadow-sm hover:shadow-md"
             >
               {t('cta')}
             </Link>
