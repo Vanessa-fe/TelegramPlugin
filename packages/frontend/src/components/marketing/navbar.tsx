@@ -24,8 +24,10 @@ export function Navbar() {
   }, []);
 
   function handleLocaleChange(newLocale: Locale) {
+    // Persist locale preference so unprefixed routes keep the selected language
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
     const nextPath = getPathname({ href: pathname, locale: newLocale });
-    // Force hard reload with cache bypass to ensure translations reload
+    // Force hard reload to ensure all server-rendered translations update immediately
     window.location.href = nextPath;
   }
 

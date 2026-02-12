@@ -2783,7 +2783,9 @@
       },
       "discountValue": {
         "label": "Valeur de la réduction",
-        "help": "Entre un pourcentage (1-100) ou un montant fixe en centimes"
+        "help": "Entre un pourcentage (1-100) ou un montant fixe en centimes",
+        "helpPercentage": "Entre un pourcentage (1-100)",
+        "helpFixed": "Entre un montant fixe en centimes"
       },
       "currency": {
         "label": "Devise",
@@ -2816,6 +2818,7 @@
         "codeTooShort": "Le code doit faire au moins 3 caractères",
         "codeTooLong": "Le code ne peut pas dépasser 32 caractères",
         "codeInvalid": "Le code ne peut contenir que des lettres, chiffres, tirets et underscores",
+        "discountRequired": "La réduction doit être supérieure à 0",
         "discountMin": "La réduction doit être d'au moins 1",
         "discountMax": "La réduction en pourcentage ne peut pas dépasser 100",
         "currencyRequired": "La devise est requise pour les réductions en montant fixe"

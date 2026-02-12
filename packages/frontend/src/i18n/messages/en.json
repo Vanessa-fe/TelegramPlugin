@@ -502,13 +502,15 @@
     "createFirst": "Create the first plan",
     "empty": "No plans found",
     "back": "Back to plans",
+    "loading": "Loading...",
     "table": {
       "name": "Name",
       "price": "Price",
       "interval": "Interval",
       "trial": "Trial",
       "accessDuration": "Access duration",
-      "status": "Status"
+      "status": "Status",
+      "actions": "Actions"
     },
     "accessUnlimited": "Unlimited",
     "accessDays": "{count} days",
@@ -574,6 +576,12 @@
   "customers": {
     "title": "My customers",
     "subtitle": "View and manage your customer base",
+    "searchPlaceholder": "Search a customer...",
+    "total": "Total",
+    "plural": "customers",
+    "singular": "customer",
+    "loading": "Loading customers...",
+    "error": "Error while loading customers",
     "empty": {
       "title": "No customers yet",
       "description": "Your customers will appear here after their first purchase.",
@@ -582,9 +590,11 @@
     "table": {
       "id": "ID",
       "customer": "Customer",
+      "Platform": "ID",
       "email": "Email",
       "subscriptions": "Subscriptions",
-      "since": "Customer since"
+      "since": "Customer since",
+      "actions": "Actions"
     },
     "detail": {
       "title": "Customer details",
@@ -605,7 +615,15 @@
       "notFound": "Customer not found",
       "backToCustomers": "Back to customers",
       "back": "Back",
-      "noName": "No name"
+      "noName": "No name",
+      "status": {
+        "ACTIVE": "Active",
+        "PAST_DUE": "Past due",
+        "CANCELED": "Canceled",
+        "INCOMPLETE": "Incomplete",
+        "TRIALING": "Trialing",
+        "EXPIRED": "Expired"
+      }
     },
     "noResults": "No customers found for these criteria"
   },
@@ -1222,6 +1240,8 @@
   "access": {
     "title": "Access management",
     "subtitle": "Manage access granted to your subscribers",
+    "error": "Error while loading access",
+    "loading": "Loading...",
     "empty": {
       "title": "No access granted",
       "description": "Access is automatically created when a new subscription starts."
@@ -1233,7 +1253,11 @@
     },
     "filters": {
       "allStatuses": "All statuses",
-      "searchPlaceholder": "Search..."
+      "searchPlaceholder": "Search...",
+      "active": "Active",
+      "suspended": "Suspended",
+      "revoked": "Revoked",
+      "expired": "Expired"
     },
     "table": {
       "subscriber": "Subscriber",
@@ -1241,6 +1265,7 @@
       "via": "Via",
       "status": "Status",
       "noName": "No name",
+      "actions": "Actions",
       "manage": "Manage"
     },
     "types": {
@@ -1256,7 +1281,8 @@
       "manual": "Manual revocation"
     },
     "manualAccess": "Manual access",
-    "noResults": "No access found for these criteria"
+    "noResults": "No access found for these criteria",
+    "manage": "Manage"
   },
 
   "payments": {
@@ -2755,7 +2781,9 @@
       },
       "discountValue": {
         "label": "Discount value",
-        "help": "Enter percentage (1-100) or fixed amount in cents"
+        "help": "Enter percentage (1-100) or fixed amount in cents",
+        "helpPercentage": "Enter percentage (1-100)",
+        "helpFixed": "Enter fixed amount in cents"
       },
       "currency": {
         "label": "Currency",
@@ -2788,6 +2816,7 @@
         "codeTooShort": "Code must be at least 3 characters",
         "codeTooLong": "Code must be at most 32 characters",
         "codeInvalid": "Code can only contain letters, numbers, hyphens and underscores",
+        "discountRequired": "Discount is required and must be greater than 0",
         "discountMin": "Discount must be at least 1",
         "discountMax": "Percentage discount cannot exceed 100",
         "currencyRequired": "Currency is required for fixed amount discounts"
