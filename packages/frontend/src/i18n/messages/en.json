@@ -2792,9 +2792,9 @@
       },
       "discountValue": {
         "label": "Discount value",
-        "help": "Enter percentage (1-100) or fixed amount in cents",
-        "helpPercentage": "Enter percentage (1-100)",
-        "helpFixed": "Enter fixed amount in cents"
+        "help": "Enter percentage (1-100) or fixed amount in euros (e.g. 20 or 20.22)",
+        "helpPercentage": "Enter a whole-number percentage (1-100)",
+        "helpFixed": "Enter a fixed amount in euros (e.g. 20 or 20.22)"
       },
       "currency": {
         "label": "Currency",
@@ -2828,6 +2828,8 @@
         "codeTooLong": "Code must be at most 32 characters",
         "codeInvalid": "Code can only contain letters, numbers, hyphens and underscores",
         "discountRequired": "Discount is required and must be greater than 0",
+        "discountFormat": "Invalid format. Example: 20 or 20.22",
+        "discountInteger": "Percentage must be a whole number",
         "discountMin": "Discount must be at least 1",
         "discountMax": "Percentage discount cannot exceed 100",
         "currencyRequired": "Currency is required for fixed amount discounts"

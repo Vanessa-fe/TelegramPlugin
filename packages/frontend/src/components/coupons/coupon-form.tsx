@@ -18,7 +18,7 @@ type FormData = {
   organizationId: string;
   code: string;
   type: CouponType;
-  discountValue: number;
+  discountValue: string;
   currency?: string;
   maxUses?: number;
   expiresAt?: string;
@@ -37,6 +37,26 @@ interface CouponFormProps {
 
 function toCouponExpiryIso(date: string): string {
   return new Date(`${date}T23:59:59.999Z`).toISOString();
+}
+
+function parseDiscountInput(value: string): number | null {
+  const normalized = value.trim().replace(/\s/g, "").replace(",", ".");
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    return null;
+  }
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatDiscountForInput(initialData?: Coupon): string {
+  if (!initialData) return "10";
+  if (initialData.type === CouponType.FIXED_AMOUNT) {
+    const euros = initialData.discountValue / 100;
+    return Number.isInteger(euros)
+      ? String(euros)
+      : euros.toString().replace(".", ",");
+  }
+  return String(initialData.discountValue);
 }
 
 export function CouponForm({
@@ -61,10 +81,7 @@ export function CouponForm({
           .regex(/^[A-Z0-9_-]+$/i, t("form.errors.codeInvalid"))
           .transform((v) => v.toUpperCase()),
         type: z.nativeEnum(CouponType),
-        discountValue: z.coerce
-          .number()
-          .int()
-          .positive(t("form.errors.discountRequired")),
+        discountValue: z.string().trim().min(1, t("form.errors.discountRequired")),
         currency: z.preprocess(
           (v) => (v === "" ? undefined : v),
           z.string().length(3).optional(),
@@ -78,7 +95,47 @@ export function CouponForm({
           z.string().optional(),
         ),
         planIds: z.array(z.string()).default([]),
-      }),
+      })
+        .superRefine((data, ctx) => {
+          const parsedDiscount = parseDiscountInput(data.discountValue);
+
+          if (parsedDiscount === null) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: t("form.errors.discountFormat"),
+              path: ["discountValue"],
+            });
+            return;
+          }
+
+          if (parsedDiscount <= 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: t("form.errors.discountRequired"),
+              path: ["discountValue"],
+            });
+            return;
+          }
+
+          if (data.type === CouponType.PERCENTAGE) {
+            if (!Number.isInteger(parsedDiscount)) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: t("form.errors.discountInteger"),
+                path: ["discountValue"],
+              });
+              return;
+            }
+
+            if (parsedDiscount > 100) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: t("form.errors.discountMax"),
+                path: ["discountValue"],
+              });
+            }
+          }
+        }),
     [t],
   );
 
@@ -104,7 +161,7 @@ export function CouponForm({
         "",
       code: initialData?.code ?? "",
       type: initialData?.type ?? CouponType.PERCENTAGE,
-      discountValue: initialData?.discountValue ?? 10,
+      discountValue: formatDiscountForInput(initialData),
       currency: initialData?.currency ?? "EUR",
       maxUses: initialData?.maxUses ?? undefined,
       expiresAt: initialData?.expiresAt
@@ -126,11 +183,21 @@ export function CouponForm({
   const showOrganizationSelect = !lockOrganization && !!organizations?.length;
 
   async function handleFormSubmit(data: FormData) {
+    const parsedDiscount = parseDiscountInput(data.discountValue);
+    if (parsedDiscount === null) {
+      return;
+    }
+
+    const discountValue =
+      data.type === CouponType.FIXED_AMOUNT
+        ? Math.round(parsedDiscount * 100)
+        : Math.round(parsedDiscount);
+
     const payload: CreateCouponDto = {
       organizationId: data.organizationId,
       code: data.code,
       type: data.type,
-      discountValue: data.discountValue,
+      discountValue,
       currency:
         data.type === CouponType.FIXED_AMOUNT ? data.currency : undefined,
       maxUses: data.maxUses || undefined,
@@ -226,17 +293,22 @@ export function CouponForm({
               <Label htmlFor="discountValue">
                 {t("form.discountValue.label")}
               </Label>
-              <div className="relative">
+              <div className="flex">
                 <Input
                   id="discountValue"
-                  type="number"
+                  type="text"
+                  inputMode={
+                    selectedType === CouponType.PERCENTAGE ? "numeric" : "decimal"
+                  }
                   {...register("discountValue")}
                   disabled={isSubmitting}
-                  min={1}
-                  max={selectedType === CouponType.PERCENTAGE ? 100 : undefined}
+                  placeholder={
+                    selectedType === CouponType.PERCENTAGE ? "20" : "20,22"
+                  }
+                  className="rounded-r-none border-r-0"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  {selectedType === CouponType.PERCENTAGE ? "%" : "cents"}
+                <span className="inline-flex h-10 items-center rounded-r-md border border-input bg-muted px-3 text-sm text-muted-foreground">
+                  {selectedType === CouponType.PERCENTAGE ? "%" : "€"}
                 </span>
               </div>
               {errors.discountValue && (
@@ -246,7 +318,7 @@ export function CouponForm({
               )}
               <p className="text-xs text-muted-foreground">
                 {selectedType === CouponType.PERCENTAGE
-                  ? t("form.discountValue.help")
+                  ? t("form.discountValue.helpPercentage")
                   : t("form.discountValue.helpFixed")}
               </p>
             </div>
