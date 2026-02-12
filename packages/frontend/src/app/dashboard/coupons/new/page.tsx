@@ -21,19 +21,32 @@ export default function NewCouponPage() {
   const { user } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [organizationCurrency, setOrganizationCurrency] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
+    const currentUser = user;
 
     async function loadData() {
       try {
         const [orgsData, plansData] = await Promise.all([
-          user?.role === UserRole.SUPERADMIN
+          currentUser.role === UserRole.SUPERADMIN
             ? organizationsApi.findAll()
             : Promise.resolve([]),
           plansApi.findAll(),
         ]);
+
+        if (
+          currentUser.role !== UserRole.SUPERADMIN &&
+          currentUser.organizationId
+        ) {
+          const organization = await organizationsApi.findOne(
+            currentUser.organizationId,
+          );
+          setOrganizationCurrency(organization.currency);
+        }
+
         setOrganizations(orgsData);
         setPlans(plansData.filter((p) => p.isActive));
       } catch (error) {
@@ -93,6 +106,7 @@ export default function NewCouponPage() {
         onSubmit={handleSubmit}
         organizations={organizations}
         organizationId={defaultOrganizationId}
+        organizationCurrency={organizationCurrency}
         lockOrganization={lockOrganization}
         plans={plans}
       />

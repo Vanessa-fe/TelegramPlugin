@@ -283,6 +283,16 @@
       "firstNamePlaceholder": "Marie",
       "lastName": "Nom",
       "lastNamePlaceholder": "Dupont",
+      "currency": "Devise de l'organisation",
+      "currencyHelp": "Cette devise sera utilisée par défaut pour vos offres et coupons.",
+      "currencyOptions": {
+        "EUR": "EUR - Euro",
+        "USD": "USD - Dollar americain",
+        "GBP": "GBP - Livre sterling",
+        "CAD": "CAD - Dollar canadien",
+        "AUD": "AUD - Dollar australien",
+        "CHF": "CHF - Franc suisse"
+      },
       "email": "Email",
       "emailPlaceholder": "ton@email.com",
       "password": "Mot de passe",
@@ -1392,6 +1402,7 @@
       "pricePlaceholder": "29.00",
       "currencyLabel": "Devise *",
       "currencyPlaceholder": "EUR",
+      "currencyLocked": "La devise est definie au niveau de l'organisation.",
 
       "trialLabel": "Période d'essai (jours)",
       "trialPlaceholder": "7",
@@ -2472,6 +2483,7 @@
         "name": "Nom",
         "slug": "Slug",
         "billingEmail": "Email de facturation",
+        "currency": "Devise",
         "saas": "SaaS",
         "stripe": "Stripe",
         "createdAt": "Créé le",
@@ -2504,6 +2516,7 @@
       "fields": {
         "slug": "Slug",
         "billingEmail": "Email de facturation",
+        "currency": "Devise",
         "saas": "Abonnement SaaS",
         "timezone": "Fuseau horaire",
         "stripeAccount": "Compte Stripe",
@@ -2538,6 +2551,7 @@
         "name": "Nom",
         "slug": "Slug",
         "billingEmail": "Email de facturation",
+        "currency": "Devise",
         "saasActive": "Abonnement SaaS actif",
         "timezone": "Fuseau horaire"
       },
@@ -2554,7 +2568,8 @@
         "nameRequired": "Le nom est requis",
         "slugRequired": "Le slug est requis",
         "slugInvalid": "Seules les lettres minuscules, chiffres et tirets sont autorisés",
-        "billingEmailInvalid": "Adresse email valide requise"
+        "billingEmailInvalid": "Adresse email valide requise",
+        "currencyInvalid": "Code devise invalide (3 lettres, ex: EUR)"
       }
     }
   },
@@ -2808,7 +2823,8 @@
       },
       "currency": {
         "label": "Devise",
-        "help": "Requise pour les réductions en montant fixe"
+        "help": "Requise pour les réductions en montant fixe",
+        "fixedFromOrganization": "La devise est definie au niveau de l'organisation."
       },
       "status": {
         "label": "Statut"

@@ -32,7 +32,12 @@ export const createCouponSchema = z
       .transform((v) => v.toUpperCase()),
     type: z.nativeEnum(CouponType),
     discountValue: z.number().int().positive(),
-    currency: z.string().length(3).optional(),
+    currency: z
+      .string()
+      .length(3)
+      .regex(/^[A-Za-z]{3}$/, 'Le code devise doit être au format ISO 4217')
+      .transform((value) => value.toUpperCase())
+      .optional(),
     maxUses: z.number().int().positive().optional(),
     expiresAt: z.preprocess(
       (value) => (value === '' ? undefined : value),
@@ -79,7 +84,12 @@ export const updateCouponSchema = z.object({
     .transform((v) => v.toUpperCase())
     .optional(),
   discountValue: z.number().int().positive().optional(),
-  currency: z.string().length(3).optional(),
+  currency: z
+    .string()
+    .length(3)
+    .regex(/^[A-Za-z]{3}$/, 'Le code devise doit être au format ISO 4217')
+    .transform((value) => value.toUpperCase())
+    .optional(),
   status: z.nativeEnum(CouponStatus).optional(),
   maxUses: z.number().int().positive().nullable().optional(),
   expiresAt: z.preprocess(

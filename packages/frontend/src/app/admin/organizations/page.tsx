@@ -71,6 +71,7 @@ export default function OrganizationsPage() {
               <TableHead>{t('table.name')}</TableHead>
               <TableHead>{t('table.slug')}</TableHead>
               <TableHead>{t('table.billingEmail')}</TableHead>
+              <TableHead>{t('table.currency')}</TableHead>
               <TableHead>{t('table.saas')}</TableHead>
               <TableHead>{t('table.stripe')}</TableHead>
               <TableHead>{t('table.createdAt')}</TableHead>
@@ -80,7 +81,7 @@ export default function OrganizationsPage() {
           <TableBody>
             {organizations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-gray-500">
+                <TableCell colSpan={8} className="text-center text-gray-500">
                   {t('table.empty')}
                 </TableCell>
               </TableRow>
@@ -90,6 +91,7 @@ export default function OrganizationsPage() {
                   <TableCell className="font-medium">{org.name}</TableCell>
                   <TableCell>{org.slug}</TableCell>
                   <TableCell>{org.billingEmail}</TableCell>
+                  <TableCell>{org.currency}</TableCell>
                   <TableCell>
                     {org.saasActive ? t('table.status.active') : t('table.status.inactive')}
                   </TableCell>

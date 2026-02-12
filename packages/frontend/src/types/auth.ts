@@ -25,6 +25,7 @@ export interface RegisterData {
   firstName?: string;
   lastName?: string;
   organizationId?: string;
+  currency?: string;
 }
 
 export interface UpdateProfileData {

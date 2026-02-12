@@ -102,9 +102,48 @@ describe('AuthService', () => {
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: { email: registerDto.email.toLowerCase() },
       });
+      expect(mockPrismaService.organization.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          billingEmail: registerDto.email.toLowerCase(),
+          currency: 'EUR',
+        }),
+      });
       expect(mockPrismaService.user.create).toHaveBeenCalled();
       expect(result.user.email).toBe(registerDto.email.toLowerCase());
       expect(result.accessToken).toBe('token');
+    });
+
+    it('should use the provided currency when creating organization', async () => {
+      const registerDto = {
+        email: 'us-creator@example.com',
+        password: 'Test1234!',
+        currency: 'USD',
+      };
+
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.user.create.mockResolvedValue({
+        id: '1',
+        email: registerDto.email.toLowerCase(),
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        isActive: true,
+        passwordHash: 'hashed',
+        firstName: null,
+        lastName: null,
+        lastLoginAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockJwtService.signAsync.mockResolvedValue('token');
+
+      await service.register(registerDto);
+
+      expect(mockPrismaService.organization.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          billingEmail: registerDto.email.toLowerCase(),
+          currency: 'USD',
+        }),
+      });
     });
 
     it('should throw ConflictException if email exists', async () => {

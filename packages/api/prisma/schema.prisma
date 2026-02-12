@@ -165,6 +165,7 @@ model Organization {
   slug            String   @unique
   pageSlug        String?  // Custom slug for public landing page (e.g., "vanessa" instead of "ferrand-vf-0dxwfh")
   billingEmail    String
+  currency        String   @default("EUR")
   stripeAccountId String?  @unique
   saasActive      Boolean  @default(false)
   timezone        String?  @default("UTC")

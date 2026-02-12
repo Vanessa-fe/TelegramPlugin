@@ -29,6 +29,10 @@ export class CouponsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateCouponDto): Promise<Coupon> {
+    const organizationCurrency = await this.getOrganizationCurrency(
+      data.organizationId,
+    );
+
     const existing = await this.prisma.coupon.findUnique({
       where: {
         organizationId_code: {
@@ -42,11 +46,24 @@ export class CouponsService {
       throw new BadRequestException('Un coupon avec ce code existe déjà');
     }
 
+    if (data.type === CouponType.FIXED_AMOUNT) {
+      if (data.currency !== organizationCurrency) {
+        throw new BadRequestException(
+          `La devise du coupon doit correspondre à celle de l'organisation (${organizationCurrency})`,
+        );
+      }
+    } else if (data.currency) {
+      throw new BadRequestException(
+        'La devise doit être vide pour un coupon en pourcentage',
+      );
+    }
+
     const payload: Prisma.CouponCreateInput = {
       code: data.code,
       type: data.type,
       discountValue: data.discountValue,
-      currency: data.currency,
+      currency:
+        data.type === CouponType.FIXED_AMOUNT ? organizationCurrency : undefined,
       maxUses: data.maxUses,
       expiresAt: data.expiresAt,
       planIds: data.planIds,
@@ -85,6 +102,9 @@ export class CouponsService {
 
   async update(id: string, data: UpdateCouponDto): Promise<Coupon> {
     const coupon = await this.findOne(id);
+    const organizationCurrency = await this.getOrganizationCurrency(
+      coupon.organizationId,
+    );
 
     if (data.code && data.code !== coupon.code) {
       const existing = await this.prisma.coupon.findUnique({
@@ -99,6 +119,20 @@ export class CouponsService {
       if (existing) {
         throw new BadRequestException('Un coupon avec ce code existe déjà');
       }
+    }
+
+    if (coupon.type === CouponType.FIXED_AMOUNT && data.currency) {
+      if (data.currency !== organizationCurrency) {
+        throw new BadRequestException(
+          `La devise du coupon doit correspondre à celle de l'organisation (${organizationCurrency})`,
+        );
+      }
+    }
+
+    if (coupon.type === CouponType.PERCENTAGE && data.currency !== undefined) {
+      throw new BadRequestException(
+        'La devise ne peut pas être modifiée pour un coupon en pourcentage',
+      );
     }
 
     const payload: Prisma.CouponUpdateInput = {
@@ -199,5 +233,18 @@ export class CouponsService {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  private async getOrganizationCurrency(organizationId: string): Promise<string> {
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { currency: true },
+    });
+
+    if (!organization) {
+      throw new BadRequestException('Organisation introuvable');
+    }
+
+    return organization.currency;
   }
 }

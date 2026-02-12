@@ -3,6 +3,7 @@ export interface Organization {
   name: string;
   slug: string;
   billingEmail: string;
+  currency: string;
   stripeAccountId?: string | null;
   saasActive?: boolean;
   timezone?: string | null;
@@ -15,6 +16,7 @@ export interface CreateOrganizationDto {
   name: string;
   slug: string;
   billingEmail: string;
+  currency?: string;
   saasActive?: boolean;
   timezone?: string;
   metadata?: Record<string, unknown>;
@@ -24,6 +26,7 @@ export interface UpdateOrganizationDto {
   name?: string;
   slug?: string;
   billingEmail?: string;
+  currency?: string;
   saasActive?: boolean;
   timezone?: string;
   metadata?: Record<string, unknown>;

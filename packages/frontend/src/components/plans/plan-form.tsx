@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { z } from "zod";
@@ -34,10 +34,16 @@ type PlanFormData = z.infer<ReturnType<typeof makePlanFormSchema>>;
 interface PlanFormProps {
   productId: string;
   plan?: Plan;
+  organizationCurrency?: string;
   onSubmit: (data: CreatePlanDto) => void | Promise<void>;
 }
 
-export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
+export function PlanForm({
+  productId,
+  plan,
+  organizationCurrency,
+  onSubmit,
+}: PlanFormProps) {
   const t = useTranslations("planForm");
 
   const planFormSchema = useMemo(() => makePlanFormSchema(t), [t]);
@@ -74,13 +80,19 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
           isActive: plan.isActive,
         }
       : {
-          currency: "EUR",
+          currency: organizationCurrency ?? "EUR",
           interval: PlanInterval.MONTH,
           isActive: true,
         },
   });
 
   const selectedInterval = watch("interval");
+
+  useEffect(() => {
+    if (organizationCurrency) {
+      setValue("currency", organizationCurrency);
+    }
+  }, [organizationCurrency, setValue]);
 
   async function onSubmitForm(data: PlanFormData) {
     const payload: CreatePlanDto = {
@@ -89,7 +101,7 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
       description: data.description || undefined,
       interval: data.interval,
       priceCents: Math.round(data.price * 100),
-      currency: data.currency.toUpperCase(),
+      currency: (organizationCurrency ?? data.currency).toUpperCase(),
       trialPeriodDays: data.trialPeriodDays || undefined,
       accessDurationDays: data.accessDurationDays || undefined,
       isActive: data.isActive ?? true,
@@ -197,10 +209,17 @@ export function PlanForm({ productId, plan, onSubmit }: PlanFormProps) {
               {...register("currency")}
               placeholder={t("fields.currencyPlaceholder")}
               maxLength={3}
+              readOnly={Boolean(organizationCurrency)}
+              className={organizationCurrency ? "bg-muted" : ""}
             />
             {errors.currency && (
               <p className="mt-1 text-sm text-red-600">
                 {errors.currency.message}
+              </p>
+            )}
+            {organizationCurrency && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("fields.currencyLocked")}
               </p>
             )}
           </div>

@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { Plan } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -54,7 +58,21 @@ export class PlansService {
     });
   }
 
-  create(data: CreatePlanDto): Promise<Plan> {
+  async create(data: CreatePlanDto): Promise<Plan> {
+    const organizationCurrency = await this.getProductOrganizationCurrency(
+      data.productId,
+    );
+
+    if (!organizationCurrency) {
+      throw new BadRequestException('Organisation introuvable pour ce produit');
+    }
+
+    if (data.currency !== organizationCurrency) {
+      throw new BadRequestException(
+        `La devise doit correspondre à celle de l'organisation (${organizationCurrency})`,
+      );
+    }
+
     const payload: Prisma.PlanCreateInput = {
       name: data.name.trim(),
       description: data.description,
@@ -73,7 +91,35 @@ export class PlansService {
     return this.prisma.plan.create({ data: payload });
   }
 
-  update(id: string, data: UpdatePlanDto): Promise<Plan> {
+  async update(id: string, data: UpdatePlanDto): Promise<Plan> {
+    const existingPlan = await this.prisma.plan.findUnique({
+      where: { id },
+      select: {
+        productId: true,
+        currency: true,
+      },
+    });
+
+    if (!existingPlan) {
+      throw new NotFoundException('Plan introuvable');
+    }
+
+    const targetProductId = data.productId ?? existingPlan.productId;
+    const targetCurrency = data.currency ?? existingPlan.currency;
+    const organizationCurrency = await this.getProductOrganizationCurrency(
+      targetProductId,
+    );
+
+    if (!organizationCurrency) {
+      throw new BadRequestException('Organisation introuvable pour ce produit');
+    }
+
+    if (targetCurrency !== organizationCurrency) {
+      throw new BadRequestException(
+        `La devise doit correspondre à celle de l'organisation (${organizationCurrency})`,
+      );
+    }
+
     const payload: Prisma.PlanUpdateInput = {
       ...(data.productId && {
         product: { connect: { id: data.productId } },
@@ -106,5 +152,20 @@ export class PlansService {
     });
 
     return product?.organizationId ?? null;
+  }
+
+  private async getProductOrganizationCurrency(
+    productId: string,
+  ): Promise<string | null> {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: {
+        organization: {
+          select: { currency: true },
+        },
+      },
+    });
+
+    return product?.organization.currency ?? null;
   }
 }

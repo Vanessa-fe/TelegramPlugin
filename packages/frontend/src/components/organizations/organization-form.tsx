@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { CreateOrganizationDto, Organization } from '@/types/organization';
+import { ORG_CURRENCY_OPTIONS } from '@/lib/currencies';
 
 interface OrganizationFormProps {
   organization?: Organization;
@@ -28,6 +29,11 @@ export function OrganizationForm({
       .max(50)
       .regex(/^[a-z0-9-]+$/, t('validation.slugInvalid')),
     billingEmail: z.string().email(t('validation.billingEmailInvalid')),
+    currency: z
+      .string()
+      .length(3, t('validation.currencyInvalid'))
+      .regex(/^[A-Za-z]{3}$/, t('validation.currencyInvalid'))
+      .transform((value) => value.toUpperCase()),
     saasActive: z.boolean().optional(),
     timezone: z.string().optional(),
   });
@@ -45,6 +51,7 @@ export function OrganizationForm({
           name: organization.name,
           slug: organization.slug,
           billingEmail: organization.billingEmail,
+          currency: organization.currency,
           saasActive: organization.saasActive ?? false,
           timezone: organization.timezone ?? 'UTC',
         }
@@ -52,6 +59,7 @@ export function OrganizationForm({
           name: '',
           slug: '',
           billingEmail: '',
+          currency: 'EUR',
           saasActive: false,
           timezone: 'UTC',
         },
@@ -98,6 +106,27 @@ export function OrganizationForm({
             {errors.billingEmail && (
               <p className="text-sm text-destructive">
                 {errors.billingEmail.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">{t('fields.currency')}</Label>
+            <select
+              id="currency"
+              {...register('currency')}
+              disabled={isSubmitting}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {ORG_CURRENCY_OPTIONS.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
+            {errors.currency && (
+              <p className="text-sm text-destructive">
+                {errors.currency.message}
               </p>
             )}
           </div>

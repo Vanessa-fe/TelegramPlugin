@@ -13,6 +13,7 @@ import { OAuthButtons } from '@/components/auth/oauth-buttons';
 import { OAuthDivider } from '@/components/auth/oauth-divider';
 import { PasswordStrengthIndicator } from '@/components/auth/password-strength';
 import { CheckCircle2 } from 'lucide-react';
+import { ORG_CURRENCY_OPTIONS } from '@/lib/currencies';
 
 type ErrorMessage =
   | string
@@ -91,6 +92,7 @@ export default function RegisterPage() {
     password: '',
     firstName: '',
     lastName: '',
+    currency: 'EUR',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -104,7 +106,9 @@ export default function RegisterPage() {
     }
   }, [searchParams, tOAuth]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -122,6 +126,7 @@ export default function RegisterPage() {
         password: formData.password,
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
+        currency: formData.currency,
       });
       toast.success(t('success'));
       router.push('/dashboard');
@@ -274,6 +279,27 @@ export default function RegisterPage() {
                   </button>
                 </div>
                 <PasswordStrengthIndicator password={formData.password} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currency" className="text-text-primary">
+                  {t('currency')}
+                </Label>
+                <select
+                  id="currency"
+                  name="currency"
+                  value={formData.currency}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  className="h-12 w-full rounded-md border border-border-custom bg-white px-3 text-sm focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600/30"
+                >
+                  {ORG_CURRENCY_OPTIONS.map((currency) => (
+                    <option key={currency} value={currency}>
+                      {t(`currencyOptions.${currency}`)}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-text-secondary">{t('currencyHelp')}</p>
               </div>
 
               <Button

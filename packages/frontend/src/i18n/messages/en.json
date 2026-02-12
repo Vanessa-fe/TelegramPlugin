@@ -283,6 +283,16 @@
       "firstNamePlaceholder": "Jane",
       "lastName": "Last name",
       "lastNamePlaceholder": "Doe",
+      "currency": "Organization currency",
+      "currencyHelp": "This currency will be used by default for your plans and coupons.",
+      "currencyOptions": {
+        "EUR": "EUR - Euro",
+        "USD": "USD - US Dollar",
+        "GBP": "GBP - British Pound",
+        "CAD": "CAD - Canadian Dollar",
+        "AUD": "AUD - Australian Dollar",
+        "CHF": "CHF - Swiss Franc"
+      },
       "email": "Email",
       "emailPlaceholder": "you@example.com",
       "password": "Password",
@@ -1391,6 +1401,7 @@
       "pricePlaceholder": "29.00",
       "currencyLabel": "Currency *",
       "currencyPlaceholder": "EUR",
+      "currencyLocked": "Currency is fixed at the organization level.",
 
       "trialLabel": "Trial period (days)",
       "trialPlaceholder": "7",
@@ -2470,6 +2481,7 @@
         "name": "Name",
         "slug": "Slug",
         "billingEmail": "Billing email",
+        "currency": "Currency",
         "saas": "SaaS",
         "stripe": "Stripe",
         "createdAt": "Created on",
@@ -2502,6 +2514,7 @@
       "fields": {
         "slug": "Slug",
         "billingEmail": "Billing email",
+        "currency": "Currency",
         "saas": "SaaS subscription",
         "timezone": "Timezone",
         "stripeAccount": "Stripe account",
@@ -2536,6 +2549,7 @@
         "name": "Name",
         "slug": "Slug",
         "billingEmail": "Billing email",
+        "currency": "Currency",
         "saasActive": "Active SaaS subscription",
         "timezone": "Timezone"
       },
@@ -2552,7 +2566,8 @@
         "nameRequired": "Name is required",
         "slugRequired": "Slug is required",
         "slugInvalid": "Only lowercase letters, numbers, and hyphens are allowed",
-        "billingEmailInvalid": "Valid email required"
+        "billingEmailInvalid": "Valid email required",
+        "currencyInvalid": "Invalid currency code (3 letters, e.g. EUR)"
       }
     }
   },
@@ -2806,7 +2821,8 @@
       },
       "currency": {
         "label": "Currency",
-        "help": "Required for fixed amount discounts"
+        "help": "Required for fixed amount discounts",
+        "fixedFromOrganization": "Currency is fixed at the organization level."
       },
       "status": {
         "label": "Status"

@@ -87,6 +87,12 @@ export default function OrganizationDetailsPage() {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">
+              {t('fields.currency')}
+            </p>
+            <p className="mt-1">{organization.currency}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">
               {t('fields.saas')}
             </p>
             <p className="mt-1">

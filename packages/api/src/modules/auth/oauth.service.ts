@@ -92,6 +92,7 @@ export class OAuthService {
             name: organizationName,
             slug: organizationSlug,
             billingEmail: email,
+            currency: 'EUR',
           },
         },
         oauthAccounts: {
@@ -225,6 +226,7 @@ export class OAuthService {
         name: organizationName,
         slug: organizationSlug,
         billingEmail: email,
+        currency: 'EUR',
       },
     });
 

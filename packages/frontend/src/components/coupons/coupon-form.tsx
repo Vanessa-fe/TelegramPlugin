@@ -29,6 +29,7 @@ interface CouponFormProps {
   onSubmit: (data: CreateCouponDto) => Promise<void>;
   organizations?: Organization[];
   organizationId?: string;
+  organizationCurrency?: string;
   lockOrganization?: boolean;
   plans?: Plan[];
   initialData?: Coupon;
@@ -63,6 +64,7 @@ export function CouponForm({
   onSubmit,
   organizations,
   organizationId,
+  organizationCurrency,
   lockOrganization = false,
   plans = [],
   initialData,
@@ -162,7 +164,7 @@ export function CouponForm({
       code: initialData?.code ?? "",
       type: initialData?.type ?? CouponType.PERCENTAGE,
       discountValue: formatDiscountForInput(initialData),
-      currency: initialData?.currency ?? "EUR",
+      currency: initialData?.currency ?? organizationCurrency ?? "EUR",
       maxUses: initialData?.maxUses ?? undefined,
       expiresAt: initialData?.expiresAt
         ? new Date(initialData.expiresAt).toISOString().split("T")[0]
@@ -172,6 +174,12 @@ export function CouponForm({
   });
 
   const selectedType = watch("type");
+  const selectedOrganizationId = watch("organizationId");
+  const selectedOrganizationCurrency = organizations?.find(
+    (org) => org.id === selectedOrganizationId,
+  )?.currency;
+  const resolvedOrganizationCurrency =
+    selectedOrganizationCurrency ?? organizationCurrency;
 
   useEffect(() => {
     const nextOrganizationId = organizationId ?? organizations?.[0]?.id;
@@ -179,6 +187,12 @@ export function CouponForm({
       setValue("organizationId", nextOrganizationId);
     }
   }, [organizationId, organizations, setValue]);
+
+  useEffect(() => {
+    if (resolvedOrganizationCurrency) {
+      setValue("currency", resolvedOrganizationCurrency);
+    }
+  }, [resolvedOrganizationCurrency, setValue]);
 
   const showOrganizationSelect = !lockOrganization && !!organizations?.length;
 
@@ -199,7 +213,9 @@ export function CouponForm({
       type: data.type,
       discountValue,
       currency:
-        data.type === CouponType.FIXED_AMOUNT ? data.currency : undefined,
+        data.type === CouponType.FIXED_AMOUNT
+          ? (resolvedOrganizationCurrency ?? data.currency)
+          : undefined,
       maxUses: data.maxUses || undefined,
       expiresAt: data.expiresAt ? toCouponExpiryIso(data.expiresAt) : undefined,
       planIds: data.planIds,
@@ -330,14 +346,23 @@ export function CouponForm({
                 <Input
                   id="currency"
                   {...register("currency")}
+                  readOnly={Boolean(resolvedOrganizationCurrency)}
                   disabled={isSubmitting}
-                  placeholder="EUR"
+                  placeholder={resolvedOrganizationCurrency ?? "EUR"}
                   maxLength={3}
-                  className="uppercase"
+                  className={cn(
+                    "uppercase",
+                    resolvedOrganizationCurrency ? "bg-muted" : "",
+                  )}
                 />
                 {errors.currency && (
                   <p className="text-sm text-destructive">
                     {errors.currency.message as string}
+                  </p>
+                )}
+                {resolvedOrganizationCurrency && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("form.currency.fixedFromOrganization")}
                   </p>
                 )}
               </div>

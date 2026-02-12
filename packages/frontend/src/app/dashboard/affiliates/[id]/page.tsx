@@ -8,7 +8,7 @@ import type {
   AffiliateReferral,
   AffiliateStatus,
 } from "@/types/affiliate";
-import { ArrowLeft, Edit, Ban, Users, DollarSign, TrendingUp, Clock } from "lucide-react";
+import { ArrowLeft, Edit, Ban, Users, DollarSign, TrendingUp, Clock, Coins } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -125,7 +125,7 @@ export default function AffiliateDetailPage() {
         <div className="flex items-center gap-2">
           <Link href={`/dashboard/affiliates/${affiliate.id}/payouts`}>
             <Button variant="outline">
-              <DollarSign className="h-4 w-4 mr-2" />
+              <Coins className="h-4 w-4 mr-2" />
               {t("detail.payouts")}
             </Button>
           </Link>

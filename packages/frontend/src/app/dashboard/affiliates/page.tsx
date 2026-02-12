@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { affiliatesApi } from "@/lib/api/affiliates";
 import type { Affiliate, AffiliateStatus } from "@/types/affiliate";
-import { MoreHorizontal, Plus, Users, DollarSign } from "lucide-react";
+import { MoreHorizontal, Plus, Users, Coins } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -199,7 +199,7 @@ export default function AffiliatesPage() {
                           size="sm"
                           className="border-border-custom hover:bg-purple-50 hover:text-purple-600 hover:border-purple-200"
                         >
-                          <DollarSign className="mr-2 h-4 w-4" />
+                          <Coins className="mr-2 h-4 w-4" />
                           {t("table.payouts")}
                         </Button>
                       </Link>

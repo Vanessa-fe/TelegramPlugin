@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
 const metadataSchema = z.record(z.any()).optional();
+const currencySchema = z
+  .string()
+  .length(3)
+  .regex(/^[A-Za-z]{3}$/, 'Le code devise doit être au format ISO 4217')
+  .transform((value) => value.toUpperCase());
 
 export const createOrganizationSchema = z.object({
   name: z.string().min(1),
@@ -14,6 +19,7 @@ export const createOrganizationSchema = z.object({
     })
     .transform((value) => value.toLowerCase()),
   billingEmail: z.string().email(),
+  currency: currencySchema.optional(),
   saasActive: z.boolean().optional(),
   timezone: z.string().min(1).optional(),
   metadata: metadataSchema,

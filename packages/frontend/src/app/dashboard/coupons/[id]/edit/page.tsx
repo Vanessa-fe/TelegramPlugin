@@ -22,6 +22,7 @@ export default function EditCouponPage() {
   const [coupon, setCoupon] = useState<Awaited<ReturnType<typeof couponsApi.findOne>> | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [organizationCurrency, setOrganizationCurrency] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +39,13 @@ export default function EditCouponPage() {
             ? organizationsApi.findAll()
             : Promise.resolve([]),
         ]);
+
+        if (currentUser.role !== UserRole.SUPERADMIN) {
+          const organization = await organizationsApi.findOne(
+            couponData.organizationId,
+          );
+          setOrganizationCurrency(organization.currency);
+        }
 
         setCoupon(couponData);
         setPlans(plansData);
@@ -108,6 +116,7 @@ export default function EditCouponPage() {
         onSubmit={handleSubmit}
         organizations={organizations}
         organizationId={defaultOrganizationId}
+        organizationCurrency={organizationCurrency}
         lockOrganization={lockOrganization}
         plans={plans}
         initialData={coupon}

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api/products';
 import { plansApi } from '@/lib/api/plans';
+import { organizationsApi } from '@/lib/api/organizations';
 import { PlanForm } from '@/components/plans/plan-form';
 import type { Product } from '@/types/product';
 import type { CreatePlanDto } from '@/types/plan';
@@ -20,6 +21,7 @@ export default function NewPlanPage() {
   const t = useTranslations('plans.newPage');
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [organizationCurrency, setOrganizationCurrency] = useState<string>('EUR');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -29,8 +31,13 @@ export default function NewPlanPage() {
 
   async function loadProduct() {
     try {
-      const data = await productsApi.findOne(productId);
-      setProduct(data);
+      const productData = await productsApi.findOne(productId);
+      setProduct(productData);
+
+      const organization = await organizationsApi.findOne(
+        productData.organizationId,
+      );
+      setOrganizationCurrency(organization.currency);
     } catch (error) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       toast.error(
@@ -95,6 +102,7 @@ export default function NewPlanPage() {
       </div>
       <PlanForm
         productId={productId}
+        organizationCurrency={organizationCurrency}
         onSubmit={handleSubmit}
       />
     </div>

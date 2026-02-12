@@ -55,6 +55,7 @@ export class AuthService {
     // Auto-create organization if not provided
     let organizationId = data.organizationId;
     if (!organizationId) {
+      const organizationCurrency = data.currency ?? 'EUR';
       const slug = await this.generateOrgSlug(
         normalizedEmail,
         data.firstName,
@@ -70,6 +71,7 @@ export class AuthService {
           name: orgName,
           slug,
           billingEmail: normalizedEmail,
+          currency: organizationCurrency,
         },
       });
       organizationId = org.id;
@@ -172,6 +174,7 @@ export class AuthService {
         name: orgName,
         slug,
         billingEmail: user.email,
+        currency: 'EUR',
       },
     });
 

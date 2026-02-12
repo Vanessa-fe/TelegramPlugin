@@ -34,6 +34,12 @@ export const registerSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
   organizationId: z.string().uuid().optional(),
+  currency: z
+    .string()
+    .length(3)
+    .regex(/^[A-Za-z]{3}$/, 'Le code devise doit être au format ISO 4217')
+    .transform((value) => value.toUpperCase())
+    .optional(),
 });
 
 export type RegisterDto = z.infer<typeof registerSchema>;
