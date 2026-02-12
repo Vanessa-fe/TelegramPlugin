@@ -7,7 +7,7 @@ import { ChannelProvider } from "@/types/channel";
 import { UserRole } from "@/types/auth";
 import {
   CreditCard,
-  DollarSign,
+  Coins,
   FileText,
   Globe,
   Hash,
@@ -36,7 +36,7 @@ const navigation = [
   {
     key: "payments",
     href: "/dashboard/payments",
-    icon: DollarSign,
+    icon: Coins,
     roles: [UserRole.SUPERADMIN, UserRole.SUPPORT, UserRole.ORG_ADMIN],
   },
   { key: "channels", href: "/dashboard/channels", icon: Hash },

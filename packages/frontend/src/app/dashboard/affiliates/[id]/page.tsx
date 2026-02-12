@@ -8,7 +8,7 @@ import type {
   AffiliateReferral,
   AffiliateStatus,
 } from "@/types/affiliate";
-import { ArrowLeft, Edit, Ban, Users, DollarSign, TrendingUp, Clock, Coins } from "lucide-react";
+import { ArrowLeft, Edit, Ban, Users, TrendingUp, Clock, Coins } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -173,7 +173,7 @@ export default function AffiliateDetailPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-text-secondary flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+              <Coins className="h-4 w-4" />
               {t("detail.stats.totalEarnings")}
             </CardTitle>
           </CardHeader>

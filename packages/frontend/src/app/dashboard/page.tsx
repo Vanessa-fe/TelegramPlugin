@@ -1,8 +1,8 @@
 import {
   ArrowDownRight,
   ArrowUpRight,
+  Coins,
   CreditCard,
-  DollarSign,
   FileText,
   Hash,
   Megaphone,
@@ -26,14 +26,14 @@ export default async function DashboardPage() {
     value: string;
     change: string;
     changeType: ChangeType;
-    icon: typeof DollarSign;
+    icon: typeof Coins;
   }> = [
     {
       name: t("stats.revenue"),
       value: "0 €",
       change: "+0%",
       changeType: "neutral",
-      icon: DollarSign,
+      icon: Coins,
     },
     {
       name: t("stats.activeSubscribers"),
