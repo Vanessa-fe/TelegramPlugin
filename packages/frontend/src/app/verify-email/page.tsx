@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -17,16 +17,12 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { refreshProfile } = useAuth();
+  const token = useMemo(() => searchParams.get('token'), [searchParams]);
 
   const [status, setStatus] = useState<VerificationStatus>('idle');
   const [error, setError] = useState('');
-  const hasAttempted = useRef(false);
 
   useEffect(() => {
-    if (hasAttempted.current) return;
-    hasAttempted.current = true;
-
-    const token = searchParams.get('token');
     if (!token) {
       setStatus('error');
       setError(t('missingToken'));
@@ -65,7 +61,7 @@ export default function VerifyEmailPage() {
     return () => {
       cancelled = true;
     };
-  }, [refreshProfile, searchParams, t]);
+  }, [refreshProfile, token, t]);
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">

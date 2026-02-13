@@ -12,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { OAuthButtons } from '@/components/auth/oauth-buttons';
 import { OAuthDivider } from '@/components/auth/oauth-divider';
 import { PasswordStrengthIndicator } from '@/components/auth/password-strength';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Copy } from 'lucide-react';
 import { ORG_CURRENCY_OPTIONS } from '@/lib/currencies';
 import { authApi } from '@/lib/api/auth';
 
@@ -173,6 +173,20 @@ export default function RegisterPage() {
     toast.success(t('suggestedApplied'));
   }
 
+  async function handleCopyPassword() {
+    if (!formData.password) {
+      toast.error(t('copyError'));
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formData.password);
+      toast.success(t('copySuccess'));
+    } catch {
+      toast.error(t('copyError'));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
@@ -286,14 +300,25 @@ export default function RegisterPage() {
                       <span className="text-xs text-text-secondary">
                         {t('passwordHint')}
                       </span>
-                      <button
-                        type="button"
-                        onClick={handleUseSuggestedPassword}
-                        className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {t('useSuggested')}
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={handleUseSuggestedPassword}
+                          className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          {t('useSuggested')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCopyPassword}
+                          className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                          aria-label={t('copyPassword')}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          {t('copyPassword')}
+                        </button>
+                      </div>
                     </div>
                     <PasswordStrengthIndicator password={formData.password} />
                   </div>
