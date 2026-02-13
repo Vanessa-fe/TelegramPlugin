@@ -154,16 +154,17 @@ export default function AffiliateDetailPage() {
     return products.find((product) => product.id === selectedProductId) ?? null;
   }, [products, selectedProductId]);
 
-  const selectedPlan = useMemo(() => {
-    if (!selectedProductId) return null;
+  const activeProductPlans = useMemo(() => {
+    if (!selectedProductId) return [];
 
-    return (
-      plans
-        .filter((plan) => plan.productId === selectedProductId && plan.isActive)
-        .sort((firstPlan, secondPlan) => firstPlan.priceCents - secondPlan.priceCents)[0] ??
-      null
-    );
+    return plans
+      .filter((plan) => plan.productId === selectedProductId && plan.isActive)
+      .sort((firstPlan, secondPlan) => firstPlan.priceCents - secondPlan.priceCents);
   }, [plans, selectedProductId]);
+
+  const selectedPlan = useMemo(() => {
+    return activeProductPlans[0] ?? null;
+  }, [activeProductPlans]);
 
   const affiliateShareLink = useMemo(() => {
     if (!affiliate || !selectedProduct) return "";
@@ -180,12 +181,12 @@ export default function AffiliateDetailPage() {
 
     const params = new URLSearchParams();
     params.set("ref", affiliate.referralCode);
-    if (selectedPlan) {
+    if (selectedPlan && activeProductPlans.length > 1) {
       params.set("plan", selectedPlan.id);
     }
 
     return `${baseUrl}?${params.toString()}`;
-  }, [affiliate, organizationSlug, selectedPlan, selectedProduct]);
+  }, [activeProductPlans.length, affiliate, organizationSlug, selectedPlan, selectedProduct]);
 
   async function handleCopyShareLink() {
     if (!affiliateShareLink) return;
