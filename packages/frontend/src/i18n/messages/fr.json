@@ -751,12 +751,19 @@
     "pastDue": {
       "message": "⚠ Le paiement a échoué. L'abonné sera relancé automatiquement."
     },
+    "incomplete": {
+      "message": "Le paiement initial n'a pas encore été confirmé. L'abonné doit finaliser son paiement."
+    },
     "canceled": {
       "message": "Annulé le {date}"
     },
     "access": {
       "message": "Les accès liés à cet abonnement sont gérés automatiquement.",
-      "viewAll": "Voir tous les accès"
+      "viewAll": "Voir tous les accès",
+      "empty": "Aucun accès accordé pour cet abonnement",
+      "grantedOn": "Accordé le {date}",
+      "active": "Actif",
+      "inactive": "Inactif"
     }
   },
   "channels": {

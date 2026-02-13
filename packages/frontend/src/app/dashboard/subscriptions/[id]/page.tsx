@@ -333,7 +333,7 @@ export default function SubscriptionDetailPage() {
           {subscription.status === "INCOMPLETE" && (
             <div className="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-3">
               <p className="text-sm text-yellow-700">
-                Le paiement initial n&apos;a pas encore été confirmé. L&apos;abonné doit finaliser son paiement.
+                {t("incomplete.message")}
               </p>
             </div>
           )}
@@ -356,7 +356,7 @@ export default function SubscriptionDetailPage() {
         <CardContent>
           {entitlements.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">
-              Aucun accès accordé pour cet abonnement
+              {t("access.empty")}
             </p>
           ) : (
             <div className="space-y-2">
@@ -378,7 +378,9 @@ export default function SubscriptionDetailPage() {
                         {entitlement.entitlementKey}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Accordé le {formatDate(entitlement.grantedAt)}
+                        {t("access.grantedOn", {
+                          date: formatDate(entitlement.grantedAt),
+                        })}
                       </p>
                     </div>
                     <span
@@ -388,7 +390,7 @@ export default function SubscriptionDetailPage() {
                           : "bg-gray-100 text-gray-700"
                       }`}
                     >
-                      {isActive ? "Actif" : "Inactif"}
+                      {isActive ? t("access.active") : t("access.inactive")}
                     </span>
                   </div>
                 );

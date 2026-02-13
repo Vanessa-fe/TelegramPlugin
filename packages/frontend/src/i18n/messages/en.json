@@ -751,12 +751,19 @@
     "pastDue": {
       "message": "⚠ Payment failed. The subscriber will be followed up automatically."
     },
+    "incomplete": {
+      "message": "The initial payment is not confirmed yet. The subscriber must complete payment."
+    },
     "canceled": {
       "message": "Canceled on {date}"
     },
     "access": {
       "message": "Access linked to this subscription is managed automatically.",
-      "viewAll": "View all access"
+      "viewAll": "View all access",
+      "empty": "No access granted for this subscription",
+      "grantedOn": "Granted on {date}",
+      "active": "Active",
+      "inactive": "Inactive"
     }
   },
   "channels": {
