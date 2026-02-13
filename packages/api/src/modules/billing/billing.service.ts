@@ -165,7 +165,20 @@ export class BillingService {
       include: {
         product: {
           include: {
-            organization: true,
+            organization: {
+              include: {
+                platformSubscription: {
+                  include: {
+                    platformPlan: {
+                      select: {
+                        name: true,
+                        features: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -364,6 +377,12 @@ export class BillingService {
     const finalPriceCents = validatedCoupon
       ? Math.max(0, originalPriceCents - validatedCoupon.discountCents)
       : originalPriceCents;
+    const platformPlanName =
+      organization.platformSubscription?.platformPlan?.name ?? null;
+    const platformFeePercent = this.resolvePlatformFeePercent(
+      platformPlanName,
+      organization.platformSubscription?.platformPlan?.features ?? null,
+    );
 
     const quantity = payload.quantity ?? 1;
     const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
@@ -399,6 +418,8 @@ export class BillingService {
       planId: plan.id,
       customerId: storedCustomer.id,
       originalPriceCents: String(originalPriceCents),
+      platformPlanName: platformPlanName ?? 'unknown',
+      platformFeePercent: String(platformFeePercent),
     };
 
     if (validatedCoupon) {
@@ -429,6 +450,14 @@ export class BillingService {
         {
           metadata,
         };
+      const subtotalCents = finalPriceCents * quantity;
+      const applicationFeeAmount = this.calculatePlatformFeeAmount(
+        subtotalCents,
+        platformFeePercent,
+      );
+      if (applicationFeeAmount > 0) {
+        paymentIntentData.application_fee_amount = applicationFeeAmount;
+      }
       sessionParams.payment_intent_data = paymentIntentData;
     } else {
       const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData =
@@ -437,6 +466,9 @@ export class BillingService {
         };
       if (plan.trialPeriodDays) {
         subscriptionData.trial_period_days = plan.trialPeriodDays;
+      }
+      if (platformFeePercent > 0) {
+        subscriptionData.application_fee_percent = platformFeePercent;
       }
       sessionParams.subscription_data = subscriptionData;
     }
@@ -458,6 +490,62 @@ export class BillingService {
     }
 
     return { url: session.url, subscriptionId: subscription.id };
+  }
+
+  private resolvePlatformFeePercent(
+    planName: string | null,
+    features: Prisma.JsonValue | null,
+  ): number {
+    const fromFeatures = this.readTakeRatePercent(features);
+    if (fromFeatures !== null) {
+      return fromFeatures;
+    }
+
+    switch (planName) {
+      case 'starter':
+        return 6;
+      case 'growth':
+        return 3.5;
+      case 'pro':
+        return 1.5;
+      case 'grandfathered':
+        return 0;
+      default:
+        return 0;
+    }
+  }
+
+  private readTakeRatePercent(features: Prisma.JsonValue | null): number | null {
+    if (!features || typeof features !== 'object' || Array.isArray(features)) {
+      return null;
+    }
+
+    const raw = (
+      features as Record<string, unknown>
+    ).takeRatePercent;
+
+    if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0) {
+      return raw;
+    }
+
+    if (typeof raw === 'string') {
+      const parsed = Number.parseFloat(raw);
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  private calculatePlatformFeeAmount(
+    subtotalCents: number,
+    feePercent: number,
+  ): number {
+    if (subtotalCents <= 0 || feePercent <= 0) {
+      return 0;
+    }
+    return Math.max(0, Math.round((subtotalCents * feePercent) / 100));
   }
 
   private mapRecurring(

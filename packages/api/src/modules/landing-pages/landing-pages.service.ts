@@ -4,7 +4,11 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { LandingPageElementType, Prisma } from '@prisma/client';
+import {
+  LandingPageElementType,
+  PlatformSubscriptionStatus,
+  Prisma,
+} from '@prisma/client';
 import type {
   CreateLandingPageDto,
   UpdateLandingPageDto,
@@ -15,6 +19,36 @@ import type {
   UpdateSocialLinksDto,
   UpdatePageSlugDto,
 } from './landing-pages.schema';
+
+function toRecord(
+  value: unknown,
+): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function resolvePublicBranding(
+  metadata: unknown,
+  status?: PlatformSubscriptionStatus | null,
+  planName?: string | null,
+) {
+  const metadataRecord = toRecord(metadata);
+  const branding = toRecord(metadataRecord?.branding);
+  const rawLogoUrl = typeof branding?.logoUrl === 'string' ? branding.logoUrl : '';
+  const logoUrl = rawLogoUrl.trim().length > 0 ? rawLogoUrl.trim() : null;
+  const requestedHide = branding?.hideSublynkBranding === true;
+  const proBrandingEnabled =
+    (status === PlatformSubscriptionStatus.ACTIVE ||
+      status === PlatformSubscriptionStatus.TRIALING) &&
+    planName === 'pro';
+
+  return {
+    logoUrl,
+    hideSublynkBranding: requestedHide && proBrandingEnabled,
+  };
+}
 
 @Injectable()
 export class LandingPagesService {
@@ -344,6 +378,17 @@ export class LandingPagesService {
         pageSlug: true,
         saasActive: true,
         stripeAccountId: true,
+        metadata: true,
+        platformSubscription: {
+          select: {
+            status: true,
+            platformPlan: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -370,6 +415,12 @@ export class LandingPagesService {
     if (!landingPage) {
       return null;
     }
+
+    const branding = resolvePublicBranding(
+      organization.metadata,
+      organization.platformSubscription?.status,
+      organization.platformSubscription?.platformPlan?.name,
+    );
 
     // Get products for the organization
     const products = await this.prisma.product.findMany({
@@ -413,6 +464,7 @@ export class LandingPagesService {
         name: organization.name,
         slug: organization.slug,
         pageSlug: organization.pageSlug,
+        branding,
       },
       landingPage: {
         id: landingPage.id,

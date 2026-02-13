@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createPlatformCheckoutSchema = z.object({
-  planName: z.enum(['early-adopter', 'pro']),
+  planName: z.enum(['starter', 'growth', 'pro']),
 });
 
 export type CreatePlatformCheckoutDto = z.infer<

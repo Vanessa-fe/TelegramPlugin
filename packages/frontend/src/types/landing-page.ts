@@ -117,6 +117,10 @@ export interface PublicLandingPage {
     name: string;
     slug: string;
     pageSlug?: string | null;
+    branding?: {
+      logoUrl: string | null;
+      hideSublynkBranding: boolean;
+    };
   };
   landingPage: {
     id: string;

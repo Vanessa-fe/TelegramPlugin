@@ -1,60 +1,50 @@
+/* eslint-disable @next/next/no-img-element */
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { storefrontApi } from "@/lib/api/storefront";
+import { getLocale, getTranslations } from "next-intl/server";
 
 interface Props {
   params: Promise<{ creator: string; product: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const t = await getTranslations("publicPages");
   const { creator, product: productSlug } = await params;
 
   try {
     const data = await storefrontApi.getProductBySlug(creator, productSlug);
+    const seoDescription =
+      data.description ||
+      t("seo.productDescription", {
+        productName: data.name,
+        organizationName: data.organization.name,
+      });
 
     return {
       title: `${data.name} - ${data.organization.name}`,
-      description:
-        data.description || `Accédez à ${data.name} par ${data.organization.name}`,
+      description: seoDescription,
       openGraph: {
         title: `${data.name} - ${data.organization.name}`,
-        description:
-          data.description || `Accédez à ${data.name} par ${data.organization.name}`,
+        description: seoDescription,
         type: "website",
       },
     };
   } catch {
     return {
-      title: "Produit introuvable",
+      title: t("seo.productNotFoundTitle"),
     };
   }
 }
 
-const formatPrice = (priceCents: number, currency: string) => {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(priceCents / 100);
-};
-
-const formatInterval = (interval: string) => {
-  const intervals: Record<string, string> = {
-    ONE_TIME: "une fois",
-    DAY: "/jour",
-    WEEK: "/semaine",
-    MONTH: "/mois",
-    QUARTER: "/trimestre",
-    YEAR: "/an",
-  };
-  return intervals[interval] || "";
-};
-
 export default async function ProductPage({ params }: Props) {
   const { creator, product: productSlug } = await params;
+  const [locale, t] = await Promise.all([
+    getLocale(),
+    getTranslations("publicPages"),
+  ]);
 
   let data;
   try {
@@ -64,6 +54,28 @@ export default async function ProductPage({ params }: Props) {
   }
 
   const color = "#7c3aed"; // Default theme color
+  const logoUrl = data.organization.branding?.logoUrl?.trim() || null;
+  const hideSublynkBranding =
+    data.organization.branding?.hideSublynkBranding === true;
+  const intervalLabels: Record<string, string> = {
+    ONE_TIME: t("interval.ONE_TIME"),
+    DAY: t("interval.DAY"),
+    WEEK: t("interval.WEEK"),
+    MONTH: t("interval.MONTH"),
+    QUARTER: t("interval.QUARTER"),
+    YEAR: t("interval.YEAR"),
+  };
+
+  const formatPrice = (priceCents: number, currency: string) => {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: currency.toUpperCase(),
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(priceCents / 100);
+  };
+
+  const formatInterval = (interval: string) => intervalLabels[interval] || "";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -74,8 +86,18 @@ export default async function ProductPage({ params }: Props) {
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour à {data.organization.name}
+          {t("backTo", { name: data.organization.name })}
         </Link>
+
+        {logoUrl ? (
+          <div className="mb-6">
+            <img
+              src={logoUrl}
+              alt={t("logoAlt", { name: data.organization.name })}
+              className="h-14 w-14 rounded-lg object-cover shadow-sm"
+            />
+          </div>
+        ) : null}
 
         {/* Product header */}
         <div className="mb-8">
@@ -89,7 +111,7 @@ export default async function ProductPage({ params }: Props) {
         {data.channels.length > 0 && (
           <div className="mb-8">
             <h2 className="text-sm font-medium text-gray-500 mb-3">
-              Accès inclus
+              {t("includedAccess")}
             </h2>
             <div className="flex flex-wrap gap-2">
               {data.channels.map((channel) => (
@@ -98,7 +120,7 @@ export default async function ProductPage({ params }: Props) {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 font-medium"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  {channel.title || "Channel"}
+                  {channel.title || t("channelFallback")}
                 </span>
               ))}
             </div>
@@ -108,7 +130,7 @@ export default async function ProductPage({ params }: Props) {
         {/* Plans */}
         <div className="space-y-3">
           <h2 className="text-sm font-medium text-gray-500 mb-3">
-            Choisir une offre
+            {t("chooseOffer")}
           </h2>
           {data.plans.map((plan) => (
             <Link
@@ -127,7 +149,7 @@ export default async function ProductPage({ params }: Props) {
                 )}
                 {plan.trialPeriodDays && plan.trialPeriodDays > 0 && (
                   <p className="text-sm text-green-600 mt-2 font-medium">
-                    {plan.trialPeriodDays} jours d&apos;essai gratuit
+                    {t("trialDays", { count: plan.trialPeriodDays })}
                   </p>
                 )}
               </div>
@@ -144,20 +166,21 @@ export default async function ProductPage({ params }: Props) {
           ))}
         </div>
 
-        {/* Built with Sublynk badge */}
-        <div className="mt-16 pt-8 text-center border-t border-gray-100">
-          <a
-            href="https://sublynk.fr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            Built with{" "}
-            <span className="font-semibold" style={{ color }}>
-              Sublynk
-            </span>
-          </a>
-        </div>
+        {!hideSublynkBranding ? (
+          <div className="mt-16 pt-8 text-center border-t border-gray-100">
+            <a
+              href="https://sublynk.fr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {t("builtWith")}{" "}
+              <span className="font-semibold" style={{ color }}>
+                Sublynk
+              </span>
+            </a>
+          </div>
+        ) : null}
       </div>
     </div>
   );

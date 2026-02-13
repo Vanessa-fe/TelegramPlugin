@@ -39,7 +39,7 @@ async function main() {
   await prisma.platformPlan.deleteMany({
     where: {
       name: {
-        in: ['grandfathered', 'early-adopter', 'pro'],
+        in: ['grandfathered', 'early-adopter', 'starter', 'growth', 'pro'],
       },
     },
   });
@@ -63,22 +63,45 @@ async function main() {
     },
   });
 
-  const earlyAdopterPlan = await prisma.platformPlan.create({
+  const starterPlan = await prisma.platformPlan.create({
     data: {
-      name: 'early-adopter',
-      displayName: 'Early Adopter',
-      priceCents: 1900, // 19€
+      name: 'starter',
+      displayName: 'Starter',
+      priceCents: 0, // 0€
+      currency: 'eur',
+      interval: PlanInterval.MONTH,
+      trialPeriodDays: null,
+      stripePriceId: null, // Will be set when Stripe price is created
+      features: {
+        maxProducts: -1,
+        maxChannels: -1,
+        takeRatePercent: 6,
+        description:
+          'Fonctionnalités de base (paiement, coupons, affiliés) - 6% par vente + frais Stripe',
+      },
+      isActive: true,
+      sortOrder: 1,
+    },
+  });
+
+  const growthPlan = await prisma.platformPlan.create({
+    data: {
+      name: 'growth',
+      displayName: 'Growth',
+      priceCents: 2900, // 29€
       currency: 'eur',
       interval: PlanInterval.MONTH,
       trialPeriodDays: 14,
       stripePriceId: null, // Will be set when Stripe price is created
       features: {
-        maxProducts: 10,
-        maxChannels: 5,
-        description: 'Parfait pour démarrer',
+        maxProducts: -1,
+        maxChannels: -1,
+        takeRatePercent: 3.5,
+        description:
+          'Affiliés avancés, analytics, exports, support prioritaire - 3.5% par vente + frais Stripe',
       },
       isActive: true,
-      sortOrder: 1,
+      sortOrder: 2,
     },
   });
 
@@ -86,7 +109,7 @@ async function main() {
     data: {
       name: 'pro',
       displayName: 'Pro',
-      priceCents: 2900, // 29€
+      priceCents: 9900, // 99€
       currency: 'eur',
       interval: PlanInterval.MONTH,
       trialPeriodDays: 14,
@@ -94,10 +117,12 @@ async function main() {
       features: {
         maxProducts: -1, // unlimited
         maxChannels: -1, // unlimited
-        description: 'Pour les créateurs établis',
+        takeRatePercent: 1.5,
+        description:
+          'Multi-admin, API/webhooks avancés, branding poussé - 1.5% par vente + frais Stripe',
       },
       isActive: true,
-      sortOrder: 2,
+      sortOrder: 3,
     },
   });
 
@@ -106,7 +131,10 @@ async function main() {
     `   - ${grandfatheredPlan.displayName} (${grandfatheredPlan.priceCents / 100}€ - inactive)`,
   );
   console.log(
-    `   - ${earlyAdopterPlan.displayName} (${earlyAdopterPlan.priceCents / 100}€)`,
+    `   - ${starterPlan.displayName} (${starterPlan.priceCents / 100}€)`,
+  );
+  console.log(
+    `   - ${growthPlan.displayName} (${growthPlan.priceCents / 100}€)`,
   );
   console.log(`   - ${proPlan.displayName} (${proPlan.priceCents / 100}€)\n`);
 
@@ -437,7 +465,7 @@ async function main() {
   console.log('   Org:      Test Merchant Organization');
   console.log('');
   console.log('📊 SAMPLE DATA CREATED:');
-  console.log(`   - 3 Platform Plans (grandfathered, early-adopter, pro)`);
+  console.log(`   - 4 Platform Plans (grandfathered, starter, growth, pro)`);
   console.log(`   - 1 Platform Subscription (grandfathered for test org)`);
   console.log(`   - 2 Products`);
   console.log(`   - 4 Plans (monthly, yearly, lifetime, 30-day)`);

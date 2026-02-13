@@ -1,6 +1,17 @@
 import { getRequestConfig } from 'next-intl/server';
 import { cookies, headers } from 'next/headers';
 import { defaultLocale, locales, type Locale } from './config';
+import enMessages from './messages/en.json';
+import frMessages from './messages/fr.json';
+
+const messagesByLocale: Record<Locale, Record<string, unknown>> = {
+  en: enMessages as Record<string, unknown>,
+  fr: frMessages as Record<string, unknown>,
+};
+
+function getLocaleMessages(locale: Locale) {
+  return messagesByLocale[locale];
+}
 
 /**
  * Server-side locale detection and message loading
@@ -13,7 +24,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   if (headerLocale && locales.includes(headerLocale)) {
     return {
       locale: headerLocale,
-      messages: (await import(`./messages/${headerLocale}.json`)).default,
+      messages: getLocaleMessages(headerLocale),
     };
   }
 
@@ -27,7 +38,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   if (requestLocaleValue) {
     return {
       locale: requestLocaleValue,
-      messages: (await import(`./messages/${requestLocaleValue}.json`)).default,
+      messages: getLocaleMessages(requestLocaleValue),
     };
   }
 
@@ -38,7 +49,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   if (cookieLocale && locales.includes(cookieLocale)) {
     return {
       locale: cookieLocale,
-      messages: (await import(`./messages/${cookieLocale}.json`)).default,
+      messages: getLocaleMessages(cookieLocale),
     };
   }
 
@@ -54,7 +65,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       if (locales.includes(browserLocale as Locale)) {
         return {
           locale: browserLocale as Locale,
-          messages: (await import(`./messages/${browserLocale}.json`)).default,
+          messages: getLocaleMessages(browserLocale as Locale),
         };
       }
     }
@@ -63,6 +74,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
   // 5. Fallback to default locale
   return {
     locale: defaultLocale,
-    messages: (await import(`./messages/${defaultLocale}.json`)).default,
+    messages: getLocaleMessages(defaultLocale),
   };
 });

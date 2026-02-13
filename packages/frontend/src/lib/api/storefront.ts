@@ -27,6 +27,11 @@ export interface PublicChannel {
   provider: 'TELEGRAM' | 'DISCORD' | 'WHATSAPP';
 }
 
+export interface PublicBranding {
+  logoUrl: string | null;
+  hideSublynkBranding: boolean;
+}
+
 export interface PublicProduct {
   id: string;
   name: string;
@@ -35,6 +40,7 @@ export interface PublicProduct {
     id: string;
     name: string;
     slug: string;
+    branding?: PublicBranding;
   };
   plans: PublicPlan[];
   channels: PublicChannel[];
@@ -44,6 +50,7 @@ export interface PublicOrganization {
   id: string;
   name: string;
   slug: string;
+  branding?: PublicBranding;
 }
 
 export interface PublicProductSummary {

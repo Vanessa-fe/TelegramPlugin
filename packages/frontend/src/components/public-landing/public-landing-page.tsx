@@ -17,14 +17,20 @@ import {
   type PublicLandingPage,
 } from "@/types/landing-page";
 import { normalizeTextSettings } from "@/lib/landing-pages/text-settings";
+import { useLocale, useTranslations } from "next-intl";
 
 interface PublicLandingPageProps {
   data: PublicLandingPage;
 }
 
 export function PublicLandingPage({ data }: PublicLandingPageProps) {
+  const locale = useLocale();
+  const t = useTranslations("publicPages");
   const { organization, landingPage, products } = data;
   const color = landingPage.themeColor || "#7c3aed";
+  const logoUrl = organization.branding?.logoUrl?.trim() || null;
+  const hideSublynkBranding =
+    organization.branding?.hideSublynkBranding === true;
 
   const getSocialIcon = (platform: SocialPlatform) => {
     const icons: Record<SocialPlatform, typeof Instagram> = {
@@ -41,7 +47,7 @@ export function PublicLandingPage({ data }: PublicLandingPageProps) {
   };
 
   const formatPrice = (priceCents: number, currency: string) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: currency.toUpperCase(),
       minimumFractionDigits: 0,
@@ -51,12 +57,12 @@ export function PublicLandingPage({ data }: PublicLandingPageProps) {
 
   const formatInterval = (interval: string) => {
     const intervals: Record<string, string> = {
-      ONE_TIME: "une fois",
-      DAY: "/jour",
-      WEEK: "/semaine",
-      MONTH: "/mois",
-      QUARTER: "/trimestre",
-      YEAR: "/an",
+      ONE_TIME: t("interval.ONE_TIME"),
+      DAY: t("interval.DAY"),
+      WEEK: t("interval.WEEK"),
+      MONTH: t("interval.MONTH"),
+      QUARTER: t("interval.QUARTER"),
+      YEAR: t("interval.YEAR"),
     };
     return intervals[interval] || "";
   };
@@ -215,7 +221,7 @@ export function PublicLandingPage({ data }: PublicLandingPageProps) {
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-50 text-blue-600"
                       >
                         <MessageCircle className="w-3 h-3" />
-                        {channel.title || "Channel"}
+                        {channel.title || t("channelFallback")}
                       </span>
                     ))}
                   </div>
@@ -239,7 +245,7 @@ export function PublicLandingPage({ data }: PublicLandingPageProps) {
                         )}
                         {plan.trialPeriodDays && plan.trialPeriodDays > 0 && (
                           <p className="text-xs text-green-600 mt-1">
-                            {plan.trialPeriodDays} jours d&apos;essai gratuit
+                            {t("trialDays", { count: plan.trialPeriodDays })}
                           </p>
                         )}
                       </div>
@@ -278,6 +284,16 @@ export function PublicLandingPage({ data }: PublicLandingPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-lg mx-auto py-12 px-5">
+        {logoUrl ? (
+          <div className="mb-8 flex justify-center">
+            <img
+              src={logoUrl}
+              alt={t("logoAlt", { name: organization.name })}
+              className="h-16 w-16 rounded-lg object-cover shadow-sm"
+            />
+          </div>
+        ) : null}
+
         <div className="space-y-8">
           {landingPage.elements
             .sort((a, b) => a.order - b.order)
@@ -286,20 +302,21 @@ export function PublicLandingPage({ data }: PublicLandingPageProps) {
             ))}
         </div>
 
-        {/* Built with Sublynk badge */}
-        <div className="mt-16 pt-8 text-center border-t border-gray-100">
-          <a
-            href="https://sublynk.fr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            Built with{" "}
-            <span className="font-semibold" style={{ color }}>
-              Sublynk
-            </span>
-          </a>
-        </div>
+        {!hideSublynkBranding ? (
+          <div className="mt-16 pt-8 text-center border-t border-gray-100">
+            <a
+              href="https://sublynk.fr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              {t("builtWith")}{" "}
+              <span className="font-semibold" style={{ color }}>
+                Sublynk
+              </span>
+            </a>
+          </div>
+        ) : null}
       </div>
     </div>
   );

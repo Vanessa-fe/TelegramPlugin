@@ -3,7 +3,6 @@
     "title": "Sublynk",
     "description": "Creators can monetize Telegram channels and groups with subscriptions and premium access. Automatic payments, no commission. Focus on your content."
   },
-
   "common": {
     "appName": "Sublynk",
     "loading": "Loading...",
@@ -42,7 +41,6 @@
     "yesterday": "Yesterday",
     "daysAgo": "{count} days ago"
   },
-
   "nav": {
     "dashboard": "Dashboard",
     "pageBuilder": "My page",
@@ -58,7 +56,6 @@
     "affiliates": "Affiliates",
     "team": "Team"
   },
-
   "sidebar": {
     "currentPlan": "Subscription",
     "noPlan": "No active plan",
@@ -76,7 +73,6 @@
     "trialDaysLeft": "{count} days left in trial",
     "upgradeNow": "Upgrade now"
   },
-
   "landingPages": {
     "title": "My page",
     "subtitle": "Customize your public landing page",
@@ -238,7 +234,6 @@
       }
     }
   },
-
   "profile": {
     "title": "Profile",
     "subtitle": "Manage your account details and public identity",
@@ -268,7 +263,6 @@
     "passwordUpdated": "Password updated",
     "savePassword": "Save password"
   },
-
   "auth": {
     "login": {
       "title": "Welcome back",
@@ -380,7 +374,6 @@
       }
     }
   },
-
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome! Here's an overview of your activity.",
@@ -429,21 +422,17 @@
       "promoteProduct": "Promote my offer"
     }
   },
-
   "products": {
     "title": "My offers",
     "subtitle": "Manage your offers and pricing plans",
     "create": "Create an offer",
     "loading": "Loading offers...",
-
     "noProducts": "No offers found",
-
     "empty": {
       "title": "No offer yet",
       "description": "Create your first offer to start selling.",
       "cta": "Create my first offer"
     },
-
     "table": {
       "name": "Name",
       "plans": "Plans",
@@ -451,13 +440,11 @@
       "created": "Created",
       "actions": "Actions"
     },
-
     "status": {
       "active": "Active",
       "draft": "Draft",
       "archived": "Archived"
     },
-
     "new": {
       "title": "New product",
       "subtitle": "Create a new subscription product."
@@ -466,37 +453,30 @@
       "title": "Edit offer",
       "subtitle": "Update offer details for {name}."
     },
-
     "form": {
       "title": "Create a product",
       "titleEdit": "Edit product",
-
       "organization": {
         "label": "Organization",
         "placeholder": "Organization UUID",
         "help": "Select the organization that owns this product."
       },
-
       "name": {
         "label": "Name",
         "placeholder": "e.g. VIP channel"
       },
-
       "description": {
         "label": "Description",
         "placeholder": "Describe what subscribers get (content, access, frequency…)."
       },
-
       "status": {
         "label": "Status"
       },
-
       "submit": {
         "create": "Create",
         "update": "Update",
         "saving": "Saving..."
       },
-
       "errors": {
         "organizationRequired": "Organization is required",
         "nameRequired": "Name is required",
@@ -504,13 +484,11 @@
         "descriptionTooLong": "Description is too long"
       }
     },
-
     "statusLabels": {
       "DRAFT": "Draft",
       "ACTIVE": "Active",
       "ARCHIVED": "Archived"
     },
-
     "toast": {
       "loadError": "Failed to load products",
       "organizationsLoadError": "Failed to load organizations",
@@ -519,7 +497,6 @@
       "updateSuccess": "Product updated successfully",
       "updateError": "Failed to update product"
     },
-
     "actions": {
       "edit": "Edit",
       "duplicate": "Duplicate",
@@ -563,7 +540,6 @@
       }
     }
   },
-
   "intervals": {
     "ONE_TIME": "One-time payment",
     "DAY": "per day",
@@ -587,7 +563,6 @@
       "YEAR": "Year"
     }
   },
-
   "subscriptionStatus": {
     "ACTIVE": "Active",
     "PAST_DUE": "Payment overdue",
@@ -596,14 +571,12 @@
     "TRIALING": "Trial",
     "EXPIRED": "Expired"
   },
-
   "accessStatus": {
     "active": "Active",
     "suspended": "Suspended",
     "revoked": "Revoked",
     "expired": "Expired"
   },
-
   "customers": {
     "title": "My customers",
     "subtitle": "View and manage your customer base",
@@ -658,33 +631,27 @@
     },
     "noResults": "No customers found for these criteria"
   },
-
   "subscriptions": {
     "title": "My subscribers",
     "subtitle": "Track your subscribers and manage their access",
-
     "loading": "Loading...",
     "error": "Error while loading subscribers",
-
     "empty": {
       "title": "No subscribers yet",
       "description": "Share your sales link to start getting subscribers.",
       "cta": "Promote my offer"
     },
-
     "stats": {
       "total": "Total",
       "active": "Active",
       "pastDue": "Past due",
       "trialing": "Trial"
     },
-
     "filters": {
       "statusLabel": "Filter by status",
       "allStatuses": "All statuses",
       "searchPlaceholder": "Search a subscriber..."
     },
-
     "table": {
       "subscriber": "Subscriber",
       "offer": "Offer",
@@ -693,16 +660,12 @@
       "actions": "Actions",
       "noName": "No name"
     },
-
     "actions": {
       "view": "View"
     },
-
     "noResults": "No subscriber matches these filters",
-
     "trialDaysLeft": "D-{count}",
     "followUp": "Follow up",
-
     "status": {
       "ACTIVE": "Active",
       "PAST_DUE": "Past due",
@@ -711,7 +674,6 @@
       "TRIALING": "Trial",
       "EXPIRED": "Expired"
     },
-
     "interval": {
       "ONE_TIME": " one-time",
       "DAY": "/day",
@@ -720,7 +682,6 @@
       "QUARTER": "/quarter",
       "YEAR": "/year"
     },
-
     "relativeDate": {
       "today": "Today",
       "yesterday": "Yesterday",
@@ -730,15 +691,12 @@
   "subscriptionDetail": {
     "loading": "Loading...",
     "subtitle": "Subscription details",
-
     "errors": {
       "load": "Error while loading the subscription"
     },
-
     "common": {
       "na": "-"
     },
-
     "actions": {
       "back": "Back",
       "viewProfile": "View profile",
@@ -746,23 +704,19 @@
       "cancel": "Cancel subscription",
       "contact": "Contact subscriber"
     },
-
     "sections": {
       "subscriber": "Subscriber",
       "offer": "Offer",
       "subscriptionStatus": "Subscription status",
       "access": "Granted access"
     },
-
     "customer": {
       "noName": "No name"
     },
-
     "plan": {
       "unknown": "Unknown offer",
       "noPlan": "No offer linked"
     },
-
     "status": {
       "ACTIVE": "Active",
       "PAST_DUE": "Past due",
@@ -771,7 +725,6 @@
       "TRIALING": "Trial",
       "EXPIRED": "Expired"
     },
-
     "interval": {
       "ONE_TIME": "one-time payment",
       "DAY": "per day",
@@ -780,56 +733,45 @@
       "QUARTER": "per quarter",
       "YEAR": "per year"
     },
-
     "relative": {
       "past": "(past)",
       "today": "(today)",
       "tomorrow": "(tomorrow)",
       "inDays": "(in {count} days)"
     },
-
     "billing": {
       "renewal": "Renewal",
       "since": "since {date}",
       "nextCharge": "Next charge",
       "amount": "Amount"
     },
-
     "trial": {
       "ends": "Trial ends"
     },
-
     "pastDue": {
       "message": "⚠ Payment failed. The subscriber will be followed up automatically."
     },
-
     "canceled": {
       "message": "Canceled on {date}"
     },
-
     "access": {
       "message": "Access linked to this subscription is managed automatically.",
       "viewAll": "View all access"
     }
   },
-
   "channels": {
     "title": "My platforms",
     "subtitle": "Manage your connected Telegram, Discord and WhatsApp channels",
-
     "add": "Add",
     "addFirst": "Add my first channel",
-
     "loading": {
       "title": "Loading channels..."
     },
-
     "success": {
       "created": "Channel added successfully",
       "accessGranted": "Access granted successfully",
       "accessRevoked": "Access revoked successfully"
     },
-
     "errors": {
       "load": "Failed to load channels",
       "create": "Failed to add channel",
@@ -839,13 +781,11 @@
       "selectCustomerAndSubscription": "Please select a customer and a subscription",
       "subscriptionNotSelected": "Error: subscription not selected"
     },
-
     "empty": {
       "title": "No channels connected",
       "description": "Connect your first channel to start granting access to your paying members.",
       "cta": "Add my first channel"
     },
-
     "list": {
       "untitled": "Untitled channel",
       "viewInviteLink": "View invite link",
@@ -869,34 +809,29 @@
     "common": {
       "cancel": "Cancel"
     },
-
     "stats": {
       "provider": "Platform",
       "externalId": "External ID",
       "created": "Created"
     },
-
     "providers": {
       "TELEGRAM": "Telegram",
       "DISCORD": "Discord",
       "WHATSAPP": "WhatsApp",
       "unknown": "Other"
     },
-
     "access": {
       "titleFallback": "Channel",
       "subtitle": "Channel access management",
       "loading": {
         "title": "Loading access..."
       },
-
       "success": {
         "granted": "Access granted successfully",
         "revoked": "Access revoked successfully",
         "manualGranted": "Access marked as added",
         "manualRevoked": "Access marked as removed"
       },
-
       "errors": {
         "load": "Error loading access",
         "grant": "Error granting access",
@@ -906,13 +841,11 @@
         "manualGrant": "Error confirming the add",
         "manualRevoke": "Error confirming the removal"
       },
-
       "ctaGrant": "Grant access",
       "actions": {
         "grant": "Grant access",
         "revoke": "Revoke"
       },
-
       "cards": {
         "total": "Total access",
         "granted": "Granted",
@@ -925,10 +858,8 @@
         "pendingAdd": "To add",
         "pendingRemove": "To remove"
       },
-
       "activeAccessesTitle": "Active access",
       "noAccesses": "No access configured for this channel",
-
       "table": {
         "title": "Active access",
         "historyTitle": "Access history",
@@ -949,14 +880,12 @@
           "actions": "Actions"
         }
       },
-
       "status": {
         "PENDING": "Pending",
         "GRANTED": "Granted",
         "REVOKE_PENDING": "To remove",
         "REVOKED": "Revoked"
       },
-
       "revokeReasons": {
         "manual": "Manual revoke",
         "payment_failed": "Payment failed",
@@ -964,7 +893,6 @@
         "refund": "Refund",
         "expired": "Subscription expired"
       },
-
       "manual": {
         "title": "WhatsApp manual management",
         "description": "WhatsApp does not allow automatic member changes. Use these lists to add or remove subscribers in your group.",
@@ -984,7 +912,6 @@
           "confirmRemoved": "Mark as removed"
         }
       },
-
       "grantDialog": {
         "title": "Grant access",
         "description": "Select a customer and their subscription to grant access to this channel.",
@@ -997,7 +924,6 @@
         "confirm": "Grant access",
         "processing": "Processing..."
       },
-
       "revokeDialog": {
         "title": "Revoke access",
         "description": "This will revoke channel access for this customer.",
@@ -1006,17 +932,14 @@
         "confirm": "Revoke access",
         "processing": "Processing..."
       },
-
       "helpers": {
         "unknownCustomer": "Unknown customer"
       },
-
       "notFound": {
         "title": "Channel not found",
         "back": "Back to channels"
       }
     },
-
     "new": {
       "title": "Add a channel",
       "subtitle": "Connect a Telegram channel to your organization",
@@ -1030,54 +953,42 @@
       "whatsappDescription": "WhatsApp groups with manual access management",
       "back": "Back to channels"
     },
-
     "form": {
       "sectionTitle": "Channel information",
-
       "providerLabel": "Platform *",
       "providerPlaceholder": "Select a platform",
       "providerHelp": "Channel platform (Telegram, Discord, or WhatsApp)",
-
       "externalIdLabel": "Channel external ID *",
       "externalIdPlaceholder": "-1003487441463",
       "externalIdHelp": "Telegram numeric channel ID (starts with -100)",
-
       "titleLabel": "Channel name",
       "titlePlaceholder": "My VIP Channel",
-
       "usernameLabel": "Username (optional)",
       "usernamePlaceholder": "my_vip_channel",
       "usernameHelp": "Public channel handle (e.g., t.me/my_channel → my_channel). Leave empty if your channel is private.",
-
       "inviteLinkLabel": "Invite link",
       "inviteLinkPlaceholder": "https://t.me/+AbcDefGhiJkl",
       "inviteLinkHelp": "Permanent invite link for the channel",
-
       "isActiveLabel": "Active channel",
-
       "buttons": {
         "saving": "Saving...",
         "update": "Update",
         "create": "Add channel",
         "cancel": "Cancel"
       },
-
       "validation": {
         "externalIdRequired": "External ID is required",
         "invalidUrl": "Invalid URL"
       },
-
       "providers": {
         "telegram": "Telegram",
         "discord": "Discord",
         "whatsapp": "WhatsApp"
       }
     },
-
     "howToFindId": {
       "titleIcon": "💡",
       "title": "How to find your Telegram channel ID",
-
       "method1": {
         "title": "Method 1: Using a bot (recommended)",
         "bot": "@userinfobot",
@@ -1087,7 +998,6 @@
           "3": "Copy this ID into the field above"
         }
       },
-
       "method2": {
         "title": "Method 2: Using the Telegram API",
         "bot": "@getidsbot",
@@ -1097,19 +1007,16 @@
           "3": "Remove the bot after you got the ID"
         }
       },
-
       "method3": {
         "title": "Method 3: Using the invite link",
         "text": "If your link is https://t.me/joinchat/XXXXXX, you first need to convert it into a numeric ID using a bot."
       },
-
       "important": {
         "prefix": "⚠️",
         "label": "Important:",
         "text": "Add @SublynkBot as an administrator of this channel with the permissions required to invite users."
       }
     },
-
     "wizard": {
       "steps": {
         "type": "Type",
@@ -1173,7 +1080,6 @@
         "postInstructions": "Once you post the code, the connection will be automatically detected."
       }
     },
-
     "discordWizard": {
       "steps": {
         "addBot": "Bot",
@@ -1239,7 +1145,6 @@
         "readyNote": "Everything looks good! Click Connect to finish the setup. Paying subscribers will automatically receive the role."
       }
     },
-
     "whatsappWizard": {
       "title": "Connect WhatsApp",
       "description": "Connect a WhatsApp group. Access is managed manually from your dashboard.",
@@ -1315,23 +1220,18 @@
     "noResults": "No access found for these criteria",
     "manage": "Manage"
   },
-
   "payments": {
     "title": "Payment events",
     "subtitle": "History of all payment events",
-
     "loading": "Loading...",
-
     "common": {
       "na": "-"
     },
-
     "stats": {
       "total": "Total events",
       "processed": "Processed",
       "pending": "Pending"
     },
-
     "table": {
       "type": "Type",
       "provider": "Provider",
@@ -1340,15 +1240,12 @@
       "status": "Status",
       "subscription": "Subscription"
     },
-
     "status": {
       "processed": "Processed",
       "pending": "Pending"
     },
-
     "empty": "No payment events found",
     "error": "Error while loading events",
-
     "eventTypes": {
       "CHECKOUT_COMPLETED": "Checkout completed",
       "SUBSCRIPTION_CREATED": "Subscription created",
@@ -1358,7 +1255,6 @@
       "INVOICE_PAYMENT_FAILED": "Payment failed",
       "REFUND_CREATED": "Refund created"
     },
-
     "providers": {
       "STRIPE": "Stripe",
       "PAYPAL": "PayPal"
@@ -1395,7 +1291,6 @@
     "connectError": "Failed to start Stripe connection",
     "dashboardError": "Failed to open Stripe dashboard"
   },
-
   "planForm": {
     "sections": {
       "general": "General information",
@@ -1409,21 +1304,17 @@
       "descriptionPlaceholder": "Plan description",
       "billingTypeLabel": "Billing type *",
       "intervalPlaceholder": "Select an interval",
-
       "priceLabel": "Price *",
       "pricePlaceholder": "29.00",
       "currencyLabel": "Currency *",
       "currencyPlaceholder": "EUR",
       "currencyLocked": "Currency is fixed at the organization level.",
-
       "trialLabel": "Trial period (days)",
       "trialPlaceholder": "7",
       "trialHelper": "Leave empty if no free trial",
-
       "accessDurationLabel": "Access duration (days)",
       "accessDurationPlaceholder": "30",
       "accessDurationHelper": "Leave empty for unlimited access",
-
       "activeLabel": "Plan is active and visible to customers"
     },
     "intervals": {
@@ -1446,7 +1337,6 @@
       "currency3Letters": "3-letter currency code (e.g. EUR)"
     }
   },
-
   "checkout": {
     "offeredBy": "Offered by {name}",
     "accessTo": "Access to:",
@@ -1511,7 +1401,6 @@
     "originalPrice": "Original price",
     "finalPrice": "Total"
   },
-
   "checkoutSuccess": {
     "title": "Payment successful!",
     "description": "Thank you for your purchase. Your subscription has been activated.",
@@ -1521,7 +1410,6 @@
     "safeToClose": "You can safely close this page",
     "loading": "Loading..."
   },
-
   "checkoutCancel": {
     "title": "Payment canceled",
     "description": "Your payment has been canceled. No amount has been charged to your account.",
@@ -1529,7 +1417,6 @@
     "retry": "Try again",
     "backHome": "Back to home"
   },
-
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "network": "Connection error. Please check your internet connection.",
@@ -1539,14 +1426,12 @@
     "validation": "Please check the information you entered",
     "loadingData": "Failed to load data"
   },
-
   "success": {
     "saved": "Changes saved",
     "created": "Created successfully",
     "deleted": "Deleted successfully",
     "copied": "Copied to clipboard"
   },
-
   "terms": {
     "title": "Terms of Service",
     "lastUpdated": "Last updated: January 25, 2026",
@@ -1648,7 +1533,6 @@
       }
     }
   },
-
   "legalNotice": {
     "title": "Legal notice",
     "lastUpdated": "Last updated: February 6, 2026",
@@ -1700,7 +1584,6 @@
       }
     }
   },
-
   "privacy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: January 25, 2026",
@@ -1840,7 +1723,6 @@
       }
     }
   },
-
   "gdpr": {
     "title": "GDPR Compliance",
     "lastUpdated": "Last updated: February 5, 2026",
@@ -2187,7 +2069,6 @@
       }
     }
   },
-
   "pricing": {
     "hero": {
       "title": "Simple, transparent pricing",
@@ -2264,7 +2145,6 @@
       "note": "14 days free • No credit card required"
     }
   },
-
   "promote": {
     "loading": "Loading...",
     "title": "Promote my offers",
@@ -2324,7 +2204,6 @@
       "defaultProduct": "my offer"
     }
   },
-
   "about": {
     "hero": {
       "title": "Empowering content creators to monetize their communities",
@@ -2381,7 +2260,6 @@
       "button": "Start your free trial →"
     }
   },
-
   "contact": {
     "title": "Get in Touch",
     "subtitle": "Have a question or need help? We're here to assist you.",
@@ -2432,7 +2310,6 @@
       "cta": "Check our FAQ →"
     }
   },
-
   "admin": {
     "home": {
       "title": "Back-office",
@@ -2584,7 +2461,6 @@
       }
     }
   },
-
   "marketing": {
     "navbar": {
       "links": {
@@ -2733,7 +2609,6 @@
       "madeIn": "Made in France 🇫🇷"
     }
   },
-
   "footer": {
     "terms": "Terms",
     "privacy": "Privacy",
@@ -2741,13 +2616,11 @@
     "contact": "Contact",
     "about": "About"
   },
-
   "notFound": {
     "title": "This page doesn't exist",
     "description": "The page you're looking for can't be found. Try going back home.",
     "cta": "Back to home"
   },
-
   "coupons": {
     "loading": "Loading...",
     "title": "Coupons",
@@ -2883,7 +2756,6 @@
       "disableError": "Failed to disable coupon"
     }
   },
-
   "affiliates": {
     "loading": "Loading...",
     "title": "Affiliates",
@@ -3047,7 +2919,6 @@
       "deactivateError": "Failed to deactivate affiliate"
     }
   },
-
   "faq": {
     "meta": {
       "title": "FAQ - How it works",
@@ -3136,6 +3007,97 @@
       "subtitle": "Start for free and begin monetizing your Telegram community today.",
       "register": "Create my account →",
       "contact": "Have a question? Contact us"
+    }
+  },
+  "platformSubscriptionPage": {
+    "loading": "Loading subscription...",
+    "common": {
+      "notAvailable": "-"
+    },
+    "header": {
+      "title": "Platform subscription",
+      "subtitle": "Choose the right plan for your growth, commissions, and branding level."
+    },
+    "status": {
+      "TRIALING": "Trialing",
+      "ACTIVE": "Active",
+      "PAST_DUE": "Payment overdue",
+      "CANCELED": "Canceled",
+      "INCOMPLETE": "Incomplete",
+      "EXPIRED": "Expired"
+    },
+    "toasts": {
+      "loadError": "Unable to load subscription",
+      "checkoutError": "Unable to start checkout",
+      "portalError": "Stripe portal unavailable",
+      "organizationMissing": "Organization not found",
+      "brandingSaved": "Branding updated",
+      "brandingSaveError": "Unable to save branding"
+    },
+    "currentPlan": {
+      "title": "Current plan",
+      "priceLabel": "Price: {price} {period}",
+      "periodLabel": "Current period: {start} - {end}",
+      "manageStripe": "Manage in Stripe",
+      "managementUnavailable": "Automatic management is unavailable for this account. Contact support to change this plan.",
+      "none": "No active subscription right now."
+    },
+    "plans": {
+      "title": "Available plans",
+      "activeLockedHint": "Your subscription is already active. Use Stripe management to change it.",
+      "starterUpgradeHint": "Your Starter plan is active. You can upgrade to Growth or Pro below.",
+      "recommended": "Recommended plan",
+      "perMonth": "/month",
+      "trialDays": "{count} trial days",
+      "choose": "Choose this plan",
+      "redirecting": "Redirecting...",
+      "planDetails": {
+        "starter": {
+          "commission": "6% per sale + Stripe fees",
+          "feature1": "Core features (payments, coupons, affiliates)"
+        },
+        "growth": {
+          "commission": "3.5% per sale + Stripe fees",
+          "feature1": "Advanced affiliates, analytics, exports, and priority support"
+        },
+        "pro": {
+          "commission": "1.5% per sale + Stripe fees",
+          "feature1": "Multi-admin, advanced API/webhooks, and advanced branding"
+        }
+      }
+    },
+    "branding": {
+      "title": "Branding v1",
+      "subtitle": "Configure your public branding to strengthen your brand across every page.",
+      "logoUrlLabel": "Logo URL",
+      "logoUrlPlaceholder": "https://...",
+      "logoUrlHelp": "This logo will be shown on your public pages.",
+      "hideSublynk": "Hide the \"Powered by Sublynk\" mention on public pages",
+      "proOnlyHint": "This option is available only with an active Pro plan.",
+      "save": "Save branding"
+    }
+  },
+  "publicPages": {
+    "backTo": "Back to {name}",
+    "includedAccess": "Included access",
+    "chooseOffer": "Choose an offer",
+    "channelFallback": "Channel",
+    "trialDays": "{count} free trial days",
+    "builtWith": "Powered by",
+    "logoAlt": "{name} logo",
+    "interval": {
+      "ONE_TIME": "one-time",
+      "DAY": "/day",
+      "WEEK": "/week",
+      "MONTH": "/month",
+      "QUARTER": "/quarter",
+      "YEAR": "/year"
+    },
+    "seo": {
+      "creatorDescription": "Discover offers from {organizationName}: premium subscriptions, secure Stripe payments, and instant access delivery.",
+      "creatorNotFoundTitle": "Creator page not found",
+      "productDescription": "Access {productName} by {organizationName}: premium subscription, secure payments, and automated access delivery.",
+      "productNotFoundTitle": "Product not found"
     }
   }
 }

@@ -35,4 +35,4 @@ export interface PlatformSubscription {
   createdAt: string;
 }
 
-export type PlatformPlanName = 'early-adopter' | 'pro';
+export type PlatformPlanName = 'starter' | 'growth' | 'pro';

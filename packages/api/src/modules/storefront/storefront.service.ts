@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ProductStatus } from '@prisma/client';
+import { PlatformSubscriptionStatus, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 function slugify(text: string): string {
@@ -10,6 +10,36 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
     .substring(0, 60);
+}
+
+function toRecord(
+  value: unknown,
+): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function resolvePublicBranding(
+  metadata: unknown,
+  status?: PlatformSubscriptionStatus | null,
+  planName?: string | null,
+) {
+  const metadataRecord = toRecord(metadata);
+  const branding = toRecord(metadataRecord?.branding);
+  const rawLogoUrl = typeof branding?.logoUrl === 'string' ? branding.logoUrl : '';
+  const logoUrl = rawLogoUrl.trim().length > 0 ? rawLogoUrl.trim() : null;
+  const requestedHide = branding?.hideSublynkBranding === true;
+  const proBrandingEnabled =
+    (status === PlatformSubscriptionStatus.ACTIVE ||
+      status === PlatformSubscriptionStatus.TRIALING) &&
+    planName === 'pro';
+
+  return {
+    logoUrl,
+    hideSublynkBranding: requestedHide && proBrandingEnabled,
+  };
 }
 
 @Injectable()
@@ -27,6 +57,17 @@ export class StorefrontService {
             slug: true,
             saasActive: true,
             stripeAccountId: true,
+            metadata: true,
+            platformSubscription: {
+              select: {
+                status: true,
+                platformPlan: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
         plans: {
@@ -70,6 +111,12 @@ export class StorefrontService {
       return null;
     }
 
+    const branding = resolvePublicBranding(
+      product.organization.metadata,
+      product.organization.platformSubscription?.status,
+      product.organization.platformSubscription?.platformPlan?.name,
+    );
+
     return {
       id: product.id,
       name: product.name,
@@ -78,6 +125,7 @@ export class StorefrontService {
         id: product.organization.id,
         name: product.organization.name,
         slug: product.organization.slug,
+        branding,
       },
       plans: product.plans,
       channels: product.channels.map((pc) => ({
@@ -128,6 +176,17 @@ export class StorefrontService {
         slug: true,
         saasActive: true,
         stripeAccountId: true,
+        metadata: true,
+        platformSubscription: {
+          select: {
+            status: true,
+            platformPlan: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -139,10 +198,17 @@ export class StorefrontService {
       return null;
     }
 
+    const branding = resolvePublicBranding(
+      organization.metadata,
+      organization.platformSubscription?.status,
+      organization.platformSubscription?.platformPlan?.name,
+    );
+
     return {
       id: organization.id,
       name: organization.name,
       slug: organization.slug,
+      branding,
     };
   }
 

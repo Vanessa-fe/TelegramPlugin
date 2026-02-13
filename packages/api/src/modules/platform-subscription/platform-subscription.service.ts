@@ -115,22 +115,21 @@ export class PlatformSubscriptionService {
   ): Promise<{ url: string }> {
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
-      include: { platformSubscription: true },
+      include: {
+        platformSubscription: {
+          include: {
+            platformPlan: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!organization) {
       throw new NotFoundException('Organisation introuvable');
-    }
-
-    // Check if already has an active subscription
-    if (organization.platformSubscription) {
-      const status = organization.platformSubscription.status;
-      if (
-        status === PlatformSubscriptionStatus.ACTIVE ||
-        status === PlatformSubscriptionStatus.TRIALING
-      ) {
-        throw new ForbiddenException('Un abonnement plateforme est déjà actif');
-      }
     }
 
     // Find the plan
@@ -140,6 +139,73 @@ export class PlatformSubscriptionService {
 
     if (!plan || !plan.isActive) {
       throw new NotFoundException('Plan introuvable ou inactif');
+    }
+
+    // Check if already has an active subscription
+    if (organization.platformSubscription) {
+      const currentSubscription = organization.platformSubscription;
+      const isActiveSubscription =
+        currentSubscription.status === PlatformSubscriptionStatus.ACTIVE ||
+        currentSubscription.status === PlatformSubscriptionStatus.TRIALING;
+      const isStarterUpgradePath =
+        currentSubscription.platformPlan?.name === 'starter' &&
+        plan.name !== 'starter';
+
+      if (isActiveSubscription && !isStarterUpgradePath) {
+        throw new ForbiddenException('Un abonnement plateforme est déjà actif');
+      }
+    }
+
+    const successUrl = this.config.get<string>('PLATFORM_CHECKOUT_SUCCESS_URL');
+    const cancelUrl = this.config.get<string>('PLATFORM_CHECKOUT_CANCEL_URL');
+
+    if (!successUrl || !cancelUrl) {
+      throw new BadRequestException(
+        'Platform checkout URLs are not configured',
+      );
+    }
+
+    // Free plan: no Stripe subscription, activate directly.
+    if (plan.priceCents <= 0) {
+      const now = new Date();
+
+      await this.prisma.platformSubscription.upsert({
+        where: { organizationId: organization.id },
+        create: {
+          organizationId: organization.id,
+          platformPlanId: plan.id,
+          status: PlatformSubscriptionStatus.ACTIVE,
+          currentPeriodStart: now,
+          currentPeriodEnd: null,
+          trialEndsAt: null,
+          cancelAtPeriodEnd: false,
+          metadata: {
+            freePlan: true,
+          },
+        },
+        update: {
+          platformPlanId: plan.id,
+          status: PlatformSubscriptionStatus.ACTIVE,
+          stripeSubscriptionId: null,
+          stripeCustomerId: null,
+          currentPeriodStart: now,
+          currentPeriodEnd: null,
+          trialEndsAt: null,
+          canceledAt: null,
+          cancelAtPeriodEnd: false,
+          graceUntil: null,
+          metadata: {
+            freePlan: true,
+          },
+        },
+      });
+
+      await this.updateSaasActive(organization.id);
+
+      const separator = successUrl.includes('?') ? '&' : '?';
+      return {
+        url: `${successUrl}${separator}free_plan=${encodeURIComponent(plan.name)}`,
+      };
     }
 
     // Get or create Stripe customer for the organization
@@ -168,7 +234,7 @@ export class PlatformSubscriptionService {
           interval: 'month',
         },
         product_data: {
-          name: `Solynk ${plan.displayName}`,
+          name: `Sublynk ${plan.displayName}`,
           metadata: {
             platformPlanId: plan.id,
             type: 'platform',
@@ -187,15 +253,6 @@ export class PlatformSubscriptionService {
         where: { id: plan.id },
         data: { stripePriceId },
       });
-    }
-
-    const successUrl = this.config.get<string>('PLATFORM_CHECKOUT_SUCCESS_URL');
-    const cancelUrl = this.config.get<string>('PLATFORM_CHECKOUT_CANCEL_URL');
-
-    if (!successUrl || !cancelUrl) {
-      throw new BadRequestException(
-        'Platform checkout URLs are not configured',
-      );
     }
 
     const trialPeriodDays =
