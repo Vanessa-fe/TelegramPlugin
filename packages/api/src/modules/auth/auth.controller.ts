@@ -17,11 +17,18 @@ import { SetAuthCookies } from './decorators/set-auth-cookies.decorator';
 import { ClearAuthCookies } from './decorators/clear-auth-cookies.decorator';
 import { CookieResponseInterceptor } from './interceptors/cookie-response.interceptor';
 import { CookieClearInterceptor } from './interceptors/cookie-clear.interceptor';
-import type { AuthUser, AuthResult, AuthProfile } from './auth.types';
+import type {
+  AuthUser,
+  AuthResult,
+  AuthProfile,
+  RegisterResult,
+} from './auth.types';
 import {
   loginSchema,
   refreshSchema,
   registerSchema,
+  verifyEmailSchema,
+  resendVerificationSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   updatePasswordSchema,
@@ -29,6 +36,8 @@ import {
   type LoginDto,
   type RefreshDto,
   type RegisterDto,
+  type VerifyEmailDto,
+  type ResendVerificationDto,
   type ForgotPasswordDto,
   type ResetPasswordDto,
   type UpdatePasswordDto,
@@ -42,12 +51,34 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  @SetAuthCookies()
   register(
     @Body(new ZodValidationPipe(registerSchema))
     body: RegisterDto,
-  ): Promise<AuthResult> {
+  ): Promise<RegisterResult> {
     return this.authService.register(body);
+  }
+
+  @Public()
+  @Post('verify-email')
+  @SetAuthCookies()
+  verifyEmail(
+    @Body(new ZodValidationPipe(verifyEmailSchema))
+    body: VerifyEmailDto,
+  ): Promise<AuthResult> {
+    return this.authService.verifyEmail(body.token);
+  }
+
+  @Public()
+  @Post('resend-verification')
+  async resendVerification(
+    @Body(new ZodValidationPipe(resendVerificationSchema))
+    body: ResendVerificationDto,
+  ): Promise<{ message: string }> {
+    await this.authService.resendEmailVerification(body.email);
+    return {
+      message:
+        "Si un compte existe avec cet email et n'est pas vérifié, un email de vérification a été envoyé.",
+    };
   }
 
   @Public()

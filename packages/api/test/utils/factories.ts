@@ -22,6 +22,7 @@ export async function createUser(data?: {
   organizationId?: string;
   firstName?: string;
   lastName?: string;
+  emailVerifiedAt?: Date | null;
 }) {
   const passwordHash = await bcrypt.hash(data?.password || 'Test1234!', 10);
 
@@ -33,6 +34,10 @@ export async function createUser(data?: {
       organizationId: data?.organizationId,
       firstName: data?.firstName || 'Test',
       lastName: data?.lastName || 'User',
+      emailVerifiedAt:
+        data?.emailVerifiedAt !== undefined
+          ? data.emailVerifiedAt
+          : new Date(),
     },
   });
 }

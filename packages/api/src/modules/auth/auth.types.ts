@@ -31,3 +31,9 @@ export interface AuthProfile {
 export interface AuthResult extends AuthTokens {
   user: AuthProfile;
 }
+
+export interface RegisterResult {
+  message: string;
+  email: string;
+  verificationRequired: true;
+}

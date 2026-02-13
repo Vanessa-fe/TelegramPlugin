@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { OAuthDivider } from '@/components/auth/oauth-divider';
 import { PasswordStrengthIndicator } from '@/components/auth/password-strength';
 import { CheckCircle2 } from 'lucide-react';
 import { ORG_CURRENCY_OPTIONS } from '@/lib/currencies';
+import { authApi } from '@/lib/api/auth';
 
 type ErrorMessage =
   | string
@@ -81,7 +82,6 @@ function generateSuggestedPassword(): string {
 }
 
 export default function RegisterPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { register } = useAuth();
   const t = useTranslations('auth.register');
@@ -96,6 +96,7 @@ export default function RegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
 
   // Handle OAuth error from redirect
   useEffect(() => {
@@ -121,15 +122,15 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      await register({
+      const result = await register({
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
         currency: formData.currency,
       });
+      setSubmittedEmail(result.email || formData.email.trim().toLowerCase());
       toast.success(t('success'));
-      router.push('/dashboard');
     } catch (err) {
       const axiosError = err as {
         response?: { data?: { message?: ErrorMessage } };
@@ -144,6 +145,20 @@ export default function RegisterPage() {
             : t('error');
       setError(msg);
       toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    if (!submittedEmail) return;
+
+    setIsLoading(true);
+    try {
+      await authApi.resendVerification({ email: submittedEmail });
+      toast.success(t('resendSuccess'));
+    } catch {
+      toast.error(t('resendError'));
     } finally {
       setIsLoading(false);
     }
@@ -174,173 +189,224 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           {/* Card */}
           <div className="bg-white rounded-2xl border border-border-custom shadow-sm p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-text-primary mb-2">
-                {t('title')}
-              </h1>
-              <p className="text-text-secondary">
-                {t('subtitle')}
-              </p>
-            </div>
-
-            {/* OAuth Buttons */}
-            <OAuthButtons mode="register" disabled={isLoading} />
-
-            <OAuthDivider />
-
-            <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
-              {error && (
-                <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
-                  {error}
-                </p>
-              )}
-              {/* Name row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-text-primary">
-                    {t('firstName')}
-                  </Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    autoComplete="given-name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    placeholder={t('firstNamePlaceholder')}
-                    className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
-                  />
+            {!submittedEmail ? (
+              <>
+                <div className="text-center mb-8">
+                  <h1 className="text-2xl font-bold text-text-primary mb-2">
+                    {t('title')}
+                  </h1>
+                  <p className="text-text-secondary">
+                    {t('subtitle')}
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-text-primary">
-                    {t('lastName')}
-                  </Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    autoComplete="family-name"
-                    value={formData.lastName}
-                    onChange={handleChange}
+
+                {/* OAuth Buttons */}
+                <OAuthButtons mode="register" disabled={isLoading} />
+
+                <OAuthDivider />
+
+                <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
+                  {error && (
+                    <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+                      {error}
+                    </p>
+                  )}
+                  {/* Name row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName" className="text-text-primary">
+                        {t('firstName')}
+                      </Label>
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        autoComplete="given-name"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        placeholder={t('firstNamePlaceholder')}
+                        className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName" className="text-text-primary">
+                        {t('lastName')}
+                      </Label>
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        autoComplete="family-name"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        disabled={isLoading}
+                        placeholder={t('lastNamePlaceholder')}
+                        className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-text-primary">
+                      {t('email')}
+                    </Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                      placeholder={t('emailPlaceholder')}
+                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-text-primary">
+                      {t('password')}
+                    </Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      autoComplete="new-password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                      placeholder={t('passwordPlaceholder')}
+                      aria-describedby="password-strength"
+                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-text-secondary">
+                        {t('passwordHint')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleUseSuggestedPassword}
+                        className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {t('useSuggested')}
+                      </button>
+                    </div>
+                    <PasswordStrengthIndicator password={formData.password} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="currency" className="text-text-primary">
+                      {t('currency')}
+                    </Label>
+                    <select
+                      id="currency"
+                      name="currency"
+                      value={formData.currency}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                      className="h-12 w-full rounded-md border border-border-custom bg-white px-3 text-sm focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600/30"
+                    >
+                      {ORG_CURRENCY_OPTIONS.map((currency) => (
+                        <option key={currency} value={currency}>
+                          {t(`currencyOptions.${currency}`)}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-text-secondary">{t('currencyHelp')}</p>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold"
                     disabled={isLoading}
-                    placeholder={t('lastNamePlaceholder')}
-                    className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-text-primary">
-                  {t('email')}
-                </Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  placeholder={t('emailPlaceholder')}
-                  className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-text-primary">
-                  {t('password')}
-                </Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  placeholder={t('passwordPlaceholder')}
-                  aria-describedby="password-strength"
-                  className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-text-secondary">
-                    {t('passwordHint')}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleUseSuggestedPassword}
-                    className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {t('useSuggested')}
-                  </button>
+                    {isLoading ? t('submitting') : t('submit')}
+                  </Button>
+                </form>
+
+                {/* Trial badge */}
+                <div className="mt-6 text-center">
+                  <span className="inline-flex items-center gap-2 text-sm text-text-secondary">
+                    <svg
+                      className="w-4 h-4 text-purple-600"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {t('trialBadge')}
+                  </span>
                 </div>
-                <PasswordStrengthIndicator password={formData.password} />
+
+                <div className="mt-6 text-center">
+                  <p className="text-text-secondary">
+                    {t('hasAccount')}{' '}
+                    <Link
+                      href="/login"
+                      className="text-purple-600 hover:text-purple-700 font-medium"
+                    >
+                      {t('signIn')}
+                    </Link>
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4" role="status">
+                <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-text-primary mb-2">
+                  {t('successTitle')}
+                </h2>
+                <p className="text-text-secondary mb-6">
+                  {t('successDescription')}{' '}
+                  <span className="font-medium text-text-primary">
+                    {submittedEmail}
+                  </span>
+                </p>
+                <p className="text-sm text-text-secondary mb-6">
+                  {t('successHint')}
+                </p>
+                <div className="space-y-3">
+                  <Button
+                    type="button"
+                    className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                    onClick={handleResendVerification}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? t('resending') : t('resend')}
+                  </Button>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center justify-center w-full h-12 border border-border-custom text-text-primary font-medium rounded-lg hover:bg-surface transition-colors"
+                  >
+                    {t('backToLogin')}
+                  </Link>
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="currency" className="text-text-primary">
-                  {t('currency')}
-                </Label>
-                <select
-                  id="currency"
-                  name="currency"
-                  value={formData.currency}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  className="h-12 w-full rounded-md border border-border-custom bg-white px-3 text-sm focus:border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600/30"
-                >
-                  {ORG_CURRENCY_OPTIONS.map((currency) => (
-                    <option key={currency} value={currency}>
-                      {t(`currencyOptions.${currency}`)}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-text-secondary">{t('currencyHelp')}</p>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold"
-                disabled={isLoading}
-              >
-                {isLoading ? t('submitting') : t('submit')}
-              </Button>
-            </form>
-
-            {/* Trial badge */}
-            <div className="mt-6 text-center">
-              <span className="inline-flex items-center gap-2 text-sm text-text-secondary">
-                <svg
-                  className="w-4 h-4 text-purple-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {t('trialBadge')}
-              </span>
-            </div>
-
-            <div className="mt-6 text-center">
-              <p className="text-text-secondary">
-                {t('hasAccount')}{' '}
-                <Link
-                  href="/login"
-                  className="text-purple-600 hover:text-purple-700 font-medium"
-                >
-                  {t('signIn')}
-                </Link>
-              </p>
-            </div>
+            )}
           </div>
 
           {/* Footer note */}

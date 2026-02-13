@@ -34,7 +34,10 @@ export class OAuthService {
       // Update lastLoginAt
       const updatedUser = await this.prisma.user.update({
         where: { id: existingOAuth.userId },
-        data: { lastLoginAt: new Date() },
+        data: {
+          lastLoginAt: new Date(),
+          emailVerifiedAt: new Date(),
+        },
       });
 
       const ensuredUser = await this.ensureOrganization(updatedUser, profile);
@@ -61,7 +64,10 @@ export class OAuthService {
         // Update lastLoginAt
         const updatedUser = await this.prisma.user.update({
           where: { id: existingUser.id },
-          data: { lastLoginAt: new Date() },
+          data: {
+            lastLoginAt: new Date(),
+            emailVerifiedAt: new Date(),
+          },
         });
 
         const ensuredUser = await this.ensureOrganization(
@@ -87,6 +93,7 @@ export class OAuthService {
         lastName: profile.lastName,
         role: UserRole.ORG_ADMIN,
         lastLoginAt: new Date(),
+        emailVerifiedAt: new Date(),
         organization: {
           create: {
             name: organizationName,

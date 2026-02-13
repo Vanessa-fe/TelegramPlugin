@@ -3,10 +3,13 @@ import type {
   User,
   LoginCredentials,
   RegisterData,
+  RegisterResponse,
   UpdateProfileData,
   UpdatePasswordData,
   ForgotPasswordData,
   ResetPasswordData,
+  VerifyEmailData,
+  ResendVerificationData,
 } from '@/types/auth';
 
 export const authApi = {
@@ -16,7 +19,10 @@ export const authApi = {
   },
 
   async register(userData: RegisterData) {
-    const { data } = await apiClient.post<{ user: User }>('/auth/register', userData);
+    const { data } = await apiClient.post<RegisterResponse>(
+      '/auth/register',
+      userData,
+    );
     return data;
   },
 
@@ -59,6 +65,22 @@ export const authApi = {
     const { data } = await apiClient.post<{ user: User }>(
       '/auth/reset-password',
       dto
+    );
+    return data;
+  },
+
+  async verifyEmail(dto: VerifyEmailData) {
+    const { data } = await apiClient.post<{ user: User }>(
+      '/auth/verify-email',
+      dto,
+    );
+    return data;
+  },
+
+  async resendVerification(dto: ResendVerificationData) {
+    const { data } = await apiClient.post<{ message: string }>(
+      '/auth/resend-verification',
+      dto,
     );
     return data;
   },

@@ -573,6 +573,7 @@ export class TeamService {
           id: true,
           organizationId: true,
           passwordHash: true,
+          emailVerifiedAt: true,
           firstName: true,
           lastName: true,
         },
@@ -602,6 +603,10 @@ export class TeamService {
           role: invite.role,
           isActive: true,
         };
+
+        if (!existingUser.emailVerifiedAt) {
+          updatePayload.emailVerifiedAt = new Date();
+        }
 
         if (!existingUser.organizationId) {
           updatePayload.organization = {
@@ -642,6 +647,7 @@ export class TeamService {
             role: invite.role,
             organizationId: invite.organizationId,
             isActive: true,
+            emailVerifiedAt: new Date(),
           },
         });
       }

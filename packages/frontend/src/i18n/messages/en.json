@@ -315,7 +315,15 @@
       "terms": "Terms",
       "and": "and",
       "privacy": "Privacy Policy",
-      "success": "Account created successfully",
+      "success": "Verification email sent",
+      "successTitle": "Check your email",
+      "successDescription": "We sent a verification link to",
+      "successHint": "Click the link to activate your account.",
+      "resend": "Resend email",
+      "resending": "Sending...",
+      "resendSuccess": "Verification email resent",
+      "resendError": "Failed to resend verification email",
+      "backToLogin": "Go to login",
       "suggestedApplied": "Suggested password applied",
       "error": "Registration failed"
     },
@@ -354,6 +362,19 @@
       "suggestedApplied": "Suggested password applied",
       "toastSuccess": "Password updated",
       "toastError": "Failed to reset password. Please try again."
+    },
+    "verifyEmail": {
+      "loadingTitle": "Verifying your email",
+      "loadingDescription": "We are confirming your email address...",
+      "missingToken": "The verification link is invalid or incomplete.",
+      "successTitle": "Email verified",
+      "successDescription": "Your account is now active. You can access your dashboard.",
+      "successCta": "Go to dashboard",
+      "errorTitle": "Invalid or expired link",
+      "backToRegister": "Back to register",
+      "backToLogin": "Back to login",
+      "toastSuccess": "Email address verified",
+      "toastError": "Failed to verify email."
     },
     "oauth": {
       "continueWithGoogle": "Continue with Google",

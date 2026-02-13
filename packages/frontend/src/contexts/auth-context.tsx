@@ -6,6 +6,7 @@ import type {
   User,
   LoginCredentials,
   RegisterData,
+  RegisterResponse,
   UpdateProfileData,
   UpdatePasswordData,
 } from '@/types/auth';
@@ -15,7 +16,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
   updatePassword: (data: UpdatePasswordData) => Promise<void>;
@@ -49,8 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function register(data: RegisterData) {
-    const { user: userData } = await authApi.register(data);
-    setUser(userData);
+    return authApi.register(data);
   }
 
   async function logout() {

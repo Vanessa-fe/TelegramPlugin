@@ -196,6 +196,7 @@ model User {
   id              String    @id @default(uuid())
   email           String    @unique
   passwordHash    String?
+  emailVerifiedAt DateTime?
   role            UserRole  @default(ORG_ADMIN)
   firstName       String?
   lastName        String?
@@ -210,10 +211,25 @@ model User {
   dataExports    DataExport[]
   oauthAccounts  OAuthAccount[]
   resetTokens    PasswordResetToken[]
+  verificationTokens EmailVerificationToken[]
   sentTeamInvites TeamInvite[] @relation("TeamInviteInvitedBy")
 }
 
 model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
   id        String   @id @default(uuid())
   userId    String
   tokenHash String   @unique

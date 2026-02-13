@@ -28,6 +28,12 @@ export interface RegisterData {
   currency?: string;
 }
 
+export interface RegisterResponse {
+  message: string;
+  email: string;
+  verificationRequired: boolean;
+}
+
 export interface UpdateProfileData {
   email?: string;
   firstName?: string;
@@ -47,4 +53,12 @@ export interface ForgotPasswordData {
 export interface ResetPasswordData {
   token: string;
   newPassword: string;
+}
+
+export interface VerifyEmailData {
+  token: string;
+}
+
+export interface ResendVerificationData {
+  email: string;
 }

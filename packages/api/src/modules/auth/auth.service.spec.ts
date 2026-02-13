@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -14,8 +15,6 @@ import { NotificationsService } from '../notifications/notifications.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prismaService: PrismaService;
-  let jwtService: JwtService;
 
   const mockPrismaService = {
     user: {
@@ -27,6 +26,20 @@ describe('AuthService', () => {
       findUnique: jest.fn(),
       create: jest.fn(),
     },
+    emailVerificationToken: {
+      findFirst: jest.fn(),
+      deleteMany: jest.fn(),
+      create: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    passwordResetToken: {
+      deleteMany: jest.fn(),
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    $transaction: jest.fn(),
   };
 
   const mockJwtService = {
@@ -42,11 +55,18 @@ describe('AuthService', () => {
       };
       return config[key];
     }),
-    get: jest.fn(),
+    get: jest.fn((key: string) => {
+      const config: Record<string, string> = {
+        FRONTEND_URL: 'http://localhost:3000',
+        EMAIL_VERIFICATION_TTL_MINUTES: '1440',
+      };
+      return config[key];
+    }),
   };
 
   const mockNotificationsService = {
     sendPasswordResetEmail: jest.fn(),
+    sendEmailVerificationEmail: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -61,11 +81,12 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    jwtService = module.get<JwtService>(JwtService);
 
     mockPrismaService.organization.findUnique.mockResolvedValue(null);
     mockPrismaService.organization.create.mockResolvedValue({ id: 'org-1' });
+    mockPrismaService.$transaction.mockImplementation(async (callback: any) =>
+      callback(mockPrismaService),
+    );
   });
 
   afterEach(() => {
@@ -73,7 +94,7 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('should create a new user successfully', async () => {
+    it('should create a new unverified user and send a verification email', async () => {
       const registerDto = {
         email: 'test@example.com',
         password: 'Test1234!',
@@ -85,17 +106,17 @@ describe('AuthService', () => {
       mockPrismaService.user.create.mockResolvedValue({
         id: '1',
         email: registerDto.email.toLowerCase(),
-        role: UserRole.VIEWER,
+        role: UserRole.ORG_ADMIN,
         firstName: registerDto.firstName,
         lastName: registerDto.lastName,
         isActive: true,
-        organizationId: null,
+        organizationId: 'org-1',
         passwordHash: 'hashed',
+        emailVerifiedAt: null,
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      mockJwtService.signAsync.mockResolvedValue('token');
 
       const result = await service.register(registerDto);
 
@@ -108,9 +129,29 @@ describe('AuthService', () => {
           currency: 'EUR',
         }),
       });
-      expect(mockPrismaService.user.create).toHaveBeenCalled();
-      expect(result.user.email).toBe(registerDto.email.toLowerCase());
-      expect(result.accessToken).toBe('token');
+      expect(mockPrismaService.emailVerificationToken.deleteMany).toHaveBeenCalledWith(
+        {
+          where: { userId: '1', usedAt: null },
+        },
+      );
+      expect(mockPrismaService.emailVerificationToken.create).toHaveBeenCalledWith(
+        {
+          data: {
+            userId: '1',
+            tokenHash: expect.any(String),
+            expiresAt: expect.any(Date),
+          },
+        },
+      );
+      expect(
+        mockNotificationsService.sendEmailVerificationEmail,
+      ).toHaveBeenCalledWith(
+        registerDto.email.toLowerCase(),
+        expect.stringContaining('/verify-email?token='),
+        registerDto.firstName,
+      );
+      expect(result.verificationRequired).toBe(true);
+      expect(result.email).toBe(registerDto.email.toLowerCase());
     });
 
     it('should use the provided currency when creating organization', async () => {
@@ -130,11 +171,11 @@ describe('AuthService', () => {
         passwordHash: 'hashed',
         firstName: null,
         lastName: null,
+        emailVerifiedAt: null,
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      mockJwtService.signAsync.mockResolvedValue('token');
 
       await service.register(registerDto);
 
@@ -177,20 +218,97 @@ describe('AuthService', () => {
         passwordHash: 'hashed',
         firstName: null,
         lastName: null,
+        emailVerifiedAt: null,
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      mockJwtService.signAsync.mockResolvedValue('token');
 
-      const result = await service.register(registerDto);
+      await service.register(registerDto);
 
       expect(mockPrismaService.user.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           role: UserRole.ORG_ADMIN,
           organizationId: 'org-123',
+          emailVerifiedAt: null,
         }),
       });
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('should verify email and return auth tokens', async () => {
+      const now = new Date();
+      mockPrismaService.emailVerificationToken.findFirst.mockResolvedValue({
+        id: 'token-1',
+        userId: '1',
+        tokenHash: 'hash',
+        expiresAt: new Date(Date.now() + 1000 * 60),
+        usedAt: null,
+        createdAt: new Date(),
+        user: {
+          id: '1',
+          email: 'test@example.com',
+          role: UserRole.ORG_ADMIN,
+          organizationId: 'org-1',
+          passwordHash: 'hashed',
+          firstName: 'Test',
+          lastName: 'User',
+          isActive: true,
+          emailVerifiedAt: null,
+          lastLoginAt: null,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      mockPrismaService.user.update.mockResolvedValue({
+        id: '1',
+        email: 'test@example.com',
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        passwordHash: 'hashed',
+        firstName: 'Test',
+        lastName: 'User',
+        isActive: true,
+        emailVerifiedAt: now,
+        lastLoginAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      mockPrismaService.emailVerificationToken.updateMany.mockResolvedValue({
+        count: 1,
+      });
+      mockJwtService.signAsync.mockResolvedValue('token');
+
+      const result = await service.verifyEmail('plain-token');
+
+      expect(mockPrismaService.emailVerificationToken.findFirst).toHaveBeenCalledWith(
+        {
+          where: {
+            tokenHash: expect.any(String),
+            usedAt: null,
+            expiresAt: { gt: expect.any(Date) },
+          },
+          include: { user: true },
+        },
+      );
+      expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: {
+          emailVerifiedAt: expect.any(Date),
+          lastLoginAt: expect.any(Date),
+        },
+      });
+      expect(result.user.email).toBe('test@example.com');
+      expect(result.accessToken).toBe('token');
+    });
+
+    it('should throw BadRequestException for invalid token', async () => {
+      mockPrismaService.emailVerificationToken.findFirst.mockResolvedValue(null);
+
+      await expect(service.verifyEmail('invalid')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -208,7 +326,8 @@ describe('AuthService', () => {
         role: UserRole.VIEWER,
         firstName: null,
         lastName: null,
-        organizationId: null,
+        organizationId: 'org-1',
+        emailVerifiedAt: new Date(),
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -222,6 +341,7 @@ describe('AuthService', () => {
         firstName: null,
         lastName: null,
         organizationId: 'org-1',
+        emailVerifiedAt: new Date(),
         lastLoginAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -257,6 +377,29 @@ describe('AuthService', () => {
         firstName: null,
         lastName: null,
         organizationId: null,
+        emailVerifiedAt: new Date(),
+        lastLoginAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await expect(
+        service.login('test@example.com', 'Test1234!'),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ForbiddenException if email is not verified', async () => {
+      const hashedPassword = await bcrypt.hash('Test1234!', 10);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: '1',
+        email: 'test@example.com',
+        passwordHash: hashedPassword,
+        isActive: true,
+        role: UserRole.VIEWER,
+        firstName: null,
+        lastName: null,
+        organizationId: null,
+        emailVerifiedAt: null,
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -278,6 +421,7 @@ describe('AuthService', () => {
         firstName: null,
         lastName: null,
         organizationId: null,
+        emailVerifiedAt: new Date(),
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -308,6 +452,7 @@ describe('AuthService', () => {
         firstName: null,
         lastName: null,
         organizationId: null,
+        emailVerifiedAt: new Date(),
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -362,6 +507,7 @@ describe('AuthService', () => {
         firstName: null,
         lastName: null,
         organizationId: null,
+        emailVerifiedAt: new Date(),
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -384,6 +530,7 @@ describe('AuthService', () => {
         organizationId: null,
         isActive: true,
         passwordHash: 'hashed',
+        emailVerifiedAt: new Date(),
         lastLoginAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),

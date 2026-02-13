@@ -18,6 +18,7 @@ import {
   JwtPayload,
   AuthProfile,
   AuthResult,
+  RegisterResult,
 } from './auth.types';
 import type {
   RegisterDto,
@@ -37,7 +38,7 @@ export class AuthService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async register(data: RegisterDto): Promise<AuthResult> {
+  async register(data: RegisterDto): Promise<RegisterResult> {
     const normalizedEmail = data.email.trim().toLowerCase();
 
     // Check if email exists
@@ -47,6 +48,16 @@ export class AuthService {
 
     if (existing) {
       throw new ConflictException('Cet email est déjà utilisé');
+    }
+
+    const frontendUrl = this.getFrontendBaseUrl();
+    if (!frontendUrl) {
+      this.logger.error(
+        'Email verification requested but frontend URL is not configured',
+      );
+      throw new BadRequestException(
+        "L'inscription est temporairement indisponible",
+      );
     }
 
     // Hash password
@@ -89,16 +100,151 @@ export class AuthService {
         lastName: data.lastName,
         organizationId,
         role,
+        emailVerifiedAt: null,
       },
     });
 
-    const payload = this.buildPayload(user);
+    await this.sendEmailVerification(user, frontendUrl);
+
+    return {
+      message:
+        'Compte créé. Vérifiez votre email pour activer votre compte.',
+      email: user.email,
+      verificationRequired: true,
+    };
+  }
+
+  async verifyEmail(token: string): Promise<AuthResult> {
+    const tokenHash = this.hashVerificationToken(token);
+    const now = new Date();
+
+    const verificationToken = await this.prisma.emailVerificationToken.findFirst(
+      {
+        where: {
+          tokenHash,
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        include: {
+          user: true,
+        },
+      },
+    );
+
+    if (!verificationToken) {
+      throw new BadRequestException('Token invalide ou expiré');
+    }
+
+    if (!verificationToken.user.isActive) {
+      throw new ForbiddenException('Ce compte est désactivé');
+    }
+
+    const updatedUser = await this.prisma.$transaction(async (tx) => {
+      const verifiedUser = await tx.user.update({
+        where: { id: verificationToken.userId },
+        data: {
+          emailVerifiedAt: now,
+          lastLoginAt: now,
+        },
+      });
+
+      await tx.emailVerificationToken.updateMany({
+        where: { userId: verificationToken.userId, usedAt: null },
+        data: { usedAt: now },
+      });
+
+      return verifiedUser;
+    });
+
+    const payload = this.buildPayload(updatedUser);
     const tokens = await this.signTokens(payload);
 
     return {
       ...tokens,
-      user: this.sanitizeUser(user),
+      user: this.sanitizeUser(updatedUser),
     };
+  }
+
+  async resendEmailVerification(email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      return;
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user || !user.isActive || user.emailVerifiedAt) {
+      return;
+    }
+
+    const frontendUrl = this.getFrontendBaseUrl();
+    if (!frontendUrl) {
+      this.logger.warn(
+        'Email verification resend requested but frontend URL is not configured',
+      );
+      return;
+    }
+
+    await this.sendEmailVerification(user, frontendUrl);
+  }
+
+  private async sendEmailVerification(
+    user: Pick<User, 'id' | 'email' | 'firstName'>,
+    frontendUrl: string,
+  ): Promise<void> {
+    const token = await this.issueEmailVerificationToken(user.id);
+    const verificationLink = `${frontendUrl}/verify-email?token=${encodeURIComponent(
+      token,
+    )}`;
+
+    await this.notifications.sendEmailVerificationEmail(
+      user.email,
+      verificationLink,
+      user.firstName ?? undefined,
+    );
+  }
+
+  private async issueEmailVerificationToken(userId: string): Promise<string> {
+    const token = this.generateResetToken();
+    const tokenHash = this.hashVerificationToken(token);
+    const expiresAt = new Date(
+      Date.now() + this.getEmailVerificationTtlMinutes() * 60 * 1000,
+    );
+
+    await this.prisma.emailVerificationToken.deleteMany({
+      where: { userId, usedAt: null },
+    });
+
+    await this.prisma.emailVerificationToken.create({
+      data: {
+        userId,
+        tokenHash,
+        expiresAt,
+      },
+    });
+
+    return token;
+  }
+
+  private hashVerificationToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private getEmailVerificationTtlMinutes(): number {
+    const rawValue = this.config.get<string>('EMAIL_VERIFICATION_TTL_MINUTES');
+    if (!rawValue) {
+      return 24 * 60;
+    }
+
+    const parsed = Number(rawValue);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+
+    return 24 * 60;
   }
 
   private slugify(value: string): string {
@@ -457,6 +603,12 @@ export class AuthService {
 
     if (!passwordValid) {
       throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    if (!user.emailVerifiedAt) {
+      throw new ForbiddenException(
+        'Veuillez vérifier votre adresse email avant de vous connecter',
+      );
     }
 
     return user;

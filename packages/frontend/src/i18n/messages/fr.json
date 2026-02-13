@@ -315,7 +315,15 @@
       "terms": "Conditions",
       "and": "et",
       "privacy": "Politique de confidentialité",
-      "success": "Compte créé avec succès",
+      "success": "Email de vérification envoyé",
+      "successTitle": "Vérifie ton email",
+      "successDescription": "Nous avons envoyé un lien de vérification à",
+      "successHint": "Clique sur le lien pour activer ton compte.",
+      "resend": "Renvoyer l'email",
+      "resending": "Envoi...",
+      "resendSuccess": "Email de vérification renvoyé",
+      "resendError": "Impossible de renvoyer l'email pour le moment",
+      "backToLogin": "Aller à la connexion",
       "suggestedApplied": "Mot de passe suggéré appliqué",
       "error": "Erreur lors de la création du compte"
     },
@@ -354,6 +362,19 @@
       "suggestedApplied": "Mot de passe suggéré appliqué",
       "toastSuccess": "Mot de passe mis à jour",
       "toastError": "Impossible de réinitialiser le mot de passe. Réessaie."
+    },
+    "verifyEmail": {
+      "loadingTitle": "Vérification en cours",
+      "loadingDescription": "Nous confirmons ton adresse email...",
+      "missingToken": "Le lien de vérification est invalide ou incomplet.",
+      "successTitle": "Email vérifié",
+      "successDescription": "Ton compte est activé. Tu peux accéder au dashboard.",
+      "successCta": "Aller au dashboard",
+      "errorTitle": "Lien invalide ou expiré",
+      "backToRegister": "Retour à l'inscription",
+      "backToLogin": "Retour à la connexion",
+      "toastSuccess": "Adresse email vérifiée",
+      "toastError": "Impossible de vérifier l'adresse email."
     },
     "oauth": {
       "continueWithGoogle": "Continuer avec Google",

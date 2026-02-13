@@ -153,6 +153,7 @@ async function main() {
       firstName: 'Admin',
       lastName: 'Super',
       isActive: true,
+      emailVerifiedAt: new Date(),
     },
   });
   console.log(`✅ Admin created: ${adminUser.email} (role: ${adminUser.role})`);
@@ -213,6 +214,7 @@ async function main() {
       lastName: 'Test',
       isActive: true,
       organizationId: merchantOrg.id,
+      emailVerifiedAt: new Date(),
     },
   });
   console.log(
@@ -232,6 +234,7 @@ async function main() {
       lastName: 'Createur',
       isActive: true,
       organizationId: merchantOrg.id,
+      emailVerifiedAt: new Date(),
     },
   });
   console.log(
@@ -251,6 +254,7 @@ async function main() {
       lastName: 'Follower',
       isActive: true,
       organizationId: merchantOrg.id,
+      emailVerifiedAt: new Date(),
     },
   });
   console.log(

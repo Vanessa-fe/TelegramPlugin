@@ -1,7 +1,8 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
-import { cleanDatabase, disconnectDatabase } from './utils/database';
+import { cleanDatabase, disconnectDatabase, prisma } from './utils/database';
 import { createUser } from './utils/factories';
 import { createTestApp } from './utils/app';
+import { createHash } from 'node:crypto';
 
 describe('Auth (e2e)', () => {
   let app: NestFastifyApplication;
@@ -34,10 +35,10 @@ describe('Auth (e2e)', () => {
 
       expect(response.statusCode).toBe(201);
       const body = JSON.parse(response.body);
-      expect(body.user).toBeDefined();
-      expect(body.user.email).toBe('newuser@example.com');
+      expect(body.verificationRequired).toBe(true);
+      expect(body.email).toBe('newuser@example.com');
       expect(response.cookies).toBeDefined();
-      expect(response.cookies.length).toBeGreaterThan(0);
+      expect(response.cookies.length).toBe(0);
     });
 
     it('should fail with invalid email', async () => {
@@ -79,6 +80,55 @@ describe('Auth (e2e)', () => {
       });
 
       expect(response.statusCode).toBe(409);
+    });
+  });
+
+  describe('POST /auth/verify-email', () => {
+    it('should verify email and set auth cookies', async () => {
+      const user = await createUser({
+        email: 'verify-me@example.com',
+        emailVerifiedAt: null,
+      });
+      const token = 'verification-token';
+
+      await prisma.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: createHash('sha256').update(token).digest('hex'),
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        },
+      });
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/auth/verify-email',
+        payload: { token },
+      });
+
+      expect(response.statusCode).toBe(201);
+      const body = JSON.parse(response.body);
+      expect(body.user).toBeDefined();
+      expect(body.user.email).toBe('verify-me@example.com');
+
+      const cookieNames = response.cookies.map((c: any) => c.name);
+      expect(cookieNames).toContain('accessToken');
+      expect(cookieNames).toContain('refreshToken');
+
+      const updated = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { emailVerifiedAt: true },
+      });
+      expect(updated?.emailVerifiedAt).not.toBeNull();
+    });
+
+    it('should fail with invalid token', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/auth/verify-email',
+        payload: { token: 'invalid-token' },
+      });
+
+      expect(response.statusCode).toBe(400);
     });
   });
 

@@ -246,6 +246,24 @@ export class NotificationsService implements OnModuleInit {
     await this.sendEmail(to, subject, body);
   }
 
+  async sendEmailVerificationEmail(
+    to: string,
+    verificationLink: string,
+    firstName?: string,
+  ): Promise<void> {
+    const subject = 'Confirmez votre adresse email';
+    const greeting = firstName ? `Bonjour ${firstName},` : 'Bonjour,';
+    const body = `
+      <h1>Vérifiez votre adresse email</h1>
+      <p>${greeting}</p>
+      <p>Merci pour votre inscription. Cliquez sur le lien ci-dessous pour activer votre compte.</p>
+      <p><a href="${verificationLink}">Vérifier mon email</a></p>
+      <p>Ce lien expirera bientôt.</p>
+    `;
+
+    await this.sendEmail(to, subject, body);
+  }
+
   async sendTeamInviteEmail(
     to: string,
     organizationName: string,
