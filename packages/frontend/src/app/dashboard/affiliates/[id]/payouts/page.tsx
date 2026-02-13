@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { affiliatesApi } from "@/lib/api/affiliates";
+import { getAffiliateDisplayLabel } from "@/lib/affiliate-utils";
 import {
   PayoutStatus,
   type Affiliate,
@@ -177,7 +178,7 @@ export default function AffiliatePayoutsPage() {
               {t("payouts.title")}
             </h1>
             <p className="text-text-secondary">
-              {affiliate.name || affiliate.email}
+              {getAffiliateDisplayLabel(affiliate)}
             </p>
           </div>
         </div>

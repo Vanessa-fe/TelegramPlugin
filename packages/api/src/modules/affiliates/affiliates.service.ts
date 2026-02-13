@@ -20,6 +20,7 @@ import type {
 } from './affiliates.schema';
 
 const REFERRAL_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const INTERNAL_AFFILIATE_EMAIL_DOMAIN = 'sublynk.local';
 
 function generateReferralCode(): string {
   const bytes = randomBytes(8);
@@ -28,6 +29,16 @@ function generateReferralCode(): string {
     code += REFERRAL_CODE_ALPHABET[byte % REFERRAL_CODE_ALPHABET.length];
   }
   return code;
+}
+
+function normalizeAffiliateEmail(email?: string): string | undefined {
+  if (!email) return undefined;
+  const normalized = email.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function buildInternalAffiliateEmail(referralCode: string): string {
+  return `affiliate+${referralCode.toLowerCase()}@${INTERNAL_AFFILIATE_EMAIL_DOMAIN}`;
 }
 
 export type AffiliateWithStats = Affiliate & {
@@ -45,19 +56,6 @@ export class AffiliatesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateAffiliateDto): Promise<Affiliate> {
-    const existingByEmail = await this.prisma.affiliate.findUnique({
-      where: {
-        organizationId_email: {
-          organizationId: data.organizationId,
-          email: data.email,
-        },
-      },
-    });
-
-    if (existingByEmail) {
-      throw new BadRequestException('Un affilié avec cet email existe déjà');
-    }
-
     let referralCode = data.referralCode;
     if (!referralCode) {
       referralCode = generateReferralCode();
@@ -71,12 +69,33 @@ export class AffiliatesService {
       throw new BadRequestException('Ce code de parrainage est déjà utilisé');
     }
 
+    const normalizedEmail = normalizeAffiliateEmail(data.email);
+    const affiliateEmail =
+      normalizedEmail ?? buildInternalAffiliateEmail(referralCode);
+
+    const existingByEmail = await this.prisma.affiliate.findUnique({
+      where: {
+        organizationId_email: {
+          organizationId: data.organizationId,
+          email: affiliateEmail,
+        },
+      },
+    });
+
+    if (existingByEmail) {
+      throw new BadRequestException('Un affilié avec cet email existe déjà');
+    }
+
+    const isLinkOnlyAffiliate = !normalizedEmail;
+
     const payload: Prisma.AffiliateCreateInput = {
-      email: data.email.toLowerCase(),
+      email: affiliateEmail,
       name: data.name,
       referralCode,
       commissionRate: data.commissionRate,
-      status: data.status ?? AffiliateStatus.PENDING,
+      status:
+        data.status ??
+        (isLinkOnlyAffiliate ? AffiliateStatus.ACTIVE : AffiliateStatus.PENDING),
       metadata: data.metadata,
       organization: {
         connect: { id: data.organizationId },
@@ -113,13 +132,14 @@ export class AffiliatesService {
 
   async update(id: string, data: UpdateAffiliateDto): Promise<Affiliate> {
     const affiliate = await this.findOne(id);
+    const normalizedEmail = normalizeAffiliateEmail(data.email);
 
-    if (data.email && data.email !== affiliate.email) {
+    if (normalizedEmail && normalizedEmail !== affiliate.email) {
       const existing = await this.prisma.affiliate.findUnique({
         where: {
           organizationId_email: {
             organizationId: affiliate.organizationId,
-            email: data.email,
+            email: normalizedEmail,
           },
         },
       });
@@ -140,7 +160,7 @@ export class AffiliatesService {
     }
 
     const payload: Prisma.AffiliateUpdateInput = {
-      ...(data.email && { email: data.email.toLowerCase() }),
+      ...(normalizedEmail && { email: normalizedEmail }),
       ...(data.name !== undefined && { name: data.name }),
       ...(data.referralCode && { referralCode: data.referralCode }),
       ...(data.commissionRate !== undefined && {

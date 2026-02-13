@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { affiliatesApi } from "@/lib/api/affiliates";
+import { getAffiliateDisplayLabel, getVisibleAffiliateEmail } from "@/lib/affiliate-utils";
 import type { Affiliate, AffiliateStatus } from "@/types/affiliate";
 import { MoreHorizontal, Plus, Users, Coins } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -147,7 +148,11 @@ export default function AffiliatesPage() {
               </tr>
             </thead>
             <tbody>
-              {affiliates.map((affiliate) => (
+              {affiliates.map((affiliate) => {
+                const visibleEmail = getVisibleAffiliateEmail(affiliate.email);
+                const primaryLabel = getAffiliateDisplayLabel(affiliate);
+
+                return (
                 <tr
                   key={affiliate.id}
                   className="border-b border-border-custom last:border-0 hover:bg-surface transition-colors"
@@ -155,11 +160,11 @@ export default function AffiliatesPage() {
                   <td className="px-6 py-4">
                     <div>
                       <p className="font-medium text-text-primary">
-                        {affiliate.name || affiliate.email}
+                        {primaryLabel}
                       </p>
-                      {affiliate.name && (
+                      {affiliate.name && visibleEmail && (
                         <p className="text-sm text-text-secondary">
-                          {affiliate.email}
+                          {visibleEmail}
                         </p>
                       )}
                     </div>
@@ -237,7 +242,8 @@ export default function AffiliatesPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

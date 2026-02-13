@@ -3,6 +3,7 @@
 import { AffiliateForm } from "@/components/affiliates/affiliate-form";
 import { useAuth } from "@/contexts/auth-context";
 import { affiliatesApi } from "@/lib/api/affiliates";
+import { getAffiliateDisplayLabel } from "@/lib/affiliate-utils";
 import { organizationsApi } from "@/lib/api/organizations";
 import { UserRole } from "@/types/auth";
 import type { CreateAffiliateDto, UpdateAffiliateDto } from "@/types/affiliate";
@@ -95,7 +96,7 @@ export default function EditAffiliatePage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold">{t("form.titleEdit")}</h1>
-        <p className="mt-2 text-gray-600">{affiliate.name || affiliate.email}</p>
+        <p className="mt-2 text-gray-600">{getAffiliateDisplayLabel(affiliate)}</p>
       </div>
 
       <AffiliateForm

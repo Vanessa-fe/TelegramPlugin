@@ -49,9 +49,9 @@ export default function NewAffiliatePage() {
 
   async function handleSubmit(data: CreateAffiliateDto) {
     try {
-      await affiliatesApi.create(data);
+      const createdAffiliate = await affiliatesApi.create(data);
       toast.success(t("toast.createSuccess"));
-      router.push("/dashboard/affiliates");
+      router.push(`/dashboard/affiliates/${createdAffiliate.id}`);
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };

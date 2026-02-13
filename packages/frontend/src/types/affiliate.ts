@@ -64,7 +64,7 @@ export interface AffiliatePayout {
 
 export interface CreateAffiliateDto {
   organizationId: string;
-  email: string;
+  email?: string;
   name?: string;
   referralCode?: string;
   commissionRate: number;

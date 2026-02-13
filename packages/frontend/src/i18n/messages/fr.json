@@ -2816,6 +2816,18 @@
         "copied": "Copié !",
         "help": "Partage ce code avec ton affilié. Les clients peuvent l'utiliser au paiement."
       },
+      "shareLink": {
+        "title": "Lien affilié",
+        "loading": "Chargement du lien affilié...",
+        "productLabel": "Offre à promouvoir",
+        "copy": "Copier le lien",
+        "open": "Ouvrir",
+        "help": "Partage ce lien : le code affilié est prérempli automatiquement au checkout.",
+        "noProducts": "Aucune offre active n'est disponible pour générer un lien affilié.",
+        "createProduct": "Créer une offre",
+        "copied": "Lien affilié copié",
+        "copyError": "Impossible de copier le lien affilié"
+      },
       "referrals": {
         "title": "Parrainages",
         "empty": "Aucun parrainage",
@@ -2836,8 +2848,9 @@
         "label": "Organisation"
       },
       "email": {
-        "label": "Email",
-        "placeholder": "affilié@exemple.com"
+        "label": "Email (optionnel)",
+        "placeholder": "affilié@exemple.com",
+        "help": "Optionnel : laisse vide pour créer un lien affilié sans compte email."
       },
       "name": {
         "label": "Nom (optionnel)",
@@ -2923,7 +2936,8 @@
       "updateSuccess": "Affilié mis à jour avec succès",
       "updateError": "Erreur lors de la mise à jour de l'affilié",
       "deactivateSuccess": "Affilié désactivé avec succès",
-      "deactivateError": "Erreur lors de la désactivation de l'affilié"
+      "deactivateError": "Erreur lors de la désactivation de l'affilié",
+      "shareLinkLoadError": "Erreur lors du chargement du lien affilié"
     }
   },
   "faq": {

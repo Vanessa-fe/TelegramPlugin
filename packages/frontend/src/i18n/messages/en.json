@@ -2816,6 +2816,18 @@
         "copied": "Copied!",
         "help": "Share this code with your affiliate. Customers can use it at checkout."
       },
+      "shareLink": {
+        "title": "Affiliate link",
+        "loading": "Loading affiliate link...",
+        "productLabel": "Offer to promote",
+        "copy": "Copy link",
+        "open": "Open",
+        "help": "Share this link: the affiliate code is prefilled automatically at checkout.",
+        "noProducts": "No active offer is available to generate an affiliate link.",
+        "createProduct": "Create an offer",
+        "copied": "Affiliate link copied",
+        "copyError": "Unable to copy affiliate link"
+      },
       "referrals": {
         "title": "Referrals",
         "empty": "No referrals yet",
@@ -2836,8 +2848,9 @@
         "label": "Organization"
       },
       "email": {
-        "label": "Email",
-        "placeholder": "affiliate@example.com"
+        "label": "Email (optional)",
+        "placeholder": "affiliate@example.com",
+        "help": "Optional: leave blank to create an affiliate link without an email account."
       },
       "name": {
         "label": "Name (optional)",
@@ -2923,7 +2936,8 @@
       "updateSuccess": "Affiliate updated successfully",
       "updateError": "Failed to update affiliate",
       "deactivateSuccess": "Affiliate deactivated successfully",
-      "deactivateError": "Failed to deactivate affiliate"
+      "deactivateError": "Failed to deactivate affiliate",
+      "shareLinkLoadError": "Failed to load affiliate link context"
     }
   },
   "faq": {

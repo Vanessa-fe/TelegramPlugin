@@ -3,7 +3,14 @@ import { z } from 'zod';
 
 export const createAffiliateSchema = z.object({
   organizationId: z.string().uuid(),
-  email: z.string().email(),
+  email: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') return value;
+      const trimmedValue = value.trim();
+      return trimmedValue === '' ? undefined : trimmedValue;
+    },
+    z.string().email().optional(),
+  ),
   name: z.string().min(1).max(120).optional(),
   referralCode: z
     .string()
@@ -27,7 +34,14 @@ export const createAffiliateSchema = z.object({
 export type CreateAffiliateDto = z.infer<typeof createAffiliateSchema>;
 
 export const updateAffiliateSchema = z.object({
-  email: z.string().email().optional(),
+  email: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') return value;
+      const trimmedValue = value.trim();
+      return trimmedValue === '' ? undefined : trimmedValue;
+    },
+    z.string().email().optional(),
+  ),
   name: z.string().min(1).max(120).optional(),
   referralCode: z
     .string()

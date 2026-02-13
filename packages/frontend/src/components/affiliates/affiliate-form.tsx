@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { getVisibleAffiliateEmail } from "@/lib/affiliate-utils";
 import type { Organization } from "@/types/organization";
 import { AffiliateStatus, type CreateAffiliateDto, type Affiliate } from "@/types/affiliate";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +16,7 @@ import { z } from "zod";
 
 type FormData = {
   organizationId: string;
-  email: string;
+  email?: string;
   name?: string;
   referralCode?: string;
   commissionRate: number;
@@ -45,7 +46,12 @@ export function AffiliateForm({
     () =>
       z.object({
         organizationId: z.string().uuid(t("form.errors.organizationRequired")),
-        email: z.string().email(t("form.errors.emailInvalid")),
+        email: z
+          .string()
+          .trim()
+          .email(t("form.errors.emailInvalid"))
+          .optional()
+          .or(z.literal("")),
         name: z.string().max(120).optional().or(z.literal("")),
         referralCode: z
           .string()
@@ -65,6 +71,8 @@ export function AffiliateForm({
     [t]
   );
 
+  const initialVisibleEmail = getVisibleAffiliateEmail(initialData?.email);
+
   const statusLabels: Record<AffiliateStatus, string> = {
     PENDING: t("statusLabels.PENDING"),
     ACTIVE: t("statusLabels.ACTIVE"),
@@ -81,11 +89,11 @@ export function AffiliateForm({
     resolver: zodResolver(affiliateSchema),
     defaultValues: {
       organizationId: initialData?.organizationId ?? organizationId ?? organizations?.[0]?.id ?? "",
-      email: initialData?.email ?? "",
+      email: initialVisibleEmail ?? "",
       name: initialData?.name ?? "",
       referralCode: initialData?.referralCode ?? "",
       commissionRate: initialData?.commissionRate ?? 10,
-      status: initialData?.status ?? AffiliateStatus.PENDING,
+      status: initialData?.status ?? AffiliateStatus.ACTIVE,
     },
   });
 
@@ -101,7 +109,7 @@ export function AffiliateForm({
   async function handleFormSubmit(data: FormData) {
     const payload: CreateAffiliateDto = {
       organizationId: data.organizationId,
-      email: data.email,
+      email: data.email?.trim() || undefined,
       name: data.name || undefined,
       referralCode: data.referralCode || undefined,
       commissionRate: data.commissionRate,
@@ -164,6 +172,9 @@ export function AffiliateForm({
                 {errors.email.message as string}
               </p>
             )}
+            <p className="text-xs text-muted-foreground">
+              {t("form.email.help")}
+            </p>
           </div>
 
           {/* Name */}
