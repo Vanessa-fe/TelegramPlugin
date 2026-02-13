@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { teamApi } from "@/lib/api/team";
 import type { TeamPublicInvite } from "@/types/team";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,6 +17,8 @@ interface InvitePageProps {
 
 export default function InvitePage({ params }: InvitePageProps) {
   const router = useRouter();
+  const t = useTranslations("invitePage");
+
   const [token, setToken] = useState("");
   const [invite, setInvite] = useState<TeamPublicInvite | null>(null);
   const [isLoadingInvite, setIsLoadingInvite] = useState(true);
@@ -48,7 +51,7 @@ export default function InvitePage({ params }: InvitePageProps) {
           setInvite({
             valid: false,
             reason: "invalid",
-            message: axiosError.response?.data?.message || "Invitation invalide",
+            message: axiosError.response?.data?.message || t("errors.invalidInvite"),
           });
         }
       } finally {
@@ -63,7 +66,7 @@ export default function InvitePage({ params }: InvitePageProps) {
     return () => {
       cancelled = true;
     };
-  }, [params]);
+  }, [params, t]);
 
   async function handleAcceptInvite(event: React.FormEvent) {
     event.preventDefault();
@@ -79,13 +82,13 @@ export default function InvitePage({ params }: InvitePageProps) {
         password: password.trim() || undefined,
       });
 
-      toast.success("Invitation acceptée. Connecte-toi pour accéder au dashboard.");
+      toast.success(t("toasts.accepted"));
       router.push("/login");
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
       };
-      toast.error(axiosError.response?.data?.message || "Impossible d'accepter l'invitation");
+      toast.error(axiosError.response?.data?.message || t("toasts.acceptError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -96,7 +99,7 @@ export default function InvitePage({ params }: InvitePageProps) {
       <div className="min-h-screen bg-surface flex items-center justify-center px-4">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-text-secondary">Chargement de l&apos;invitation...</p>
+          <p className="mt-3 text-sm text-text-secondary">{t("loading")}</p>
         </div>
       </div>
     );
@@ -106,14 +109,18 @@ export default function InvitePage({ params }: InvitePageProps) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center px-4">
         <div className="w-full max-w-md rounded-2xl border border-border-custom bg-white p-8 shadow-sm text-center">
-          <h1 className="text-xl font-semibold text-text-primary">Invitation indisponible</h1>
-          <p className="mt-2 text-text-secondary">{invite?.message || "Invitation invalide"}</p>
+          <h1 className="text-xl font-semibold text-text-primary">{t("invalid.title")}</h1>
+          <p className="mt-2 text-text-secondary">
+            {invite?.message || t("errors.invalidInvite")}
+          </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link href="/login">
-              <Button variant="outline">Connexion</Button>
+              <Button variant="outline">{t("actions.login")}</Button>
             </Link>
             <Link href="/">
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white">Accueil</Button>
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                {t("actions.home")}
+              </Button>
             </Link>
           </div>
         </div>
@@ -124,53 +131,55 @@ export default function InvitePage({ params }: InvitePageProps) {
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg rounded-2xl border border-border-custom bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-text-primary">Rejoindre l&apos;équipe</h1>
+        <h1 className="text-2xl font-bold text-text-primary">{t("header.title")}</h1>
         <p className="mt-2 text-text-secondary">
-          Tu as été invité(e) à rejoindre <strong>{invite.organizationName}</strong>.
+          {t("header.subtitle", { organizationName: invite.organizationName })}
         </p>
 
         <div className="mt-4 rounded-lg border border-purple-200 bg-purple-50 p-3 text-sm">
-          <p><strong>Email :</strong> {invite.email}</p>
-          <p><strong>Rôle :</strong> {invite.role}</p>
+          <p>
+            <strong>{t("summary.emailLabel")}:</strong> {invite.email}
+          </p>
+          <p>
+            <strong>{t("summary.roleLabel")}:</strong> {invite.role}
+          </p>
         </div>
 
         <form onSubmit={handleAcceptInvite} className="mt-6 space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="firstName">Prénom (optionnel)</Label>
+              <Label htmlFor="firstName">{t("form.firstNameLabel")}</Label>
               <Input
                 id="firstName"
                 value={firstName}
                 onChange={(event) => setFirstName(event.target.value)}
                 disabled={isSubmitting}
-                placeholder="Prénom"
+                placeholder={t("form.firstNamePlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName">Nom (optionnel)</Label>
+              <Label htmlFor="lastName">{t("form.lastNameLabel")}</Label>
               <Input
                 id="lastName"
                 value={lastName}
                 onChange={(event) => setLastName(event.target.value)}
                 disabled={isSubmitting}
-                placeholder="Nom"
+                placeholder={t("form.lastNamePlaceholder")}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Mot de passe</Label>
+            <Label htmlFor="password">{t("form.passwordLabel")}</Label>
             <Input
               id="password"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               disabled={isSubmitting}
-              placeholder="Requis si c'est ton premier accès"
+              placeholder={t("form.passwordPlaceholder")}
             />
-            <p className="text-xs text-text-secondary">
-              Si tu as déjà un compte Sublynk avec cet email, tu peux laisser vide.
-            </p>
+            <p className="text-xs text-text-secondary">{t("form.passwordHelp")}</p>
           </div>
 
           <Button
@@ -178,7 +187,7 @@ export default function InvitePage({ params }: InvitePageProps) {
             className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Validation..." : "Accepter l'invitation"}
+            {isSubmitting ? t("form.submitting") : t("form.submit")}
           </Button>
         </form>
       </div>

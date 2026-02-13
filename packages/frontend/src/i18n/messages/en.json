@@ -3077,6 +3077,113 @@
       "save": "Save branding"
     }
   },
+  "teamPage": {
+    "loading": "Loading team...",
+    "roles": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin",
+      "support": "Support",
+      "viewer": "Viewer"
+    },
+    "accessRestricted": {
+      "title": "Restricted access",
+      "description": "Only administrators can manage the team."
+    },
+    "header": {
+      "title": "Team",
+      "subtitle": "Invite collaborators, adjust roles, and control access."
+    },
+    "invite": {
+      "title": "Invite a member",
+      "emailLabel": "Email",
+      "roleLabel": "Role",
+      "emailPlaceholder": "person@example.com",
+      "submit": "Invite",
+      "submitting": "Sending...",
+      "copyLink": "Copy link"
+    },
+    "members": {
+      "title": "Members ({count})",
+      "columns": {
+        "member": "Member",
+        "role": "Role",
+        "lastLogin": "Last login",
+        "actions": "Actions"
+      },
+      "deactivatedBadge": "Deactivated",
+      "never": "Never",
+      "actions": {
+        "saveRole": "Save role",
+        "deactivate": "Deactivate",
+        "reactivate": "Reactivate",
+        "remove": "Delete"
+      }
+    },
+    "invites": {
+      "title": "Pending invites ({count})",
+      "empty": "No pending invites.",
+      "columns": {
+        "email": "Email",
+        "role": "Role",
+        "expiresAt": "Expires on",
+        "actions": "Actions"
+      },
+      "revoke": "Revoke"
+    },
+    "toasts": {
+      "loadError": "Unable to load team data",
+      "inviteSent": "Invitation sent",
+      "inviteError": "Unable to send invitation",
+      "inviteCopied": "Invitation link copied",
+      "copyError": "Unable to copy link",
+      "roleUpdated": "Role updated",
+      "roleUpdateError": "Unable to update role",
+      "memberDeactivated": "Account deactivated",
+      "memberDeactivateError": "Unable to deactivate member",
+      "memberReactivated": "Account reactivated",
+      "memberReactivateError": "Unable to reactivate member",
+      "memberRemoved": "Member removed from the organization",
+      "memberRemoveError": "Unable to remove member",
+      "inviteRevoked": "Invitation revoked",
+      "inviteRevokeError": "Unable to revoke invitation"
+    }
+  },
+  "invitePage": {
+    "loading": "Loading invitation...",
+    "errors": {
+      "invalidInvite": "Invalid invitation"
+    },
+    "toasts": {
+      "accepted": "Invitation accepted. Sign in to access the dashboard.",
+      "acceptError": "Unable to accept invitation"
+    },
+    "invalid": {
+      "title": "Invitation unavailable"
+    },
+    "actions": {
+      "login": "Sign in",
+      "home": "Home"
+    },
+    "header": {
+      "title": "Join the team",
+      "subtitle": "You were invited to join {organizationName}."
+    },
+    "summary": {
+      "emailLabel": "Email",
+      "roleLabel": "Role"
+    },
+    "form": {
+      "firstNameLabel": "First name (optional)",
+      "firstNamePlaceholder": "First name",
+      "lastNameLabel": "Last name (optional)",
+      "lastNamePlaceholder": "Last name",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Required if this is your first access",
+      "passwordHelp": "If you already have a Sublynk account with this email, you can leave this empty.",
+      "submit": "Accept invitation",
+      "submitting": "Validating..."
+    }
+  },
   "publicPages": {
     "backTo": "Back to {name}",
     "includedAccess": "Included access",

@@ -3077,6 +3077,113 @@
       "save": "Enregistrer le branding"
     }
   },
+  "teamPage": {
+    "loading": "Chargement de l'équipe...",
+    "roles": {
+      "superAdmin": "Super Admin",
+      "admin": "Admin",
+      "support": "Support",
+      "viewer": "Lecture"
+    },
+    "accessRestricted": {
+      "title": "Accès restreint",
+      "description": "Seuls les administrateurs peuvent gérer l'équipe."
+    },
+    "header": {
+      "title": "Équipe",
+      "subtitle": "Invite des collaborateurs, ajuste leurs rôles et contrôle les accès."
+    },
+    "invite": {
+      "title": "Inviter un membre",
+      "emailLabel": "Email",
+      "roleLabel": "Rôle",
+      "emailPlaceholder": "personne@exemple.com",
+      "submit": "Inviter",
+      "submitting": "Envoi...",
+      "copyLink": "Copier le lien"
+    },
+    "members": {
+      "title": "Membres ({count})",
+      "columns": {
+        "member": "Membre",
+        "role": "Rôle",
+        "lastLogin": "Dernière connexion",
+        "actions": "Actions"
+      },
+      "deactivatedBadge": "Désactivé",
+      "never": "Jamais",
+      "actions": {
+        "saveRole": "Sauver le rôle",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver",
+        "remove": "Supprimer"
+      }
+    },
+    "invites": {
+      "title": "Invitations en attente ({count})",
+      "empty": "Aucune invitation en attente.",
+      "columns": {
+        "email": "Email",
+        "role": "Rôle",
+        "expiresAt": "Expire le",
+        "actions": "Actions"
+      },
+      "revoke": "Révoquer"
+    },
+    "toasts": {
+      "loadError": "Erreur lors du chargement de l'équipe",
+      "inviteSent": "Invitation envoyée",
+      "inviteError": "Impossible d'envoyer l'invitation",
+      "inviteCopied": "Lien d'invitation copié",
+      "copyError": "Impossible de copier le lien",
+      "roleUpdated": "Rôle mis à jour",
+      "roleUpdateError": "Impossible de modifier le rôle",
+      "memberDeactivated": "Compte désactivé",
+      "memberDeactivateError": "Impossible de désactiver le membre",
+      "memberReactivated": "Compte réactivé",
+      "memberReactivateError": "Impossible de réactiver le membre",
+      "memberRemoved": "Membre supprimé de l'organisation",
+      "memberRemoveError": "Impossible de supprimer le membre",
+      "inviteRevoked": "Invitation révoquée",
+      "inviteRevokeError": "Impossible de révoquer l'invitation"
+    }
+  },
+  "invitePage": {
+    "loading": "Chargement de l'invitation...",
+    "errors": {
+      "invalidInvite": "Invitation invalide"
+    },
+    "toasts": {
+      "accepted": "Invitation acceptée. Connecte-toi pour accéder au dashboard.",
+      "acceptError": "Impossible d'accepter l'invitation"
+    },
+    "invalid": {
+      "title": "Invitation indisponible"
+    },
+    "actions": {
+      "login": "Connexion",
+      "home": "Accueil"
+    },
+    "header": {
+      "title": "Rejoindre l'équipe",
+      "subtitle": "Tu as été invité(e) à rejoindre {organizationName}."
+    },
+    "summary": {
+      "emailLabel": "Email",
+      "roleLabel": "Rôle"
+    },
+    "form": {
+      "firstNameLabel": "Prénom (optionnel)",
+      "firstNamePlaceholder": "Prénom",
+      "lastNameLabel": "Nom (optionnel)",
+      "lastNamePlaceholder": "Nom",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Requis si c'est ton premier accès",
+      "passwordHelp": "Si tu as déjà un compte Sublynk avec cet email, tu peux laisser vide.",
+      "submit": "Accepter l'invitation",
+      "submitting": "Validation..."
+    }
+  },
   "publicPages": {
     "backTo": "Retour à {name}",
     "includedAccess": "Accès inclus",

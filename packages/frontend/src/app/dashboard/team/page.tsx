@@ -12,30 +12,35 @@ import type {
   TeamMember,
 } from "@/types/team";
 import { Copy, MailPlus, Shield, Trash2, UserX } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-const ROLE_OPTIONS: Array<{ value: TeamManageableRole; label: string }> = [
-  { value: UserRole.ORG_ADMIN, label: "Admin" },
-  { value: UserRole.SUPPORT, label: "Support" },
-  { value: UserRole.VIEWER, label: "Lecture" },
+const MANAGEABLE_ROLE_OPTIONS: TeamManageableRole[] = [
+  UserRole.ORG_ADMIN,
+  UserRole.SUPPORT,
+  UserRole.VIEWER,
 ];
 
-function roleLabel(role: UserRole): string {
-  if (role === UserRole.SUPERADMIN) return "Super Admin";
-  if (role === UserRole.ORG_ADMIN) return "Admin";
-  if (role === UserRole.SUPPORT) return "Support";
-  return "Lecture";
+function roleLabel(role: UserRole, t: ReturnType<typeof useTranslations>): string {
+  if (role === UserRole.SUPERADMIN) return t("roles.superAdmin");
+  if (role === UserRole.ORG_ADMIN) return t("roles.admin");
+  if (role === UserRole.SUPPORT) return t("roles.support");
+  return t("roles.viewer");
 }
 
 function isManageableRole(role: UserRole): role is TeamManageableRole {
-  return role === UserRole.ORG_ADMIN || role === UserRole.SUPPORT || role === UserRole.VIEWER;
+  return (
+    role === UserRole.ORG_ADMIN ||
+    role === UserRole.SUPPORT ||
+    role === UserRole.VIEWER
+  );
 }
 
 export default function TeamPage() {
   const { user } = useAuth();
   const locale = useLocale();
+  const t = useTranslations("teamPage");
 
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invites, setInvites] = useState<TeamInvite[]>([]);
@@ -45,7 +50,18 @@ export default function TeamPage() {
   const [role, setRole] = useState<TeamManageableRole>(UserRole.SUPPORT);
   const [isInviting, setIsInviting] = useState(false);
   const [latestInviteUrl, setLatestInviteUrl] = useState<string | null>(null);
-  const [roleDrafts, setRoleDrafts] = useState<Record<string, TeamManageableRole>>({});
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, TeamManageableRole>>(
+    {},
+  );
+
+  const roleOptions = useMemo(
+    () =>
+      MANAGEABLE_ROLE_OPTIONS.map((value) => ({
+        value,
+        label: roleLabel(value, t),
+      })),
+    [t],
+  );
 
   const canManageTeam = useMemo(() => {
     return user?.role === UserRole.SUPERADMIN || user?.role === UserRole.ORG_ADMIN;
@@ -77,11 +93,11 @@ export default function TeamPage() {
       const axiosError = error as {
         response?: { data?: { message?: string } };
       };
-      toast.error(axiosError.response?.data?.message || "Erreur lors du chargement de l'équipe");
+      toast.error(axiosError.response?.data?.message || t("toasts.loadError"));
     } finally {
       setIsLoading(false);
     }
-  }, [canManageTeam]);
+  }, [canManageTeam, t]);
 
   useEffect(() => {
     loadData();
@@ -98,13 +114,13 @@ export default function TeamPage() {
       });
       setEmail("");
       setLatestInviteUrl(created.inviteUrl);
-      toast.success("Invitation envoyée");
+      toast.success(t("toasts.inviteSent"));
       loadData();
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
       };
-      toast.error(axiosError.response?.data?.message || "Impossible d'envoyer l'invitation");
+      toast.error(axiosError.response?.data?.message || t("toasts.inviteError"));
     } finally {
       setIsInviting(false);
     }
@@ -115,9 +131,9 @@ export default function TeamPage() {
 
     try {
       await navigator.clipboard.writeText(latestInviteUrl);
-      toast.success("Lien d'invitation copié");
+      toast.success(t("toasts.inviteCopied"));
     } catch {
-      toast.error("Impossible de copier le lien");
+      toast.error(t("toasts.copyError"));
     }
   }
 
@@ -129,65 +145,75 @@ export default function TeamPage() {
 
     try {
       await teamApi.updateMemberRole(member.id, { role: nextRole });
-      toast.success("Rôle mis à jour");
+      toast.success(t("toasts.roleUpdated"));
       loadData();
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
       };
-      toast.error(axiosError.response?.data?.message || "Impossible de modifier le rôle");
+      toast.error(
+        axiosError.response?.data?.message || t("toasts.roleUpdateError"),
+      );
     }
   }
 
   async function handleDeactivate(member: TeamMember) {
     try {
       await teamApi.deactivateMember(member.id);
-      toast.success("Compte désactivé");
+      toast.success(t("toasts.memberDeactivated"));
       loadData();
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
       };
-      toast.error(axiosError.response?.data?.message || "Impossible de désactiver le membre");
+      toast.error(
+        axiosError.response?.data?.message || t("toasts.memberDeactivateError"),
+      );
     }
   }
 
   async function handleReactivate(member: TeamMember) {
     try {
       await teamApi.reactivateMember(member.id);
-      toast.success("Compte réactivé");
+      toast.success(t("toasts.memberReactivated"));
       loadData();
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
       };
-      toast.error(axiosError.response?.data?.message || "Impossible de réactiver le membre");
+      toast.error(
+        axiosError.response?.data?.message || t("toasts.memberReactivateError"),
+      );
     }
   }
 
   async function handleRemove(member: TeamMember) {
     try {
       await teamApi.removeMember(member.id);
-      toast.success("Membre supprimé de l'organisation");
+      toast.success(t("toasts.memberRemoved"));
       loadData();
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
       };
-      toast.error(axiosError.response?.data?.message || "Impossible de supprimer le membre");
+      toast.error(
+        axiosError.response?.data?.message || t("toasts.memberRemoveError"),
+      );
     }
   }
 
   async function handleRevokeInvite(invite: TeamInvite) {
     try {
       await teamApi.revokeInvite(invite.id);
-      toast.success("Invitation révoquée");
+      toast.success(t("toasts.inviteRevoked"));
       loadData();
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
       };
-      toast.error(axiosError.response?.data?.message || "Impossible de révoquer l'invitation");
+      toast.error(
+        axiosError.response?.data?.message || t("toasts.inviteRevokeError"),
+      );
     }
   }
 
@@ -203,7 +229,7 @@ export default function TeamPage() {
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
-          <p className="mt-3 text-sm text-text-secondary">Chargement de l&apos;équipe...</p>
+          <p className="mt-3 text-sm text-text-secondary">{t("loading")}</p>
         </div>
       </div>
     );
@@ -213,9 +239,11 @@ export default function TeamPage() {
     return (
       <div className="rounded-xl border border-border-custom bg-white p-8 text-center">
         <Shield className="mx-auto h-8 w-8 text-text-secondary" />
-        <h1 className="mt-3 text-xl font-semibold text-text-primary">Accès restreint</h1>
+        <h1 className="mt-3 text-xl font-semibold text-text-primary">
+          {t("accessRestricted.title")}
+        </h1>
         <p className="mt-2 text-text-secondary">
-          Seuls les administrateurs peuvent gérer l&apos;équipe.
+          {t("accessRestricted.description")}
         </p>
       </div>
     );
@@ -224,38 +252,45 @@ export default function TeamPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Équipe</h1>
-        <p className="mt-1 text-text-secondary">
-          Invite des collaborateurs, ajuste leurs rôles et contrôle les accès.
-        </p>
+        <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">
+          {t("header.title")}
+        </h1>
+        <p className="mt-1 text-text-secondary">{t("header.subtitle")}</p>
       </div>
 
       <div className="rounded-xl border border-border-custom bg-white p-6">
-        <h2 className="text-lg font-semibold text-text-primary">Inviter un membre</h2>
-        <form onSubmit={handleCreateInvite} className="mt-4 grid gap-4 lg:grid-cols-[1fr_220px_auto]">
+        <h2 className="text-lg font-semibold text-text-primary">
+          {t("invite.title")}
+        </h2>
+        <form
+          onSubmit={handleCreateInvite}
+          className="mt-4 grid gap-4 lg:grid-cols-[1fr_220px_auto]"
+        >
           <div className="space-y-2">
-            <Label htmlFor="invite-email">Email</Label>
+            <Label htmlFor="invite-email">{t("invite.emailLabel")}</Label>
             <Input
               id="invite-email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="personne@exemple.com"
+              placeholder={t("invite.emailPlaceholder")}
               required
               disabled={isInviting}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="invite-role">Rôle</Label>
+            <Label htmlFor="invite-role">{t("invite.roleLabel")}</Label>
             <select
               id="invite-role"
               value={role}
-              onChange={(event) => setRole(event.target.value as TeamManageableRole)}
+              onChange={(event) =>
+                setRole(event.target.value as TeamManageableRole)
+              }
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               disabled={isInviting}
             >
-              {ROLE_OPTIONS.map((option) => (
+              {roleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -264,9 +299,13 @@ export default function TeamPage() {
           </div>
 
           <div className="flex items-end">
-            <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white" disabled={isInviting}>
+            <Button
+              type="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+              disabled={isInviting}
+            >
               <MailPlus className="mr-2 h-4 w-4" />
-              {isInviting ? "Envoi..." : "Inviter"}
+              {isInviting ? t("invite.submitting") : t("invite.submit")}
             </Button>
           </div>
         </form>
@@ -274,9 +313,13 @@ export default function TeamPage() {
         {latestInviteUrl && (
           <div className="mt-4 rounded-lg border border-purple-200 bg-purple-50 p-3">
             <p className="text-sm text-text-primary break-all">{latestInviteUrl}</p>
-            <Button onClick={handleCopyInviteUrl} variant="outline" className="mt-3 border-purple-200">
+            <Button
+              onClick={handleCopyInviteUrl}
+              variant="outline"
+              className="mt-3 border-purple-200"
+            >
               <Copy className="mr-2 h-4 w-4" />
-              Copier le lien
+              {t("invite.copyLink")}
             </Button>
           </div>
         )}
@@ -284,35 +327,53 @@ export default function TeamPage() {
 
       <div className="rounded-xl border border-border-custom bg-white overflow-hidden">
         <div className="border-b border-border-custom px-6 py-4">
-          <h2 className="text-lg font-semibold text-text-primary">Membres ({members.length})</h2>
+          <h2 className="text-lg font-semibold text-text-primary">
+            {t("members.title", { count: members.length })}
+          </h2>
         </div>
 
         <table className="w-full">
           <thead>
             <tr className="bg-surface border-b border-border-custom">
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Membre</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Rôle</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Dernière connexion</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-text-secondary">Actions</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">
+                {t("members.columns.member")}
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">
+                {t("members.columns.role")}
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">
+                {t("members.columns.lastLogin")}
+              </th>
+              <th className="px-6 py-3 text-right text-sm font-medium text-text-secondary">
+                {t("members.columns.actions")}
+              </th>
             </tr>
           </thead>
           <tbody>
             {members.map((member) => {
-              const displayName = [member.firstName, member.lastName].filter(Boolean).join(" ");
+              const displayName = [member.firstName, member.lastName]
+                .filter(Boolean)
+                .join(" ");
               const canEditRole = isManageableRole(member.role);
               const nextRole = roleDrafts[member.id];
-              const roleChanged = canEditRole && nextRole && nextRole !== member.role;
+              const roleChanged =
+                canEditRole && Boolean(nextRole) && nextRole !== member.role;
               const isSelf = member.id === user?.id;
 
               return (
-                <tr key={member.id} className="border-b border-border-custom last:border-0 hover:bg-surface/40">
+                <tr
+                  key={member.id}
+                  className="border-b border-border-custom last:border-0 hover:bg-surface/40"
+                >
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium text-text-primary">{displayName || member.email}</p>
+                      <p className="font-medium text-text-primary">
+                        {displayName || member.email}
+                      </p>
                       <p className="text-sm text-text-secondary">{member.email}</p>
                       {!member.isActive && (
                         <span className="mt-1 inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                          Désactivé
+                          {t("members.deactivatedBadge")}
                         </span>
                       )}
                     </div>
@@ -331,7 +392,7 @@ export default function TeamPage() {
                         disabled={!member.isActive}
                         className="flex h-10 w-[180px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                       >
-                        {ROLE_OPTIONS.map((option) => (
+                        {roleOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -339,13 +400,15 @@ export default function TeamPage() {
                       </select>
                     ) : (
                       <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
-                        {roleLabel(member.role)}
+                        {roleLabel(member.role, t)}
                       </span>
                     )}
                   </td>
 
                   <td className="px-6 py-4 text-sm text-text-secondary">
-                    {member.lastLoginAt ? formatDate(member.lastLoginAt) : "Jamais"}
+                    {member.lastLoginAt
+                      ? formatDate(member.lastLoginAt)
+                      : t("members.never")}
                   </td>
 
                   <td className="px-6 py-4">
@@ -356,7 +419,7 @@ export default function TeamPage() {
                           className="border-border-custom"
                           onClick={() => handleUpdateRole(member)}
                         >
-                          Sauver le rôle
+                          {t("members.actions.saveRole")}
                         </Button>
                       )}
 
@@ -367,7 +430,7 @@ export default function TeamPage() {
                           onClick={() => handleDeactivate(member)}
                         >
                           <UserX className="mr-2 h-4 w-4" />
-                          Désactiver
+                          {t("members.actions.deactivate")}
                         </Button>
                       )}
 
@@ -377,7 +440,7 @@ export default function TeamPage() {
                           className="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
                           onClick={() => handleReactivate(member)}
                         >
-                          Réactiver
+                          {t("members.actions.reactivate")}
                         </Button>
                       )}
 
@@ -388,7 +451,7 @@ export default function TeamPage() {
                           onClick={() => handleRemove(member)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Supprimer
+                          {t("members.actions.remove")}
                         </Button>
                       )}
                     </div>
@@ -403,28 +466,43 @@ export default function TeamPage() {
       <div className="rounded-xl border border-border-custom bg-white overflow-hidden">
         <div className="border-b border-border-custom px-6 py-4">
           <h2 className="text-lg font-semibold text-text-primary">
-            Invitations en attente ({invites.length})
+            {t("invites.title", { count: invites.length })}
           </h2>
         </div>
 
         {invites.length === 0 ? (
-          <p className="px-6 py-6 text-sm text-text-secondary">Aucune invitation en attente.</p>
+          <p className="px-6 py-6 text-sm text-text-secondary">{t("invites.empty")}</p>
         ) : (
           <table className="w-full">
             <thead>
               <tr className="bg-surface border-b border-border-custom">
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Rôle</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Expire le</th>
-                <th className="px-6 py-3 text-right text-sm font-medium text-text-secondary">Actions</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">
+                  {t("invites.columns.email")}
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">
+                  {t("invites.columns.role")}
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">
+                  {t("invites.columns.expiresAt")}
+                </th>
+                <th className="px-6 py-3 text-right text-sm font-medium text-text-secondary">
+                  {t("invites.columns.actions")}
+                </th>
               </tr>
             </thead>
             <tbody>
               {invites.map((invite) => (
-                <tr key={invite.id} className="border-b border-border-custom last:border-0 hover:bg-surface/40">
+                <tr
+                  key={invite.id}
+                  className="border-b border-border-custom last:border-0 hover:bg-surface/40"
+                >
                   <td className="px-6 py-4 text-sm text-text-primary">{invite.email}</td>
-                  <td className="px-6 py-4 text-sm text-text-primary">{roleLabel(invite.role)}</td>
-                  <td className="px-6 py-4 text-sm text-text-secondary">{formatDate(invite.expiresAt)}</td>
+                  <td className="px-6 py-4 text-sm text-text-primary">
+                    {roleLabel(invite.role, t)}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-text-secondary">
+                    {formatDate(invite.expiresAt)}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <Button
                       variant="outline"
@@ -432,7 +510,7 @@ export default function TeamPage() {
                       onClick={() => handleRevokeInvite(invite)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Révoquer
+                      {t("invites.revoke")}
                     </Button>
                   </td>
                 </tr>
