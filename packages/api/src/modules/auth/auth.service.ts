@@ -38,7 +38,10 @@ export class AuthService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async register(data: RegisterDto): Promise<RegisterResult> {
+  async register(
+    data: RegisterDto,
+    frontendOrigin?: string,
+  ): Promise<RegisterResult> {
     const normalizedEmail = data.email.trim().toLowerCase();
 
     // Check if email exists
@@ -50,7 +53,7 @@ export class AuthService {
       throw new ConflictException('Cet email est déjà utilisé');
     }
 
-    const frontendUrl = this.getFrontendBaseUrl();
+    const frontendUrl = this.resolveFrontendBaseUrl(frontendOrigin);
     if (!frontendUrl) {
       this.logger.error(
         'Email verification requested but frontend URL is not configured',
@@ -165,7 +168,10 @@ export class AuthService {
     };
   }
 
-  async resendEmailVerification(email: string): Promise<void> {
+  async resendEmailVerification(
+    email: string,
+    frontendOrigin?: string,
+  ): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail) {
@@ -180,7 +186,7 @@ export class AuthService {
       return;
     }
 
-    const frontendUrl = this.getFrontendBaseUrl();
+    const frontendUrl = this.resolveFrontendBaseUrl(frontendOrigin);
     if (!frontendUrl) {
       this.logger.warn(
         'Email verification resend requested but frontend URL is not configured',
@@ -683,17 +689,87 @@ export class AuthService {
     return 60;
   }
 
-  private getFrontendBaseUrl(): string | null {
-    const raw =
-      this.config.get<string>('FRONTEND_URL') ??
-      this.config.get<string>('NEXT_PUBLIC_SITE_URL') ??
-      this.config.get<string>('CORS_ORIGIN');
+  private resolveFrontendBaseUrl(frontendOrigin?: string): string | null {
+    const preferredOrigin = this.normalizeFrontendUrl(frontendOrigin);
+    if (preferredOrigin) {
+      const allowedOrigins = this.getAllowedFrontendOrigins();
+      if (allowedOrigins.size === 0 || allowedOrigins.has(preferredOrigin)) {
+        return preferredOrigin;
+      }
+    }
 
-    if (!raw) {
+    return this.getFrontendBaseUrl();
+  }
+
+  private getAllowedFrontendOrigins(): Set<string> {
+    const origins = new Set<string>();
+    const rawValues = [
+      this.config.get<string>('FRONTEND_URL'),
+      this.config.get<string>('NEXT_PUBLIC_SITE_URL'),
+      this.config.get<string>('CORS_ORIGIN'),
+    ];
+
+    rawValues.forEach((rawValue) => {
+      if (!rawValue) {
+        return;
+      }
+
+      rawValue.split(',').forEach((entry) => {
+        const normalized = this.normalizeFrontendUrl(entry);
+        if (normalized) {
+          origins.add(normalized);
+        }
+      });
+    });
+
+    return origins;
+  }
+
+  private getFrontendBaseUrl(): string | null {
+    const rawValues = [
+      this.config.get<string>('FRONTEND_URL'),
+      this.config.get<string>('NEXT_PUBLIC_SITE_URL'),
+      this.config.get<string>('CORS_ORIGIN'),
+    ];
+
+    for (const rawValue of rawValues) {
+      if (!rawValue) {
+        continue;
+      }
+
+      const candidates = rawValue
+        .split(',')
+        .map((entry) => this.normalizeFrontendUrl(entry))
+        .filter((entry): entry is string => Boolean(entry));
+
+      if (candidates.length > 0) {
+        return candidates[0];
+      }
+    }
+
+    return null;
+  }
+
+  private normalizeFrontendUrl(value?: string | null): string | null {
+    if (!value) {
       return null;
     }
 
-    return raw.replace(/\/+$/, '');
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return null;
+      }
+
+      return parsed.origin;
+    } catch {
+      return null;
+    }
   }
 
   private generateResetToken(): string {

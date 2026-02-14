@@ -367,6 +367,9 @@
       "toastError": "Impossible de réinitialiser le mot de passe. Réessaie."
     },
     "verifyEmail": {
+      "readyTitle": "Confirme ton adresse email",
+      "readyDescription": "Clique sur le bouton ci-dessous pour activer ton compte.",
+      "readyCta": "Vérifier mon email",
       "loadingTitle": "Vérification en cours",
       "loadingDescription": "Nous confirmons ton adresse email...",
       "missingToken": "Le lien de vérification est invalide ou incomplet.",

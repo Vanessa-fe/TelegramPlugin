@@ -52,10 +52,11 @@ export class AuthController {
   @Public()
   @Post('register')
   register(
+    @Req() req: FastifyRequest,
     @Body(new ZodValidationPipe(registerSchema))
     body: RegisterDto,
   ): Promise<RegisterResult> {
-    return this.authService.register(body);
+    return this.authService.register(body, this.extractFrontendOrigin(req));
   }
 
   @Public()
@@ -71,10 +72,14 @@ export class AuthController {
   @Public()
   @Post('resend-verification')
   async resendVerification(
+    @Req() req: FastifyRequest,
     @Body(new ZodValidationPipe(resendVerificationSchema))
     body: ResendVerificationDto,
   ): Promise<{ message: string }> {
-    await this.authService.resendEmailVerification(body.email);
+    await this.authService.resendEmailVerification(
+      body.email,
+      this.extractFrontendOrigin(req),
+    );
     return {
       message:
         "Si un compte existe avec cet email et n'est pas vérifié, un email de vérification a été envoyé.",
@@ -165,5 +170,19 @@ export class AuthController {
     body: UpdatePasswordDto,
   ): Promise<AuthResult> {
     return this.authService.updatePassword(user.userId, body);
+  }
+
+  private extractFrontendOrigin(req: FastifyRequest): string | undefined {
+    const originHeader = req.headers.origin;
+    if (typeof originHeader === 'string' && originHeader.trim().length > 0) {
+      return originHeader;
+    }
+
+    const refererHeader = req.headers.referer;
+    if (typeof refererHeader === 'string' && refererHeader.trim().length > 0) {
+      return refererHeader;
+    }
+
+    return undefined;
   }
 }

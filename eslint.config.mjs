@@ -11,12 +11,12 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        project: ["packages/*/tsconfig.json"],
+        project: ["packages/*/tsconfig.eslint.json", "packages/*/tsconfig.json"],
         tsconfigRootDir,
       },
     },
     files: ["packages/**/*.{ts,tsx}"],
-    ignores: ["**/dist/**", "**/node_modules/**"],
+    ignores: ["**/dist/**", "**/node_modules/**", "**/*.d.ts"],
     rules: {
       "@typescript-eslint/consistent-type-imports": "warn",
       "@typescript-eslint/no-floating-promises": "error",

@@ -367,6 +367,9 @@
       "toastError": "Failed to reset password. Please try again."
     },
     "verifyEmail": {
+      "readyTitle": "Confirm your email",
+      "readyDescription": "Click the button below to activate your account.",
+      "readyCta": "Verify my email",
       "loadingTitle": "Verifying your email",
       "loadingDescription": "We are confirming your email address...",
       "missingToken": "The verification link is invalid or incomplete.",

@@ -28,40 +28,31 @@ export default function VerifyEmailPage() {
       setError(t('missingToken'));
       return;
     }
-    const verificationToken = token;
+    setStatus('idle');
+    setError('');
+  }, [token, t]);
 
-    let cancelled = false;
-
-    async function verify() {
-      setStatus('loading');
-      try {
-        await authApi.verifyEmail({ token: verificationToken });
-        await refreshProfile();
-
-        if (!cancelled) {
-          setStatus('success');
-          toast.success(t('toastSuccess'));
-        }
-      } catch (err) {
-        const axiosError = err as {
-          response?: { data?: { message?: string } };
-        };
-        const message = axiosError.response?.data?.message || t('toastError');
-
-        if (!cancelled) {
-          setStatus('error');
-          setError(message);
-          toast.error(message);
-        }
-      }
+  async function handleVerifyEmail() {
+    if (!token || status === 'loading') {
+      return;
     }
 
-    verify();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshProfile, token, t]);
+    setStatus('loading');
+    try {
+      await authApi.verifyEmail({ token });
+      await refreshProfile();
+      setStatus('success');
+      toast.success(t('toastSuccess'));
+    } catch (err) {
+      const axiosError = err as {
+        response?: { data?: { message?: string } };
+      };
+      const message = axiosError.response?.data?.message || t('toastError');
+      setStatus('error');
+      setError(message);
+      toast.error(message);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -76,7 +67,23 @@ export default function VerifyEmailPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl border border-border-custom shadow-sm p-8 text-center">
-            {(status === 'idle' || status === 'loading') && (
+            {status === 'idle' && (
+              <>
+                <h1 className="text-2xl font-bold text-text-primary mt-2 mb-2">
+                  {t('readyTitle')}
+                </h1>
+                <p className="text-text-secondary mb-6">{t('readyDescription')}</p>
+                <Button
+                  type="button"
+                  className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                  onClick={handleVerifyEmail}
+                >
+                  {t('readyCta')}
+                </Button>
+              </>
+            )}
+
+            {status === 'loading' && (
               <>
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-600 border-t-transparent mx-auto" />
                 <h1 className="text-2xl font-bold text-text-primary mt-6 mb-2">
