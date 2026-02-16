@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "Sublynk",
-    "description": "Creators can monetize Telegram channels and groups with subscriptions and premium access. Automatic payments, no commission. Focus on your content."
+    "description": "Creators can monetize Telegram channels and groups with subscriptions and premium access. Start for free, then switch plans as you grow."
   },
   "common": {
     "appName": "Sublynk",
@@ -63,14 +63,14 @@
     "proPlan": "Pro Plan",
     "planStatusNone": "Status unavailable",
     "planStatus": {
-      "TRIALING": "Trialing",
+      "TRIALING": "Initial period",
       "ACTIVE": "Active",
       "PAST_DUE": "Payment overdue",
       "CANCELED": "Canceled",
       "INCOMPLETE": "Incomplete",
       "EXPIRED": "Expired"
     },
-    "trialDaysLeft": "{count} days left in trial",
+    "trialDaysLeft": "{count} days left",
     "upgradeNow": "Upgrade now"
   },
   "landingPages": {
@@ -311,7 +311,7 @@
       "copyError": "Unable to copy password",
       "submit": "Create account",
       "submitting": "Creating account...",
-      "trialBadge": "14-day free trial • No credit card required",
+      "trialBadge": "Free Starter plan",
       "hasAccount": "Already have an account?",
       "signIn": "Sign in",
       "termsNotice": "By creating an account, you agree to our",
@@ -542,14 +542,14 @@
       "name": "Name",
       "price": "Price",
       "interval": "Interval",
-      "trial": "Trial",
+      "trial": "Billing delay",
       "accessDuration": "Access duration",
       "status": "Status",
       "actions": "Actions"
     },
     "accessUnlimited": "Unlimited",
     "accessDays": "{count} days",
-    "trialDays": "{count} days",
+    "trialDays": "{count} days before billing",
     "status": {
       "active": "Active",
       "inactive": "Inactive"
@@ -595,7 +595,7 @@
     "PAST_DUE": "Payment overdue",
     "CANCELED": "Canceled",
     "INCOMPLETE": "Pending",
-    "TRIALING": "Trial",
+    "TRIALING": "Initial period",
     "EXPIRED": "Expired"
   },
   "accessStatus": {
@@ -652,7 +652,7 @@
         "PAST_DUE": "Past due",
         "CANCELED": "Canceled",
         "INCOMPLETE": "Incomplete",
-        "TRIALING": "Trialing",
+        "TRIALING": "Initial period",
         "EXPIRED": "Expired"
       }
     },
@@ -672,7 +672,7 @@
       "total": "Total",
       "active": "Active",
       "pastDue": "Past due",
-      "trialing": "Trial"
+      "trialing": "Initial period"
     },
     "filters": {
       "statusLabel": "Filter by status",
@@ -691,14 +691,14 @@
       "view": "View"
     },
     "noResults": "No subscriber matches these filters",
-    "trialDaysLeft": "D-{count}",
+    "trialDaysLeft": "{count} days left",
     "followUp": "Follow up",
     "status": {
       "ACTIVE": "Active",
       "PAST_DUE": "Past due",
       "CANCELED": "Canceled",
       "INCOMPLETE": "Pending",
-      "TRIALING": "Trial",
+      "TRIALING": "Initial period",
       "EXPIRED": "Expired"
     },
     "interval": {
@@ -749,7 +749,7 @@
       "PAST_DUE": "Past due",
       "CANCELED": "Canceled",
       "INCOMPLETE": "Pending",
-      "TRIALING": "Trial",
+      "TRIALING": "Initial period",
       "EXPIRED": "Expired"
     },
     "interval": {
@@ -773,7 +773,7 @@
       "amount": "Amount"
     },
     "trial": {
-      "ends": "Trial ends"
+      "ends": "Initial period ends"
     },
     "pastDue": {
       "message": "⚠ Payment failed. The subscriber will be followed up automatically."
@@ -1343,9 +1343,9 @@
       "currencyLabel": "Currency *",
       "currencyPlaceholder": "EUR",
       "currencyLocked": "Currency is fixed at the organization level.",
-      "trialLabel": "Trial period (days)",
+      "trialLabel": "Delay before first charge (days)",
       "trialPlaceholder": "7",
-      "trialHelper": "Leave empty if no free trial",
+      "trialHelper": "Leave empty for immediate billing",
       "accessDurationLabel": "Access duration (days)",
       "accessDurationPlaceholder": "30",
       "accessDurationHelper": "Leave empty for unlimited access",
@@ -1377,7 +1377,7 @@
     "channelFallback": "Channel",
     "choosePlan": "Choose your plan",
     "popular": "Popular",
-    "freeTrial": "{days}-day free trial",
+    "freeTrial": "First charge in {days} days",
     "accessDuration": "Access valid for {days} days",
     "finalize": "Finalize",
     "form": {
@@ -1501,15 +1501,15 @@
         "title": "4. Fees and Payment",
         "subscription": {
           "title": "4.1 Subscription Fee",
-          "body": "The Service is offered at a flat monthly fee of €39. We charge 0% commission on your sales. Standard Stripe processing fees apply separately."
+          "body": "The Service is offered under the selected plan (Starter, Growth, or Pro), with monthly subscription fees and/or commission based on the active offer. Standard Stripe processing fees apply separately."
         },
         "trial": {
-          "title": "4.2 Free Trial",
-          "body": "New accounts receive a 14-day free trial. No credit card is required to start. At the end of the trial, you must subscribe to continue using the Service."
+          "title": "4.2 Free Starter Plan",
+          "body": "Starter is available for free. Growth and Pro are billed monthly based on the active offer."
         },
         "billing": {
           "title": "4.3 Billing",
-          "body": "Subscription fees are billed monthly in advance. You may cancel at any time; service continues until the end of the billing period."
+          "body": "Paid subscriptions are billed monthly in advance. You may cancel at any time; service continues until the end of the billing period."
         }
       },
       "acceptableUse": {
@@ -2106,54 +2106,79 @@
   "pricing": {
     "hero": {
       "title": "Simple, transparent pricing",
-      "subtitle": "One plan. No hidden fees. No commission on your sales."
+      "subtitle": "Three plans built for your growth. Start free, then upgrade to the one that maximizes your margin."
     },
-    "pricingCard": {
-      "badge": "Most popular",
-      "planName": "Pro",
-      "planSubtitle": "Everything you need to monetize",
-      "price": "€39",
-      "perMonth": "/month",
-      "commission": "+ 0% commission",
-      "cta": "Start 14-day free trial →",
-      "ctaNote": "No credit card required"
-    },
-    "features": {
-      "item1": "Unlimited products & plans",
-      "item2": "Unlimited customers",
-      "item3": "Telegram, Discord & WhatsApp",
-      "item4": "Automatic access management",
-      "item5": "Subscriptions & one-time payments",
-      "item6": "Direct Stripe payouts",
-      "item7": "Real-time analytics dashboard",
-      "item8": "Email notifications (Brevo)",
-      "item9": "GDPR-compliant data handling",
-      "item10": "Priority email support"
+    "plans": {
+      "recommended": "Most popular",
+      "starter": {
+        "name": "Starter",
+        "subtitle": "Launch and validate your offer",
+        "price": "€0",
+        "perMonth": "/month",
+        "commission": "+ 6% per sale",
+        "cta": "Start with Starter →",
+        "ctaNote": "Instant activation",
+        "features": {
+          "item1": "Unlimited products and customers",
+          "item2": "Direct Stripe payouts",
+          "item3": "Coupons and affiliates included"
+        }
+      },
+      "growth": {
+        "name": "Growth",
+        "subtitle": "Scale with predictable costs",
+        "price": "€29",
+        "perMonth": "/month",
+        "commission": "+ 3.5% per sale",
+        "cta": "Choose Growth →",
+        "ctaNote": "Monthly billing",
+        "features": {
+          "item1": "Advanced analytics and exports",
+          "item2": "Priority support",
+          "item3": "All channels in one dashboard"
+        }
+      },
+      "pro": {
+        "name": "Pro",
+        "subtitle": "For teams ready to scale faster",
+        "price": "€99",
+        "perMonth": "/month",
+        "commission": "+ 1.5% per sale",
+        "cta": "Choose Pro →",
+        "ctaNote": "Monthly billing",
+        "features": {
+          "item1": "Multi-admin and advanced branding",
+          "item2": "Advanced API and webhooks",
+          "item3": "Lowest commission to maximize margin"
+        }
+      }
     },
     "comparison": {
       "title": "Why creators switch to us",
       "cards": {
-        "card3Title": "EU",
-        "card1": "commission vs 3-15% elsewhere",
-        "card2": "flat fee, predictable costs",
-        "card3": "based & GDPR-compliant"
+        "card1Title": "€0",
+        "card1": "to start with Starter",
+        "card2Title": "€29",
+        "card2": "Growth subscription to scale",
+        "card3Title": "1.5%",
+        "card3": "lowest commission with Pro"
       },
       "example": {
-        "label": "Example:",
-        "text": "If you make €5,000/month, competitors charge €150-750 in commission.",
-        "highlight": "With us, you pay €39. You save €111-711 every month."
+        "label": "In practice:",
+        "text": "Start with Starter to launch, then move to Growth or Pro when it becomes more profitable for your stage.",
+        "highlight": "Switch plans anytime in one click, with no commitment."
       }
     },
     "faqs": {
       "title": "Frequently asked questions",
       "items": {
         "item1": {
-          "question": "Is there really 0% commission?",
-          "answer": "Yes. We charge a flat monthly fee only. You keep 100% of your revenue. Stripe processing fees (typically 1.4% + €0.25 for EU cards) are separate and go directly to Stripe, not us."
+          "question": "How do commissions work?",
+          "answer": "Starter is €0/month with 6% commission. Growth is €29/month + 3.5%. Pro is €99/month + 1.5%. Stripe processing fees are separate."
         },
         "item2": {
-          "question": "What happens after the free trial?",
-          "answer": "Your account continues to work. We'll send you a reminder before the trial ends. If you don't upgrade, your payment links will pause until you subscribe."
+          "question": "Is there a free plan?",
+          "answer": "Yes. Starter is free and can be activated immediately. You can upgrade to Growth or Pro anytime."
         },
         "item3": {
           "question": "Can I cancel anytime?",
@@ -2165,18 +2190,18 @@
         },
         "item5": {
           "question": "Which platforms are supported?",
-          "answer": "Currently Telegram (including Telegram Stars), with Discord and WhatsApp coming soon. You can manage all platforms from a single dashboard."
+          "answer": "Currently Telegram, Discord and WhatsApp. You can manage all platforms from a single dashboard."
         },
         "item6": {
           "question": "Is my data safe?",
-          "answer": "We're EU-based and fully GDPR-compliant. Your data is stored in European data centers. You can export or delete your data anytime from your dashboard."
+          "answer": "Yes. We follow high security standards with EU hosting, encryption, and strict access controls."
         }
       }
     },
     "finalCta": {
-      "title": "Ready to keep 100% of your revenue?",
-      "button": "Start your free trial →",
-      "note": "14 days free • No credit card required"
+      "title": "Ready to pick your plan?",
+      "button": "Start for free →",
+      "note": "Free Starter • Switch plans anytime"
     }
   },
   "promote": {
@@ -2241,7 +2266,7 @@
   "about": {
     "hero": {
       "title": "Empowering content creators to monetize their communities",
-      "body": "TelegramPlugin was born from a simple observation: creators deserve better tools. While dominant platforms set the rules, creators face real challenges — from payment restrictions to GDPR compliance."
+      "body": "TelegramPlugin was born from a simple observation: creators deserve better tools. While dominant platforms set the rules, creators face real challenges — unpredictable costs, clunky payment tools, and limited control over revenue."
     },
     "story": {
       "title": "Our Story",
@@ -2262,8 +2287,8 @@
           "label": "Payments"
         },
         "item3": {
-          "value": "0%",
-          "label": "Commission"
+          "value": "From €0",
+          "label": "Starter plan"
         },
         "item4": {
           "value": "France",
@@ -2276,7 +2301,7 @@
       "items": {
         "item1": {
           "title": "Privacy First",
-          "description": "Your data stays yours. We are based in France, GDPR-compliant, and never sell your information."
+          "description": "Your data stays yours. EU hosting, high security standards, and we never sell your information."
         },
         "item2": {
           "title": "Creator-Focused",
@@ -2284,14 +2309,14 @@
         },
         "item3": {
           "title": "Simple & Transparent",
-          "description": "No hidden fees, no complex pricing. One flat rate, zero commission on your sales."
+          "description": "No hidden fees, no complex pricing. Free Starter, Growth at €29/month, Pro at €99/month."
         }
       }
     },
     "cta": {
       "title": "Ready to join us?",
-      "body": "Start monetizing your community today with zero commission and full control over your revenue.",
-      "button": "Start your free trial →"
+      "body": "Start for free, then move to the plan that matches your growth stage.",
+      "button": "Start for free →"
     }
   },
   "contact": {
@@ -2515,12 +2540,12 @@
         "line1": "Your content has value",
         "line2": "monetize it"
       },
-      "subtitle": "You create, we handle the rest. Sell access to your Telegram channels (discord and whatsapp soon available), collect payments via Stripe, manage your members yourself. Let's go!",
+      "subtitle": "You create, we handle the rest. Sell access to your Telegram channels, Discord and Whatsapp, collect payments via Stripe, manage your members yourself. Let's go!",
       "cta": {
         "primary": "Start monetizing →",
         "secondary": "View pricing"
       },
-      "trust": "No credit card required • Setup in 5 minutes"
+      "trust": "Setup in 5 minutes"
     },
     "socialProof": {
       "items": {
@@ -2550,7 +2575,7 @@
         },
         "item2": {
           "title": "Connect",
-          "description": "Link your Telegram, Discord, or WhatsApp"
+          "description": "Link your Telegram, Discord, and/or WhatsApp"
         },
         "item3": {
           "title": "Sell",
@@ -2587,35 +2612,35 @@
       "title": "Why creators choose us",
       "items": {
         "item1": {
-          "title": "0% commission",
-          "description": "You keep every euro. Just a flat monthly fee."
+          "title": "Scalable pricing",
+          "description": "Start at €0, then reduce commission with Growth and Pro."
         },
         "item2": {
           "title": "Direct payments",
-          "description": "Money goes straight to your Stripe account."
+          "description": "Revenue goes directly to your Stripe account, no intermediary."
         },
         "item3": {
-          "title": "GDPR & Privacy",
-          "description": "Based in France. Fully GDPR-compliant."
+          "title": "Fast support",
+          "description": "A responsive team to help you launch, optimize, and scale."
         }
       }
     },
     "pricingTeaser": {
-      "title": "Simple, transparent pricing",
-      "price": "€39",
+      "title": "Pricing that grows with you",
+      "price": "From €0",
       "perMonth": "/month",
       "features": {
-        "item1": "0% commission",
-        "item2": "Unlimited products",
-        "item3": "All platforms"
+        "item1": "Starter: €0 + 6% commission",
+        "item2": "Growth: €29 + 3.5% commission",
+        "item3": "Pro: €99 + 1.5% commission"
       },
-      "cta": "View full pricing →",
-      "note": "14-day free trial. No credit card required."
+      "cta": "Compare plans →",
+      "note": "Free Starter. Switch plans anytime."
     },
     "finalCta": {
       "title": "Ready to monetize your community?",
       "cta": "Start free today →",
-      "note": "No credit card required"
+      "note": ""
     },
     "footer": {
       "description": "The community monetization platform for content creators.",
@@ -2636,7 +2661,7 @@
         "contact": "Contact",
         "privacy": "Privacy",
         "terms": "Terms",
-        "gdpr": "GDPR",
+        "gdpr": "Data rights",
         "legalNotice": "Legal notice"
       },
       "copyright": "© {year} {appName}. All rights reserved.",
@@ -2646,7 +2671,7 @@
   "footer": {
     "terms": "Terms",
     "privacy": "Privacy",
-    "gdpr": "GDPR",
+    "gdpr": "Data rights",
     "contact": "Contact",
     "about": "About"
   },
@@ -2982,7 +3007,7 @@
       "steps": {
         "step1": {
           "title": "Create your account",
-          "description": "Sign up for free on Sublynk. No credit card required for the 14-day trial."
+          "description": "Sign up for free on Sublynk."
         },
         "step2": {
           "title": "Connect Stripe",
@@ -3067,7 +3092,7 @@
       "subtitle": "Choose the right plan for your growth, commissions, and branding level."
     },
     "status": {
-      "TRIALING": "Trialing",
+      "TRIALING": "Initial period",
       "ACTIVE": "Active",
       "PAST_DUE": "Payment overdue",
       "CANCELED": "Canceled",
@@ -3096,7 +3121,7 @@
       "starterUpgradeHint": "Your Starter plan is active. You can upgrade to Growth or Pro below.",
       "recommended": "Recommended plan",
       "perMonth": "/month",
-      "trialDays": "{count} trial days",
+      "trialDays": "{count} days before billing",
       "choose": "Choose this plan",
       "redirecting": "Redirecting...",
       "planDetails": {
@@ -3237,7 +3262,7 @@
     "includedAccess": "Included access",
     "chooseOffer": "Choose an offer",
     "channelFallback": "Channel",
-    "trialDays": "{count} free trial days",
+    "trialDays": "{count} days before billing",
     "builtWith": "Powered by",
     "logoAlt": "{name} logo",
     "interval": {

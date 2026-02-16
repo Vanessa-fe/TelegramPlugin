@@ -17,18 +17,22 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PricingPage() {
   const t = await getTranslations('pricing');
-  const includedFeatures = [
-    t('features.item1'),
-    t('features.item2'),
-    t('features.item3'),
-    t('features.item4'),
-    t('features.item5'),
-    t('features.item6'),
-    t('features.item7'),
-    t('features.item8'),
-    t('features.item9'),
-    t('features.item10'),
-  ];
+  const planNames = ['starter', 'growth', 'pro'] as const;
+  const plans = planNames.map((planName) => ({
+    key: planName,
+    name: t(`plans.${planName}.name`),
+    subtitle: t(`plans.${planName}.subtitle`),
+    price: t(`plans.${planName}.price`),
+    perMonth: t(`plans.${planName}.perMonth`),
+    commission: t(`plans.${planName}.commission`),
+    cta: t(`plans.${planName}.cta`),
+    ctaNote: t(`plans.${planName}.ctaNote`),
+    features: [
+      t(`plans.${planName}.features.item1`),
+      t(`plans.${planName}.features.item2`),
+      t(`plans.${planName}.features.item3`),
+    ],
+  }));
   const faqs = [
     {
       question: t('faqs.items.item1.question'),
@@ -72,71 +76,81 @@ export default async function PricingPage() {
         </div>
       </section>
 
-      {/* Pricing Card */}
+      {/* Pricing Plans */}
       <section className="pb-20 lg:pb-28">
-        <div className="max-w-md mx-auto px-4 lg:px-6">
-          <div className="rounded-2xl border-2 border-purple-600 bg-white p-8 shadow-lg">
-            {/* Badge */}
-            <div className="text-center mb-6">
-              <span className="inline-block bg-purple-100 text-purple-600 text-sm font-semibold px-3 py-1 rounded-full">
-                {t('pricingCard.badge')}
-              </span>
-            </div>
+        <div className="max-w-6xl mx-auto px-4 lg:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {plans.map((plan) => {
+              const isRecommended = plan.key === 'growth';
+              return (
+                <div
+                  key={plan.key}
+                  className={`relative rounded-2xl bg-white p-8 ${
+                    isRecommended
+                      ? 'border-2 border-purple-600 shadow-lg'
+                      : 'border border-border-custom shadow-sm'
+                  }`}
+                >
+                  {isRecommended && (
+                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 inline-block bg-purple-100 text-purple-600 text-sm font-semibold px-3 py-1 rounded-full">
+                      {t('plans.recommended')}
+                    </span>
+                  )}
 
-            {/* Plan name */}
-            <h2 className="text-2xl font-bold text-text-primary text-center mb-2">
-              {t('pricingCard.planName')}
-            </h2>
-            <p className="text-text-secondary text-center mb-6">
-              {t('pricingCard.planSubtitle')}
-            </p>
+                  <h2 className="text-2xl font-bold text-text-primary text-center mb-2">
+                    {plan.name}
+                  </h2>
+                  <p className="text-text-secondary text-center mb-6">
+                    {plan.subtitle}
+                  </p>
 
-            {/* Price */}
-            <div className="text-center mb-8">
-              <p className="text-5xl font-bold text-text-primary">
-                {t('pricingCard.price')}
-                <span className="text-lg font-normal text-text-secondary">
-                  {t('pricingCard.perMonth')}
-                </span>
-              </p>
-              <p className="text-purple-600 font-medium mt-2">
-                {t('pricingCard.commission')}
-              </p>
-            </div>
+                  <div className="text-center mb-8">
+                    <p className="text-5xl font-bold text-text-primary">
+                      {plan.price}
+                      <span className="text-lg font-normal text-text-secondary">
+                        {plan.perMonth}
+                      </span>
+                    </p>
+                    <p className="text-purple-600 font-medium mt-2">
+                      {plan.commission}
+                    </p>
+                  </div>
 
-            {/* CTA */}
-            <Link
-              href="/register"
-              className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-4 rounded-lg text-center transition-colors duration-150 shadow-sm hover:shadow-md mb-4"
-            >
-              {t('pricingCard.cta')}
-            </Link>
-            <p className="text-center text-sm text-text-secondary">
-              {t('pricingCard.ctaNote')}
-            </p>
-
-            {/* Divider */}
-            <div className="border-t border-border-custom my-8" />
-
-            {/* Features */}
-            <ul className="space-y-3">
-              {includedFeatures.map((feature) => (
-                <li key={feature} className="flex items-start gap-3">
-                  <svg
-                    className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+                  <Link
+                    href="/register"
+                    className={`block w-full font-semibold px-6 py-4 rounded-lg text-center transition-colors duration-150 mb-4 ${
+                      isRecommended
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm hover:shadow-md'
+                        : 'bg-purple-50 hover:bg-purple-100 text-purple-700'
+                    }`}
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className="text-text-primary text-sm">{feature}</span>
-                </li>
-              ))}
-            </ul>
+                    {plan.cta}
+                  </Link>
+                  <p className="text-center text-sm text-text-secondary mb-8">
+                    {plan.ctaNote}
+                  </p>
+
+                  <ul className="space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3">
+                        <svg
+                          className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span className="text-text-primary text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -150,11 +164,15 @@ export default async function PricingPage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="text-4xl font-bold text-purple-600 mb-2">0%</div>
+              <div className="text-4xl font-bold text-purple-600 mb-2">
+                {t('comparison.cards.card1Title')}
+              </div>
               <p className="text-text-secondary">{t('comparison.cards.card1')}</p>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-purple-600 mb-2">€39</div>
+              <div className="text-4xl font-bold text-purple-600 mb-2">
+                {t('comparison.cards.card2Title')}
+              </div>
               <p className="text-text-secondary">{t('comparison.cards.card2')}</p>
             </div>
             <div className="text-center">

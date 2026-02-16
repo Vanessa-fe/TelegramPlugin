@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "Sublynk",
-    "description": "Créateurs, monétisez vos canaux et groupes Telegram avec des abonnements et accès premium. Paiements automatiques, zéro commission. Concentrez-vous sur votre contenu."
+    "description": "Créateurs, monétisez vos canaux et groupes Telegram avec des abonnements et accès premium. Démarrez gratuitement puis adaptez votre plan à votre croissance."
   },
   "common": {
     "appName": "Sublynk",
@@ -63,14 +63,14 @@
     "proPlan": "Plan Pro",
     "planStatusNone": "Statut indisponible",
     "planStatus": {
-      "TRIALING": "En essai",
+      "TRIALING": "Période initiale",
       "ACTIVE": "Actif",
       "PAST_DUE": "Paiement en retard",
       "CANCELED": "Annulé",
       "INCOMPLETE": "Incomplet",
       "EXPIRED": "Expiré"
     },
-    "trialDaysLeft": "{count} jours d'essai restants",
+    "trialDaysLeft": "{count} jours restants",
     "upgradeNow": "Passer au plan payant"
   },
   "landingPages": {
@@ -311,7 +311,7 @@
       "copyError": "Impossible de copier le mot de passe",
       "submit": "Créer mon compte",
       "submitting": "Création du compte...",
-      "trialBadge": "14 jours d'essai gratuit • Sans carte bancaire",
+      "trialBadge": "Starter gratuit",
       "hasAccount": "Tu as déjà un compte ?",
       "signIn": "Se connecter",
       "termsNotice": "En créant un compte, tu acceptes nos",
@@ -542,14 +542,14 @@
       "name": "Nom",
       "price": "Prix",
       "interval": "Intervalle",
-      "trial": "Essai",
+      "trial": "Délai",
       "accessDuration": "Durée d'accès",
       "status": "Statut",
       "actions": "Actions"
     },
     "accessUnlimited": "Illimité",
     "accessDays": "{count} jours",
-    "trialDays": "{count} jours",
+    "trialDays": "{count} jours avant facturation",
     "status": {
       "active": "Actif",
       "inactive": "Inactif"
@@ -595,7 +595,7 @@
     "PAST_DUE": "Paiement en retard",
     "CANCELED": "Annulé",
     "INCOMPLETE": "En attente",
-    "TRIALING": "Période d'essai",
+    "TRIALING": "Période initiale",
     "EXPIRED": "Expiré"
   },
   "accessStatus": {
@@ -652,7 +652,7 @@
         "PAST_DUE": "Impayé",
         "CANCELED": "Annulé",
         "INCOMPLETE": "En attente",
-        "TRIALING": "Essai",
+        "TRIALING": "Période initiale",
         "EXPIRED": "Expiré"
       }
     },
@@ -672,7 +672,7 @@
       "total": "Total",
       "active": "Actifs",
       "pastDue": "Impayés",
-      "trialing": "En essai"
+      "trialing": "Période initiale"
     },
     "filters": {
       "statusLabel": "Filtrer par statut",
@@ -691,14 +691,14 @@
       "view": "Voir"
     },
     "noResults": "Aucun abonné trouvé pour ces critères",
-    "trialDaysLeft": "J-{count}",
+    "trialDaysLeft": "{count} jours restants",
     "followUp": "Relancer",
     "status": {
       "ACTIVE": "Actif",
       "PAST_DUE": "Impayé",
       "CANCELED": "Annulé",
       "INCOMPLETE": "En attente",
-      "TRIALING": "Essai",
+      "TRIALING": "Période initiale",
       "EXPIRED": "Expiré"
     },
     "interval": {
@@ -749,7 +749,7 @@
       "PAST_DUE": "Impayé",
       "CANCELED": "Annulé",
       "INCOMPLETE": "En attente",
-      "TRIALING": "Essai",
+      "TRIALING": "Période initiale",
       "EXPIRED": "Expiré"
     },
     "interval": {
@@ -773,7 +773,7 @@
       "amount": "Montant"
     },
     "trial": {
-      "ends": "Fin de l'essai"
+      "ends": "Fin de la période initiale"
     },
     "pastDue": {
       "message": "⚠ Le paiement a échoué. L'abonné sera relancé automatiquement."
@@ -1343,9 +1343,9 @@
       "currencyLabel": "Devise *",
       "currencyPlaceholder": "EUR",
       "currencyLocked": "La devise est definie au niveau de l'organisation.",
-      "trialLabel": "Période d'essai (jours)",
+      "trialLabel": "Délai avant 1re facturation (jours)",
       "trialPlaceholder": "7",
-      "trialHelper": "Laisser vide si pas d'essai gratuit",
+      "trialHelper": "Laisser vide pour facturation immédiate",
       "accessDurationLabel": "Durée d'accès (jours)",
       "accessDurationPlaceholder": "30",
       "accessDurationHelper": "Laisser vide pour un accès illimité",
@@ -1377,7 +1377,7 @@
     "channelFallback": "Canal",
     "choosePlan": "Choisir votre formule",
     "popular": "Populaire",
-    "freeTrial": "Essai gratuit de {days} jours",
+    "freeTrial": "Première facturation dans {days} jours",
     "accessDuration": "Accès valide {days} jours",
     "finalize": "Finaliser",
     "form": {
@@ -1501,15 +1501,15 @@
         "title": "4. Frais et paiement",
         "subscription": {
           "title": "4.1 Frais d'abonnement",
-          "body": "Le Service est proposé à un tarif mensuel fixe de 39 €. Nous ne prenons aucune commission sur vos ventes. Les frais de traitement Stripe standard s'appliquent séparément."
+          "body": "Le Service est proposé selon le plan choisi (Starter, Growth ou Pro), avec forfait mensuel et/ou commission selon l'offre active. Les frais de traitement Stripe standard s'appliquent séparément."
         },
         "trial": {
-          "title": "4.2 Essai gratuit",
-          "body": "Les nouveaux comptes bénéficient d'un essai gratuit de 14 jours. Aucune carte bancaire n'est requise pour commencer. À la fin de l'essai, vous devez vous abonner pour continuer à utiliser le Service."
+          "title": "4.2 Plan gratuit",
+          "body": "Le plan Starter est disponible gratuitement. Les plans Growth et Pro sont facturés mensuellement selon l'offre active."
         },
         "billing": {
           "title": "4.3 Facturation",
-          "body": "Les frais d'abonnement sont facturés mensuellement à l'avance. Vous pouvez annuler à tout moment ; le service continue jusqu'à la fin de la période de facturation."
+          "body": "Les abonnements payants sont facturés mensuellement à l'avance. Vous pouvez annuler à tout moment ; le service continue jusqu'à la fin de la période de facturation."
         }
       },
       "acceptableUse": {
@@ -2106,54 +2106,79 @@
   "pricing": {
     "hero": {
       "title": "Tarification simple et transparente",
-      "subtitle": "Un seul plan. Aucun frais caché. Aucune commission sur vos ventes."
+      "subtitle": "Trois plans pour s'adapter à votre croissance. Démarrez gratuitement, puis passez à l'offre qui maximise votre marge."
     },
-    "pricingCard": {
-      "badge": "Le plus populaire",
-      "planName": "Pro",
-      "planSubtitle": "Tout ce dont vous avez besoin pour monétiser",
-      "price": "€39",
-      "perMonth": "/mois",
-      "commission": "+ 0 % de commission",
-      "cta": "Commencer l'essai gratuit de 14 jours →",
-      "ctaNote": "Aucune carte bancaire requise"
-    },
-    "features": {
-      "item1": "Produits et plans illimités",
-      "item2": "Clients illimités",
-      "item3": "Telegram, Discord et WhatsApp",
-      "item4": "Gestion automatique des accès",
-      "item5": "Abonnements et paiements uniques",
-      "item6": "Versements Stripe directs",
-      "item7": "Tableau de bord d'analytique en temps réel",
-      "item8": "Notifications email (Brevo)",
-      "item9": "Gestion des données conforme au RGPD",
-      "item10": "Support email prioritaire"
+    "plans": {
+      "recommended": "Le plus populaire",
+      "starter": {
+        "name": "Starter",
+        "subtitle": "Lancer et tester votre offre",
+        "price": "0€",
+        "perMonth": "/mois",
+        "commission": "+ 6 % par vente",
+        "cta": "Démarrer avec Starter →",
+        "ctaNote": "Activation immédiate",
+        "features": {
+          "item1": "Produits et clients illimités",
+          "item2": "Paiements Stripe directs",
+          "item3": "Coupons et affiliés inclus"
+        }
+      },
+      "growth": {
+        "name": "Growth",
+        "subtitle": "Accélérer à budget maîtrisé",
+        "price": "29€",
+        "perMonth": "/mois",
+        "commission": "+ 3,5 % par vente",
+        "cta": "Choisir Growth →",
+        "ctaNote": "Facturation mensuelle",
+        "features": {
+          "item1": "Analytics et exports avancés",
+          "item2": "Support prioritaire",
+          "item3": "Tous les canaux sur un seul dashboard"
+        }
+      },
+      "pro": {
+        "name": "Pro",
+        "subtitle": "Pour les équipes qui veulent scaler vite",
+        "price": "99€",
+        "perMonth": "/mois",
+        "commission": "+ 1,5 % par vente",
+        "cta": "Choisir Pro →",
+        "ctaNote": "Facturation mensuelle",
+        "features": {
+          "item1": "Multi-admin et branding avancé",
+          "item2": "API et webhooks avancés",
+          "item3": "Commission minimale pour maximiser la marge"
+        }
+      }
     },
     "comparison": {
       "title": "Pourquoi les créateurs passent chez nous",
       "cards": {
-        "card3Title": "UE",
-        "card1": "commission vs 3-15 % ailleurs",
-        "card2": "tarif fixe, coûts prévisibles",
-        "card3": "basé dans l'UE et conforme au RGPD"
+        "card1Title": "0€",
+        "card1": "pour démarrer avec Starter",
+        "card2Title": "29€",
+        "card2": "abonnement Growth pour accélérer",
+        "card3Title": "1,5%",
+        "card3": "commission minimale avec Pro"
       },
       "example": {
-        "label": "Exemple :",
-        "text": "Si vous gagnez 5 000 €/mois, les concurrents facturent 150-750 € de commission.",
-        "highlight": "Avec nous, vous payez 39 €. Vous économisez 111-711 € chaque mois."
+        "label": "En pratique :",
+        "text": "Commencez avec Starter pour lancer, puis passez sur Growth ou Pro au moment où cela devient rentable pour vous.",
+        "highlight": "Changement de plan en un clic, sans engagement."
       }
     },
     "faqs": {
       "title": "Questions fréquentes",
       "items": {
         "item1": {
-          "question": "Y a-t-il vraiment 0 % de commission ?",
-          "answer": "Oui. Nous facturons uniquement un forfait mensuel. Vous gardez 100 % de vos revenus. Les frais de traitement Stripe (généralement 1,4 % + 0,25 € pour les cartes UE) sont séparés et vont directement à Stripe, pas à nous."
+          "question": "Comment fonctionnent les commissions ?",
+          "answer": "Starter est à 0 €/mois avec 6 % de commission. Growth est à 29 €/mois + 3,5 %. Pro est à 99 €/mois + 1,5 %. Les frais de traitement Stripe s'ajoutent séparément."
         },
         "item2": {
-          "question": "Que se passe-t-il après l'essai gratuit ?",
-          "answer": "Votre compte continue de fonctionner. Nous vous enverrons un rappel avant la fin de l'essai. Si vous ne passez pas à l'abonnement, vos liens de paiement seront mis en pause jusqu'à votre souscription."
+          "question": "Y a-t-il un plan gratuit ?",
+          "answer": "Oui. Le plan Starter est gratuit et activable immédiatement. Vous pouvez passer sur Growth ou Pro à tout moment."
         },
         "item3": {
           "question": "Puis-je annuler à tout moment ?",
@@ -2165,18 +2190,18 @@
         },
         "item5": {
           "question": "Quelles plateformes sont prises en charge ?",
-          "answer": "Actuellement Telegram (y compris Telegram Stars), avec Discord et WhatsApp bientôt disponibles. Vous pouvez gérer toutes les plateformes depuis un tableau de bord unique."
+          "answer": "Actuellement Telegram, Discord et WhatsApp. Vous pouvez gérer toutes les plateformes depuis un tableau de bord unique."
         },
         "item6": {
           "question": "Mes données sont-elles en sécurité ?",
-          "answer": "Nous sommes basés dans l'UE et entièrement conformes au RGPD. Vos données sont stockées dans des centres de données européens. Vous pouvez exporter ou supprimer vos données à tout moment depuis votre tableau de bord."
+          "answer": "Oui. Nous appliquons des standards de sécurité élevés, avec hébergement en Europe, chiffrement et contrôle strict des accès."
         }
       }
     },
     "finalCta": {
-      "title": "Prêt à garder 100 % de vos revenus ?",
-      "button": "Commencer votre essai gratuit →",
-      "note": "14 jours gratuits • Aucune carte bancaire requise"
+      "title": "Prêt à choisir votre plan ?",
+      "button": "Commencer gratuitement →",
+      "note": "Starter gratuit • Changement de plan à tout moment"
     }
   },
   "promote": {
@@ -2241,7 +2266,7 @@
   "about": {
     "hero": {
       "title": "Aider les créateurs de contenus à monétiser leurs communautés",
-      "body": "Sublynk est né d'un constat simple : les créateurs méritent de meilleurs outils. Alors que les plateformes dominantes imposent leurs règles, les créateurs font face à des défis concrets — des restrictions de paiement à la conformité RGPD."
+      "body": "Sublynk est né d'un constat simple : les créateurs méritent de meilleurs outils. Alors que les plateformes dominantes imposent leurs règles, les créateurs font face à des défis concrets — coûts imprévisibles, solutions de paiement bancales et perte de contrôle sur leurs revenus."
     },
     "story": {
       "title": "Notre histoire",
@@ -2262,8 +2287,8 @@
           "label": "Paiements"
         },
         "item3": {
-          "value": "0%",
-          "label": "Commission"
+          "value": "Dès 0€",
+          "label": "Plan Starter"
         },
         "item4": {
           "value": "France",
@@ -2276,7 +2301,7 @@
       "items": {
         "item1": {
           "title": "Confidentialité d'abord",
-          "description": "Tes données restent les tiennes. Nous sommes basés en France, conformes au RGPD, et nous ne revendons jamais tes informations."
+          "description": "Tes données restent les tiennes. Hébergement européen, standards de sécurité élevés, et aucune revente de tes informations."
         },
         "item2": {
           "title": "Pensé pour les créateurs",
@@ -2284,14 +2309,14 @@
         },
         "item3": {
           "title": "Simple et transparent",
-          "description": "Aucun frais caché, aucune tarification complexe. Un tarif unique, zéro commission sur tes ventes."
+          "description": "Aucun frais caché, aucune tarification complexe. Starter gratuit, Growth à 29 €/mois, Pro à 99 €/mois."
         }
       }
     },
     "cta": {
       "title": "Prêt à nous rejoindre ?",
-      "body": "Commence à monétiser ta communauté dès aujourd'hui avec zéro commission et un contrôle total sur tes revenus.",
-      "button": "Commencer l'essai gratuit →"
+      "body": "Commence gratuitement, puis passe à l'offre qui correspond à ton niveau de croissance.",
+      "button": "Commencer gratuitement →"
     }
   },
   "contact": {
@@ -2515,12 +2540,12 @@
         "line1": "Votre contenu a de la valeur",
         "line2": "monétisez-le"
       },
-      "subtitle": "Vous créez, on s'occupe du reste. Vendez l'accès à vos canaux Telegram (discord et whatsapp bientôt disponibles), encaissez via Stripe, gérez vos membres vous-même. C'est parti !",
+      "subtitle": "Vous créez, on s'occupe du reste. Vendez l'accès à vos canaux Telegram, Discord et Whatsapp, encaissez via Stripe, gérez vos membres vous-même. C'est parti !",
       "cta": {
         "primary": "Commencer à monétiser →",
         "secondary": "Voir les tarifs"
       },
-      "trust": "Aucune carte bancaire requise • Mise en place en 5 minutes"
+      "trust": "Mise en place en 5 minutes"
     },
     "socialProof": {
       "items": {
@@ -2550,7 +2575,7 @@
         },
         "item2": {
           "title": "Connecter",
-          "description": "Lie ton Telegram (Discord et WhatsApp bientôt disponibles)"
+          "description": "Lie ton Telegram, Discord et/ou WhatsApp"
         },
         "item3": {
           "title": "Vendre",
@@ -2587,35 +2612,35 @@
       "title": "Pourquoi les créateurs nous choisissent",
       "items": {
         "item1": {
-          "title": "0 % de commission",
-          "description": "Tu gardes chaque euro. Juste un forfait mensuel."
+          "title": "Tarifs évolutifs",
+          "description": "Démarre à 0 €, puis réduis la commission avec Growth et Pro."
         },
         "item2": {
           "title": "Paiements directs",
-          "description": "L'argent arrive directement sur ton compte Stripe."
+          "description": "L'argent arrive directement sur ton compte Stripe, sans intermédiaire."
         },
         "item3": {
-          "title": "RGPD & confidentialité",
-          "description": "Basé en France. Entièrement conforme au RGPD."
+          "title": "Support réactif",
+          "description": "Une équipe disponible pour t'aider à lancer, optimiser et scaler."
         }
       }
     },
     "pricingTeaser": {
-      "title": "Tarification simple et transparente",
-      "price": "€39",
+      "title": "Des tarifs qui suivent ta croissance",
+      "price": "Dès 0€",
       "perMonth": "/mois",
       "features": {
-        "item1": "0 % de commission",
-        "item2": "Produits illimités",
-        "item3": "Toutes les plateformes"
+        "item1": "Starter : 0 € + 6 % de commission",
+        "item2": "Growth : 29 € + 3,5 % de commission",
+        "item3": "Pro : 99 € + 1,5 % de commission"
       },
-      "cta": "Voir tous les tarifs →",
-      "note": "Essai gratuit de 14 jours. Aucune carte bancaire requise."
+      "cta": "Comparer les plans →",
+      "note": "Starter gratuit. Changement de plan à tout moment."
     },
     "finalCta": {
       "title": "Prêt à monétiser ta communauté ?",
       "cta": "Commencer gratuitement →",
-      "note": "Aucune carte bancaire requise"
+      "note": ""
     },
     "footer": {
       "description": "La plateforme de monétisation de communautés pour les créateurs de contenus.",
@@ -2636,7 +2661,7 @@
         "contact": "Contact",
         "privacy": "Confidentialité",
         "terms": "Conditions",
-        "gdpr": "RGPD",
+        "gdpr": "Données personnelles",
         "legalNotice": "Mentions légales"
       },
       "copyright": "© {year} {appName}. Tous droits réservés.",
@@ -2646,7 +2671,7 @@
   "footer": {
     "terms": "Conditions",
     "privacy": "Confidentialité",
-    "gdpr": "RGPD",
+    "gdpr": "Données personnelles",
     "contact": "Contact",
     "about": "À propos"
   },
@@ -2982,7 +3007,7 @@
       "steps": {
         "step1": {
           "title": "Créez votre compte",
-          "description": "Inscrivez-vous gratuitement sur Sublynk. Aucune carte bancaire requise pour l'essai de 14 jours."
+          "description": "Inscrivez-vous gratuitement sur Sublynk."
         },
         "step2": {
           "title": "Connectez Stripe",
@@ -3067,7 +3092,7 @@
       "subtitle": "Choisis le plan adapté à ta croissance, à tes commissions et à ton niveau de branding."
     },
     "status": {
-      "TRIALING": "Essai",
+      "TRIALING": "Période initiale",
       "ACTIVE": "Actif",
       "PAST_DUE": "Paiement en retard",
       "CANCELED": "Annulé",
@@ -3096,7 +3121,7 @@
       "starterUpgradeHint": "Ton plan Starter est actif. Tu peux passer sur Growth ou Pro ci-dessous.",
       "recommended": "Plan recommandé",
       "perMonth": "/mois",
-      "trialDays": "{count} jours d'essai",
+      "trialDays": "{count} jours avant facturation",
       "choose": "Choisir ce plan",
       "redirecting": "Redirection...",
       "planDetails": {
@@ -3237,7 +3262,7 @@
     "includedAccess": "Accès inclus",
     "chooseOffer": "Choisir une offre",
     "channelFallback": "Canal",
-    "trialDays": "{count} jours d'essai gratuit",
+    "trialDays": "{count} jours avant facturation",
     "builtWith": "Powered by",
     "logoAlt": "Logo de {name}",
     "interval": {

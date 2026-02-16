@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { AccessStatus, SubscriptionStatus } from '@prisma/client';
+import {
+  AccessStatus,
+  PlatformSubscriptionStatus,
+  SubscriptionStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { DataExportsService } from '../data-exports/data-exports.service';
@@ -9,6 +13,11 @@ import { DataExportsService } from '../data-exports/data-exports.service';
 const DEFAULT_AUDIT_LOG_RETENTION_DAYS = 400;
 const DEFAULT_PAYMENT_EVENT_RETENTION_DAYS = 730;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const TERMINAL_PLATFORM_STATUSES: PlatformSubscriptionStatus[] = [
+  PlatformSubscriptionStatus.CANCELED,
+  PlatformSubscriptionStatus.INCOMPLETE,
+  PlatformSubscriptionStatus.EXPIRED,
+];
 
 @Injectable()
 export class SchedulerService {
@@ -136,6 +145,146 @@ export class SchedulerService {
     }
 
     this.logger.log('Grace period expiration check complete');
+  }
+
+  /**
+   * Hard-stop customer subscriptions when platform subscription is no longer active.
+   * This prevents organizations from keeping paid members after trial/subscription ends.
+   * Runs every 15 minutes.
+   */
+  @Cron('*/15 * * * *')
+  async handleInactivePlatformSubscriptions(): Promise<void> {
+    this.logger.log('Starting inactive platform subscription enforcement...');
+
+    const now = new Date();
+
+    const organizationsToDisable = await this.prisma.organization.findMany({
+      where: {
+        saasActive: true,
+        platformSubscription: {
+          is: {
+            OR: [
+              {
+                status: {
+                  in: TERMINAL_PLATFORM_STATUSES,
+                },
+                OR: [
+                  { graceUntil: null },
+                  {
+                    graceUntil: {
+                      lte: now,
+                    },
+                  },
+                ],
+              },
+              {
+                status: PlatformSubscriptionStatus.PAST_DUE,
+                graceUntil: {
+                  lte: now,
+                },
+              },
+            ],
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (organizationsToDisable.length > 0) {
+      await this.prisma.organization.updateMany({
+        where: {
+          id: {
+            in: organizationsToDisable.map((org) => org.id),
+          },
+        },
+        data: {
+          saasActive: false,
+        },
+      });
+    }
+
+    const subscriptionsToRevoke = await this.prisma.subscription.findMany({
+      where: {
+        status: {
+          in: [
+            SubscriptionStatus.ACTIVE,
+            SubscriptionStatus.TRIALING,
+            SubscriptionStatus.PAST_DUE,
+            SubscriptionStatus.INCOMPLETE,
+          ],
+        },
+        organization: {
+          platformSubscription: {
+            is: {
+              OR: [
+                {
+                  status: {
+                    in: TERMINAL_PLATFORM_STATUSES,
+                  },
+                  OR: [
+                    { graceUntil: null },
+                    {
+                      graceUntil: {
+                        lte: now,
+                      },
+                    },
+                  ],
+                },
+                {
+                  status: PlatformSubscriptionStatus.PAST_DUE,
+                  graceUntil: {
+                    lte: now,
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (subscriptionsToRevoke.length === 0) {
+      this.logger.debug(
+        'No customer subscriptions to revoke for inactive platform subscriptions',
+      );
+      return;
+    }
+
+    for (const subscription of subscriptionsToRevoke) {
+      try {
+        await this.channelAccessService.handlePaymentFailure(
+          subscription.id,
+          'canceled',
+        );
+
+        await this.prisma.subscription.update({
+          where: { id: subscription.id },
+          data: {
+            status: SubscriptionStatus.CANCELED,
+            canceledAt: now,
+            endedAt: now,
+            graceUntil: null,
+          },
+        });
+
+        this.logger.debug(
+          `Hard-stopped subscription ${subscription.id} due to inactive platform subscription`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to hard-stop subscription ${subscription.id}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Inactive platform subscription enforcement complete: ${subscriptionsToRevoke.length} subscription(s) revoked`,
+    );
   }
 
   /**

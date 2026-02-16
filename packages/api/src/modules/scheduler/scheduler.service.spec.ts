@@ -20,8 +20,13 @@ describe('SchedulerService', () => {
         {
           provide: PrismaService,
           useValue: {
+            organization: {
+              findMany: jest.fn(),
+              updateMany: jest.fn(),
+            },
             subscription: {
               findMany: jest.fn(),
+              update: jest.fn(),
             },
             auditLog: {
               deleteMany: jest.fn(),
@@ -96,6 +101,56 @@ describe('SchedulerService', () => {
       await service.handleExpiredGracePeriods();
 
       expect(channelAccessService.handlePaymentFailure).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleInactivePlatformSubscriptions', () => {
+    it('should disable saas and hard-stop customer subscriptions when platform is inactive', async () => {
+      prisma.organization.findMany.mockResolvedValue([{ id: 'org-1' }] as any);
+      prisma.organization.updateMany.mockResolvedValue({ count: 1 } as any);
+      prisma.subscription.findMany.mockResolvedValue([
+        { id: 'sub-1' },
+        { id: 'sub-2' },
+      ] as any);
+      prisma.subscription.update.mockResolvedValue({ id: 'sub-1' } as any);
+
+      await service.handleInactivePlatformSubscriptions();
+
+      expect(prisma.organization.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['org-1'] } },
+        data: { saasActive: false },
+      });
+      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledTimes(2);
+      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledWith(
+        'sub-1',
+        'canceled',
+      );
+      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledWith(
+        'sub-2',
+        'canceled',
+      );
+      expect(prisma.subscription.update).toHaveBeenCalledTimes(2);
+      expect(prisma.subscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sub-1' },
+        }),
+      );
+      expect(prisma.subscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'sub-2' },
+        }),
+      );
+    });
+
+    it('should skip revocation when no impacted subscriptions are found', async () => {
+      prisma.organization.findMany.mockResolvedValue([]);
+      prisma.subscription.findMany.mockResolvedValue([]);
+
+      await service.handleInactivePlatformSubscriptions();
+
+      expect(prisma.organization.updateMany).not.toHaveBeenCalled();
+      expect(channelAccessService.handlePaymentFailure).not.toHaveBeenCalled();
+      expect(prisma.subscription.update).not.toHaveBeenCalled();
     });
   });
 
