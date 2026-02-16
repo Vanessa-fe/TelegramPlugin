@@ -88,6 +88,22 @@ export default async function FaqPage() {
       question: t('questions.q6.question'),
       answer: t('questions.q6.answer'),
     },
+    {
+      question: t('questions.q7.question'),
+      answer: t('questions.q7.answer'),
+    },
+    {
+      question: t('questions.q8.question'),
+      answer: t('questions.q8.answer'),
+    },
+    {
+      question: t('questions.q9.question'),
+      answer: t('questions.q9.answer'),
+    },
+    {
+      question: t('questions.q10.question'),
+      answer: t('questions.q10.answer'),
+    },
   ];
 
   const faqJsonLd = {

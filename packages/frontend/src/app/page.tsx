@@ -4,10 +4,13 @@ import { buildMetadata } from '@/lib/metadata';
 import {
   Navbar,
   Hero,
+  TelegramStarsBanner,
   SocialProof,
+  WhySublynk,
   HowItWorks,
   Features,
   Differentiators,
+  Testimonials,
   PricingTeaser,
   FinalCTA,
   Footer,
@@ -30,10 +33,13 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Navbar />
       <Hero />
+      <TelegramStarsBanner />
       <SocialProof />
+      <WhySublynk />
       <HowItWorks />
       <Features />
       <Differentiators />
+      <Testimonials />
       <PricingTeaser />
       <FinalCTA />
       <Footer />

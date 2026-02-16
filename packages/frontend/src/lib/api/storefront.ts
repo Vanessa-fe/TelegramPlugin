@@ -44,6 +44,7 @@ export interface PublicProduct {
   };
   plans: PublicPlan[];
   channels: PublicChannel[];
+  telegramStarsEnabled?: boolean;
 }
 
 export interface PublicOrganization {

@@ -1,13 +1,22 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   PaymentEventType,
   PaymentProvider,
+  PlatformSubscriptionStatus,
   ProductStatus,
   SubscriptionStatus,
 } from '@prisma/client';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
+
+// Plan name required for Telegram Stars feature
+const REQUIRED_PLAN_FOR_TELEGRAM_STARS = 'pro';
 
 // Default conversion rate: 1 Star = 2 cents USD (approximate Telegram rate)
 const DEFAULT_STARS_CONVERSION_RATE = 2;
@@ -229,7 +238,15 @@ export class TelegramStarsService {
       include: {
         product: {
           include: {
-            organization: true,
+            organization: {
+              include: {
+                platformSubscription: {
+                  include: {
+                    platformPlan: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -241,6 +258,26 @@ export class TelegramStarsService {
 
     if (!plan.isActive || plan.product.status !== ProductStatus.ACTIVE) {
       throw new BadRequestException('Plan non disponible');
+    }
+
+    // Check if organization has Pro plan for Telegram Stars
+    const organization = plan.product.organization;
+    const platformSubscription = organization.platformSubscription;
+    const platformPlanName = platformSubscription?.platformPlan?.name;
+    const isSubscriptionActive =
+      platformSubscription?.status === PlatformSubscriptionStatus.ACTIVE ||
+      platformSubscription?.status === PlatformSubscriptionStatus.TRIALING;
+
+    if (
+      !isSubscriptionActive ||
+      platformPlanName !== REQUIRED_PLAN_FOR_TELEGRAM_STARS
+    ) {
+      this.logger.warn(
+        `Organization ${organization.id} attempted Telegram Stars payment without Pro plan (current: ${platformPlanName ?? 'none'})`,
+      );
+      throw new ForbiddenException(
+        'Les paiements Telegram Stars nécessitent un abonnement Pro. Passez au plan Pro pour activer cette fonctionnalité.',
+      );
     }
 
     const telegramUserId = customer.telegramUserId.trim();
@@ -397,6 +434,51 @@ export class TelegramStarsService {
       );
       return { valid: false, error: 'Invalid invoice payload' };
     }
+  }
+
+  /**
+   * Checks if an organization can use Telegram Stars payments
+   * Returns availability status and required plan if not available
+   */
+  async checkAvailability(organizationId: string): Promise<{
+    available: boolean;
+    requiredPlan: string;
+    currentPlan: string | null;
+  }> {
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: {
+        platformSubscription: {
+          include: {
+            platformPlan: true,
+          },
+        },
+      },
+    });
+
+    if (!organization) {
+      return {
+        available: false,
+        requiredPlan: REQUIRED_PLAN_FOR_TELEGRAM_STARS,
+        currentPlan: null,
+      };
+    }
+
+    const platformSubscription = organization.platformSubscription;
+    const platformPlanName = platformSubscription?.platformPlan?.name ?? null;
+    const isSubscriptionActive =
+      platformSubscription?.status === PlatformSubscriptionStatus.ACTIVE ||
+      platformSubscription?.status === PlatformSubscriptionStatus.TRIALING;
+
+    const available =
+      isSubscriptionActive &&
+      platformPlanName === REQUIRED_PLAN_FOR_TELEGRAM_STARS;
+
+    return {
+      available,
+      requiredPlan: REQUIRED_PLAN_FOR_TELEGRAM_STARS,
+      currentPlan: platformPlanName,
+    };
   }
 
   private calculatePeriodEnd(interval: string): Date | null {

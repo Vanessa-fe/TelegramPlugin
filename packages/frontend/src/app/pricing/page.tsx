@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Navbar, Footer } from '@/components/marketing';
+import { Navbar, Footer, CompetitorsTable } from '@/components/marketing';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
 
@@ -154,6 +154,9 @@ export default async function PricingPage() {
           </div>
         </div>
       </section>
+
+      {/* Competitors Table */}
+      <CompetitorsTable />
 
       {/* Comparison note */}
       <section className="py-16 lg:py-20 bg-surface">

@@ -2202,6 +2202,22 @@
       "title": "Ready to pick your plan?",
       "button": "Start for free →",
       "note": "Free Starter • Switch plans anytime"
+    },
+    "competitors": {
+      "title": "Sublynk vs the competition",
+      "feature": "Feature",
+      "free": "Free",
+      "paid": "Paid",
+      "features": {
+        "telegramStars": "Telegram Stars",
+        "whatsapp": "WhatsApp",
+        "discord": "Discord",
+        "affiliates": "Affiliates included",
+        "coupons": "Coupons",
+        "frenchSupport": "French support",
+        "minFees": "Minimum fees",
+        "freePlanFees": "Free plan fees"
+      }
     }
   },
   "promote": {
@@ -2642,6 +2658,55 @@
       "cta": "Start free today →",
       "note": ""
     },
+    "whySublynk": {
+      "title": "Why choose Sublynk?",
+      "items": {
+        "item1": {
+          "title": "Telegram Stars Payments",
+          "description": "The only platform accepting native Telegram payments. Your subscribers pay directly in the app — zero friction."
+        },
+        "item2": {
+          "title": "Affiliates included from day one",
+          "description": "Turn your members into ambassadors. Full referral system with commission tracking, even on the free plan."
+        },
+        "item3": {
+          "title": "Multi-platform, one dashboard",
+          "description": "Telegram, Discord, WhatsApp — manage all your paid access from a single, intuitive interface."
+        },
+        "item4": {
+          "title": "French-speaking support",
+          "description": "A responsive team that speaks your language. No chatbot, real answers."
+        },
+        "item5": {
+          "title": "Lowest fees on the market",
+          "description": "From 1.5% to 6% depending on your plan. You keep more, we take less."
+        }
+      }
+    },
+    "testimonials": {
+      "title": "They chose Sublynk",
+      "items": {
+        "item1": {
+          "quote": "Conversion rate doubled since I accept Telegram Stars. My subscribers pay in 2 clicks without leaving the app.",
+          "name": "Alex K.",
+          "role": "Crypto Signals"
+        },
+        "item2": {
+          "quote": "Super easy setup. I launched my paid channel in under an hour, with responsive French-speaking support.",
+          "name": "Marine D.",
+          "role": "Fitness Coach"
+        },
+        "item3": {
+          "quote": "The affiliate system brought me 40 new members in the first month. Zero ads, just word-of-mouth.",
+          "name": "Thomas R.",
+          "role": "Gaming Community"
+        }
+      }
+    },
+    "telegramStarsBanner": {
+      "badge": "Sublynk Exclusive",
+      "text": "The only platform accepting native Telegram Stars payments."
+    },
     "footer": {
       "description": "The community monetization platform for content creators.",
       "sections": {
@@ -3073,6 +3138,22 @@
       "q6": {
         "question": "Are payments secure?",
         "answer": "Absolutely. All payments are processed by Stripe, the world leader in online payments. We never store your banking data."
+      },
+      "q7": {
+        "question": "What are Telegram Stars?",
+        "answer": "Telegram Stars is Telegram's built-in payment system. Your subscribers can pay directly in the app without a credit card. Sublynk is the only platform that supports it."
+      },
+      "q8": {
+        "question": "Can I use Sublynk if I already have subscribers elsewhere?",
+        "answer": "Yes! You can import your existing customers and grant them access manually, then manage new ones through Sublynk."
+      },
+      "q9": {
+        "question": "Are affiliates really free?",
+        "answer": "Yes, the complete affiliate system (referral links, commission tracking, payouts) is included in all plans, including the free Starter plan."
+      },
+      "q10": {
+        "question": "What's the difference with Sublaunch or LaunchPass?",
+        "answer": "Sublynk offers Telegram Stars support (exclusive), lower fees (1.5% vs 3% minimum), and French-speaking support. Check out our comparison table on the Pricing page."
       }
     },
     "cta": {

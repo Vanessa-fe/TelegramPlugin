@@ -532,31 +532,33 @@ export function CheckoutPageContent({
                       </div>
                     </div>
 
-                    <div
-                      className={`border rounded-lg p-3 cursor-pointer transition-all ${
-                        paymentMethod === "telegram_stars"
-                          ? "border-purple-600 bg-purple-50"
-                          : "border-gray-200 hover:border-purple-600"
-                      }`}
-                      onClick={() => setPaymentMethod("telegram_stars")}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="telegram_stars"
-                          checked={paymentMethod === "telegram_stars"}
-                          onChange={() => setPaymentMethod("telegram_stars")}
-                          className="h-4 w-4 accent-purple-600"
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium text-sm flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500" />
-                            {t("payment.telegramStars")}
+                    {product.telegramStarsEnabled && (
+                      <div
+                        className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                          paymentMethod === "telegram_stars"
+                            ? "border-purple-600 bg-purple-50"
+                            : "border-gray-200 hover:border-purple-600"
+                        }`}
+                        onClick={() => setPaymentMethod("telegram_stars")}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="telegram_stars"
+                            checked={paymentMethod === "telegram_stars"}
+                            onChange={() => setPaymentMethod("telegram_stars")}
+                            className="h-4 w-4 accent-purple-600"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium text-sm flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-500" />
+                              {t("payment.telegramStars")}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 

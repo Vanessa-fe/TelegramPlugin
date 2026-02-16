@@ -21,6 +21,9 @@ function toRecord(
   return value as Record<string, unknown>;
 }
 
+// Plan required for Telegram Stars
+const TELEGRAM_STARS_REQUIRED_PLAN = 'pro';
+
 function resolvePublicBranding(
   metadata: unknown,
   status?: PlatformSubscriptionStatus | null,
@@ -40,6 +43,16 @@ function resolvePublicBranding(
     logoUrl,
     hideSublynkBranding: requestedHide && proBrandingEnabled,
   };
+}
+
+function isTelegramStarsEnabled(
+  status?: PlatformSubscriptionStatus | null,
+  planName?: string | null,
+): boolean {
+  const isActive =
+    status === PlatformSubscriptionStatus.ACTIVE ||
+    status === PlatformSubscriptionStatus.TRIALING;
+  return isActive && planName === TELEGRAM_STARS_REQUIRED_PLAN;
 }
 
 @Injectable()
@@ -111,10 +124,18 @@ export class StorefrontService {
       return null;
     }
 
+    const platformStatus = product.organization.platformSubscription?.status;
+    const platformPlanName = product.organization.platformSubscription?.platformPlan?.name;
+
     const branding = resolvePublicBranding(
       product.organization.metadata,
-      product.organization.platformSubscription?.status,
-      product.organization.platformSubscription?.platformPlan?.name,
+      platformStatus,
+      platformPlanName,
+    );
+
+    const telegramStarsEnabled = isTelegramStarsEnabled(
+      platformStatus,
+      platformPlanName,
     );
 
     return {
@@ -133,6 +154,7 @@ export class StorefrontService {
         title: pc.channel.title,
         provider: pc.channel.provider,
       })),
+      telegramStarsEnabled,
     };
   }
 

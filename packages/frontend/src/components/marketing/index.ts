@@ -8,3 +8,7 @@ export { PricingTeaser } from './pricing-teaser';
 export { FinalCTA } from './final-cta';
 export { Footer } from './footer';
 export { LegalLayout } from './legal-layout';
+export { WhySublynk } from './why-sublynk';
+export { Testimonials } from './testimonials';
+export { TelegramStarsBanner } from './telegram-stars-banner';
+export { CompetitorsTable } from './competitors-table';

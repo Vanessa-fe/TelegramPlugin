@@ -2202,6 +2202,22 @@
       "title": "Prêt à choisir votre plan ?",
       "button": "Commencer gratuitement →",
       "note": "Starter gratuit • Changement de plan à tout moment"
+    },
+    "competitors": {
+      "title": "Sublynk vs la concurrence",
+      "feature": "Fonctionnalité",
+      "free": "Gratuit",
+      "paid": "Payant",
+      "features": {
+        "telegramStars": "Telegram Stars",
+        "whatsapp": "WhatsApp",
+        "discord": "Discord",
+        "affiliates": "Affiliés inclus",
+        "coupons": "Coupons",
+        "frenchSupport": "Support français",
+        "minFees": "Frais minimum",
+        "freePlanFees": "Frais plan gratuit"
+      }
     }
   },
   "promote": {
@@ -2642,6 +2658,55 @@
       "cta": "Commencer gratuitement →",
       "note": ""
     },
+    "whySublynk": {
+      "title": "Pourquoi choisir Sublynk ?",
+      "items": {
+        "item1": {
+          "title": "Paiements Telegram Stars",
+          "description": "La seule plateforme qui accepte les paiements natifs Telegram. Vos abonnés paient directement dans l'app — zéro friction."
+        },
+        "item2": {
+          "title": "Affiliés inclus dès le départ",
+          "description": "Transformez vos membres en ambassadeurs. Système de parrainage complet avec suivi des commissions, même sur le plan gratuit."
+        },
+        "item3": {
+          "title": "Multi-plateforme, un seul dashboard",
+          "description": "Telegram, Discord, WhatsApp — gérez tous vos accès payants depuis une interface unique et intuitive."
+        },
+        "item4": {
+          "title": "Support en français",
+          "description": "Une équipe réactive qui parle votre langue. Pas de chatbot, de vraies réponses."
+        },
+        "item5": {
+          "title": "Les frais les plus bas du marché",
+          "description": "De 1,5% à 6% selon votre plan. Vous gardez plus, nous prenons moins."
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Ils ont choisi Sublynk",
+      "items": {
+        "item1": {
+          "quote": "Taux de conversion doublé depuis que j'accepte les Telegram Stars. Mes abonnés paient en 2 clics, sans quitter l'app.",
+          "name": "Alex K.",
+          "role": "Signaux Crypto"
+        },
+        "item2": {
+          "quote": "Configuration ultra simple. J'ai lancé mon canal payant en moins d'une heure, support réactif et en français.",
+          "name": "Marine D.",
+          "role": "Coach Fitness"
+        },
+        "item3": {
+          "quote": "Le système d'affiliés m'a apporté 40 nouveaux membres le premier mois. Zéro pub, juste le bouche-à-oreille.",
+          "name": "Thomas R.",
+          "role": "Communauté Gaming"
+        }
+      }
+    },
+    "telegramStarsBanner": {
+      "badge": "Exclusivité Sublynk",
+      "text": "La seule plateforme qui accepte les paiements Telegram Stars natifs."
+    },
     "footer": {
       "description": "La plateforme de monétisation de communautés pour les créateurs de contenus.",
       "sections": {
@@ -3073,6 +3138,22 @@
       "q6": {
         "question": "Les paiements sont-ils sécurisés ?",
         "answer": "Absolument. Tous les paiements sont traités par Stripe, leader mondial du paiement en ligne. Nous ne stockons jamais vos données bancaires."
+      },
+      "q7": {
+        "question": "Qu'est-ce que Telegram Stars ?",
+        "answer": "Telegram Stars est le système de paiement intégré à Telegram. Vos abonnés peuvent payer directement dans l'application sans carte bancaire. Sublynk est la seule plateforme à le supporter."
+      },
+      "q8": {
+        "question": "Puis-je utiliser Sublynk si j'ai déjà des abonnés ailleurs ?",
+        "answer": "Oui ! Vous pouvez importer vos clients existants et leur donner accès manuellement, puis gérer les nouveaux via Sublynk."
+      },
+      "q9": {
+        "question": "Les affiliés sont vraiment gratuits ?",
+        "answer": "Oui, le système d'affiliation complet (liens de parrainage, suivi des commissions, paiements) est inclus dans tous les plans, y compris le plan Starter gratuit."
+      },
+      "q10": {
+        "question": "Quelle est la différence avec Sublaunch ou LaunchPass ?",
+        "answer": "Sublynk offre le support Telegram Stars (exclusif), des frais plus bas (1,5% vs 3% minimum), et un support en français. Consultez notre tableau comparatif sur la page Tarifs."
       }
     },
     "cta": {
