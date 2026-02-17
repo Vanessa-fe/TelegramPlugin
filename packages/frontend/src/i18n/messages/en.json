@@ -3231,15 +3231,15 @@
       "redirecting": "Redirecting...",
       "planDetails": {
         "starter": {
-          "commission": "6% per sale + Stripe fees",
+          "commission": "6% per sale",
           "feature1": "Core features (payments, coupons, affiliates)"
         },
         "growth": {
-          "commission": "3.5% per sale + Stripe fees",
+          "commission": "3.5% per sale",
           "feature1": "Advanced affiliates, analytics, exports, and priority support"
         },
         "pro": {
-          "commission": "1.5% per sale + Stripe fees",
+          "commission": "1.5% per sale",
           "feature1": "Multi-admin, advanced API/webhooks, and advanced branding"
         }
       }
