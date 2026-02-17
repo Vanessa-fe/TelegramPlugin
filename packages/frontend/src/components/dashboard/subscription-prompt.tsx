@@ -80,13 +80,14 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
 
   if (hasActivePaidSub) return null;
 
-  // Get recommended plan (growth is default recommendation)
+  // Get all plans
+  const starterPlan = plans.find(p => p.name === 'starter');
   const growthPlan = plans.find(p => p.name === 'growth');
   const proPlan = plans.find(p => p.name === 'pro');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Dismiss button */}
         {dismissible && (
           <button
@@ -112,7 +113,45 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
         </div>
 
         {/* Plans */}
-        <div className="p-8 grid gap-4 md:grid-cols-2">
+        <div className="p-8 grid gap-4 md:grid-cols-3">
+          {/* Starter Plan */}
+          {starterPlan && (
+            <div className="border border-gray-200 rounded-xl p-6">
+              <h3 className="font-bold text-lg text-gray-900 mb-1">
+                {starterPlan.displayName}
+              </h3>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-3xl font-bold text-gray-900">
+                  {starterPlan.priceCents === 0 ? t('free') : `${(starterPlan.priceCents / 100).toFixed(0)}€`}
+                </span>
+                {starterPlan.priceCents > 0 && <span className="text-gray-500">/{t('month')}</span>}
+              </div>
+              <ul className="space-y-2 mb-6">
+                <li className="flex items-center gap-2 text-sm text-gray-700">
+                  <Check className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  {t('features.limitedProducts')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700">
+                  <Check className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  {t('features.limitedChannels')}
+                </li>
+                <li className="flex items-center gap-2 text-sm text-gray-700">
+                  <Check className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  {t('features.basicSupport')}
+                </li>
+              </ul>
+              <Button
+                onClick={() => handleSelectPlan('starter')}
+                disabled={checkoutLoading === 'starter'}
+                variant="outline"
+                className="w-full"
+              >
+                {checkoutLoading === 'starter' ? t('loading') : t('selectPlan')}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
           {/* Growth Plan */}
           {growthPlan && (
             <div className="relative border-2 border-purple-500 rounded-xl p-6 bg-purple-50/50">
@@ -201,19 +240,16 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
         </div>
 
         {/* Footer */}
-        <div className="px-8 pb-8 text-center">
-          <p className="text-sm text-gray-500">
-            {t('trialNote')}
-          </p>
-          {dismissible && (
+        {dismissible && (
+          <div className="px-8 pb-8 text-center">
             <button
               onClick={handleDismiss}
-              className="mt-3 text-sm text-gray-500 hover:text-gray-700 underline"
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
             >
               {t('skipForNow')}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

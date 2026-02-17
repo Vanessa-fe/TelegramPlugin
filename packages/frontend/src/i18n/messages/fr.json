@@ -454,11 +454,14 @@
       "dismiss": "Fermer",
       "recommended": "Recommandé",
       "month": "mois",
+      "free": "Gratuit",
       "selectPlan": "Choisir ce plan",
       "loading": "Chargement...",
-      "trialNote": "Tous les plans incluent une période d'essai gratuite. Annulez à tout moment.",
       "skipForNow": "Passer pour l'instant",
       "features": {
+        "limitedProducts": "1 produit",
+        "limitedChannels": "1 canal",
+        "basicSupport": "Support par email",
         "unlimitedProducts": "Produits illimités",
         "unlimitedChannels": "Canaux illimités",
         "affiliates": "Programme d'affiliation",
@@ -3228,15 +3231,15 @@
       "redirecting": "Redirection...",
       "planDetails": {
         "starter": {
-          "commission": "6% par vente + frais Stripe",
+          "commission": "6% par vente",
           "feature1": "Fonctionnalités de base (paiement, coupons, affiliés)"
         },
         "growth": {
-          "commission": "3.5% par vente + frais Stripe",
+          "commission": "3.5% par vente",
           "feature1": "Affiliés avancés, analytics, exports et support prioritaire"
         },
         "pro": {
-          "commission": "1.5% par vente + frais Stripe",
+          "commission": "1.5% par vente",
           "feature1": "Multi-admin, API/webhooks avancés et branding poussé"
         }
       }
