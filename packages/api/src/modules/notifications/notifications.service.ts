@@ -44,6 +44,7 @@ export class NotificationsService implements OnModuleInit {
   private readonly brevoEnabled: boolean;
   private readonly brevoFromEmail: string;
   private readonly brevoFromName: string;
+  private readonly adminEmail: string | undefined;
   private brevoApi: Brevo.TransactionalEmailsApi | null = null;
 
   constructor(
@@ -60,6 +61,9 @@ export class NotificationsService implements OnModuleInit {
     // Check if Brevo is configured
     const brevoApiKey = this.config.get<string>('BREVO_API_KEY');
     this.brevoEnabled = !!brevoApiKey;
+
+    // Admin email for notifications
+    this.adminEmail = this.config.get<string>('ADMIN_NOTIFICATION_EMAIL');
   }
 
   onModuleInit() {
@@ -287,6 +291,81 @@ export class NotificationsService implements OnModuleInit {
     `;
 
     await this.sendEmail(to, subject, body);
+  }
+
+  /**
+   * Send notification to admin when a new platform subscription is created
+   */
+  async sendAdminNewSubscriptionNotification(data: {
+    organizationName: string;
+    organizationEmail: string;
+    planName: string;
+    amount: number;
+    currency: string;
+    isTrialing: boolean;
+  }): Promise<void> {
+    if (!this.adminEmail) {
+      this.logger.debug('No ADMIN_NOTIFICATION_EMAIL configured, skipping admin notification');
+      return;
+    }
+
+    const formattedAmount = this.formatAmount(data.amount, data.currency);
+    const status = data.isTrialing ? '🎁 Essai gratuit' : '💰 Abonnement actif';
+
+    const subject = `🎉 Nouveau client Sublynk : ${data.organizationName}`;
+    const body = `
+      <h1>🎉 Nouveau client !</h1>
+      <p>Une nouvelle organisation vient de s'abonner à Sublynk.</p>
+
+      <h2>Détails</h2>
+      <ul>
+        <li><strong>Organisation :</strong> ${data.organizationName}</li>
+        <li><strong>Email :</strong> ${data.organizationEmail}</li>
+        <li><strong>Plan :</strong> ${data.planName}</li>
+        <li><strong>Montant :</strong> ${formattedAmount}/mois</li>
+        <li><strong>Statut :</strong> ${status}</li>
+      </ul>
+
+      <p><em>Ce client a été ajouté automatiquement à ta liste dans le dashboard.</em></p>
+    `;
+
+    await this.sendEmail(this.adminEmail, subject, body);
+    this.logger.log(`Admin notification sent for new subscription: ${data.organizationName}`);
+  }
+
+  /**
+   * Send notification to admin when a new user registers
+   */
+  async sendAdminNewUserNotification(data: {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    method: 'email' | 'google';
+  }): Promise<void> {
+    if (!this.adminEmail) {
+      this.logger.debug('No ADMIN_NOTIFICATION_EMAIL configured, skipping admin notification');
+      return;
+    }
+
+    const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Non renseigné';
+    const methodLabel = data.method === 'google' ? '🔵 Google OAuth' : '📧 Email/Mot de passe';
+
+    const subject = `👤 Nouvel utilisateur : ${data.email}`;
+    const body = `
+      <h1>👤 Nouvel utilisateur inscrit</h1>
+
+      <h2>Détails</h2>
+      <ul>
+        <li><strong>Email :</strong> ${data.email}</li>
+        <li><strong>Nom :</strong> ${fullName}</li>
+        <li><strong>Méthode :</strong> ${methodLabel}</li>
+      </ul>
+
+      <p><em>Cet utilisateur n'a pas encore souscrit à un plan.</em></p>
+    `;
+
+    await this.sendEmail(this.adminEmail, subject, body);
+    this.logger.log(`Admin notification sent for new user: ${data.email}`);
   }
 
   private async sendEmail(

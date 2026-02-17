@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { PlatformSubscriptionStatus, Prisma } from '@prisma/client';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import type {
   PlatformPlanResponse,
   PlatformSubscriptionResponse,
@@ -22,6 +23,7 @@ export class PlatformSubscriptionService {
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
   ) {
     const apiKey = this.config.get<string>('STRIPE_SECRET_KEY');
     if (!apiKey) {
@@ -472,6 +474,37 @@ export class PlatformSubscriptionService {
 
     // Update saasActive on organization
     await this.updateSaasActive(organizationId);
+
+    // Send admin notification for new subscription
+    try {
+      const organization = await this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        include: {
+          platformSubscription: {
+            include: { platformPlan: true },
+          },
+        },
+      });
+
+      if (organization?.platformSubscription?.platformPlan) {
+        const plan = organization.platformSubscription.platformPlan;
+        const isTrialing = stripeSubscription.status === 'trialing';
+
+        await this.notifications.sendAdminNewSubscriptionNotification({
+          organizationName: organization.name,
+          organizationEmail: organization.billingEmail || 'Non renseigné',
+          planName: plan.displayName || plan.name,
+          amount: plan.priceCents,
+          currency: plan.currency,
+          isTrialing,
+        });
+      }
+    } catch (error) {
+      // Don't fail the checkout if notification fails
+      this.logger.error(
+        `Failed to send admin notification: ${(error as Error).message}`,
+      );
+    }
 
     this.logger.log(
       `Platform subscription activated for organization ${organizationId}`,

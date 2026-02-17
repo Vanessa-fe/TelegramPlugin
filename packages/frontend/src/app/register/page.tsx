@@ -1,6 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
+declare global {
+  interface Window {
+    dataLayer?: Array<Record<string, unknown>>;
+  }
+}
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
@@ -131,6 +137,14 @@ export default function RegisterPage() {
       });
       setSubmittedEmail(result.email || formData.email.trim().toLowerCase());
       toast.success(t('success'));
+
+      // Send registration_success event to GTM
+      if (typeof window !== 'undefined' && window.dataLayer) {
+        window.dataLayer.push({
+          event: 'registration_success',
+          method: 'email',
+        });
+      }
     } catch (err) {
       const axiosError = err as {
         response?: { data?: { message?: ErrorMessage } };

@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { Suspense } from "react";
 import { GettingStartedChecklist } from "@/components/dashboard/getting-started-checklist";
+import { SignupTracker } from "@/components/dashboard/signup-tracker";
+import { SubscriptionPrompt } from "@/components/dashboard/subscription-prompt";
 
 type ChangeType = "positive" | "negative" | "neutral";
 
@@ -100,6 +103,16 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* GTM tracking for OAuth signup */}
+      <Suspense fallback={null}>
+        <SignupTracker />
+      </Suspense>
+
+      {/* Subscription prompt for users without active paid plan */}
+      <Suspense fallback={null}>
+        <SubscriptionPrompt />
+      </Suspense>
+
       {/* Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">

@@ -87,7 +87,12 @@ export class OAuthController {
         maxAge: 7 * 24 * 60 * 60, // 7 days (seconds)
       });
 
-      return reply.status(302).redirect(successUrl);
+      // Add signup param for new user registrations (for GTM tracking)
+      const redirectUrl = authResult.isNewUser
+        ? `${successUrl}?signup=google`
+        : successUrl;
+
+      return reply.status(302).redirect(redirectUrl);
     } catch (error) {
       const message =
         error instanceof Error ? error.stack ?? error.message : String(error);

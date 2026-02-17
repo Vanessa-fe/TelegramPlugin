@@ -447,6 +447,27 @@
       "createProduct": "Create my offer",
       "connectChannel": "Connect my Telegram channel (add @SublynkBot)",
       "promoteProduct": "Promote my offer"
+    },
+    "subscriptionPrompt": {
+      "title": "Choose your plan",
+      "description": "Select the plan that fits your needs to unlock all Sublynk features.",
+      "dismiss": "Close",
+      "recommended": "Recommended",
+      "month": "month",
+      "selectPlan": "Select this plan",
+      "loading": "Loading...",
+      "trialNote": "All plans include a free trial period. Cancel anytime.",
+      "skipForNow": "Skip for now",
+      "features": {
+        "unlimitedProducts": "Unlimited products",
+        "unlimitedChannels": "Unlimited channels",
+        "affiliates": "Affiliate program",
+        "prioritySupport": "Priority support",
+        "allGrowth": "Everything in Growth +",
+        "telegramStars": "Telegram Stars payments",
+        "customBranding": "Custom branding",
+        "apiAccess": "API access"
+      }
     }
   },
   "products": {

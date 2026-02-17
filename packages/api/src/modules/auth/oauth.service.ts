@@ -8,6 +8,10 @@ import type { GoogleProfile } from './strategies/google.strategy';
 
 export type OAuthProfile = GoogleProfile;
 
+export interface OAuthLoginResult extends AuthResult {
+  isNewUser: boolean;
+}
+
 @Injectable()
 export class OAuthService {
   constructor(
@@ -16,7 +20,7 @@ export class OAuthService {
     private readonly config: ConfigService,
   ) {}
 
-  async handleOAuthLogin(profile: OAuthProfile): Promise<AuthResult> {
+  async handleOAuthLogin(profile: OAuthProfile): Promise<OAuthLoginResult> {
     const provider = OAuthProvider.GOOGLE;
 
     // 1. Check if OAuth account already exists
@@ -41,7 +45,8 @@ export class OAuthService {
       });
 
       const ensuredUser = await this.ensureOrganization(updatedUser, profile);
-      return this.generateAuthResult(ensuredUser);
+      const authResult = await this.generateAuthResult(ensuredUser);
+      return { ...authResult, isNewUser: false };
     }
 
     // 2. Check if user with same email exists
@@ -74,7 +79,8 @@ export class OAuthService {
           updatedUser,
           profile,
         );
-        return this.generateAuthResult(ensuredUser);
+        const authResult = await this.generateAuthResult(ensuredUser);
+        return { ...authResult, isNewUser: false };
       }
     }
 
@@ -112,7 +118,8 @@ export class OAuthService {
       },
     });
 
-    return this.generateAuthResult(user);
+    const authResult = await this.generateAuthResult(user);
+    return { ...authResult, isNewUser: true };
   }
 
   async generateAuthResult(user: User): Promise<AuthResult> {
