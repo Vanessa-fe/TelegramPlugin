@@ -1330,7 +1330,8 @@
     "subtitle": "Connect Stripe to receive payments from your customers",
     "saasWarning": {
       "title": "Subscription required",
-      "description": "Your TelegramPlugin subscription is not active. Payments are disabled until you subscribe."
+      "description": "Your TelegramPlugin subscription is not active. Payments are disabled until you subscribe.",
+      "choosePlan": "Choose a plan"
     },
     "stripeConnect": {
       "title": "Stripe Connect",

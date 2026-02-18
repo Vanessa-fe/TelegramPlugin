@@ -1330,7 +1330,8 @@
     "subtitle": "Connecte Stripe pour recevoir les paiements de tes clients",
     "saasWarning": {
       "title": "Abonnement requis",
-      "description": "Ton abonnement Sublynk n'est pas actif. Les paiements sont désactivés jusqu'à ton abonnement."
+      "description": "Ton abonnement Sublynk n'est pas actif. Les paiements sont désactivés jusqu'à ton abonnement.",
+      "choosePlan": "Choisir un plan"
     },
     "stripeConnect": {
       "title": "Stripe Connect",

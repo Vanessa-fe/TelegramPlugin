@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Loader2,
 } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -58,7 +59,7 @@ export default function BillingPage() {
     try {
       setIsOpeningStripe(true);
       const { url } = await billingApi.createStripeLoginLink();
-      window.location.href = url;
+      window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
@@ -112,6 +113,13 @@ export default function BillingPage() {
             <p className="text-sm text-amber-700 mt-1">
               {t("saasWarning.description")}
             </p>
+            <Link
+              href="/dashboard/subscription"
+              className="inline-flex items-center gap-1 text-sm font-medium text-purple-600 hover:text-purple-700 mt-2"
+            >
+              {t("saasWarning.choosePlan")}
+              <ExternalLink className="w-3 h-3" />
+            </Link>
           </div>
         </div>
       )}
