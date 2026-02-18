@@ -3261,6 +3261,12 @@
       "hideSublynk": "Masquer la mention \"Powered by Sublynk\" sur les pages publiques",
       "proOnlyHint": "Option disponible uniquement avec un plan Pro actif.",
       "save": "Enregistrer le branding"
+    },
+    "success": {
+      "title": "Abonnement activé !",
+      "description": "Ton abonnement a été activé avec succès. Tu peux maintenant profiter de toutes les fonctionnalités.",
+      "freePlanActivated": "Ton plan {plan} a été activé avec succès.",
+      "redirecting": "Redirection vers ton tableau de bord..."
     }
   },
   "teamPage": {
