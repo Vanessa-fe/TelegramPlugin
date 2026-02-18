@@ -318,15 +318,20 @@ export default function PlatformSubscriptionPage() {
 
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {plans.map((plan) => (
-            <div key={plan.id} className="rounded-lg border border-border-custom p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold text-text-primary">{plan.displayName}</p>
-                {plan.name === "growth" ? (
-                  <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
-                    {t("plans.recommended")}
-                  </span>
-                ) : null}
-              </div>
+            <div
+              key={plan.id}
+              className={`relative rounded-lg border p-4 ${
+                plan.name === "growth"
+                  ? "border-2 border-purple-500"
+                  : "border-border-custom"
+              }`}
+            >
+              {plan.name === "growth" && (
+                <span className="absolute -top-3 left-4 rounded-full bg-purple-600 px-3 py-1 text-xs font-semibold text-white">
+                  {t("plans.recommended")}
+                </span>
+              )}
+              <p className="font-semibold text-text-primary">{plan.displayName}</p>
               <p className="mt-1 text-xl font-bold text-text-primary">
                 {formatPrice(plan.priceCents, plan.currency)}
                 <span className="ml-1 text-sm font-normal text-text-secondary">
@@ -340,12 +345,6 @@ export default function PlatformSubscriptionPage() {
                   {getPlanConfig(plan.name).commission}
                 </p>
               )}
-
-              {plan.trialPeriodDays ? (
-                <p className="mt-1 text-xs text-green-600">
-                  {t("plans.trialDays", { count: plan.trialPeriodDays })}
-                </p>
-              ) : null}
 
               {(plan.name === "starter" ||
                 plan.name === "growth" ||

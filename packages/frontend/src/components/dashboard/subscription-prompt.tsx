@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, Sparkles, Check, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Check, ArrowRight, CreditCard, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { platformSubscriptionApi } from '@/lib/api/platform-subscription';
+import { billingApi } from '@/lib/api/billing';
 import type { PlatformSubscription, PlatformPlan } from '@/types/platform-subscription';
+import type { StripeStatus } from '@/types/billing';
 
 interface SubscriptionPromptProps {
   dismissible?: boolean;
@@ -18,8 +20,10 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
   const [isLoading, setIsLoading] = useState(true);
   const [subscription, setSubscription] = useState<PlatformSubscription | null>(null);
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [isDismissed, setIsDismissed] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [isConnectingStripe, setIsConnectingStripe] = useState(false);
 
   useEffect(() => {
     // Check if user has dismissed for this session
@@ -30,12 +34,14 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
 
     async function load() {
       try {
-        const [sub, plansList] = await Promise.all([
+        const [sub, plansList, stripe] = await Promise.all([
           platformSubscriptionApi.getSubscription(),
           platformSubscriptionApi.getPlans(),
+          billingApi.getStripeStatus(),
         ]);
         setSubscription(sub);
         setPlans(plansList.filter(p => p.isActive));
+        setStripeStatus(stripe);
       } catch {
         // Silently fail - don't block the dashboard
       } finally {
@@ -59,10 +65,22 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
       );
       window.location.href = url;
     } catch {
-      // Redirect to pricing page as fallback
-      router.push('/pricing');
+      // Redirect to billing page to connect Stripe
+      router.push('/dashboard/billing');
     } finally {
       setCheckoutLoading(null);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    setIsConnectingStripe(true);
+    try {
+      const { url } = await billingApi.createStripeConnectLink();
+      window.location.href = url;
+    } catch {
+      router.push('/dashboard/billing');
+    } finally {
+      setIsConnectingStripe(false);
     }
   };
 
@@ -72,18 +90,102 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
   // Don't show if dismissed
   if (isDismissed) return null;
 
-  // Don't show if user has active paid subscription (not starter/free)
-  const hasActivePaidSub =
+  // Check if user has any active subscription (including starter)
+  const hasActiveSubscription =
     subscription &&
-    (subscription.status === 'ACTIVE' || subscription.status === 'TRIALING') &&
-    subscription.plan?.name !== 'starter';
+    (subscription.status === 'ACTIVE' || subscription.status === 'TRIALING');
 
-  if (hasActivePaidSub) return null;
+  // Check if Stripe Connect is ready
+  const stripeReady = Boolean(
+    stripeStatus?.connected &&
+    stripeStatus?.chargesEnabled &&
+    stripeStatus?.detailsSubmitted
+  );
+
+  // Don't show if user has active subscription AND Stripe is connected
+  if (hasActiveSubscription && stripeReady) return null;
+
+  // Determine which mode to show
+  const showStripeConnectPrompt = hasActiveSubscription && !stripeReady;
 
   // Get all plans
   const starterPlan = plans.find(p => p.name === 'starter');
   const growthPlan = plans.find(p => p.name === 'growth');
   const proPlan = plans.find(p => p.name === 'pro');
+
+  // Stripe Connect prompt when user has a plan but Stripe is not connected
+  if (showStripeConnectPrompt) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+          {/* Dismiss button */}
+          {dismissible && (
+            <button
+              onClick={handleDismiss}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label={t('dismiss')}
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
+          )}
+
+          {/* Header */}
+          <div className="p-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 text-purple-600 mb-4">
+              <CreditCard className="h-8 w-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {t('stripeConnect.title')}
+            </h2>
+            <p className="text-gray-600 max-w-md mx-auto mb-2">
+              {t('stripeConnect.description')}
+            </p>
+            {subscription?.plan && (
+              <p className="text-sm text-purple-600 font-medium">
+                {t('stripeConnect.currentPlan', { plan: subscription.plan.displayName })}
+              </p>
+            )}
+          </div>
+
+          {/* Action */}
+          <div className="px-8 pb-8">
+            <Button
+              onClick={handleConnectStripe}
+              disabled={isConnectingStripe}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 text-lg"
+            >
+              {isConnectingStripe ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {t('loading')}
+                </>
+              ) : (
+                <>
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  {t('stripeConnect.button')}
+                </>
+              )}
+            </Button>
+            <p className="text-center text-sm text-gray-500 mt-4">
+              {t('stripeConnect.hint')}
+            </p>
+          </div>
+
+          {/* Footer */}
+          {dismissible && (
+            <div className="px-8 pb-8 text-center">
+              <button
+                onClick={handleDismiss}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                {t('skipForNow')}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">

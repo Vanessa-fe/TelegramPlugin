@@ -470,6 +470,13 @@
         "telegramStars": "Telegram Stars payments",
         "customBranding": "Custom branding",
         "apiAccess": "API access"
+      },
+      "stripeConnect": {
+        "title": "Connect your Stripe account",
+        "description": "To activate your plan and start receiving payments, you need to connect your Stripe account.",
+        "currentPlan": "Selected plan: {plan}",
+        "button": "Connect Stripe",
+        "hint": "Quick and secure setup. You will be redirected to Stripe."
       }
     }
   },

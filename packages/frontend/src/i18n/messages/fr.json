@@ -470,6 +470,13 @@
         "telegramStars": "Paiements Telegram Stars",
         "customBranding": "Branding personnalisé",
         "apiAccess": "Accès API"
+      },
+      "stripeConnect": {
+        "title": "Connectez votre compte Stripe",
+        "description": "Pour activer votre plan et commencer à recevoir des paiements, vous devez connecter votre compte Stripe.",
+        "currentPlan": "Plan sélectionné : {plan}",
+        "button": "Connecter Stripe",
+        "hint": "Configuration rapide et sécurisée. Vous serez redirigé vers Stripe."
       }
     }
   },
