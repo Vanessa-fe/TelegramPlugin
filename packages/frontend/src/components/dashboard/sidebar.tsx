@@ -15,6 +15,7 @@ import {
   Hash,
   Key,
   LayoutDashboard,
+  Lock,
   Megaphone,
   Package,
   Shield,
@@ -79,23 +80,21 @@ export function Sidebar() {
   const [isGrandfathered, setIsGrandfathered] = useState(false);
   const [isPlanLoading, setIsPlanLoading] = useState(true);
 
-  // Filter navigation based on user role and plan
+  // Filter navigation based on user role only (plan restrictions are shown as locked)
   const filteredNavigation = navigation.filter((item) => {
     // Check role restriction
     if (item.roles && (!user?.role || !item.roles.includes(user.role))) {
       return false;
     }
-    // Check plan restriction
-    if (item.requiredPlans) {
-      // Grandfathered accounts have access to all features
-      if (isGrandfathered) return true;
-      // Check if user's plan is in the required plans
-      if (!planName || !item.requiredPlans.includes(planName)) {
-        return false;
-      }
-    }
     return true;
   });
+
+  // Check if user has access to a feature based on their plan
+  const hasAccessToFeature = (requiredPlans?: string[]) => {
+    if (!requiredPlans) return true;
+    if (isGrandfathered) return true;
+    return planName !== null && requiredPlans.includes(planName);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -210,6 +209,23 @@ export function Sidebar() {
             pathname === item.href ||
             (item.href !== "/dashboard" &&
               pathname.startsWith(`${item.href}/`));
+          const isLocked = !hasAccessToFeature(item.requiredPlans);
+
+          if (isLocked) {
+            return (
+              <Link
+                key={item.key}
+                href="/dashboard/subscription"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-50 transition-colors"
+                title={tSidebar("upgradeToAccess")}
+              >
+                <item.icon className="h-5 w-5" />
+                {tNav(item.key)}
+                <Lock className="ml-auto h-4 w-4" />
+              </Link>
+            );
+          }
+
           return (
             <Link
               key={item.key}

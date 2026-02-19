@@ -71,7 +71,8 @@
       "EXPIRED": "Expired"
     },
     "trialDaysLeft": "{count} days left",
-    "upgradeNow": "Upgrade now"
+    "upgradeNow": "Upgrade now",
+    "upgradeToAccess": "Upgrade to a higher plan to access this feature"
   },
   "landingPages": {
     "title": "My page",

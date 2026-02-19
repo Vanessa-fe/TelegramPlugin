@@ -71,7 +71,8 @@
       "EXPIRED": "Expiré"
     },
     "trialDaysLeft": "{count} jours restants",
-    "upgradeNow": "Passer au plan payant"
+    "upgradeNow": "Passer au plan payant",
+    "upgradeToAccess": "Passez à un plan supérieur pour accéder à cette fonctionnalité"
   },
   "landingPages": {
     "title": "Ma page",
