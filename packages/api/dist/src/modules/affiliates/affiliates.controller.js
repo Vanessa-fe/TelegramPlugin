@@ -22,6 +22,7 @@ const affiliates_service_1 = require("./affiliates.service");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const public_decorator_1 = require("../auth/decorators/public.decorator");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const require_plan_decorator_1 = require("../auth/decorators/require-plan.decorator");
 const organization_scope_1 = require("../auth/utils/organization-scope");
 let AffiliatesController = class AffiliatesController {
     affiliatesService;
@@ -174,6 +175,7 @@ __decorate([
 ], AffiliatesController.prototype, "validate", null);
 exports.AffiliatesController = AffiliatesController = __decorate([
     (0, common_1.Controller)('affiliates'),
+    (0, require_plan_decorator_1.RequirePlan)('growth', 'pro'),
     __metadata("design:paramtypes", [affiliates_service_1.AffiliatesService])
 ], AffiliatesController);
 //# sourceMappingURL=affiliates.controller.js.map

@@ -32,12 +32,18 @@ exports.reorderElementsSchema = zod_1.z.object({
 });
 exports.updateLandingPageSchema = zod_1.z.object({
     isPublished: zod_1.z.boolean().optional(),
-    themeColor: zod_1.z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    themeColor: zod_1.z
+        .string()
+        .regex(/^#[0-9A-Fa-f]{6}$/)
+        .optional(),
     metaTitle: zod_1.z.string().max(60).nullable().optional(),
     metaDescription: zod_1.z.string().max(160).nullable().optional(),
 });
 exports.createLandingPageSchema = zod_1.z.object({
-    themeColor: zod_1.z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    themeColor: zod_1.z
+        .string()
+        .regex(/^#[0-9A-Fa-f]{6}$/)
+        .optional(),
     metaTitle: zod_1.z.string().max(60).nullable().optional(),
     metaDescription: zod_1.z.string().max(160).nullable().optional(),
 });

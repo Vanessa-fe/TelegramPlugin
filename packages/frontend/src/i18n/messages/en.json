@@ -3241,11 +3241,11 @@
       "planDetails": {
         "starter": {
           "commission": "6% per sale",
-          "feature1": "Core features (payments, coupons, affiliates)"
+          "feature1": "Core features (payments)"
         },
         "growth": {
           "commission": "3.5% per sale",
-          "feature1": "Advanced affiliates, analytics, exports, and priority support"
+          "feature1": "Advanced, coupons, analytics, exports, and priority support"
         },
         "pro": {
           "commission": "1.5% per sale",

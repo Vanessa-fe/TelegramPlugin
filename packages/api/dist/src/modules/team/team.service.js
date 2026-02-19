@@ -561,7 +561,7 @@ let TeamService = class TeamService {
             },
         });
         if (activeOrgAdminCount < 1) {
-            throw new common_1.BadRequestException('Au moins un ORG_ADMIN actif est requis dans l\'organisation');
+            throw new common_1.BadRequestException("Au moins un ORG_ADMIN actif est requis dans l'organisation");
         }
     }
 };

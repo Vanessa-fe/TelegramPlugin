@@ -22,6 +22,7 @@ const coupons_service_1 = require("./coupons.service");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const public_decorator_1 = require("../auth/decorators/public.decorator");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const require_plan_decorator_1 = require("../auth/decorators/require-plan.decorator");
 const organization_scope_1 = require("../auth/utils/organization-scope");
 const prisma_service_1 = require("../../prisma/prisma.service");
 let CouponsController = class CouponsController {
@@ -146,6 +147,7 @@ __decorate([
 ], CouponsController.prototype, "validate", null);
 exports.CouponsController = CouponsController = __decorate([
     (0, common_1.Controller)('coupons'),
+    (0, require_plan_decorator_1.RequirePlan)('growth', 'pro'),
     __metadata("design:paramtypes", [coupons_service_1.CouponsService,
         prisma_service_1.PrismaService])
 ], CouponsController);

@@ -3241,11 +3241,11 @@
       "planDetails": {
         "starter": {
           "commission": "6% par vente",
-          "feature1": "Fonctionnalités de base (paiement, coupons, affiliés)"
+          "feature1": "Fonctionnalités de base (paiement)"
         },
         "growth": {
           "commission": "3.5% par vente",
-          "feature1": "Affiliés avancés, analytics, exports et support prioritaire"
+          "feature1": "Affiliés, coupons, analytics, exports et support prioritaire"
         },
         "pro": {
           "commission": "1.5% par vente",

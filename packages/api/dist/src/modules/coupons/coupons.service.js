@@ -43,7 +43,9 @@ let CouponsService = class CouponsService {
             code: data.code,
             type: data.type,
             discountValue: data.discountValue,
-            currency: data.type === client_1.CouponType.FIXED_AMOUNT ? organizationCurrency : undefined,
+            currency: data.type === client_1.CouponType.FIXED_AMOUNT
+                ? organizationCurrency
+                : undefined,
             maxUses: data.maxUses,
             expiresAt: data.expiresAt,
             planIds: data.planIds,
@@ -140,7 +142,10 @@ let CouponsService = class CouponsService {
             return { valid: false, error: 'Ce coupon a expiré' };
         }
         if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
-            return { valid: false, error: "Ce coupon a atteint sa limite d'utilisation" };
+            return {
+                valid: false,
+                error: "Ce coupon a atteint sa limite d'utilisation",
+            };
         }
         if (coupon.planIds.length > 0 && !coupon.planIds.includes(data.planId)) {
             return { valid: false, error: "Ce coupon n'est pas valide pour ce plan" };

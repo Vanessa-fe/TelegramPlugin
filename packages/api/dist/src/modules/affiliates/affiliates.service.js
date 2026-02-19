@@ -69,7 +69,9 @@ let AffiliatesService = class AffiliatesService {
             referralCode,
             commissionRate: data.commissionRate,
             status: data.status ??
-                (isLinkOnlyAffiliate ? client_1.AffiliateStatus.ACTIVE : client_1.AffiliateStatus.PENDING),
+                (isLinkOnlyAffiliate
+                    ? client_1.AffiliateStatus.ACTIVE
+                    : client_1.AffiliateStatus.PENDING),
             metadata: data.metadata,
             organization: {
                 connect: { id: data.organizationId },
