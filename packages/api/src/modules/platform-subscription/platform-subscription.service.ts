@@ -257,12 +257,8 @@ export class PlatformSubscriptionService {
       });
     }
 
-    const trialPeriodDays =
-      plan.trialPeriodDays ??
-      this.config.get<number>('PLATFORM_TRIAL_DAYS') ??
-      14;
-
     // Create checkout session (direct Stripe, not Connect)
+    // No trial period - immediate billing
     const session = await this.stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: stripeCustomerId,
@@ -280,7 +276,6 @@ export class PlatformSubscriptionService {
         type: 'platform',
       },
       subscription_data: {
-        trial_period_days: trialPeriodDays,
         metadata: {
           organizationId: organization.id,
           platformPlanId: plan.id,
