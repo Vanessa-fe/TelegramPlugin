@@ -42,7 +42,12 @@ export class LandingPagesController {
   constructor(private readonly landingPagesService: LandingPagesService) {}
 
   @Get('me')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   getMyLandingPage(@CurrentUser() user: AuthUser) {
     const organizationId = resolveOrganizationScope(user);
     if (!organizationId) {
@@ -52,7 +57,12 @@ export class LandingPagesController {
   }
 
   @Get('me/slug')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   getMyPageSlug(@CurrentUser() user: AuthUser) {
     const organizationId = resolveOrganizationScope(user);
     if (!organizationId) {

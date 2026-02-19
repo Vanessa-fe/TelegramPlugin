@@ -95,7 +95,9 @@ export class AffiliatesService {
       commissionRate: data.commissionRate,
       status:
         data.status ??
-        (isLinkOnlyAffiliate ? AffiliateStatus.ACTIVE : AffiliateStatus.PENDING),
+        (isLinkOnlyAffiliate
+          ? AffiliateStatus.ACTIVE
+          : AffiliateStatus.PENDING),
       metadata: data.metadata,
       organization: {
         connect: { id: data.organizationId },

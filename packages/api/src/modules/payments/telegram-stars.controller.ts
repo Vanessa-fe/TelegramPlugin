@@ -38,7 +38,12 @@ export class TelegramStarsController {
    * Requires Pro plan
    */
   @Get('availability')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   checkAvailability(
     @CurrentUser() user: AuthUser,
     @Query('organizationId') organizationId?: string,

@@ -263,7 +263,9 @@ export class TeamService {
     }
 
     if (member.role === UserRole.SUPERADMIN) {
-      throw new BadRequestException('Le rôle SUPERADMIN ne peut pas être modifié ici');
+      throw new BadRequestException(
+        'Le rôle SUPERADMIN ne peut pas être modifié ici',
+      );
     }
 
     if (member.role === dto.role) {
@@ -329,7 +331,9 @@ export class TeamService {
     }
 
     if (member.role === UserRole.SUPERADMIN) {
-      throw new BadRequestException('Le compte SUPERADMIN ne peut pas être désactivé ici');
+      throw new BadRequestException(
+        'Le compte SUPERADMIN ne peut pas être désactivé ici',
+      );
     }
 
     if (member.role === UserRole.ORG_ADMIN && member.isActive) {
@@ -701,7 +705,7 @@ export class TeamService {
 
     if (activeOrgAdminCount < 1) {
       throw new BadRequestException(
-        'Au moins un ORG_ADMIN actif est requis dans l\'organisation',
+        "Au moins un ORG_ADMIN actif est requis dans l'organisation",
       );
     }
   }

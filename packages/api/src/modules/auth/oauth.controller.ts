@@ -95,7 +95,7 @@ export class OAuthController {
       return reply.status(302).redirect(redirectUrl);
     } catch (error) {
       const message =
-        error instanceof Error ? error.stack ?? error.message : String(error);
+        error instanceof Error ? (error.stack ?? error.message) : String(error);
       this.logger.error(`OAuth callback failed: ${message}`);
       return reply.status(302).redirect(failureUrl);
     }

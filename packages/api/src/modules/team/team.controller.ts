@@ -60,7 +60,12 @@ export class TeamController {
       throw new BadRequestException('Organization ID is required');
     }
 
-    return this.teamService.updateMemberRole(scopedOrgId, id, user.userId, body);
+    return this.teamService.updateMemberRole(
+      scopedOrgId,
+      id,
+      user.userId,
+      body,
+    );
   }
 
   @Patch('members/:id/deactivate')
@@ -125,7 +130,8 @@ export class TeamController {
   @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   createInvite(
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(createTeamInviteSchema)) body: CreateTeamInviteDto,
+    @Body(new ZodValidationPipe(createTeamInviteSchema))
+    body: CreateTeamInviteDto,
   ) {
     const scopedOrgId = resolveOrganizationScope(user, body.organizationId);
     if (!scopedOrgId) {
@@ -158,7 +164,8 @@ export class TeamController {
   @Post('invites/accept')
   @Public()
   acceptInvite(
-    @Body(new ZodValidationPipe(acceptTeamInviteSchema)) body: AcceptTeamInviteDto,
+    @Body(new ZodValidationPipe(acceptTeamInviteSchema))
+    body: AcceptTeamInviteDto,
   ) {
     return this.teamService.acceptInvite(body);
   }

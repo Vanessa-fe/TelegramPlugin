@@ -129,20 +129,20 @@ describe('AuthService', () => {
           currency: 'EUR',
         }),
       });
-      expect(mockPrismaService.emailVerificationToken.deleteMany).toHaveBeenCalledWith(
-        {
-          where: { userId: '1', usedAt: null },
+      expect(
+        mockPrismaService.emailVerificationToken.deleteMany,
+      ).toHaveBeenCalledWith({
+        where: { userId: '1', usedAt: null },
+      });
+      expect(
+        mockPrismaService.emailVerificationToken.create,
+      ).toHaveBeenCalledWith({
+        data: {
+          userId: '1',
+          tokenHash: expect.any(String),
+          expiresAt: expect.any(Date),
         },
-      );
-      expect(mockPrismaService.emailVerificationToken.create).toHaveBeenCalledWith(
-        {
-          data: {
-            userId: '1',
-            tokenHash: expect.any(String),
-            expiresAt: expect.any(Date),
-          },
-        },
-      );
+      });
       expect(
         mockNotificationsService.sendEmailVerificationEmail,
       ).toHaveBeenCalledWith(
@@ -282,16 +282,16 @@ describe('AuthService', () => {
 
       const result = await service.verifyEmail('plain-token');
 
-      expect(mockPrismaService.emailVerificationToken.findFirst).toHaveBeenCalledWith(
-        {
-          where: {
-            tokenHash: expect.any(String),
-            usedAt: null,
-            expiresAt: { gt: expect.any(Date) },
-          },
-          include: { user: true },
+      expect(
+        mockPrismaService.emailVerificationToken.findFirst,
+      ).toHaveBeenCalledWith({
+        where: {
+          tokenHash: expect.any(String),
+          usedAt: null,
+          expiresAt: { gt: expect.any(Date) },
         },
-      );
+        include: { user: true },
+      });
       expect(mockPrismaService.user.update).toHaveBeenCalledWith({
         where: { id: '1' },
         data: {
@@ -304,7 +304,9 @@ describe('AuthService', () => {
     });
 
     it('should throw BadRequestException for invalid token', async () => {
-      mockPrismaService.emailVerificationToken.findFirst.mockResolvedValue(null);
+      mockPrismaService.emailVerificationToken.findFirst.mockResolvedValue(
+        null,
+      );
 
       await expect(service.verifyEmail('invalid')).rejects.toThrow(
         BadRequestException,

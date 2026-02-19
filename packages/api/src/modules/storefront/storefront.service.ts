@@ -12,9 +12,7 @@ function slugify(text: string): string {
     .substring(0, 60);
 }
 
-function toRecord(
-  value: unknown,
-): Record<string, unknown> | null {
+function toRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
@@ -31,7 +29,8 @@ function resolvePublicBranding(
 ) {
   const metadataRecord = toRecord(metadata);
   const branding = toRecord(metadataRecord?.branding);
-  const rawLogoUrl = typeof branding?.logoUrl === 'string' ? branding.logoUrl : '';
+  const rawLogoUrl =
+    typeof branding?.logoUrl === 'string' ? branding.logoUrl : '';
   const logoUrl = rawLogoUrl.trim().length > 0 ? rawLogoUrl.trim() : null;
   const requestedHide = branding?.hideSublynkBranding === true;
   const proBrandingEnabled =
@@ -125,7 +124,8 @@ export class StorefrontService {
     }
 
     const platformStatus = product.organization.platformSubscription?.status;
-    const platformPlanName = product.organization.platformSubscription?.platformPlan?.name;
+    const platformPlanName =
+      product.organization.platformSubscription?.platformPlan?.name;
 
     const branding = resolvePublicBranding(
       product.organization.metadata,

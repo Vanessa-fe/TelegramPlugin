@@ -110,8 +110,7 @@ export class AuthService {
     await this.sendEmailVerification(user, frontendUrl);
 
     return {
-      message:
-        'Compte créé. Vérifiez votre email pour activer votre compte.',
+      message: 'Compte créé. Vérifiez votre email pour activer votre compte.',
       email: user.email,
       verificationRequired: true,
     };
@@ -121,8 +120,8 @@ export class AuthService {
     const tokenHash = this.hashVerificationToken(token);
     const now = new Date();
 
-    const verificationToken = await this.prisma.emailVerificationToken.findFirst(
-      {
+    const verificationToken =
+      await this.prisma.emailVerificationToken.findFirst({
         where: {
           tokenHash,
           usedAt: null,
@@ -131,8 +130,7 @@ export class AuthService {
         include: {
           user: true,
         },
-      },
-    );
+      });
 
     if (!verificationToken) {
       throw new BadRequestException('Token invalide ou expiré');

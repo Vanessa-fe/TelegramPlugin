@@ -34,13 +34,24 @@ const navigation = [
   { key: "customers", href: "/dashboard/customers", icon: Users },
   { key: "subscriptions", href: "/dashboard/subscriptions", icon: FileText },
   { key: "promote", href: "/dashboard/promote", icon: Megaphone },
-  { key: "coupons", href: "/dashboard/coupons", icon: Ticket },
-  { key: "affiliates", href: "/dashboard/affiliates", icon: UserPlus },
+  {
+    key: "coupons",
+    href: "/dashboard/coupons",
+    icon: Ticket,
+    requiredPlans: ["growth", "pro"],
+  },
+  {
+    key: "affiliates",
+    href: "/dashboard/affiliates",
+    icon: UserPlus,
+    requiredPlans: ["growth", "pro"],
+  },
   {
     key: "team",
     href: "/dashboard/team",
     icon: Shield,
     roles: [UserRole.SUPERADMIN, UserRole.ORG_ADMIN],
+    requiredPlans: ["pro"],
   },
   {
     key: "payments",
@@ -61,15 +72,29 @@ export function Sidebar() {
   const tSidebar = useTranslations("sidebar");
   const [pendingRemoveCount, setPendingRemoveCount] = useState(0);
   const [planName, setPlanName] = useState<string | null>(null);
+  const [planDisplayName, setPlanDisplayName] = useState<string | null>(null);
   const [planStatus, setPlanStatus] = useState<PlatformSubscriptionStatus | null>(
     null,
   );
+  const [isGrandfathered, setIsGrandfathered] = useState(false);
   const [isPlanLoading, setIsPlanLoading] = useState(true);
 
-  // Filter navigation based on user role
+  // Filter navigation based on user role and plan
   const filteredNavigation = navigation.filter((item) => {
-    if (!item.roles) return true; // No role restriction
-    return user?.role && item.roles.includes(user.role);
+    // Check role restriction
+    if (item.roles && (!user?.role || !item.roles.includes(user.role))) {
+      return false;
+    }
+    // Check plan restriction
+    if (item.requiredPlans) {
+      // Grandfathered accounts have access to all features
+      if (isGrandfathered) return true;
+      // Check if user's plan is in the required plans
+      if (!planName || !item.requiredPlans.includes(planName)) {
+        return false;
+      }
+    }
+    return true;
   });
 
   useEffect(() => {
@@ -127,7 +152,9 @@ export function Sidebar() {
       if (!user) {
         if (!cancelled) {
           setPlanName(null);
+          setPlanDisplayName(null);
           setPlanStatus(null);
+          setIsGrandfathered(false);
           setIsPlanLoading(false);
         }
         return;
@@ -136,13 +163,17 @@ export function Sidebar() {
       try {
         const subscription = await platformSubscriptionApi.getSubscription();
         if (!cancelled) {
-          setPlanName(subscription?.plan?.displayName ?? null);
+          setPlanName(subscription?.plan?.name ?? null);
+          setPlanDisplayName(subscription?.plan?.displayName ?? null);
           setPlanStatus(subscription?.status ?? null);
+          setIsGrandfathered(subscription?.isGrandfathered === true);
         }
       } catch {
         if (!cancelled) {
           setPlanName(null);
+          setPlanDisplayName(null);
           setPlanStatus(null);
+          setIsGrandfathered(false);
         }
       } finally {
         if (!cancelled) {
@@ -207,7 +238,7 @@ export function Sidebar() {
         <div className="rounded-lg bg-purple-50 p-4">
           <p className="text-sm font-medium text-purple-600">{tSidebar("currentPlan")}</p>
           <p className="mt-1 text-sm font-semibold text-text-primary">
-            {isPlanLoading ? tCommon("loading") : (planName ?? tSidebar("noPlan"))}
+            {isPlanLoading ? tCommon("loading") : (planDisplayName ?? tSidebar("noPlan"))}
           </p>
           <p className="mt-1 text-xs text-text-secondary">
             {isPlanLoading ? tCommon("loading") : getPlanStatusLabel(planStatus)}

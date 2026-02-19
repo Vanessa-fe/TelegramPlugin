@@ -305,7 +305,9 @@ export class NotificationsService implements OnModuleInit {
     isTrialing: boolean;
   }): Promise<void> {
     if (!this.adminEmail) {
-      this.logger.debug('No ADMIN_NOTIFICATION_EMAIL configured, skipping admin notification');
+      this.logger.debug(
+        'No ADMIN_NOTIFICATION_EMAIL configured, skipping admin notification',
+      );
       return;
     }
 
@@ -330,7 +332,9 @@ export class NotificationsService implements OnModuleInit {
     `;
 
     await this.sendEmail(this.adminEmail, subject, body);
-    this.logger.log(`Admin notification sent for new subscription: ${data.organizationName}`);
+    this.logger.log(
+      `Admin notification sent for new subscription: ${data.organizationName}`,
+    );
   }
 
   /**
@@ -343,12 +347,17 @@ export class NotificationsService implements OnModuleInit {
     method: 'email' | 'google';
   }): Promise<void> {
     if (!this.adminEmail) {
-      this.logger.debug('No ADMIN_NOTIFICATION_EMAIL configured, skipping admin notification');
+      this.logger.debug(
+        'No ADMIN_NOTIFICATION_EMAIL configured, skipping admin notification',
+      );
       return;
     }
 
-    const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ') || 'Non renseigné';
-    const methodLabel = data.method === 'google' ? '🔵 Google OAuth' : '📧 Email/Mot de passe';
+    const fullName =
+      [data.firstName, data.lastName].filter(Boolean).join(' ') ||
+      'Non renseigné';
+    const methodLabel =
+      data.method === 'google' ? '🔵 Google OAuth' : '📧 Email/Mot de passe';
 
     const subject = `👤 Nouvel utilisateur : ${data.email}`;
     const body = `

@@ -120,7 +120,9 @@ describe('SchedulerService', () => {
         where: { id: { in: ['org-1'] } },
         data: { saasActive: false },
       });
-      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledTimes(2);
+      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledTimes(
+        2,
+      );
       expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledWith(
         'sub-1',
         'canceled',

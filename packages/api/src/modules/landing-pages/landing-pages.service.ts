@@ -20,9 +20,7 @@ import type {
   UpdatePageSlugDto,
 } from './landing-pages.schema';
 
-function toRecord(
-  value: unknown,
-): Record<string, unknown> | null {
+function toRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
@@ -36,7 +34,8 @@ function resolvePublicBranding(
 ) {
   const metadataRecord = toRecord(metadata);
   const branding = toRecord(metadataRecord?.branding);
-  const rawLogoUrl = typeof branding?.logoUrl === 'string' ? branding.logoUrl : '';
+  const rawLogoUrl =
+    typeof branding?.logoUrl === 'string' ? branding.logoUrl : '';
   const logoUrl = rawLogoUrl.trim().length > 0 ? rawLogoUrl.trim() : null;
   const requestedHide = branding?.hideSublynkBranding === true;
   const proBrandingEnabled =
@@ -99,7 +98,9 @@ export class LandingPagesService {
     });
 
     if (existing) {
-      throw new ConflictException('Landing page already exists for this organization');
+      throw new ConflictException(
+        'Landing page already exists for this organization',
+      );
     }
 
     // Get organization name for default heading

@@ -133,7 +133,7 @@ export class AuthController {
     await this.authService.requestPasswordReset(body.email);
     return {
       message:
-        "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.",
+        'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.',
     };
   }
 

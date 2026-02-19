@@ -25,7 +25,9 @@ export const updateTeamMemberRoleSchema = z.object({
   role: manageableUserRoleSchema,
 });
 
-export type UpdateTeamMemberRoleDto = z.infer<typeof updateTeamMemberRoleSchema>;
+export type UpdateTeamMemberRoleDto = z.infer<
+  typeof updateTeamMemberRoleSchema
+>;
 
 export const acceptTeamInviteSchema = z.object({
   token: z.string().min(16, 'Invitation invalide'),

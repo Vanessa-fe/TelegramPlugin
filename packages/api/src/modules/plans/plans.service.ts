@@ -106,9 +106,8 @@ export class PlansService {
 
     const targetProductId = data.productId ?? existingPlan.productId;
     const targetCurrency = data.currency ?? existingPlan.currency;
-    const organizationCurrency = await this.getProductOrganizationCurrency(
-      targetProductId,
-    );
+    const organizationCurrency =
+      await this.getProductOrganizationCurrency(targetProductId);
 
     if (!organizationCurrency) {
       throw new BadRequestException('Organisation introuvable pour ce produit');

@@ -23,6 +23,7 @@ import { EntitlementsModule } from './modules/entitlements/entitlements.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
+import { PlanGuard } from './modules/auth/guards/plan.guard';
 import { StorefrontModule } from './modules/storefront/storefront.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { DataExportsModule } from './modules/data-exports/data-exports.module';
@@ -135,6 +136,10 @@ function resolveEnvFiles(): string[] {
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PlanGuard,
     },
   ],
 })

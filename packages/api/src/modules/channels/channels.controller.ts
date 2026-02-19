@@ -40,7 +40,12 @@ export class ChannelsController {
   // ========== Verification Endpoints (MUST be before :id routes) ==========
 
   @Post('verification/start')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   startVerification(
     @CurrentUser() user: AuthUser,
     @Body(new ZodValidationPipe(startVerificationSchema))
@@ -62,7 +67,12 @@ export class ChannelsController {
   }
 
   @Get('verification/:id/status')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   checkVerificationStatus(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -75,7 +85,12 @@ export class ChannelsController {
   }
 
   @Post('verification/:id/confirm')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   confirmVerification(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -92,13 +107,19 @@ export class ChannelsController {
   @Post('verification/discord/verify')
   @Public()
   verifyDiscordFromBot(
-    @Body(new ZodValidationPipe(verifyDiscordChannelSchema)) body: VerifyDiscordChannelDto,
+    @Body(new ZodValidationPipe(verifyDiscordChannelSchema))
+    body: VerifyDiscordChannelDto,
   ) {
     return this.channelsService.verifyDiscordFromBot(body);
   }
 
   @Post('verification/:id/discord/role')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   setDiscordRole(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -112,7 +133,12 @@ export class ChannelsController {
   }
 
   @Post('verification/:id/discord/confirm')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   confirmDiscordVerification(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -127,7 +153,12 @@ export class ChannelsController {
   // ========== Discord Guild Endpoints ==========
 
   @Get(':id/discord')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   async getDiscordGuild(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,

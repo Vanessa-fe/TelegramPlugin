@@ -254,7 +254,9 @@ export class BillingService {
 
       let discountCents: number;
       if (coupon.type === CouponType.PERCENTAGE) {
-        discountCents = Math.round((plan.priceCents * coupon.discountValue) / 100);
+        discountCents = Math.round(
+          (plan.priceCents * coupon.discountValue) / 100,
+        );
       } else {
         discountCents = Math.min(coupon.discountValue, plan.priceCents);
       }
@@ -515,14 +517,14 @@ export class BillingService {
     }
   }
 
-  private readTakeRatePercent(features: Prisma.JsonValue | null): number | null {
+  private readTakeRatePercent(
+    features: Prisma.JsonValue | null,
+  ): number | null {
     if (!features || typeof features !== 'object' || Array.isArray(features)) {
       return null;
     }
 
-    const raw = (
-      features as Record<string, unknown>
-    ).takeRatePercent;
+    const raw = (features as Record<string, unknown>).takeRatePercent;
 
     if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0) {
       return raw;

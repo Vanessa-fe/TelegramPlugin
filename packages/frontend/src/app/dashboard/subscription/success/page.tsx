@@ -11,7 +11,6 @@ export default function SubscriptionSuccessPage() {
   const searchParams = useSearchParams();
 
   const freePlan = searchParams.get("free_plan");
-  const sessionId = searchParams.get("session_id");
 
   useEffect(() => {
     // Redirect to subscription page after 3 seconds

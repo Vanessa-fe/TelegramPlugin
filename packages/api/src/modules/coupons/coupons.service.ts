@@ -63,7 +63,9 @@ export class CouponsService {
       type: data.type,
       discountValue: data.discountValue,
       currency:
-        data.type === CouponType.FIXED_AMOUNT ? organizationCurrency : undefined,
+        data.type === CouponType.FIXED_AMOUNT
+          ? organizationCurrency
+          : undefined,
       maxUses: data.maxUses,
       expiresAt: data.expiresAt,
       planIds: data.planIds,
@@ -188,7 +190,10 @@ export class CouponsService {
     }
 
     if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
-      return { valid: false, error: "Ce coupon a atteint sa limite d'utilisation" };
+      return {
+        valid: false,
+        error: "Ce coupon a atteint sa limite d'utilisation",
+      };
     }
 
     if (coupon.planIds.length > 0 && !coupon.planIds.includes(data.planId)) {
@@ -235,7 +240,9 @@ export class CouponsService {
     });
   }
 
-  private async getOrganizationCurrency(organizationId: string): Promise<string> {
+  private async getOrganizationCurrency(
+    organizationId: string,
+  ): Promise<string> {
     const organization = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: { currency: true },

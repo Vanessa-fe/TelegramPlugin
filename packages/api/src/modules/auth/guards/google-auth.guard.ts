@@ -39,7 +39,8 @@ export class GoogleCallbackGuard extends GoogleAuthGuard {
         err instanceof Error ? err.message : err ? String(err) : undefined;
       const infoMessage =
         info && typeof info === 'object'
-          ? (info as { message?: string; error_description?: string }).message ||
+          ? (info as { message?: string; error_description?: string })
+              .message ||
             (info as { error_description?: string }).error_description ||
             JSON.stringify(info)
           : info

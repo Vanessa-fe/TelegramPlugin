@@ -30,15 +30,22 @@ import { AffiliatesService } from './affiliates.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { RequirePlan } from '../auth/decorators/require-plan.decorator';
 import type { AuthUser } from '../auth/auth.types';
 import { resolveOrganizationScope } from '../auth/utils/organization-scope';
 
 @Controller('affiliates')
+@RequirePlan('growth', 'pro')
 export class AffiliatesController {
   constructor(private readonly affiliatesService: AffiliatesService) {}
 
   @Get()
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   findAll(
     @CurrentUser() user: AuthUser,
     @Query('organizationId') organizationId?: string,
@@ -51,7 +58,12 @@ export class AffiliatesController {
   }
 
   @Get(':id')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   async findOne(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -62,7 +74,12 @@ export class AffiliatesController {
   }
 
   @Get(':id/referrals')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   async getReferrals(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -73,7 +90,12 @@ export class AffiliatesController {
   }
 
   @Get(':id/payouts')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   async getPayouts(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -87,7 +109,8 @@ export class AffiliatesController {
   @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   create(
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(createAffiliateSchema)) body: CreateAffiliateDto,
+    @Body(new ZodValidationPipe(createAffiliateSchema))
+    body: CreateAffiliateDto,
   ) {
     resolveOrganizationScope(user, body.organizationId);
     return this.affiliatesService.create(body);
@@ -98,7 +121,8 @@ export class AffiliatesController {
   async update(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body(new ZodValidationPipe(updateAffiliateSchema)) body: UpdateAffiliateDto,
+    @Body(new ZodValidationPipe(updateAffiliateSchema))
+    body: UpdateAffiliateDto,
   ) {
     const affiliate = await this.affiliatesService.findOne(id);
     resolveOrganizationScope(user, affiliate.organizationId);

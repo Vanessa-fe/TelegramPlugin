@@ -26,11 +26,13 @@ import { CouponsService } from './coupons.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { RequirePlan } from '../auth/decorators/require-plan.decorator';
 import type { AuthUser } from '../auth/auth.types';
 import { resolveOrganizationScope } from '../auth/utils/organization-scope';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Controller('coupons')
+@RequirePlan('growth', 'pro')
 export class CouponsController {
   constructor(
     private readonly couponsService: CouponsService,
@@ -38,7 +40,12 @@ export class CouponsController {
   ) {}
 
   @Get()
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   findAll(
     @CurrentUser() user: AuthUser,
     @Query('organizationId') organizationId?: string,
@@ -51,7 +58,12 @@ export class CouponsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   async findOne(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -62,7 +74,12 @@ export class CouponsController {
   }
 
   @Get(':id/usages')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN, UserRole.SUPPORT, UserRole.VIEWER)
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
   async getUsages(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) id: string,
@@ -76,7 +93,8 @@ export class CouponsController {
   @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   create(
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(createCouponSchema as never)) body: CreateCouponDto,
+    @Body(new ZodValidationPipe(createCouponSchema as never))
+    body: CreateCouponDto,
   ) {
     resolveOrganizationScope(user, body.organizationId);
     return this.couponsService.create(body);

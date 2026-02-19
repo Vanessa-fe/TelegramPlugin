@@ -55,7 +55,10 @@ export type ReorderElementsDto = z.infer<typeof reorderElementsSchema>;
 // Landing page config schemas
 export const updateLandingPageSchema = z.object({
   isPublished: z.boolean().optional(),
-  themeColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  themeColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
   metaTitle: z.string().max(60).nullable().optional(),
   metaDescription: z.string().max(160).nullable().optional(),
 });
@@ -63,7 +66,10 @@ export const updateLandingPageSchema = z.object({
 export type UpdateLandingPageDto = z.infer<typeof updateLandingPageSchema>;
 
 export const createLandingPageSchema = z.object({
-  themeColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  themeColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .optional(),
   metaTitle: z.string().max(60).nullable().optional(),
   metaDescription: z.string().max(160).nullable().optional(),
 });

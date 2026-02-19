@@ -75,10 +75,7 @@ export class OAuthService {
           },
         });
 
-        const ensuredUser = await this.ensureOrganization(
-          updatedUser,
-          profile,
-        );
+        const ensuredUser = await this.ensureOrganization(updatedUser, profile);
         const authResult = await this.generateAuthResult(ensuredUser);
         return { ...authResult, isNewUser: false };
       }
@@ -88,9 +85,8 @@ export class OAuthService {
     const email =
       profile.email?.toLowerCase() || `${profile.providerId}@oauth.local`;
     const organizationName = this.buildOrganizationName(profile, email);
-    const organizationSlug = await this.generateUniqueOrganizationSlug(
-      organizationName,
-    );
+    const organizationSlug =
+      await this.generateUniqueOrganizationSlug(organizationName);
 
     const user = await this.prisma.user.create({
       data: {
@@ -188,7 +184,9 @@ export class OAuthService {
   }
 
   private buildOrganizationName(profile: OAuthProfile, email: string): string {
-    const name = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
+    const name = [profile.firstName, profile.lastName]
+      .filter(Boolean)
+      .join(' ');
     if (name) {
       return name;
     }
@@ -231,9 +229,8 @@ export class OAuthService {
 
     const email = user.email;
     const organizationName = this.buildOrganizationName(profile, email);
-    const organizationSlug = await this.generateUniqueOrganizationSlug(
-      organizationName,
-    );
+    const organizationSlug =
+      await this.generateUniqueOrganizationSlug(organizationName);
 
     const organization = await this.prisma.organization.create({
       data: {

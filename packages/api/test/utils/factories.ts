@@ -35,9 +35,7 @@ export async function createUser(data?: {
       firstName: data?.firstName || 'Test',
       lastName: data?.lastName || 'User',
       emailVerifiedAt:
-        data?.emailVerifiedAt !== undefined
-          ? data.emailVerifiedAt
-          : new Date(),
+        data?.emailVerifiedAt !== undefined ? data.emailVerifiedAt : new Date(),
     },
   });
 }
