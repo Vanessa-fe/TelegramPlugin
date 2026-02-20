@@ -10,11 +10,10 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   AuthTokens,
-  AuthUser,
   JwtPayload,
   AuthProfile,
   AuthResult,
@@ -358,7 +357,7 @@ export class AuthService {
       payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
         secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
       });
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Refresh token invalide');
     }
 
@@ -723,6 +722,7 @@ export class AuthService {
       this.jwtService.signAsync(payload, {
         secret: this.config.getOrThrow<string>('JWT_REFRESH_SECRET'),
         expiresIn: refreshExpiresIn,
+        jwtid: randomUUID(),
       }),
     ]);
 

@@ -4,6 +4,44 @@ import { createUser } from './utils/factories';
 import { createTestApp } from './utils/app';
 import { createHash } from 'node:crypto';
 
+interface RegisterResponseBody {
+  verificationRequired: boolean;
+  email: string;
+}
+
+interface AuthResponseBody {
+  user: {
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  };
+}
+
+interface LogoutResponseBody {
+  message: string;
+}
+
+interface TestCookie {
+  name: string;
+  value: string;
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseJson<T>(raw: string): T {
+  return JSON.parse(raw) as T;
+}
+
+function getCookieNames(cookies: TestCookie[]): string[] {
+  return cookies.map((cookie) => cookie.name);
+}
+
+function toCookieHeader(cookies: TestCookie[]): string {
+  return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
+}
+
 describe('Auth (e2e)', () => {
   let app: NestFastifyApplication;
 
@@ -27,14 +65,14 @@ describe('Auth (e2e)', () => {
         url: '/auth/register',
         payload: {
           email: 'newuser@example.com',
-          password: 'Test1234!',
+          password: 'Test12345!',
           firstName: 'New',
           lastName: 'User',
         },
       });
 
       expect(response.statusCode).toBe(201);
-      const body = JSON.parse(response.body);
+      const body = parseJson<RegisterResponseBody>(response.body);
       expect(body.verificationRequired).toBe(true);
       expect(body.email).toBe('newuser@example.com');
       expect(response.cookies).toBeDefined();
@@ -47,7 +85,7 @@ describe('Auth (e2e)', () => {
         url: '/auth/register',
         payload: {
           email: 'invalid-email',
-          password: 'Test1234!',
+          password: 'Test12345!',
         },
       });
 
@@ -67,7 +105,8 @@ describe('Auth (e2e)', () => {
       expect(response.statusCode).toBe(400);
     });
 
-    it('should fail if email already exists', async () => {
+    it('should return generic success if email already exists', async () => {
+      await wait(1100);
       await createUser({ email: 'existing@example.com' });
 
       const response = await app.inject({
@@ -75,11 +114,14 @@ describe('Auth (e2e)', () => {
         url: '/auth/register',
         payload: {
           email: 'existing@example.com',
-          password: 'Test1234!',
+          password: 'Test12345!',
         },
       });
 
-      expect(response.statusCode).toBe(409);
+      expect(response.statusCode).toBe(201);
+      const body = parseJson<RegisterResponseBody>(response.body);
+      expect(body.verificationRequired).toBe(true);
+      expect(body.email).toBe('existing@example.com');
     });
   });
 
@@ -106,11 +148,11 @@ describe('Auth (e2e)', () => {
       });
 
       expect(response.statusCode).toBe(201);
-      const body = JSON.parse(response.body);
+      const body = parseJson<AuthResponseBody>(response.body);
       expect(body.user).toBeDefined();
       expect(body.user.email).toBe('verify-me@example.com');
 
-      const cookieNames = response.cookies.map((c: any) => c.name);
+      const cookieNames = getCookieNames(response.cookies as TestCookie[]);
       expect(cookieNames).toContain('accessToken');
       expect(cookieNames).toContain('refreshToken');
 
@@ -149,11 +191,11 @@ describe('Auth (e2e)', () => {
       });
 
       expect(response.statusCode).toBe(201);
-      const body = JSON.parse(response.body);
+      const body = parseJson<AuthResponseBody>(response.body);
       expect(body.user).toBeDefined();
       expect(body.user.email).toBe('test@example.com');
       expect(response.cookies).toBeDefined();
-      const cookieNames = response.cookies.map((c: any) => c.name);
+      const cookieNames = getCookieNames(response.cookies as TestCookie[]);
       expect(cookieNames).toContain('accessToken');
       expect(cookieNames).toContain('refreshToken');
     });
@@ -208,9 +250,7 @@ describe('Auth (e2e)', () => {
         },
       });
 
-      const cookies = loginResponse.cookies
-        .map((c: any) => `${c.name}=${c.value}`)
-        .join('; ');
+      const cookies = toCookieHeader(loginResponse.cookies as TestCookie[]);
 
       const response = await app.inject({
         method: 'GET',
@@ -221,7 +261,7 @@ describe('Auth (e2e)', () => {
       });
 
       expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
+      const body = parseJson<AuthResponseBody['user']>(response.body);
       expect(body.email).toBe('test@example.com');
       expect(body.firstName).toBe('Test');
       expect(body.lastName).toBe('User');
@@ -253,9 +293,7 @@ describe('Auth (e2e)', () => {
         },
       });
 
-      const cookies = loginResponse.cookies
-        .map((c: any) => `${c.name}=${c.value}`)
-        .join('; ');
+      const cookies = toCookieHeader(loginResponse.cookies as TestCookie[]);
 
       const response = await app.inject({
         method: 'POST',
@@ -267,7 +305,7 @@ describe('Auth (e2e)', () => {
       });
 
       expect(response.statusCode).toBe(201);
-      const body = JSON.parse(response.body);
+      const body = parseJson<AuthResponseBody>(response.body);
       expect(body.user).toBeDefined();
       expect(response.cookies).toBeDefined();
     });
@@ -302,9 +340,7 @@ describe('Auth (e2e)', () => {
         },
       });
 
-      const cookies = loginResponse.cookies
-        .map((c: any) => `${c.name}=${c.value}`)
-        .join('; ');
+      const cookies = toCookieHeader(loginResponse.cookies as TestCookie[]);
 
       const response = await app.inject({
         method: 'POST',
@@ -315,7 +351,7 @@ describe('Auth (e2e)', () => {
       });
 
       expect(response.statusCode).toBe(201);
-      const body = JSON.parse(response.body);
+      const body = parseJson<LogoutResponseBody>(response.body);
       expect(body.message).toBe('Déconnexion réussie');
 
       // Verify cookies are cleared (maxAge should be 0)
