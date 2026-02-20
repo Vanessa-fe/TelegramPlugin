@@ -83,7 +83,16 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const { refreshProfile } = useAuth();
 
-  const token = searchParams.get('token') ?? '';
+  const token = useMemo(() => {
+    const t = searchParams.get('token') ?? '';
+    // Clean token from URL after reading to prevent exposure in history/bookmarks
+    if (typeof window !== 'undefined' && t) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+    return t;
+  }, [searchParams]);
   const tokenMissing = !token;
 
   const [password, setPassword] = useState('');

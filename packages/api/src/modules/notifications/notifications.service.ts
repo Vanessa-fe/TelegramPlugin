@@ -403,10 +403,12 @@ export class NotificationsService implements OnModuleInit {
     subject: string,
     body: string,
   ): Promise<void> {
-    // If Brevo is not configured, just log the email
+    // If Brevo is not configured, just log the email (without sensitive tokens)
     if (!this.brevoApi || !this.brevoEnabled) {
       this.logger.log(`[EMAIL - DEV MODE] To: ${to}, Subject: ${subject}`);
-      this.logger.debug(`[EMAIL - DEV MODE] Body: ${body}`);
+      // Redact sensitive tokens from body before logging to prevent token exposure
+      const redactedBody = this.redactSensitiveUrls(body);
+      this.logger.debug(`[EMAIL - DEV MODE] Body: ${redactedBody}`);
       return;
     }
 
@@ -686,5 +688,18 @@ export class NotificationsService implements OnModuleInit {
       style: 'currency',
       currency: currency.toUpperCase(),
     }).format(amountCents / 100);
+  }
+
+  /**
+   * Redact sensitive tokens from URLs in email body before logging.
+   * This prevents tokens from being exposed in logs.
+   */
+  private redactSensitiveUrls(body: string): string {
+    // Redact token query parameters in URLs
+    // Matches: ?token=xxx or &token=xxx
+    return body.replace(
+      /([?&]token=)[A-Za-z0-9_-]+/gi,
+      '$1[REDACTED]',
+    );
   }
 }

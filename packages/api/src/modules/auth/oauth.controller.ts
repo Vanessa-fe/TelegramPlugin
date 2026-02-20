@@ -64,11 +64,11 @@ export class OAuthController {
       const authResult = await this.oauthService.handleOAuthLogin(req.user);
 
       const isProduction = process.env.NODE_ENV === 'production';
-
-      // IMPORTANT:
-      // - if your frontend is on a different domain than the API, cookies must be SameSite=None; Secure
-      // - in local dev, SameSite=Lax generally works
-      const sameSite: 'none' | 'lax' = isProduction ? 'none' : 'lax';
+      // Use 'lax' by default for CSRF protection (consistent with auth interceptors)
+      // Only use 'none' if COOKIE_SAME_SITE_NONE is explicitly set (cross-domain setup)
+      const allowCrossSite = process.env.COOKIE_SAME_SITE_NONE === 'true';
+      const sameSite: 'none' | 'lax' =
+        isProduction && allowCrossSite ? 'none' : 'lax';
 
       // FastifyReply has setCookie if @fastify/cookie is registered
       reply.setCookie('accessToken', authResult.accessToken, {

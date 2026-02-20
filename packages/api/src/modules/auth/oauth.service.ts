@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { OAuthProvider, User, UserRole } from '@prisma/client';
+import { createHash } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthTokens, JwtPayload, AuthProfile, AuthResult } from './auth.types';
 import type { GoogleProfile } from './strategies/google.strategy';
@@ -35,6 +36,11 @@ export class OAuthService {
     });
 
     if (existingOAuth) {
+      // Check if user account is active before allowing login
+      if (!existingOAuth.user.isActive) {
+        throw new ForbiddenException('Ce compte est désactivé');
+      }
+
       // Update lastLoginAt
       const updatedUser = await this.prisma.user.update({
         where: { id: existingOAuth.userId },
@@ -56,6 +62,11 @@ export class OAuthService {
       });
 
       if (existingUser) {
+        // Check if user account is active before allowing login
+        if (!existingUser.isActive) {
+          throw new ForbiddenException('Ce compte est désactivé');
+        }
+
         // Link OAuth account to existing user
         await this.prisma.oAuthAccount.create({
           data: {
@@ -166,7 +177,23 @@ export class OAuthService {
       }),
     ]);
 
+    // Store refresh token hash in database for revocation support
+    const tokenHash = this.hashRefreshToken(refreshToken);
+    const expiresAt = new Date(Date.now() + refreshExpiresIn * 1000);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: payload.sub,
+        tokenHash,
+        expiresAt,
+      },
+    });
+
     return { accessToken, refreshToken };
+  }
+
+  private hashRefreshToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   private getTtlSeconds(envKey: string, fallback: number): number {

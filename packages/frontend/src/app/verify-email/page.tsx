@@ -17,7 +17,16 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { refreshProfile } = useAuth();
-  const token = useMemo(() => searchParams.get('token'), [searchParams]);
+  const token = useMemo(() => {
+    const t = searchParams.get('token');
+    // Clean token from URL after reading to prevent exposure in history/bookmarks
+    if (typeof window !== 'undefined' && t) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+    return t;
+  }, [searchParams]);
 
   const [status, setStatus] = useState<VerificationStatus>('idle');
   const [error, setError] = useState('');
