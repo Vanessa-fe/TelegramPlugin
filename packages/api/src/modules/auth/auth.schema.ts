@@ -33,7 +33,8 @@ export const registerSchema = z.object({
   password: passwordSchema,
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
-  organizationId: z.string().uuid().optional(),
+  // organizationId removed: public registration MUST create a new organization
+  // to prevent privilege escalation attacks
   currency: z
     .string()
     .length(3)

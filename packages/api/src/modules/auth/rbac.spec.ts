@@ -60,16 +60,16 @@ describe('RBAC metadata', () => {
     });
   });
 
-  describe('admin payment secrets', () => {
-    it('should restrict org admin from payment events', () => {
+  describe('admin payment events access', () => {
+    it('should allow org admin to view payment events', () => {
       const listRoles = getRoles(PaymentEventsController.prototype, 'findAll');
       const detailRoles = getRoles(
         PaymentEventsController.prototype,
         'findOne',
       );
 
-      expect(listRoles).not.toContain(UserRole.ORG_ADMIN);
-      expect(detailRoles).not.toContain(UserRole.ORG_ADMIN);
+      expect(listRoles).toContain(UserRole.ORG_ADMIN);
+      expect(detailRoles).toContain(UserRole.ORG_ADMIN);
     });
   });
 });

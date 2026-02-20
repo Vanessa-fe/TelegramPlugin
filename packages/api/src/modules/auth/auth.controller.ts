@@ -8,6 +8,7 @@ import {
   UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
 import { ZodValidationPipe } from '../../common';
 import { AuthService } from './auth.service';
@@ -51,6 +52,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @Throttle({ short: { limit: 3, ttl: 1000 }, medium: { limit: 5, ttl: 60000 } })
   register(
     @Req() req: FastifyRequest,
     @Body(new ZodValidationPipe(registerSchema))
@@ -71,6 +73,7 @@ export class AuthController {
 
   @Public()
   @Post('resend-verification')
+  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 3, ttl: 60000 } })
   async resendVerification(
     @Req() req: FastifyRequest,
     @Body(new ZodValidationPipe(resendVerificationSchema))
@@ -89,6 +92,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @SetAuthCookies()
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 10, ttl: 60000 } })
   login(
     @Body(new ZodValidationPipe(loginSchema))
     body: LoginDto,
@@ -117,15 +121,17 @@ export class AuthController {
   }
 
   @Post('logout')
-  @Public()
   @UseInterceptors(CookieClearInterceptor)
   @ClearAuthCookies()
-  logout(): { message: string } {
+  async logout(@CurrentUser() user: AuthUser): Promise<{ message: string }> {
+    // Revoke all refresh tokens for the user
+    await this.authService.logout(user.userId);
     return { message: 'Déconnexion réussie' };
   }
 
   @Public()
   @Post('forgot-password')
+  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 3, ttl: 60000 } })
   async forgotPassword(
     @Body(new ZodValidationPipe(forgotPasswordSchema))
     body: ForgotPasswordDto,

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
@@ -24,6 +25,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 import { PlanGuard } from './modules/auth/guards/plan.guard';
+import { CsrfGuard } from './modules/auth/guards/csrf.guard';
 import { StorefrontModule } from './modules/storefront/storefront.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { DataExportsModule } from './modules/data-exports/data-exports.module';
@@ -85,6 +87,24 @@ function resolveEnvFiles(): string[] {
       cache: true,
       envFilePath: resolveEnvFiles(),
     }),
+    // Global rate limiting: 100 requests per minute per IP
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000, // 1 second
+        limit: 10, // 10 requests per second
+      },
+      {
+        name: 'medium',
+        ttl: 60000, // 1 minute
+        limit: 100, // 100 requests per minute
+      },
+      {
+        name: 'long',
+        ttl: 3600000, // 1 hour
+        limit: 1000, // 1000 requests per hour
+      },
+    ]),
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? 'info',
@@ -129,6 +149,14 @@ function resolveEnvFiles(): string[] {
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

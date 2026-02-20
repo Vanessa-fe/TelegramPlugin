@@ -29,7 +29,10 @@ export class CookieResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data: AuthResult) => {
         const isProduction = process.env.NODE_ENV === 'production';
-        const sameSite = isProduction ? 'none' : 'lax';
+        // Use 'lax' by default for CSRF protection
+        // Only use 'none' if COOKIE_SAME_SITE_NONE is explicitly set (cross-domain setup)
+        const allowCrossSite = process.env.COOKIE_SAME_SITE_NONE === 'true';
+        const sameSite = isProduction && allowCrossSite ? 'none' : 'lax';
 
         // Use Fastify's native cookie method via the 'any' type assertion
         // This is necessary because @fastify/cookie types are not properly exposed

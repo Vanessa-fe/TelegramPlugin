@@ -212,6 +212,7 @@ model User {
   oauthAccounts  OAuthAccount[]
   resetTokens    PasswordResetToken[]
   verificationTokens EmailVerificationToken[]
+  refreshTokens  RefreshToken[]
   sentTeamInvites TeamInvite[] @relation("TeamInviteInvitedBy")
 }
 
@@ -238,6 +239,20 @@ model EmailVerificationToken {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])

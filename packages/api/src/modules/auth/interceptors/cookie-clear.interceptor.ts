@@ -30,7 +30,10 @@ export class CookieClearInterceptor implements NestInterceptor {
         // Clear cookies by setting maxAge to 0
         // Use 'any' type assertion because @fastify/cookie types are not properly exposed
         const isProduction = process.env.NODE_ENV === 'production';
-        const sameSite = isProduction ? 'none' : 'lax';
+        // Use 'lax' by default for CSRF protection
+        // Only use 'none' if COOKIE_SAME_SITE_NONE is explicitly set (cross-domain setup)
+        const allowCrossSite = process.env.COOKIE_SAME_SITE_NONE === 'true';
+        const sameSite = isProduction && allowCrossSite ? 'none' : 'lax';
 
         (reply as any).setCookie('accessToken', '', {
           httpOnly: true,

@@ -11,8 +11,8 @@ export declare const createTeamInviteSchema: z.ZodObject<{
     organizationId?: string | undefined;
 }, {
     email: string;
-    organizationId?: string | undefined;
     role?: "ORG_ADMIN" | "SUPPORT" | "VIEWER" | undefined;
+    organizationId?: string | undefined;
 }>;
 export type CreateTeamInviteDto = z.infer<typeof createTeamInviteSchema>;
 export declare const updateTeamMemberRoleSchema: z.ZodObject<{
@@ -30,13 +30,13 @@ export declare const acceptTeamInviteSchema: z.ZodObject<{
     password: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     token: string;
+    password?: string | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
-    password?: string | undefined;
 }, {
     token: string;
+    password?: string | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
-    password?: string | undefined;
 }>;
 export type AcceptTeamInviteDto = z.infer<typeof acceptTeamInviteSchema>;

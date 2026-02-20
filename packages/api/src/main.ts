@@ -41,6 +41,17 @@ async function bootstrap() {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Security: In production, CORS_ORIGIN must be explicitly configured
+  // to prevent credentials being sent to arbitrary origins
+  if (isProduction && (!allowedOrigins || allowedOrigins.length === 0)) {
+    throw new Error(
+      'CORS_ORIGIN must be configured in production. ' +
+        'Set CORS_ORIGIN to a comma-separated list of allowed origins.',
+    );
+  }
+
   await register(cors, {
     origin: allowedOrigins && allowedOrigins.length > 0 ? allowedOrigins : true,
     credentials: true,

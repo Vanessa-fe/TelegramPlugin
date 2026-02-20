@@ -39,6 +39,12 @@ describe('AuthService', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+    refreshToken: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
     $transaction: jest.fn(),
   };
 
@@ -67,6 +73,7 @@ describe('AuthService', () => {
   const mockNotificationsService = {
     sendPasswordResetEmail: jest.fn(),
     sendEmailVerificationEmail: jest.fn(),
+    sendAccountAlreadyExistsEmail: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -187,33 +194,42 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw ConflictException if email exists', async () => {
+    it('should send account exists email if email already registered (no enumeration)', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: '1',
         email: 'existing@example.com',
       });
 
-      await expect(
-        service.register({
-          email: 'existing@example.com',
-          password: 'Test1234!',
-        }),
-      ).rejects.toThrow(ConflictException);
+      // Should NOT throw - returns same response to prevent email enumeration
+      const result = await service.register({
+        email: 'existing@example.com',
+        password: 'Test1234!',
+      });
+
+      expect(result.verificationRequired).toBe(true);
+      expect(result.email).toBe('existing@example.com');
+      expect(
+        mockNotificationsService.sendAccountAlreadyExistsEmail,
+      ).toHaveBeenCalledWith(
+        'existing@example.com',
+        expect.stringContaining('/login'),
+        expect.stringContaining('/forgot-password'),
+      );
     });
 
-    it('should assign ORG_ADMIN role when organizationId is provided', async () => {
+    it('should always create a new organization for public registration', async () => {
       const registerDto = {
         email: 'test@example.com',
         password: 'Test1234!',
-        organizationId: 'org-123',
       };
 
       mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.organization.create.mockResolvedValue({ id: 'new-org-id' });
       mockPrismaService.user.create.mockResolvedValue({
         id: '1',
         email: registerDto.email.toLowerCase(),
         role: UserRole.ORG_ADMIN,
-        organizationId: 'org-123',
+        organizationId: 'new-org-id',
         isActive: true,
         passwordHash: 'hashed',
         firstName: null,
@@ -226,10 +242,12 @@ describe('AuthService', () => {
 
       await service.register(registerDto);
 
+      // Verify organization was always created
+      expect(mockPrismaService.organization.create).toHaveBeenCalled();
       expect(mockPrismaService.user.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           role: UserRole.ORG_ADMIN,
-          organizationId: 'org-123',
+          organizationId: 'new-org-id',
           emailVerifiedAt: null,
         }),
       });
@@ -278,6 +296,7 @@ describe('AuthService', () => {
       mockPrismaService.emailVerificationToken.updateMany.mockResolvedValue({
         count: 1,
       });
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1' });
       mockJwtService.signAsync.mockResolvedValue('token');
 
       const result = await service.verifyEmail('plain-token');
@@ -348,6 +367,7 @@ describe('AuthService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1' });
       mockJwtService.signAsync.mockResolvedValue('token');
 
       const result = await service.login(email, password);
@@ -436,7 +456,7 @@ describe('AuthService', () => {
   });
 
   describe('refresh', () => {
-    it('should refresh tokens successfully', async () => {
+    it('should refresh tokens successfully with token rotation', async () => {
       const payload = {
         sub: '1',
         email: 'test@example.com',
@@ -445,6 +465,13 @@ describe('AuthService', () => {
       };
 
       mockJwtService.verifyAsync.mockResolvedValue(payload);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue({
+        id: 'rt-1',
+        userId: '1',
+        tokenHash: 'hash',
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        revokedAt: null,
+      });
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: '1',
         email: 'test@example.com',
@@ -459,6 +486,8 @@ describe('AuthService', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
+      mockPrismaService.refreshToken.update.mockResolvedValue({ id: 'rt-1' });
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-2' });
       mockJwtService.signAsync.mockResolvedValue('new-token');
 
       const result = await service.refresh('valid-refresh-token');
@@ -475,7 +504,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('should throw UnauthorizedException if user not found', async () => {
+    it('should throw UnauthorizedException if token not in database', async () => {
       const payload = {
         sub: '1',
         email: 'test@example.com',
@@ -484,7 +513,30 @@ describe('AuthService', () => {
       };
 
       mockJwtService.verifyAsync.mockResolvedValue(payload);
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue(null);
+
+      await expect(service.refresh('valid-refresh-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw UnauthorizedException if token is revoked', async () => {
+      const payload = {
+        sub: '1',
+        email: 'test@example.com',
+        role: UserRole.VIEWER,
+        organizationId: null,
+      };
+
+      mockJwtService.verifyAsync.mockResolvedValue(payload);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue({
+        id: 'rt-1',
+        userId: '1',
+        tokenHash: 'hash',
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        revokedAt: new Date(), // Token is revoked
+      });
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 1 });
 
       await expect(service.refresh('valid-refresh-token')).rejects.toThrow(
         UnauthorizedException,
@@ -500,6 +552,13 @@ describe('AuthService', () => {
       };
 
       mockJwtService.verifyAsync.mockResolvedValue(payload);
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue({
+        id: 'rt-1',
+        userId: '1',
+        tokenHash: 'hash',
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        revokedAt: null,
+      });
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: '1',
         email: 'test@example.com',

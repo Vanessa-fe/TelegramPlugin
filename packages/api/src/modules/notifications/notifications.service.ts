@@ -268,6 +268,27 @@ export class NotificationsService implements OnModuleInit {
     await this.sendEmail(to, subject, body);
   }
 
+  async sendAccountAlreadyExistsEmail(
+    to: string,
+    loginLink: string,
+    resetPasswordLink: string,
+  ): Promise<void> {
+    const subject = 'Tentative de création de compte';
+    const body = `
+      <h1>Tentative de création de compte</h1>
+      <p>Bonjour,</p>
+      <p>Quelqu'un a essayé de créer un compte avec votre adresse email. Si c'était vous, sachez qu'un compte existe déjà avec cette adresse.</p>
+      <p>Vous pouvez :</p>
+      <ul>
+        <li><a href="${loginLink}">Vous connecter à votre compte existant</a></li>
+        <li><a href="${resetPasswordLink}">Réinitialiser votre mot de passe</a> si vous l'avez oublié</li>
+      </ul>
+      <p>Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.</p>
+    `;
+
+    await this.sendEmail(to, subject, body);
+  }
+
   async sendTeamInviteEmail(
     to: string,
     organizationName: string,

@@ -44,15 +44,6 @@ export class AuthService {
   ): Promise<RegisterResult> {
     const normalizedEmail = data.email.trim().toLowerCase();
 
-    // Check if email exists
-    const existing = await this.prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-
-    if (existing) {
-      throw new ConflictException('Cet email est déjà utilisé');
-    }
-
     const frontendUrl = this.resolveFrontendBaseUrl(frontendOrigin);
     if (!frontendUrl) {
       this.logger.error(
@@ -63,33 +54,56 @@ export class AuthService {
       );
     }
 
+    // Check if email exists - but don't reveal this to the caller
+    const existing = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existing) {
+      // Send a different email to inform the user they already have an account
+      // This prevents email enumeration while still being helpful to legitimate users
+      const loginLink = `${frontendUrl}/login`;
+      const resetPasswordLink = `${frontendUrl}/forgot-password`;
+      await this.notifications.sendAccountAlreadyExistsEmail(
+        normalizedEmail,
+        loginLink,
+        resetPasswordLink,
+      );
+
+      // Return the same response as a successful registration
+      // to prevent email enumeration attacks
+      return {
+        message: 'Compte créé. Vérifiez votre email pour activer votre compte.',
+        email: normalizedEmail,
+        verificationRequired: true,
+      };
+    }
+
     // Hash password
     const passwordHash = await bcrypt.hash(data.password, 10);
 
-    // Auto-create organization if not provided
-    let organizationId = data.organizationId;
-    if (!organizationId) {
-      const organizationCurrency = data.currency ?? 'EUR';
-      const slug = await this.generateOrgSlug(
-        normalizedEmail,
-        data.firstName,
-        data.lastName,
-      );
-      const orgName =
-        data.firstName && data.lastName
-          ? `${data.firstName} ${data.lastName}`
-          : normalizedEmail.split('@')[0];
+    // Always create a new organization for public registration
+    // This prevents privilege escalation by specifying an existing organizationId
+    const organizationCurrency = data.currency ?? 'EUR';
+    const slug = await this.generateOrgSlug(
+      normalizedEmail,
+      data.firstName,
+      data.lastName,
+    );
+    const orgName =
+      data.firstName && data.lastName
+        ? `${data.firstName} ${data.lastName}`
+        : normalizedEmail.split('@')[0];
 
-      const org = await this.prisma.organization.create({
-        data: {
-          name: orgName,
-          slug,
-          billingEmail: normalizedEmail,
-          currency: organizationCurrency,
-        },
-      });
-      organizationId = org.id;
-    }
+    const org = await this.prisma.organization.create({
+      data: {
+        name: orgName,
+        slug,
+        billingEmail: normalizedEmail,
+        currency: organizationCurrency,
+      },
+    });
+    const organizationId = org.id;
 
     // All users with organizations are ORG_ADMIN
     const role: UserRole = 'ORG_ADMIN';
@@ -348,6 +362,23 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token invalide');
     }
 
+    // Verify the refresh token exists in database and is not revoked
+    const tokenHash = this.hashRefreshToken(refreshToken);
+    const storedToken = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+    });
+
+    if (!storedToken || storedToken.revokedAt) {
+      // Token reuse detected or token was revoked - revoke all user tokens for security
+      if (storedToken?.revokedAt) {
+        this.logger.warn(
+          `Refresh token reuse detected for user ${payload.sub}. Revoking all tokens.`,
+        );
+        await this.revokeAllUserRefreshTokens(payload.sub);
+      }
+      throw new UnauthorizedException('Refresh token invalide ou révoqué');
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
@@ -356,12 +387,37 @@ export class AuthService {
       throw new UnauthorizedException('Utilisateur introuvable ou désactivé');
     }
 
-    const tokens = await this.signTokens(this.buildPayload(user));
+    // Rotate: revoke old token and issue new one
+    const tokens = await this.prisma.$transaction(async (tx) => {
+      // Revoke the old token
+      await tx.refreshToken.update({
+        where: { id: storedToken.id },
+        data: { revokedAt: new Date() },
+      });
+
+      // Sign new tokens
+      return this.signTokens(this.buildPayload(user), tx);
+    });
 
     return {
       ...tokens,
       user: this.sanitizeUser(user),
     };
+  }
+
+  async logout(userId: string): Promise<void> {
+    await this.revokeAllUserRefreshTokens(userId);
+  }
+
+  private async revokeAllUserRefreshTokens(userId: string): Promise<void> {
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  private hashRefreshToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   async profile(userId: string): Promise<AuthProfile> {
@@ -470,6 +526,11 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+
+    // Revoke all existing refresh tokens for security
+    // (invalidates all other sessions after password change)
+    await this.revokeAllUserRefreshTokens(userId);
+
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: { passwordHash },
@@ -562,6 +623,12 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
     const updatedUser = await this.prisma.$transaction(async (tx) => {
+      // Revoke all existing refresh tokens for security
+      await tx.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: now },
+      });
+
       const updated = await tx.user.update({
         where: { id: user.id },
         data: { passwordHash },
@@ -638,7 +705,10 @@ export class AuthService {
     };
   }
 
-  private async signTokens(payload: JwtPayload): Promise<AuthTokens> {
+  private async signTokens(
+    payload: JwtPayload,
+    tx?: Parameters<Parameters<typeof this.prisma.$transaction>[0]>[0],
+  ): Promise<AuthTokens> {
     const accessExpiresIn = this.getTtlSeconds('JWT_ACCESS_TTL', 900);
     const refreshExpiresIn = this.getTtlSeconds(
       'JWT_REFRESH_TTL',
@@ -655,6 +725,19 @@ export class AuthService {
         expiresIn: refreshExpiresIn,
       }),
     ]);
+
+    // Store refresh token hash in database for revocation support
+    const tokenHash = this.hashRefreshToken(refreshToken);
+    const expiresAt = new Date(Date.now() + refreshExpiresIn * 1000);
+
+    const prismaClient = tx ?? this.prisma;
+    await prismaClient.refreshToken.create({
+      data: {
+        userId: payload.sub,
+        tokenHash,
+        expiresAt,
+      },
+    });
 
     return { accessToken, refreshToken };
   }
