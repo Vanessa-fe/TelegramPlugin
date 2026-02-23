@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/contexts/auth-context";
+import { PostHogPageview } from "@/components/analytics/posthog-pageview";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
@@ -135,6 +136,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           messages={messages}
           key={locale}
         >
+          <PostHogPageview />
           <AuthProvider>{children}</AuthProvider>
           <Toaster richColors position="top-right" />
         </NextIntlClientProvider>
