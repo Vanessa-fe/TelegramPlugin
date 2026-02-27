@@ -21,71 +21,76 @@ function detectLocaleFromAcceptLanguage(acceptLanguageHeader: string | null): (t
 }
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  try {
+    const { pathname } = request.nextUrl;
 
-  if (
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/_next') ||
-    PUBLIC_FILE.test(pathname)
-  ) {
-    return NextResponse.next();
-  }
+    if (
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/_next') ||
+      PUBLIC_FILE.test(pathname)
+    ) {
+      return NextResponse.next();
+    }
 
-  const localeMatch = locales.find(
-    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
-  );
+    const localeMatch = locales.find(
+      (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
+    );
 
-  if (localeMatch) {
-    if (localeMatch === defaultLocale) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = pathname.replace(`/${localeMatch}`, '') || '/';
-      const redirectResponse = NextResponse.redirect(redirectUrl);
-      redirectResponse.cookies.set('NEXT_LOCALE', defaultLocale, {
+    if (localeMatch) {
+      if (localeMatch === defaultLocale) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = pathname.replace(`/${localeMatch}`, '') || '/';
+        const redirectResponse = NextResponse.redirect(redirectUrl);
+        redirectResponse.cookies.set('NEXT_LOCALE', defaultLocale, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 365,
+        });
+        return redirectResponse;
+      }
+
+      const newPathname = pathname.replace(`/${localeMatch}`, '') || '/';
+      const url = request.nextUrl.clone();
+      url.pathname = newPathname;
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('X-NEXT-INTL-LOCALE', localeMatch);
+
+      const response = NextResponse.rewrite(url, {
+        request: {
+          headers: requestHeaders,
+        },
+      });
+      response.cookies.set('NEXT_LOCALE', localeMatch, {
         path: '/',
         maxAge: 60 * 60 * 24 * 365,
       });
-      return redirectResponse;
+      return response;
     }
 
-    const newPathname = pathname.replace(`/${localeMatch}`, '') || '/';
-    const url = request.nextUrl.clone();
-    url.pathname = newPathname;
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('X-NEXT-INTL-LOCALE', localeMatch);
+    const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
+    const resolvedLocale = isSupportedLocale(cookieLocale)
+      ? cookieLocale
+      : detectLocaleFromAcceptLanguage(request.headers.get('accept-language'));
 
-    const response = NextResponse.rewrite(url, {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('X-NEXT-INTL-LOCALE', resolvedLocale);
+    const response = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     });
-    response.cookies.set('NEXT_LOCALE', localeMatch, {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 365,
-    });
+
+    if (cookieLocale !== resolvedLocale) {
+      response.cookies.set('NEXT_LOCALE', resolvedLocale, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365,
+      });
+    }
+
     return response;
+  } catch (error) {
+    console.error('middleware failed, falling back to next response', error);
+    return NextResponse.next();
   }
-
-  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
-  const resolvedLocale = isSupportedLocale(cookieLocale)
-    ? cookieLocale
-    : detectLocaleFromAcceptLanguage(request.headers.get('accept-language'));
-
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('X-NEXT-INTL-LOCALE', resolvedLocale);
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
-
-  if (cookieLocale !== resolvedLocale) {
-    response.cookies.set('NEXT_LOCALE', resolvedLocale, {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 365,
-    });
-  }
-
-  return response;
 }
 
 export const config = {
