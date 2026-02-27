@@ -21,6 +21,7 @@ import { LogOut, Shield, User, Menu, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
+import Image from 'next/image';
 
 // Mobile navigation items
 const mobileNav = [
@@ -87,8 +88,14 @@ export function Header() {
               <Menu className="h-6 w-6" />
             )}
           </button>
-          <Link href="/" className="text-lg font-bold text-text-primary">
-            {tCommon('appName')}
+          <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
+            <Image
+              src="/android-chrome-192x192.png"
+              alt={tCommon('appName')}
+              width={32}
+              height={32}
+              className="rounded-md"
+            />
           </Link>
         </div>
 

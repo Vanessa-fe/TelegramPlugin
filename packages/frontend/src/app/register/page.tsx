@@ -9,6 +9,7 @@ declare global {
 }
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -150,8 +151,14 @@ export default function RegisterPage() {
       {/* Header */}
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
-          <Link href="/" className="text-xl font-bold text-text-primary">
-            {tCommon('appName')}
+          <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
+            <Image
+              src="/android-chrome-192x192.png"
+              alt={tCommon('appName')}
+              width={36}
+              height={36}
+              className="rounded-md"
+            />
           </Link>
         </div>
       </header>
