@@ -24,6 +24,7 @@ import {
   Users,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -197,8 +198,14 @@ export function Sidebar() {
     <div className="hidden lg:flex h-full w-64 flex-col border-r border-border-custom bg-white">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-border-custom px-6">
-        <Link href="/" className="text-xl font-bold text-text-primary">
-          {tCommon("appName")}
+        <Link href="/" className="inline-flex items-center" aria-label={tCommon("appName")}>
+          <Image
+            src="/android-chrome-192x192.png"
+            alt={tCommon("appName")}
+            width={32}
+            height={32}
+            className="rounded-md"
+          />
         </Link>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -67,8 +68,14 @@ export default function VerifyEmailPage() {
     <div className="min-h-screen bg-surface flex flex-col">
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
-          <Link href="/" className="text-xl font-bold text-text-primary">
-            {tCommon('appName')}
+          <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
+            <Image
+              src="/android-chrome-192x192.png"
+              alt={tCommon('appName')}
+              width={36}
+              height={36}
+              className="rounded-md"
+            />
           </Link>
         </div>
       </header>
