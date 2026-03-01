@@ -98,10 +98,7 @@ export default function ResetPasswordPage() {
     syncAutofilledValues();
 
     // Password managers can update inputs without firing React onChange.
-    const intervalId = window.setInterval(syncAutofilledValues, 250);
-    const timeoutId = window.setTimeout(() => {
-      window.clearInterval(intervalId);
-    }, 6000);
+    const intervalId = window.setInterval(syncAutofilledValues, 300);
     const handleFocus = () => syncAutofilledValues();
     const handleVisibility = () => syncAutofilledValues();
 
@@ -110,7 +107,6 @@ export default function ResetPasswordPage() {
 
     return () => {
       window.clearInterval(intervalId);
-      window.clearTimeout(timeoutId);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
