@@ -288,12 +288,12 @@ export default function RegisterPage() {
                       {t('password')}
                     </Label>
                     <input
+                      key="password-input"
                       ref={passwordInputRef}
                       id="password"
                       name="password"
                       type="password"
                       autoComplete="new-password"
-                      onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
                       disabled={isLoading}
                       placeholder={t('passwordPlaceholder')}
                       aria-describedby="password-strength"

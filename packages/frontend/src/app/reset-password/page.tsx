@@ -251,12 +251,12 @@ export default function ResetPasswordPage() {
                       {t('password')}
                     </Label>
                     <input
+                      key="new-password-input"
                       ref={passwordInputRef}
                       id="new-password"
                       name="new-password"
                       type="password"
                       autoComplete="new-password"
-                      onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
                       disabled={isLoading}
                       placeholder={t('passwordPlaceholder')}
                       className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
