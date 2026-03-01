@@ -210,6 +210,15 @@ export default function ResetPasswordPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading} noValidate>
+                  {/* Hidden username field for password managers */}
+                  <input
+                    type="text"
+                    name="username"
+                    autoComplete="username"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
+                  />
                   {error && (
                     <p
                       role="alert"
@@ -220,23 +229,19 @@ export default function ResetPasswordPage() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-text-primary">
+                    <Label htmlFor="new-password" className="text-text-primary">
                       {t('password')}
                     </Label>
-                    <Input
+                    <input
                       ref={passwordInputRef}
-                      id="password"
-                      name="password"
+                      id="new-password"
+                      name="new-password"
                       type="password"
                       autoComplete="new-password"
-                      onChange={(e) => setPassword(e.target.value)}
                       onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
-                      onBlur={syncAutofilledValues}
-                      onFocus={syncAutofilledValues}
-                      required
                       disabled={isLoading}
                       placeholder={t('passwordPlaceholder')}
-                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
+                      className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                     />
                     <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
                     <div className="space-y-1">
@@ -261,21 +266,18 @@ export default function ResetPasswordPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-text-primary">
+                    <Label htmlFor="confirm-password" className="text-text-primary">
                       {t('confirmPassword')}
                     </Label>
-                    <Input
+                    <input
                       ref={confirmInputRef}
-                      id="confirmPassword"
-                      name="confirmPassword"
+                      id="confirm-password"
+                      name="confirm-password"
                       type="password"
                       autoComplete="new-password"
-                      onBlur={syncAutofilledValues}
-                      onFocus={syncAutofilledValues}
-                      required
                       disabled={isLoading}
                       placeholder={t('confirmPlaceholder')}
-                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
+                      className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                     />
                   </div>
 
