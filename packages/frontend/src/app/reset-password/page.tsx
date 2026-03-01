@@ -78,6 +78,7 @@ export default function ResetPasswordPage() {
   }, []);
 
   useEffect(() => {
+    const input = passwordInputRef.current;
     syncAutofilledValues();
 
     // Password managers can update inputs without firing React onChange.
@@ -85,13 +86,30 @@ export default function ResetPasswordPage() {
     const handleFocus = () => syncAutofilledValues();
     const handleVisibility = () => syncAutofilledValues();
 
+    // Listen for native change event (Chrome fires this after autofill)
+    const handleChange = () => syncAutofilledValues();
+
+    // Listen for Chrome autofill animation (defined in globals.css)
+    const handleAnimationStart = (e: AnimationEvent) => {
+      if (e.animationName === 'onAutoFillStart') {
+        // Chrome just autofilled - sync after a short delay
+        setTimeout(syncAutofilledValues, 50);
+        setTimeout(syncAutofilledValues, 150);
+        setTimeout(syncAutofilledValues, 300);
+      }
+    };
+
     window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibility);
+    input?.addEventListener('change', handleChange);
+    input?.addEventListener('animationstart', handleAnimationStart);
 
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
+      input?.removeEventListener('change', handleChange);
+      input?.removeEventListener('animationstart', handleAnimationStart);
     };
   }, [syncAutofilledValues]);
 

@@ -48,10 +48,10 @@ export declare class TeamService {
     createInvite(organizationId: string, invitedByUserId: string, dto: CreateTeamInviteDto): Promise<{
         inviteUrl: string;
         id: string;
-        email: string;
         createdAt: Date;
-        expiresAt: Date;
+        email: string;
         role: import("@prisma/client").$Enums.UserRole;
+        expiresAt: Date;
     }>;
     revokeInvite(organizationId: string, inviteId: string): Promise<{
         success: boolean;

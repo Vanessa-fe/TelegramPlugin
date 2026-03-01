@@ -79,10 +79,34 @@ export default function RegisterPage() {
     setPassword((prev) => (prev === domValue ? prev : domValue));
   }, []);
 
-  // Poll for autofill changes
+  // Listen for Chrome autofill events
   useEffect(() => {
+    const input = passwordInputRef.current;
+    if (!input) return;
+
+    // Poll for autofill changes
     const intervalId = window.setInterval(syncPasswordValue, 300);
-    return () => window.clearInterval(intervalId);
+
+    // Listen for native change event (Chrome fires this after autofill)
+    const handleChange = () => syncPasswordValue();
+    input.addEventListener('change', handleChange);
+
+    // Listen for Chrome autofill animation (defined in globals.css)
+    const handleAnimationStart = (e: AnimationEvent) => {
+      if (e.animationName === 'onAutoFillStart') {
+        // Chrome just autofilled - sync after a short delay
+        setTimeout(syncPasswordValue, 50);
+        setTimeout(syncPasswordValue, 150);
+        setTimeout(syncPasswordValue, 300);
+      }
+    };
+    input.addEventListener('animationstart', handleAnimationStart);
+
+    return () => {
+      window.clearInterval(intervalId);
+      input.removeEventListener('change', handleChange);
+      input.removeEventListener('animationstart', handleAnimationStart);
+    };
   }, [syncPasswordValue]);
 
   // Handle OAuth error from redirect
