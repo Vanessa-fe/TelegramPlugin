@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 declare global {
   interface Window {
@@ -63,14 +63,27 @@ export default function RegisterPage() {
   const tCommon = useTranslations('common');
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
     firstName: '',
     lastName: '',
     currency: 'EUR',
   });
+  const [password, setPassword] = useState('');
+  const passwordInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
+
+  // Sync password state with DOM value (for Chrome autofill)
+  const syncPasswordValue = useCallback(() => {
+    const domValue = passwordInputRef.current?.value ?? '';
+    setPassword((prev) => (prev === domValue ? prev : domValue));
+  }, []);
+
+  // Poll for autofill changes
+  useEffect(() => {
+    const intervalId = window.setInterval(syncPasswordValue, 300);
+    return () => window.clearInterval(intervalId);
+  }, [syncPasswordValue]);
 
   // Handle OAuth error from redirect
   useEffect(() => {
@@ -95,10 +108,13 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError('');
 
+    // Read password directly from DOM to handle Chrome autofill
+    const passwordValue = passwordInputRef.current?.value ?? '';
+
     try {
       const result = await register({
         email: formData.email,
-        password: formData.password,
+        password: passwordValue,
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
         currency: formData.currency,
@@ -247,21 +263,20 @@ export default function RegisterPage() {
                     <Label htmlFor="password" className="text-text-primary">
                       {t('password')}
                     </Label>
-                    <Input
+                    <input
+                      ref={passwordInputRef}
                       id="password"
                       name="password"
                       type="password"
                       autoComplete="new-password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
+                      onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
                       disabled={isLoading}
                       placeholder={t('passwordPlaceholder')}
                       aria-describedby="password-strength"
-                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
+                      className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                     />
                     <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
-                    <PasswordStrengthIndicator password={formData.password} />
+                    <PasswordStrengthIndicator password={password} />
                   </div>
 
                   <div className="space-y-2">
