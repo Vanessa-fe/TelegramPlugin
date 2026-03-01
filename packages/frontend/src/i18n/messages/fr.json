@@ -359,6 +359,7 @@
       "submitting": "Réinitialisation...",
       "backToLogin": "Retour à la connexion",
       "missingToken": "Le lien est invalide ou expiré. Demande un nouveau lien.",
+      "passwordRequired": "Veuillez saisir un mot de passe",
       "passwordMismatch": "Les mots de passe ne correspondent pas",
       "successTitle": "Mot de passe mis à jour",
       "successDescription": "Ton mot de passe a été mis à jour.",

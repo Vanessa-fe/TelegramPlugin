@@ -359,6 +359,7 @@
       "submitting": "Resetting...",
       "backToLogin": "Back to login",
       "missingToken": "Reset link is invalid or expired. Please request a new one.",
+      "passwordRequired": "Please enter a password",
       "passwordMismatch": "Passwords do not match",
       "successTitle": "Password updated",
       "successDescription": "Your password has been updated.",

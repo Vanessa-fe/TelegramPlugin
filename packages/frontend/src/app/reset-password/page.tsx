@@ -125,6 +125,9 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    // Wait briefly for Chrome password manager to finish filling fields
+    await new Promise((resolve) => setTimeout(resolve, 50));
     syncAutofilledValues();
 
     const nextPassword = passwordInputRef.current?.value ?? '';
@@ -132,6 +135,11 @@ export default function ResetPasswordPage() {
 
     if (tokenMissing) {
       setError(t('missingToken'));
+      return;
+    }
+
+    if (!nextPassword.trim()) {
+      setError(t('passwordRequired'));
       return;
     }
 
@@ -201,7 +209,7 @@ export default function ResetPasswordPage() {
                   <p className="text-text-secondary">{t('subtitle')}</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
+                <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading} noValidate>
                   {error && (
                     <p
                       role="alert"
