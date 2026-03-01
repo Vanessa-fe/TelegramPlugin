@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -69,6 +69,52 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const confirmInputRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef(password);
+  const confirmPasswordRef = useRef(confirmPassword);
+
+  useEffect(() => {
+    passwordRef.current = password;
+  }, [password]);
+
+  useEffect(() => {
+    confirmPasswordRef.current = confirmPassword;
+  }, [confirmPassword]);
+
+  const syncAutofilledValues = useCallback(() => {
+    const nextPassword = passwordInputRef.current?.value ?? '';
+    const nextConfirm = confirmInputRef.current?.value ?? '';
+
+    if (nextPassword !== passwordRef.current) {
+      setPassword(nextPassword);
+    }
+    if (nextConfirm !== confirmPasswordRef.current) {
+      setConfirmPassword(nextConfirm);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncAutofilledValues();
+
+    // Password managers can update inputs without firing React onChange.
+    const intervalId = window.setInterval(syncAutofilledValues, 250);
+    const timeoutId = window.setTimeout(() => {
+      window.clearInterval(intervalId);
+    }, 6000);
+    const handleFocus = () => syncAutofilledValues();
+    const handleVisibility = () => syncAutofilledValues();
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [syncAutofilledValues]);
 
   const requirements = useMemo(() => {
     const tests = [
@@ -187,10 +233,15 @@ export default function ResetPasswordPage() {
                       {t('password')}
                     </Label>
                     <Input
+                      ref={passwordInputRef}
                       id="password"
+                      name="password"
                       type="password"
+                      autoComplete="new-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
+                      onBlur={syncAutofilledValues}
                       required
                       disabled={isLoading}
                       placeholder={t('passwordPlaceholder')}
@@ -223,10 +274,15 @@ export default function ResetPasswordPage() {
                       {t('confirmPassword')}
                     </Label>
                     <Input
+                      ref={confirmInputRef}
                       id="confirmPassword"
+                      name="confirmPassword"
                       type="password"
+                      autoComplete="new-password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
+                      onInput={(e) => setConfirmPassword((e.target as HTMLInputElement).value)}
+                      onBlur={syncAutofilledValues}
                       required
                       disabled={isLoading}
                       placeholder={t('confirmPlaceholder')}
