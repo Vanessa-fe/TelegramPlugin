@@ -153,11 +153,10 @@ export default function RegisterPage() {
         <div className="max-w-6xl mx-auto">
           <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
             <Image
-              src="/android-chrome-192x192.png"
-              alt={tCommon('appName')}
-              width={36}
-              height={36}
-              className="rounded-md"
+              src="/logo_160.svg"
+              alt=""
+              width={40}
+              height={40}
             />
           </Link>
         </div>

@@ -90,11 +90,10 @@ export function Header() {
           </button>
           <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
             <Image
-              src="/android-chrome-192x192.png"
-              alt={tCommon('appName')}
-              width={32}
-              height={32}
-              className="rounded-md"
+              src="/logo_160.svg"
+              alt=""
+              width={40}
+              height={40}
             />
           </Link>
         </div>

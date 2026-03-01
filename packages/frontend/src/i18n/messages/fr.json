@@ -353,7 +353,7 @@
       "passwordPlaceholder": "••••••••",
       "confirmPassword": "Confirmer le mot de passe",
       "confirmPlaceholder": "••••••••",
-      "passwordHint": "10 caractères minimum avec majuscule, chiffre et caractère spécial",
+      "passwordHint": "10 caractères minimum avec majuscule et chiffre",
       "useSuggested": "Utiliser le mot de passe suggéré",
       "submit": "Réinitialiser",
       "submitting": "Réinitialisation...",

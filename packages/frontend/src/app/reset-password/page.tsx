@@ -44,38 +44,6 @@ function extractZodErrors(message: ErrorMessage): string[] {
   return errors;
 }
 
-function getRandomInt(max: number): number {
-  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
-    const buffer = new Uint32Array(1);
-    window.crypto.getRandomValues(buffer);
-    return buffer[0] % max;
-  }
-  return Math.floor(Math.random() * max);
-}
-
-function generateSuggestedPassword(): string {
-  const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-  const lowercase = 'abcdefghijkmnopqrstuvwxyz';
-  const numbers = '23456789';
-  const specials = '!@#$%^&*()-_=+[]{}';
-  const all = `${uppercase}${lowercase}${numbers}${specials}`;
-
-  const pick = (chars: string) =>
-    chars[getRandomInt(chars.length)];
-
-  const required = [
-    pick(uppercase),
-    pick(lowercase),
-    pick(numbers),
-    pick(specials),
-  ];
-
-  const remainingLength = 12;
-  const rest = Array.from({ length: remainingLength }, () => pick(all));
-  const password = [...required, ...rest].sort(() => 0.5 - Math.random());
-  return password.join('');
-}
-
 export default function ResetPasswordPage() {
   const t = useTranslations('auth.resetPassword');
   const tRequirements = useTranslations('auth.passwordStrength.requirements');
@@ -124,11 +92,6 @@ export default function ResetPasswordPage() {
         label: tRequirements('number'),
         valid: /[0-9]/.test(password),
       },
-      {
-        id: 'special',
-        label: tRequirements('special'),
-        valid: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\\/`~;']/.test(password),
-      },
     ];
 
     return tests;
@@ -171,24 +134,16 @@ export default function ResetPasswordPage() {
     }
   }
 
-  function handleUseSuggested() {
-    const suggestion = generateSuggestedPassword();
-    setPassword(suggestion);
-    setConfirmPassword(suggestion);
-    toast.success(t('suggestedApplied'));
-  }
-
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
           <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
             <Image
-              src="/android-chrome-192x192.png"
-              alt={tCommon('appName')}
-              width={36}
-              height={36}
-              className="rounded-md"
+              src="/logo_160.svg"
+              alt=""
+              width={40}
+              height={40}
             />
           </Link>
         </div>
@@ -241,16 +196,7 @@ export default function ResetPasswordPage() {
                       placeholder={t('passwordPlaceholder')}
                       className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
                     />
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
-                      <button
-                        type="button"
-                        onClick={handleUseSuggested}
-                        className="text-xs font-medium text-purple-600 hover:text-purple-700"
-                      >
-                        {t('useSuggested')}
-                      </button>
-                    </div>
+                    <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
                     <div className="space-y-1">
                       {requirements.map((req) => (
                         <div

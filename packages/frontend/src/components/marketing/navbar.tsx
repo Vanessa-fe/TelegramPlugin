@@ -10,6 +10,7 @@ import { Globe } from 'lucide-react';
 
 export function Navbar() {
   const t = useTranslations('marketing.navbar');
+  const tCommon = useTranslations('common');
   const currentLocale = useLocale() as Locale;
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -42,13 +43,12 @@ export function Navbar() {
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         <div className="flex items-center justify-between h-16 md:h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center" aria-label={tCommon('appName')}>
             <Image
-              src="/android-chrome-192x192.png"
-              alt="Sublynk"
-              width={32}
-              height={32}
-              className="rounded-md"
+              src="/logo_160.svg"
+              alt=""
+              width={40}
+              height={40}
             />
           </Link>
 

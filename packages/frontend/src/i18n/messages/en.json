@@ -353,7 +353,7 @@
       "passwordPlaceholder": "••••••••",
       "confirmPassword": "Confirm password",
       "confirmPlaceholder": "••••••••",
-      "passwordHint": "At least 10 characters with uppercase, number and special character",
+      "passwordHint": "At least 10 characters with uppercase and number",
       "useSuggested": "Use suggested password",
       "submit": "Reset password",
       "submitting": "Resetting...",
