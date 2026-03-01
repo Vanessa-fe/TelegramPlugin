@@ -44,6 +44,15 @@ function extractZodErrors(message: ErrorMessage): string[] {
   return errors;
 }
 
+function isWebkitAutofilled(input: HTMLInputElement | null): boolean {
+  if (!input) return false;
+  try {
+    return input.matches(':-webkit-autofill');
+  } catch {
+    return false;
+  }
+}
+
 export default function ResetPasswordPage() {
   const t = useTranslations('auth.resetPassword');
   const tRequirements = useTranslations('auth.passwordStrength.requirements');
@@ -69,6 +78,8 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [passwordAutofilled, setPasswordAutofilled] = useState(false);
+  const [confirmAutofilled, setConfirmAutofilled] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const confirmInputRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef(password);
@@ -83,8 +94,12 @@ export default function ResetPasswordPage() {
   }, [confirmPassword]);
 
   const syncAutofilledValues = useCallback(() => {
-    const nextPassword = passwordInputRef.current?.value ?? '';
-    const nextConfirm = confirmInputRef.current?.value ?? '';
+    const passwordInput = passwordInputRef.current;
+    const confirmInput = confirmInputRef.current;
+    const nextPassword = passwordInput?.value ?? '';
+    const nextConfirm = confirmInput?.value ?? '';
+    const nextPasswordAutofilled = isWebkitAutofilled(passwordInput);
+    const nextConfirmAutofilled = isWebkitAutofilled(confirmInput);
 
     if (nextPassword !== passwordRef.current) {
       setPassword(nextPassword);
@@ -92,7 +107,13 @@ export default function ResetPasswordPage() {
     if (nextConfirm !== confirmPasswordRef.current) {
       setConfirmPassword(nextConfirm);
     }
-  }, []);
+    if (nextPasswordAutofilled !== passwordAutofilled) {
+      setPasswordAutofilled(nextPasswordAutofilled);
+    }
+    if (nextConfirmAutofilled !== confirmAutofilled) {
+      setConfirmAutofilled(nextConfirmAutofilled);
+    }
+  }, [confirmAutofilled, passwordAutofilled]);
 
   useEffect(() => {
     syncAutofilledValues();
@@ -113,6 +134,21 @@ export default function ResetPasswordPage() {
   }, [syncAutofilledValues]);
 
   const requirements = useMemo(() => {
+    const looksAutofilledButOpaque =
+      passwordAutofilled &&
+      confirmAutofilled &&
+      password.length === 0 &&
+      confirmPassword.length === 0;
+
+    if (looksAutofilledButOpaque) {
+      return [
+        { id: 'minLength', label: tRequirements('minLength'), valid: true },
+        { id: 'uppercase', label: tRequirements('uppercase'), valid: true },
+        { id: 'lowercase', label: tRequirements('lowercase'), valid: true },
+        { id: 'number', label: tRequirements('number'), valid: true },
+      ];
+    }
+
     const tests = [
       {
         id: 'minLength',
@@ -137,18 +173,35 @@ export default function ResetPasswordPage() {
     ];
 
     return tests;
-  }, [password, tRequirements]);
+  }, [confirmAutofilled, confirmPassword.length, password, passwordAutofilled, tRequirements]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    const submittedPassword = String(formData.get('password') ?? '').trim();
+    const submittedConfirmPassword = String(
+      formData.get('confirmPassword') ?? '',
+    ).trim();
+    const nextPassword =
+      submittedPassword || passwordInputRef.current?.value || password;
+    const nextConfirmPassword =
+      submittedConfirmPassword || confirmInputRef.current?.value || confirmPassword;
+    if (nextPassword !== password) {
+      setPassword(nextPassword);
+    }
+    if (nextConfirmPassword !== confirmPassword) {
+      setConfirmPassword(nextConfirmPassword);
+    }
 
     if (tokenMissing) {
       setError(t('missingToken'));
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (nextPassword !== nextConfirmPassword) {
       setError(t('passwordMismatch'));
       return;
     }
@@ -156,7 +209,7 @@ export default function ResetPasswordPage() {
     setIsLoading(true);
 
     try {
-      await authApi.resetPassword({ token, newPassword: password });
+      await authApi.resetPassword({ token, newPassword: nextPassword });
       await refreshProfile();
       setIsSubmitted(true);
       toast.success(t('toastSuccess'));
