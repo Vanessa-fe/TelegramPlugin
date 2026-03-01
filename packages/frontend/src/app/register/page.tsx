@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 declare global {
   interface Window {
@@ -18,7 +18,6 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { OAuthButtons } from '@/components/auth/oauth-buttons';
 import { OAuthDivider } from '@/components/auth/oauth-divider';
-import { PasswordStrengthIndicator } from '@/components/auth/password-strength';
 import { ORG_CURRENCY_OPTIONS } from '@/lib/currencies';
 import { authApi } from '@/lib/api/auth';
 
@@ -67,47 +66,9 @@ export default function RegisterPage() {
     lastName: '',
     currency: 'EUR',
   });
-  const [password, setPassword] = useState('');
-  const passwordInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
-
-  // Sync password state with DOM value (for Chrome autofill)
-  const syncPasswordValue = useCallback(() => {
-    const domValue = passwordInputRef.current?.value ?? '';
-    setPassword((prev) => (prev === domValue ? prev : domValue));
-  }, []);
-
-  // Listen for Chrome autofill events
-  useEffect(() => {
-    const input = passwordInputRef.current;
-    if (!input) return;
-
-    // Poll for autofill changes
-    const intervalId = window.setInterval(syncPasswordValue, 300);
-
-    // Listen for native change event (Chrome fires this after autofill)
-    const handleChange = () => syncPasswordValue();
-    input.addEventListener('change', handleChange);
-
-    // Listen for Chrome autofill animation (defined in globals.css)
-    const handleAnimationStart = (e: AnimationEvent) => {
-      if (e.animationName === 'onAutoFillStart') {
-        // Chrome just autofilled - sync after a short delay
-        setTimeout(syncPasswordValue, 50);
-        setTimeout(syncPasswordValue, 150);
-        setTimeout(syncPasswordValue, 300);
-      }
-    };
-    input.addEventListener('animationstart', handleAnimationStart);
-
-    return () => {
-      window.clearInterval(intervalId);
-      input.removeEventListener('change', handleChange);
-      input.removeEventListener('animationstart', handleAnimationStart);
-    };
-  }, [syncPasswordValue]);
 
   // Handle OAuth error from redirect
   useEffect(() => {
@@ -133,7 +94,8 @@ export default function RegisterPage() {
     setError('');
 
     // Read password directly from DOM to handle Chrome autofill
-    const passwordValue = passwordInputRef.current?.value ?? '';
+    const passwordInput = document.querySelector('input[name="password"]') as HTMLInputElement;
+    const passwordValue = passwordInput?.value ?? '';
 
     try {
       const result = await register({
@@ -288,19 +250,15 @@ export default function RegisterPage() {
                       {t('password')}
                     </Label>
                     <input
-                      key="password-input"
-                      ref={passwordInputRef}
                       id="password"
                       name="password"
                       type="password"
                       autoComplete="new-password"
                       disabled={isLoading}
                       placeholder={t('passwordPlaceholder')}
-                      aria-describedby="password-strength"
                       className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                     />
                     <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
-                    <PasswordStrengthIndicator password={password} />
                   </div>
 
                   <div className="space-y-2">
