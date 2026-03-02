@@ -1,5 +1,6 @@
 import { AuthProvider } from "@/contexts/auth-context";
 import { AnalyticsGate } from "@/components/analytics/analytics-gate";
+import { ConsentManager } from "@/components/analytics/consent-manager";
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
@@ -105,6 +106,7 @@ export default async function RootLayout({
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ConsentManager />
         <NextIntlClientProvider
           locale={locale}
           messages={messages}
