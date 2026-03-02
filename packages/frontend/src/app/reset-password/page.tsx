@@ -153,15 +153,6 @@ export default function ResetPasswordPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading} noValidate>
-                  {/* Hidden username field for password managers */}
-                  <input
-                    type="text"
-                    name="username"
-                    autoComplete="username"
-                    aria-hidden="true"
-                    tabIndex={-1}
-                    style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px' }}
-                  />
                   {error && (
                     <p
                       role="alert"
@@ -195,7 +186,7 @@ export default function ResetPasswordPage() {
                       id="confirm-password"
                       name="confirm-password"
                       type="password"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       disabled={isLoading}
                       placeholder={t('confirmPlaceholder')}
                       className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
