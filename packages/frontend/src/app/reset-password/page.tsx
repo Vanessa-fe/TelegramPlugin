@@ -153,6 +153,15 @@ export default function ResetPasswordPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading} noValidate>
+                  {/* Hidden email field to help Chrome Password Manager identify the account */}
+                  <input
+                    type="email"
+                    name="email"
+                    autoComplete="email username"
+                    className="sr-only"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  />
                   {error && (
                     <p
                       role="alert"
