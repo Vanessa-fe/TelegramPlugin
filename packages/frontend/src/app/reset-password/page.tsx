@@ -71,8 +71,8 @@ export default function ResetPasswordPage() {
     setError('');
 
     // Read passwords directly from DOM
-    const passwordInput = document.querySelector('input[name="new-password"]') as HTMLInputElement;
-    const confirmInput = document.querySelector('input[name="confirm-password"]') as HTMLInputElement;
+    const passwordInput = document.querySelector('input[name="password"]') as HTMLInputElement;
+    const confirmInput = document.querySelector('input[name="confirmPassword"]') as HTMLInputElement;
     const nextPassword = passwordInput?.value ?? '';
     const nextConfirmPassword = confirmInput?.value ?? '';
 
@@ -163,12 +163,12 @@ export default function ResetPasswordPage() {
                   )}
 
                   <div className="space-y-2">
-                    <Label htmlFor="new-password" className="text-text-primary">
+                    <Label htmlFor="password" className="text-text-primary">
                       {t('password')}
                     </Label>
                     <input
-                      id="new-password"
-                      name="new-password"
+                      id="password"
+                      name="password"
                       type="password"
                       autoComplete="new-password"
                       disabled={isLoading}
@@ -179,12 +179,12 @@ export default function ResetPasswordPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="text-text-primary">
+                    <Label htmlFor="confirmPassword" className="text-text-primary">
                       {t('confirmPassword')}
                     </Label>
                     <input
-                      id="confirm-password"
-                      name="confirm-password"
+                      id="confirmPassword"
+                      name="confirmPassword"
                       type="password"
                       autoComplete="off"
                       disabled={isLoading}
