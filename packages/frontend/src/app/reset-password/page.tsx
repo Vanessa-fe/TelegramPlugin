@@ -1,14 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { KeyRound, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { KeyRound, ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authApi } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/auth-context';
@@ -46,7 +45,6 @@ function extractZodErrors(message: ErrorMessage): string[] {
 
 export default function ResetPasswordPage() {
   const t = useTranslations('auth.resetPassword');
-  const tRequirements = useTranslations('auth.passwordStrength.requirements');
   const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -64,92 +62,19 @@ export default function ResetPasswordPage() {
   }, [searchParams]);
   const tokenMissing = !token;
 
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
-  const passwordInputRef = useRef<HTMLInputElement>(null);
-  const confirmInputRef = useRef<HTMLInputElement>(null);
-
-  const syncAutofilledValues = useCallback(() => {
-    const nextPassword = passwordInputRef.current?.value ?? '';
-
-    setPassword((prev) => (prev === nextPassword ? prev : nextPassword));
-  }, []);
-
-  useEffect(() => {
-    const input = passwordInputRef.current;
-    syncAutofilledValues();
-
-    // Password managers can update inputs without firing React onChange.
-    const intervalId = window.setInterval(syncAutofilledValues, 300);
-    const handleFocus = () => syncAutofilledValues();
-    const handleVisibility = () => syncAutofilledValues();
-
-    // Listen for native change event (Chrome fires this after autofill)
-    const handleChange = () => syncAutofilledValues();
-
-    // Listen for Chrome autofill animation (defined in globals.css)
-    const handleAnimationStart = (e: AnimationEvent) => {
-      if (e.animationName === 'onAutoFillStart') {
-        // Chrome just autofilled - sync after a short delay
-        setTimeout(syncAutofilledValues, 50);
-        setTimeout(syncAutofilledValues, 150);
-        setTimeout(syncAutofilledValues, 300);
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibility);
-    input?.addEventListener('change', handleChange);
-    input?.addEventListener('animationstart', handleAnimationStart);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibility);
-      input?.removeEventListener('change', handleChange);
-      input?.removeEventListener('animationstart', handleAnimationStart);
-    };
-  }, [syncAutofilledValues]);
-
-  const requirements = useMemo(() => {
-    const tests = [
-      {
-        id: 'minLength',
-        label: tRequirements('minLength'),
-        valid: password.length >= 10,
-      },
-      {
-        id: 'uppercase',
-        label: tRequirements('uppercase'),
-        valid: /[A-Z]/.test(password),
-      },
-      {
-        id: 'lowercase',
-        label: tRequirements('lowercase'),
-        valid: /[a-z]/.test(password),
-      },
-      {
-        id: 'number',
-        label: tRequirements('number'),
-        valid: /[0-9]/.test(password),
-      },
-    ];
-
-    return tests;
-  }, [password, tRequirements]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
 
-    // Wait briefly for Chrome password manager to finish filling fields
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    syncAutofilledValues();
-
-    const nextPassword = passwordInputRef.current?.value ?? '';
-    const nextConfirmPassword = confirmInputRef.current?.value ?? '';
+    // Read passwords directly from DOM
+    const passwordInput = document.querySelector('input[name="new-password"]') as HTMLInputElement;
+    const confirmInput = document.querySelector('input[name="confirm-password"]') as HTMLInputElement;
+    const nextPassword = passwordInput?.value ?? '';
+    const nextConfirmPassword = confirmInput?.value ?? '';
 
     if (tokenMissing) {
       setError(t('missingToken'));
@@ -251,8 +176,6 @@ export default function ResetPasswordPage() {
                       {t('password')}
                     </Label>
                     <input
-                      key="new-password-input"
-                      ref={passwordInputRef}
                       id="new-password"
                       name="new-password"
                       type="password"
@@ -262,25 +185,6 @@ export default function ResetPasswordPage() {
                       className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                     />
                     <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
-                    <div className="space-y-1">
-                      {requirements.map((req) => (
-                        <div
-                          key={req.id}
-                          className={
-                            req.valid
-                              ? 'flex items-center gap-2 text-xs rounded-md px-2 py-1 bg-green-50 text-green-800 font-medium'
-                              : 'flex items-center gap-2 text-xs rounded-md px-2 py-1 bg-gray-100 text-gray-700'
-                          }
-                        >
-                          {req.valid ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-700" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5 text-gray-500" />
-                          )}
-                          <span>{req.label}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -288,7 +192,6 @@ export default function ResetPasswordPage() {
                       {t('confirmPassword')}
                     </Label>
                     <input
-                      ref={confirmInputRef}
                       id="confirm-password"
                       name="confirm-password"
                       type="password"
