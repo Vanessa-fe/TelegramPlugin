@@ -1,17 +1,18 @@
 import { z } from 'zod';
 
 // Reusable password schema with strong validation
-export const passwordSchema = z
+const basePasswordSchema = z
   .string()
   .min(10, 'Le mot de passe doit contenir au moins 10 caractères')
   .max(128, 'Le mot de passe ne peut pas dépasser 128 caractères')
   .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
   .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
-  .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre')
-  .regex(
-    /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/`~;']/,
-    'Le mot de passe doit contenir au moins un caractère spécial',
-  );
+  .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre');
+
+export const passwordSchema = basePasswordSchema.regex(
+  /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/`~;']/,
+  'Le mot de passe doit contenir au moins un caractère spécial',
+);
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -69,7 +70,7 @@ export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Token invalide'),
-  newPassword: passwordSchema,
+  newPassword: basePasswordSchema,
 });
 
 export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;

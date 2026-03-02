@@ -15,10 +15,10 @@ export declare class TeamController {
     createInvite(user: AuthUser, body: CreateTeamInviteDto): Promise<{
         inviteUrl: string;
         id: string;
-        email: string;
         createdAt: Date;
-        expiresAt: Date;
+        email: string;
         role: import("@prisma/client").$Enums.UserRole;
+        expiresAt: Date;
     }>;
     revokeInvite(user: AuthUser, id: string, organizationId?: string): Promise<{
         success: boolean;

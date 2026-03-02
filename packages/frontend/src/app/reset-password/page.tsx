@@ -1,17 +1,42 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { KeyRound, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { KeyRound, ArrowLeft, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authApi } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/auth-context';
+
+function generateSecurePassword(length = 16): string {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const allChars = uppercase + lowercase + numbers + special;
+
+  // Ensure at least one of each type
+  let password = '';
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+
+  // Fill the rest randomly
+  for (let i = password.length; i < length; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+
+  // Shuffle the password
+  return password
+    .split('')
+    .sort(() => Math.random() - 0.5)
+    .join('');
+}
 
 type ErrorMessage =
   | string
@@ -44,41 +69,8 @@ function extractZodErrors(message: ErrorMessage): string[] {
   return errors;
 }
 
-function getRandomInt(max: number): number {
-  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
-    const buffer = new Uint32Array(1);
-    window.crypto.getRandomValues(buffer);
-    return buffer[0] % max;
-  }
-  return Math.floor(Math.random() * max);
-}
-
-function generateSuggestedPassword(): string {
-  const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-  const lowercase = 'abcdefghijkmnopqrstuvwxyz';
-  const numbers = '23456789';
-  const specials = '!@#$%^&*()-_=+[]{}';
-  const all = `${uppercase}${lowercase}${numbers}${specials}`;
-
-  const pick = (chars: string) =>
-    chars[getRandomInt(chars.length)];
-
-  const required = [
-    pick(uppercase),
-    pick(lowercase),
-    pick(numbers),
-    pick(specials),
-  ];
-
-  const remainingLength = 12;
-  const rest = Array.from({ length: remainingLength }, () => pick(all));
-  const password = [...required, ...rest].sort(() => 0.5 - Math.random());
-  return password.join('');
-}
-
 export default function ResetPasswordPage() {
   const t = useTranslations('auth.resetPassword');
-  const tRequirements = useTranslations('auth.passwordStrength.requirements');
   const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -96,43 +88,22 @@ export default function ResetPasswordPage() {
   }, [searchParams]);
   const tokenMissing = !token;
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
-  const requirements = useMemo(() => {
-    const tests = [
-      {
-        id: 'minLength',
-        label: tRequirements('minLength'),
-        valid: password.length >= 10,
-      },
-      {
-        id: 'uppercase',
-        label: tRequirements('uppercase'),
-        valid: /[A-Z]/.test(password),
-      },
-      {
-        id: 'lowercase',
-        label: tRequirements('lowercase'),
-        valid: /[a-z]/.test(password),
-      },
-      {
-        id: 'number',
-        label: tRequirements('number'),
-        valid: /[0-9]/.test(password),
-      },
-      {
-        id: 'special',
-        label: tRequirements('special'),
-        valid: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\\/`~;']/.test(password),
-      },
-    ];
-
-    return tests;
-  }, [password, tRequirements]);
+  const handleSuggestPassword = useCallback(() => {
+    const newPassword = generateSecurePassword(16);
+    setPassword(newPassword);
+    setConfirmPassword(newPassword);
+    setGeneratedPassword(newPassword);
+    setShowPassword(true);
+    toast.success(t('passwordGenerated'));
+  }, [t]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -140,6 +111,11 @@ export default function ResetPasswordPage() {
 
     if (tokenMissing) {
       setError(t('missingToken'));
+      return;
+    }
+
+    if (!password.trim()) {
+      setError(t('passwordRequired'));
       return;
     }
 
@@ -171,24 +147,16 @@ export default function ResetPasswordPage() {
     }
   }
 
-  function handleUseSuggested() {
-    const suggestion = generateSuggestedPassword();
-    setPassword(suggestion);
-    setConfirmPassword(suggestion);
-    toast.success(t('suggestedApplied'));
-  }
-
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
           <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
             <Image
-              src="/android-chrome-192x192.png"
-              alt={tCommon('appName')}
-              width={36}
-              height={36}
-              className="rounded-md"
+              src="/logo_160.svg"
+              alt=""
+              width={40}
+              height={40}
             />
           </Link>
         </div>
@@ -217,7 +185,7 @@ export default function ResetPasswordPage() {
                   <p className="text-text-secondary">{t('subtitle')}</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
+                <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading} noValidate>
                   {error && (
                     <p
                       role="alert"
@@ -227,65 +195,86 @@ export default function ResetPasswordPage() {
                     </p>
                   )}
 
+                  {/* Suggest password button */}
+                  <button
+                    type="button"
+                    onClick={handleSuggestPassword}
+                    disabled={isLoading}
+                    className="w-full flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {t('suggestPassword')}
+                  </button>
+
+                  {generatedPassword && (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-xs text-green-700 mb-1">{t('generatedPasswordLabel')}</p>
+                      <code className="text-sm font-mono text-green-800 break-all select-all">
+                        {generatedPassword}
+                      </code>
+                      <p className="text-xs text-green-600 mt-1">{t('generatedPasswordHint')}</p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="password" className="text-text-primary">
                       {t('password')}
                     </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={isLoading}
-                      placeholder={t('passwordPlaceholder')}
-                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
-                    />
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (generatedPassword) setGeneratedPassword(null);
+                        }}
+                        disabled={isLoading}
+                        placeholder={t('passwordPlaceholder')}
+                        className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 pr-10 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                      />
                       <button
                         type="button"
-                        onClick={handleUseSuggested}
-                        className="text-xs font-medium text-purple-600 hover:text-purple-700"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                        aria-label={showPassword ? t('hidePassword') : t('showPassword')}
                       >
-                        {t('useSuggested')}
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
                     </div>
-                    <div className="space-y-1">
-                      {requirements.map((req) => (
-                        <div
-                          key={req.id}
-                          className={
-                            req.valid
-                              ? 'flex items-center gap-2 text-xs rounded-md px-2 py-1 bg-green-50 text-green-800 font-medium'
-                              : 'flex items-center gap-2 text-xs rounded-md px-2 py-1 bg-gray-100 text-gray-700'
-                          }
-                        >
-                          {req.valid ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-700" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5 text-gray-500" />
-                          )}
-                          <span>{req.label}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword" className="text-text-primary">
                       {t('confirmPassword')}
                     </Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      disabled={isLoading}
-                      placeholder={t('confirmPlaceholder')}
-                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
-                    />
+                    <div className="relative">
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          if (generatedPassword) setGeneratedPassword(null);
+                        }}
+                        disabled={isLoading}
+                        placeholder={t('confirmPlaceholder')}
+                        className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 pr-10 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                        aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </div>
 
                   <Button

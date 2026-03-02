@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 declare global {
   interface Window {
@@ -10,6 +10,7 @@ declare global {
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Sparkles, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,9 +19,31 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { OAuthButtons } from '@/components/auth/oauth-buttons';
 import { OAuthDivider } from '@/components/auth/oauth-divider';
-import { PasswordStrengthIndicator } from '@/components/auth/password-strength';
 import { ORG_CURRENCY_OPTIONS } from '@/lib/currencies';
 import { authApi } from '@/lib/api/auth';
+
+function generateSecurePassword(length = 16): string {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const allChars = uppercase + lowercase + numbers + special;
+
+  let password = '';
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+
+  for (let i = password.length; i < length; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+
+  return password
+    .split('')
+    .sort(() => Math.random() - 0.5)
+    .join('');
+}
 
 type ErrorMessage =
   | string
@@ -63,11 +86,12 @@ export default function RegisterPage() {
   const tCommon = useTranslations('common');
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
     firstName: '',
     lastName: '',
     currency: 'EUR',
   });
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
@@ -80,6 +104,13 @@ export default function RegisterPage() {
       toast.error(tOAuth('error'));
     }
   }, [searchParams, tOAuth]);
+
+  const handleSuggestPassword = useCallback(() => {
+    const newPassword = generateSecurePassword(16);
+    setPassword(newPassword);
+    setShowPassword(true);
+    toast.success(t('passwordGenerated'));
+  }, [t]);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -98,7 +129,7 @@ export default function RegisterPage() {
     try {
       const result = await register({
         email: formData.email,
-        password: formData.password,
+        password: password,
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
         currency: formData.currency,
@@ -153,11 +184,10 @@ export default function RegisterPage() {
         <div className="max-w-6xl mx-auto">
           <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
             <Image
-              src="/android-chrome-192x192.png"
-              alt={tCommon('appName')}
-              width={36}
-              height={36}
-              className="rounded-md"
+              src="/logo_160.svg"
+              alt=""
+              width={40}
+              height={40}
             />
           </Link>
         </div>
@@ -248,21 +278,37 @@ export default function RegisterPage() {
                     <Label htmlFor="password" className="text-text-primary">
                       {t('password')}
                     </Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      disabled={isLoading}
-                      placeholder={t('passwordPlaceholder')}
-                      aria-describedby="password-strength"
-                      className="h-12 border-border-custom focus:border-purple-600 focus:ring-purple-600"
-                    />
+                    <div className="relative">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={isLoading}
+                        placeholder={t('passwordPlaceholder')}
+                        className="flex h-12 w-full rounded-md border border-border-custom bg-white px-3 py-2 pr-10 text-base ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-600/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                        aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                     <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
-                    <PasswordStrengthIndicator password={formData.password} />
+                    <button
+                      type="button"
+                      onClick={handleSuggestPassword}
+                      disabled={isLoading}
+                      className="w-full flex items-center justify-center gap-2 h-9 px-4 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      {t('suggestPassword')}
+                    </button>
                   </div>
 
                   <div className="space-y-2">
