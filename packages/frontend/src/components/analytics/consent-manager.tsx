@@ -1,8 +1,6 @@
-'use client';
-
 import Script from 'next/script';
 
-const CMP_ID = process.env.NEXT_PUBLIC_CMP_ID;
+const CMP_ID = process.env.NEXT_PUBLIC_CMP_ID?.trim();
 
 export function ConsentManager() {
   if (!CMP_ID) {
@@ -17,7 +15,7 @@ export function ConsentManager() {
       data-cmp-host="b.delivery.consentmanager.net"
       data-cmp-cdn="cdn.consentmanager.net"
       data-cmp-codesrc="16"
-      strategy="afterInteractive"
+      strategy="beforeInteractive"
     />
   );
 }
