@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { giftCodesApi } from "@/lib/api/gift-codes";
-import type { GiftCode, UpdateGiftCodeDto, GiftCodeStatus } from "@/types/gift-code";
+import {
+  GiftCodeStatus,
+  type GiftCode,
+  type UpdateGiftCodeDto,
+} from "@/types/gift-code";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -25,7 +29,7 @@ export default function EditGiftCodePage() {
   const [description, setDescription] = useState("");
   const [maxUses, setMaxUses] = useState<string>("");
   const [expiresAt, setExpiresAt] = useState<string>("");
-  const [status, setStatus] = useState<GiftCodeStatus>("ACTIVE");
+  const [status, setStatus] = useState<GiftCodeStatus>(GiftCodeStatus.ACTIVE);
 
   const loadGiftCode = useCallback(async () => {
     try {
@@ -158,8 +162,8 @@ export default function EditGiftCodePage() {
             onChange={(e) => setStatus(e.target.value as GiftCodeStatus)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
-            <option value="ACTIVE">Actif</option>
-            <option value="DISABLED">Désactivé</option>
+            <option value={GiftCodeStatus.ACTIVE}>Actif</option>
+            <option value={GiftCodeStatus.DISABLED}>Désactivé</option>
           </select>
         </div>
 
