@@ -28,6 +28,15 @@ export default function AdminPage() {
           </p>
         </Link>
         <Link
+          href="/admin/gift-codes"
+          className="rounded-lg border bg-white p-6 shadow-sm transition hover:shadow-md"
+        >
+          <h3 className="text-lg font-semibold">{t('cards.giftCodes.title')}</h3>
+          <p className="mt-2 text-sm text-gray-600">
+            {t('cards.giftCodes.description')}
+          </p>
+        </Link>
+        <Link
           href="/admin/billing"
           className="rounded-lg border bg-white p-6 shadow-sm transition hover:shadow-md"
         >

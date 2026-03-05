@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Building2, CreditCard, LayoutDashboard } from 'lucide-react';
+import { Building2, CreditCard, Gift, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
@@ -12,6 +12,7 @@ export function AdminSidebar() {
   const navigation = [
     { key: 'home', href: '/admin', icon: LayoutDashboard },
     { key: 'organizations', href: '/admin/organizations', icon: Building2 },
+    { key: 'giftCodes', href: '/admin/gift-codes', icon: Gift },
     { key: 'billing', href: '/admin/billing', icon: CreditCard },
   ];
 

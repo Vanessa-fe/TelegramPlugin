@@ -2441,12 +2441,17 @@
         "billing": {
           "title": "Facturation",
           "description": "Suivez l'état Stripe et la configuration de facturation"
+        },
+        "giftCodes": {
+          "title": "Codes cadeaux",
+          "description": "Créez des codes pour offrir des accès gratuits"
         }
       }
     },
     "nav": {
       "home": "Vue d'ensemble",
       "organizations": "Organisations",
+      "giftCodes": "Codes cadeaux",
       "billing": "Facturation"
     },
     "header": {

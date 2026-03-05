@@ -2441,12 +2441,17 @@
         "billing": {
           "title": "Billing",
           "description": "Track Stripe status and billing setup"
+        },
+        "giftCodes": {
+          "title": "Gift Codes",
+          "description": "Create codes to offer free access"
         }
       }
     },
     "nav": {
       "home": "Overview",
       "organizations": "Organizations",
+      "giftCodes": "Gift Codes",
       "billing": "Billing"
     },
     "header": {
