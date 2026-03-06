@@ -830,21 +830,25 @@ enum GiftCodeStatus {
 }
 
 model GiftCode {
-  id             String         @id @default(uuid())
-  code           String         @unique
-  description    String?        // Note interne pour l'admin
-  status         GiftCodeStatus @default(ACTIVE)
-  maxUses        Int?           // null = illimité
-  usedCount      Int            @default(0)
-  expiresAt      DateTime?
-  // Restrictions optionnelles
-  planIds        String[]       // Vide = tous les plans
-  organizationIds String[]      // Vide = toutes les organisations
-  createdById    String         // SUPERADMIN qui a créé le code
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id               String         @id @default(uuid())
+  code             String         @unique
+  description      String?        // Note interne pour l'admin
+  status           GiftCodeStatus @default(ACTIVE)
+  maxUses          Int?           // null = illimité
+  usedCount        Int            @default(0)
+  expiresAt        DateTime?
+  // Restrictions optionnelles (pour codes produit)
+  planIds          String[]       // Vide = tous les plans
+  organizationIds  String[]       // Vide = toutes les organisations
+  // Mode essai plateforme (pour testeurs SaaS)
+  isPlatformTrial  Boolean        @default(false)
+  platformPlanName String?        // "starter", "growth", "pro"
+  trialDays        Int?           // Durée de l'essai en jours
+  createdById      String         // SUPERADMIN qui a créé le code
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
-  usages         GiftCodeUsage[]
+  usages           GiftCodeUsage[]
 
   @@index([code])
   @@index([status])

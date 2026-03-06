@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { giftCodesApi } from "@/lib/api/gift-codes";
 import type { GiftCode, GiftCodeUsage, GiftCodeStatus } from "@/types/gift-code";
-import { ArrowLeft, Copy, Check, Gift, Pencil } from "lucide-react";
+import { ArrowLeft, Copy, Check, Gift, Pencil, Crown } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -113,8 +113,16 @@ export default function GiftCodeDetailPage() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-            <Gift className="w-6 h-6" />
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+            giftCode.isPlatformTrial
+              ? "bg-purple-100 text-purple-600"
+              : "bg-blue-100 text-blue-600"
+          }`}>
+            {giftCode.isPlatformTrial ? (
+              <Crown className="w-6 h-6" />
+            ) : (
+              <Gift className="w-6 h-6" />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-3">
@@ -136,6 +144,17 @@ export default function GiftCodeDetailPage() {
               >
                 {statusLabels[giftCode.status]}
               </span>
+              {giftCode.isPlatformTrial ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                  <Crown className="h-3 w-3" />
+                  Essai Plateforme
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                  <Gift className="h-3 w-3" />
+                  Accès Produit
+                </span>
+              )}
             </div>
             {giftCode.description && (
               <p className="mt-1 text-gray-500">{giftCode.description}</p>
@@ -156,6 +175,30 @@ export default function GiftCodeDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Platform Trial Info */}
+      {giftCode.isPlatformTrial && (
+        <div className="bg-purple-50 rounded-xl border border-purple-200 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Crown className="h-5 w-5 text-purple-600" />
+            <h3 className="font-semibold text-purple-900">Essai Plateforme</h3>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm text-purple-600">Plan offert</p>
+              <p className="text-xl font-bold text-purple-900 mt-1">
+                {giftCode.platformPlanName?.charAt(0).toUpperCase()}{giftCode.platformPlanName?.slice(1)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-purple-600">Durée de l&apos;essai</p>
+              <p className="text-xl font-bold text-purple-900 mt-1">
+                {giftCode.trialDays} jours
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">

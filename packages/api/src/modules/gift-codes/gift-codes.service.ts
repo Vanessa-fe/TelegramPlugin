@@ -43,6 +43,9 @@ export class GiftCodesService {
       expiresAt: data.expiresAt,
       planIds: data.planIds,
       organizationIds: data.organizationIds,
+      isPlatformTrial: data.isPlatformTrial ?? false,
+      platformPlanName: data.platformPlanName,
+      trialDays: data.trialDays,
       createdById,
     };
 
@@ -94,6 +97,9 @@ export class GiftCodesService {
       ...(data.expiresAt !== undefined && { expiresAt: data.expiresAt }),
       ...(data.planIds && { planIds: data.planIds }),
       ...(data.organizationIds && { organizationIds: data.organizationIds }),
+      ...(data.isPlatformTrial !== undefined && { isPlatformTrial: data.isPlatformTrial }),
+      ...(data.platformPlanName !== undefined && { platformPlanName: data.platformPlanName }),
+      ...(data.trialDays !== undefined && { trialDays: data.trialDays }),
     };
 
     return this.prisma.giftCode.update({

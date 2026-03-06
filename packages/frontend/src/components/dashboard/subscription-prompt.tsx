@@ -7,6 +7,8 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { platformSubscriptionApi } from '@/lib/api/platform-subscription';
 import { billingApi } from '@/lib/api/billing';
+import { useAuth } from '@/contexts/auth-context';
+import { UserRole } from '@/types/auth';
 import type { PlatformSubscription, PlatformPlan } from '@/types/platform-subscription';
 import type { StripeStatus } from '@/types/billing';
 
@@ -17,6 +19,7 @@ interface SubscriptionPromptProps {
 export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptProps) {
   const t = useTranslations('dashboard.subscriptionPrompt');
   const router = useRouter();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [subscription, setSubscription] = useState<PlatformSubscription | null>(null);
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
@@ -83,6 +86,9 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
       setIsConnectingStripe(false);
     }
   };
+
+  // Don't show for SUPERADMIN - they don't need subscriptions
+  if (user?.role === UserRole.SUPERADMIN) return null;
 
   // Don't show if loading
   if (isLoading) return null;

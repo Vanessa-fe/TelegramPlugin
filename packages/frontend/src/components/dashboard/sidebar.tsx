@@ -93,9 +93,14 @@ export function Sidebar() {
   // Check if user has access to a feature based on their plan
   const hasAccessToFeature = (requiredPlans?: string[]) => {
     if (!requiredPlans) return true;
+    // SUPERADMIN bypasses all plan restrictions
+    if (user?.role === UserRole.SUPERADMIN) return true;
     if (isGrandfathered) return true;
     return planName !== null && requiredPlans.includes(planName);
   };
+
+  // SUPERADMIN doesn't need to see subscription info
+  const showSubscriptionFooter = user?.role !== UserRole.SUPERADMIN;
 
   useEffect(() => {
     let cancelled = false;
@@ -255,27 +260,29 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-border-custom p-4">
-        <div className="rounded-lg bg-purple-50 p-4">
-          <p className="text-sm font-medium text-purple-600">{tSidebar("currentPlan")}</p>
-          <p className="mt-1 text-sm font-semibold text-text-primary">
-            {isPlanLoading ? tCommon("loading") : (planDisplayName ?? tSidebar("noPlan"))}
-          </p>
-          <p className="mt-1 text-xs text-text-secondary">
-            {isPlanLoading ? tCommon("loading") : getPlanStatusLabel(planStatus)}
-          </p>
-          <Link
-            href="/dashboard/subscription"
-            className="mt-3 block text-center text-sm font-medium text-purple-600 hover:text-purple-700"
-          >
-            {planStatus === "ACTIVE" || planStatus === "TRIALING"
-              ? tSidebar("manageSubscription")
-              : tSidebar("upgradeNow")}{" "}
-            →
-          </Link>
+      {/* Footer - Hidden for SUPERADMIN */}
+      {showSubscriptionFooter && (
+        <div className="border-t border-border-custom p-4">
+          <div className="rounded-lg bg-purple-50 p-4">
+            <p className="text-sm font-medium text-purple-600">{tSidebar("currentPlan")}</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">
+              {isPlanLoading ? tCommon("loading") : (planDisplayName ?? tSidebar("noPlan"))}
+            </p>
+            <p className="mt-1 text-xs text-text-secondary">
+              {isPlanLoading ? tCommon("loading") : getPlanStatusLabel(planStatus)}
+            </p>
+            <Link
+              href="/dashboard/subscription"
+              className="mt-3 block text-center text-sm font-medium text-purple-600 hover:text-purple-700"
+            >
+              {planStatus === "ACTIVE" || planStatus === "TRIALING"
+                ? tSidebar("manageSubscription")
+                : tSidebar("upgradeNow")}{" "}
+              →
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

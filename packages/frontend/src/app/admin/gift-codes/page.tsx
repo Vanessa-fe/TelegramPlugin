@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { giftCodesApi } from "@/lib/api/gift-codes";
 import type { GiftCode, GiftCodeStatus } from "@/types/gift-code";
-import { Gift, MoreHorizontal, Plus, Copy, Check } from "lucide-react";
+import { Gift, MoreHorizontal, Plus, Copy, Check, Crown } from "lucide-react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -130,7 +130,7 @@ export default function AdminGiftCodesPage() {
                   Code
                 </th>
                 <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">
-                  Description
+                  Type
                 </th>
                 <th className="text-left text-sm font-medium text-gray-500 px-6 py-4">
                   Utilisations
@@ -169,8 +169,28 @@ export default function AdminGiftCodesPage() {
                       </button>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {giftCode.description || "-"}
+                  <td className="px-6 py-4">
+                    {giftCode.isPlatformTrial ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                          <Crown className="h-3 w-3" />
+                          Essai {giftCode.platformPlanName?.charAt(0).toUpperCase()}{giftCode.platformPlanName?.slice(1)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {giftCode.trialDays}j
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                        <Gift className="h-3 w-3" />
+                        Accès Produit
+                      </span>
+                    )}
+                    {giftCode.description && (
+                      <p className="text-xs text-gray-500 mt-1 truncate max-w-[200px]">
+                        {giftCode.description}
+                      </p>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     <span className="font-medium">{giftCode.usedCount}</span>

@@ -6,35 +6,59 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { giftCodesApi } from "@/lib/api/gift-codes";
 import type { CreateGiftCodeDto } from "@/types/gift-code";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, Gift, Crown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-function generateRandomCode(): string {
+function generateRandomCode(prefix: string = "GIFT"): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "GIFT-";
+  let code = `${prefix}-`;
   for (let i = 0; i < 8; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
 }
 
+type CodeType = "product" | "platform";
+
 export default function NewGiftCodePage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [code, setCode] = useState(generateRandomCode());
+  // Code type selection
+  const [codeType, setCodeType] = useState<CodeType>("platform");
+
+  // Common fields
+  const [code, setCode] = useState(generateRandomCode("TRIAL"));
   const [description, setDescription] = useState("");
   const [maxUses, setMaxUses] = useState<string>("");
   const [expiresAt, setExpiresAt] = useState<string>("");
+
+  // Platform trial fields
+  const [platformPlanName, setPlatformPlanName] = useState<"starter" | "growth" | "pro">("pro");
+  const [trialDays, setTrialDays] = useState<string>("30");
+
+  function handleCodeTypeChange(type: CodeType) {
+    setCodeType(type);
+    if (type === "platform") {
+      setCode(generateRandomCode("TRIAL"));
+    } else {
+      setCode(generateRandomCode("GIFT"));
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     if (!code.trim()) {
       toast.error("Le code est requis");
+      return;
+    }
+
+    if (codeType === "platform" && !trialDays) {
+      toast.error("La durée de l'essai est requise");
       return;
     }
 
@@ -46,6 +70,9 @@ export default function NewGiftCodePage() {
         description: description || undefined,
         maxUses: maxUses ? parseInt(maxUses, 10) : undefined,
         expiresAt: expiresAt || undefined,
+        isPlatformTrial: codeType === "platform",
+        platformPlanName: codeType === "platform" ? platformPlanName : undefined,
+        trialDays: codeType === "platform" ? parseInt(trialDays, 10) : undefined,
       };
 
       await giftCodesApi.create(data);
@@ -76,8 +103,50 @@ export default function NewGiftCodePage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Nouveau code cadeau</h1>
         <p className="mt-2 text-gray-600">
-          Créez un code pour offrir des accès gratuits à vos utilisateurs.
+          Créez un code pour offrir un essai gratuit ou un accès produit.
         </p>
+      </div>
+
+      {/* Code type selector */}
+      <div className="grid grid-cols-2 gap-4">
+        <button
+          type="button"
+          onClick={() => handleCodeTypeChange("platform")}
+          className={`p-4 rounded-xl border-2 text-left transition-all ${
+            codeType === "platform"
+              ? "border-purple-600 bg-purple-50"
+              : "border-gray-200 hover:border-purple-300"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${codeType === "platform" ? "bg-purple-100" : "bg-gray-100"}`}>
+              <Crown className={`h-5 w-5 ${codeType === "platform" ? "text-purple-600" : "text-gray-500"}`} />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Essai Plateforme</p>
+              <p className="text-sm text-gray-500">Pour les testeurs du SaaS</p>
+            </div>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleCodeTypeChange("product")}
+          className={`p-4 rounded-xl border-2 text-left transition-all ${
+            codeType === "product"
+              ? "border-purple-600 bg-purple-50"
+              : "border-gray-200 hover:border-purple-300"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${codeType === "product" ? "bg-purple-100" : "bg-gray-100"}`}>
+              <Gift className={`h-5 w-5 ${codeType === "product" ? "text-purple-600" : "text-gray-500"}`} />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Accès Produit</p>
+              <p className="text-sm text-gray-500">Accès gratuit à un produit créateur</p>
+            </div>
+          </div>
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-xl border p-6">
@@ -89,23 +158,20 @@ export default function NewGiftCodePage() {
               id="code"
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="GIFT-XXXXXXXX"
+              placeholder={codeType === "platform" ? "TRIAL-XXXXXXXX" : "GIFT-XXXXXXXX"}
               className="uppercase font-mono"
               required
             />
             <Button
               type="button"
               variant="outline"
-              onClick={() => setCode(generateRandomCode())}
+              onClick={() => setCode(generateRandomCode(codeType === "platform" ? "TRIAL" : "GIFT"))}
               className="shrink-0"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               Générer
             </Button>
           </div>
-          <p className="text-sm text-gray-500">
-            Le code que les utilisateurs devront saisir au checkout.
-          </p>
         </div>
 
         {/* Description */}
@@ -115,13 +181,50 @@ export default function NewGiftCodePage() {
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ex: Code pour le lancement, Code pour les beta testeurs..."
+            placeholder={
+              codeType === "platform"
+                ? "Ex: Essai Pro pour les beta testeurs..."
+                : "Ex: Code pour le lancement..."
+            }
             rows={2}
           />
-          <p className="text-sm text-gray-500">
-            Note interne pour vous rappeler l&apos;usage de ce code.
-          </p>
         </div>
+
+        {/* Platform trial specific fields */}
+        {codeType === "platform" && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="platformPlan">Plan à offrir *</Label>
+              <select
+                id="platformPlan"
+                value={platformPlanName}
+                onChange={(e) => setPlatformPlanName(e.target.value as "starter" | "growth" | "pro")}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="starter">Starter</option>
+                <option value="growth">Growth</option>
+                <option value="pro">Pro (recommandé)</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="trialDays">Durée de l&apos;essai (jours) *</Label>
+              <Input
+                id="trialDays"
+                type="number"
+                min="1"
+                max="365"
+                value={trialDays}
+                onChange={(e) => setTrialDays(e.target.value)}
+                placeholder="30"
+                required
+              />
+              <p className="text-sm text-gray-500">
+                Nombre de jours d&apos;accès au plan sélectionné.
+              </p>
+            </div>
+          </>
+        )}
 
         {/* Max uses */}
         <div className="space-y-2">
@@ -134,14 +237,11 @@ export default function NewGiftCodePage() {
             onChange={(e) => setMaxUses(e.target.value)}
             placeholder="Illimité"
           />
-          <p className="text-sm text-gray-500">
-            Laissez vide pour un nombre illimité d&apos;utilisations.
-          </p>
         </div>
 
         {/* Expiration */}
         <div className="space-y-2">
-          <Label htmlFor="expiresAt">Date d&apos;expiration</Label>
+          <Label htmlFor="expiresAt">Date d&apos;expiration du code</Label>
           <Input
             id="expiresAt"
             type="date"
@@ -149,15 +249,29 @@ export default function NewGiftCodePage() {
             onChange={(e) => setExpiresAt(e.target.value)}
           />
           <p className="text-sm text-gray-500">
-            Laissez vide pour que le code n&apos;expire jamais.
+            Date limite pour utiliser le code (pas la durée de l&apos;essai).
           </p>
         </div>
 
         {/* Info box */}
-        <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
-          <p className="text-sm text-purple-700">
-            <strong>Note :</strong> Ce code offrira un accès 100% gratuit.
-            L&apos;utilisateur pourra l&apos;utiliser au checkout pour obtenir un accès sans paiement.
+        <div className={`rounded-lg border p-4 ${
+          codeType === "platform"
+            ? "border-purple-200 bg-purple-50"
+            : "border-blue-200 bg-blue-50"
+        }`}>
+          <p className={`text-sm ${codeType === "platform" ? "text-purple-700" : "text-blue-700"}`}>
+            {codeType === "platform" ? (
+              <>
+                <strong>Essai Plateforme :</strong> Ce code permettra à un utilisateur de tester
+                le plan <strong>{platformPlanName.charAt(0).toUpperCase() + platformPlanName.slice(1)}</strong> pendant{" "}
+                <strong>{trialDays || "X"} jours</strong> gratuitement.
+              </>
+            ) : (
+              <>
+                <strong>Accès Produit :</strong> Ce code offrira un accès 100% gratuit
+                à un produit créateur. L&apos;utilisateur pourra l&apos;utiliser au checkout.
+              </>
+            )}
           </p>
         </div>
 

@@ -14,6 +14,10 @@ export interface GiftCode {
   expiresAt?: string | null;
   planIds: string[];
   organizationIds: string[];
+  // Platform trial options
+  isPlatformTrial: boolean;
+  platformPlanName?: string | null;
+  trialDays?: number | null;
   createdById: string;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +42,10 @@ export interface CreateGiftCodeDto {
   expiresAt?: string;
   planIds?: string[];
   organizationIds?: string[];
+  // Platform trial options
+  isPlatformTrial?: boolean;
+  platformPlanName?: 'starter' | 'growth' | 'pro';
+  trialDays?: number;
 }
 
 export interface UpdateGiftCodeDto {
@@ -48,6 +56,10 @@ export interface UpdateGiftCodeDto {
   expiresAt?: string | null;
   planIds?: string[];
   organizationIds?: string[];
+  // Platform trial options
+  isPlatformTrial?: boolean;
+  platformPlanName?: 'starter' | 'growth' | 'pro' | null;
+  trialDays?: number | null;
 }
 
 export interface ValidateGiftCodeDto {

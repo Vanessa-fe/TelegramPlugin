@@ -10,7 +10,7 @@ import {
   type GiftCode,
   type UpdateGiftCodeDto,
 } from "@/types/gift-code";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Crown, Gift } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -31,6 +31,11 @@ export default function EditGiftCodePage() {
   const [expiresAt, setExpiresAt] = useState<string>("");
   const [status, setStatus] = useState<GiftCodeStatus>(GiftCodeStatus.ACTIVE);
 
+  // Platform trial fields
+  const [isPlatformTrial, setIsPlatformTrial] = useState(false);
+  const [platformPlanName, setPlatformPlanName] = useState<"starter" | "growth" | "pro">("pro");
+  const [trialDays, setTrialDays] = useState<string>("");
+
   const loadGiftCode = useCallback(async () => {
     try {
       const data = await giftCodesApi.findOne(id);
@@ -40,6 +45,10 @@ export default function EditGiftCodePage() {
       setMaxUses(data.maxUses?.toString() || "");
       setExpiresAt(data.expiresAt ? data.expiresAt.split("T")[0] : "");
       setStatus(data.status);
+      // Platform trial fields
+      setIsPlatformTrial(data.isPlatformTrial);
+      setPlatformPlanName((data.platformPlanName as "starter" | "growth" | "pro") || "pro");
+      setTrialDays(data.trialDays?.toString() || "");
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
@@ -71,6 +80,9 @@ export default function EditGiftCodePage() {
         maxUses: maxUses ? parseInt(maxUses, 10) : null,
         expiresAt: expiresAt || null,
         status,
+        isPlatformTrial,
+        platformPlanName: isPlatformTrial ? platformPlanName : null,
+        trialDays: isPlatformTrial && trialDays ? parseInt(trialDays, 10) : null,
       };
 
       await giftCodesApi.update(id, data);
@@ -152,6 +164,69 @@ export default function EditGiftCodePage() {
             rows={2}
           />
         </div>
+
+        {/* Code type indicator */}
+        <div className="rounded-lg border p-4">
+          <div className="flex items-center gap-3">
+            {isPlatformTrial ? (
+              <>
+                <div className="p-2 rounded-lg bg-purple-100">
+                  <Crown className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Essai Plateforme</p>
+                  <p className="text-sm text-gray-500">Ce code offre un essai du SaaS</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="p-2 rounded-lg bg-blue-100">
+                  <Gift className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Accès Produit</p>
+                  <p className="text-sm text-gray-500">Ce code offre un accès à un produit créateur</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Platform trial fields */}
+        {isPlatformTrial && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="platformPlan">Plan à offrir *</Label>
+              <select
+                id="platformPlan"
+                value={platformPlanName}
+                onChange={(e) => setPlatformPlanName(e.target.value as "starter" | "growth" | "pro")}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="starter">Starter</option>
+                <option value="growth">Growth</option>
+                <option value="pro">Pro (recommandé)</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="trialDays">Durée de l&apos;essai (jours) *</Label>
+              <Input
+                id="trialDays"
+                type="number"
+                min="1"
+                max="365"
+                value={trialDays}
+                onChange={(e) => setTrialDays(e.target.value)}
+                placeholder="30"
+                required={isPlatformTrial}
+              />
+              <p className="text-sm text-gray-500">
+                Nombre de jours d&apos;accès au plan sélectionné.
+              </p>
+            </div>
+          </>
+        )}
 
         {/* Status */}
         <div className="space-y-2">

@@ -35,6 +35,10 @@ export const createGiftCodeSchema = z.object({
   ),
   planIds: z.array(z.string().uuid()).optional().default([]),
   organizationIds: z.array(z.string().uuid()).optional().default([]),
+  // Platform trial options
+  isPlatformTrial: z.boolean().optional().default(false),
+  platformPlanName: z.enum(['starter', 'growth', 'pro']).optional(),
+  trialDays: z.number().int().min(1).max(365).optional(),
 });
 
 export type CreateGiftCodeDto = z.infer<typeof createGiftCodeSchema>;
@@ -59,6 +63,10 @@ export const updateGiftCodeSchema = z.object({
   ),
   planIds: z.array(z.string().uuid()).optional(),
   organizationIds: z.array(z.string().uuid()).optional(),
+  // Platform trial options
+  isPlatformTrial: z.boolean().optional(),
+  platformPlanName: z.enum(['starter', 'growth', 'pro']).nullable().optional(),
+  trialDays: z.number().int().min(1).max(365).nullable().optional(),
 });
 
 export type UpdateGiftCodeDto = z.infer<typeof updateGiftCodeSchema>;

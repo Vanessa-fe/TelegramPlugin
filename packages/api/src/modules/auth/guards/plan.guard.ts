@@ -5,7 +5,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { PlatformSubscriptionStatus } from '@prisma/client';
+import { PlatformSubscriptionStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import type { AuthUser } from '../auth.types';
 import { REQUIRE_PLAN_KEY } from '../decorators/require-plan.decorator';
@@ -29,6 +29,13 @@ export class PlanGuard implements CanActivate {
       return true;
     }
 
+    // SUPERADMIN bypasses all plan restrictions
+    const request = context.switchToHttp().getRequest<{ user?: AuthUser }>();
+    const user = request.user;
+    if (user?.role === UserRole.SUPERADMIN) {
+      return true;
+    }
+
     const requiredPlans = this.reflector.getAllAndOverride<string[]>(
       REQUIRE_PLAN_KEY,
       [context.getHandler(), context.getClass()],
@@ -38,9 +45,6 @@ export class PlanGuard implements CanActivate {
     if (!requiredPlans || requiredPlans.length === 0) {
       return true;
     }
-
-    const request = context.switchToHttp().getRequest<{ user?: AuthUser }>();
-    const user = request.user;
 
     if (!user) {
       throw new ForbiddenException('Utilisateur non authentifié');
