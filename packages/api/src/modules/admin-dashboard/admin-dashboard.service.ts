@@ -33,6 +33,21 @@ export interface FailedPaymentItem {
   invoiceUrl: string | null;
 }
 
+export interface CreatorListItem {
+  id: string;
+  name: string;
+  slug: string;
+  billingEmail: string;
+  saasActive: boolean;
+  createdAt: Date;
+  ownerEmail: string | null;
+  channelsCount: number;
+  customersCount: number;
+  activeSubscriptionsCount: number;
+  platformPlan: string | null;
+  platformStatus: string | null;
+}
+
 @Injectable()
 export class AdminDashboardService {
   private readonly logger = new Logger(AdminDashboardService.name);
@@ -163,5 +178,58 @@ export class AdminDashboardService {
         invoiceUrl: payload?.hosted_invoice_url ?? null,
       };
     });
+  }
+
+  /**
+   * Get list of all creators (organizations) with enriched data for admin view.
+   */
+  async getCreatorsList(): Promise<CreatorListItem[]> {
+    const organizations = await this.prisma.organization.findMany({
+      where: {
+        deletedAt: null,
+      },
+      include: {
+        users: {
+          where: { role: 'ORG_ADMIN' },
+          select: { email: true },
+          take: 1,
+        },
+        channels: {
+          select: { id: true },
+        },
+        customers: {
+          where: { deletedAt: null },
+          select: { id: true },
+        },
+        subscriptions: {
+          where: { status: 'ACTIVE' },
+          select: { id: true },
+        },
+        platformSubscription: {
+          select: {
+            status: true,
+            platformPlan: {
+              select: { name: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return organizations.map((org) => ({
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      billingEmail: org.billingEmail,
+      saasActive: org.saasActive,
+      createdAt: org.createdAt,
+      ownerEmail: org.users[0]?.email ?? null,
+      channelsCount: org.channels.length,
+      customersCount: org.customers.length,
+      activeSubscriptionsCount: org.subscriptions.length,
+      platformPlan: org.platformSubscription?.platformPlan?.name ?? null,
+      platformStatus: org.platformSubscription?.status ?? null,
+    }));
   }
 }

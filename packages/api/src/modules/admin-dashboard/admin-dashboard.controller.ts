@@ -19,4 +19,10 @@ export class AdminDashboardController {
     const daysNum = days ? parseInt(days, 10) : 30;
     return this.adminDashboardService.getFailedPaymentsList(daysNum);
   }
+
+  @Get('creators')
+  @Roles(UserRole.SUPERADMIN)
+  async getCreators() {
+    return this.adminDashboardService.getCreatorsList();
+  }
 }

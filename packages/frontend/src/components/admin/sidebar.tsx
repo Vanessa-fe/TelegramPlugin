@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -31,9 +32,10 @@ export function AdminSidebar() {
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-gray-50">
-      <div className="flex h-16 items-center border-b px-6">
-        <h1 className="text-xl font-bold text-purple-600">{t('home.title')}</h1>
-      </div>
+      <Link href="/admin" className="flex h-16 items-center border-b px-6">
+        <Image src="/logo_160.svg" alt="Sublynk" width={32} height={32} />
+        <span className="ml-2 text-xl font-bold text-purple-600">Sublynk</span>
+      </Link>
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
           const isActive =
