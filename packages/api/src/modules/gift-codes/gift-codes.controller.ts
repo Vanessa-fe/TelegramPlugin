@@ -76,7 +76,8 @@ export class GiftCodesController {
   @Post('validate')
   @Public()
   validate(
-    @Body(new ZodValidationPipe(validateGiftCodeSchema)) body: ValidateGiftCodeDto,
+    @Body(new ZodValidationPipe(validateGiftCodeSchema))
+    body: ValidateGiftCodeDto,
   ) {
     return this.giftCodesService.validate(body);
   }

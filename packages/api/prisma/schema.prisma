@@ -829,6 +829,14 @@ enum GiftCodeStatus {
   EXPIRED
 }
 
+enum VipInvitationStatus {
+  PENDING           // Email sent, waiting for activation
+  ACTIVATED         // User created account
+  CONVERTED         // Trial ended, user subscribed
+  EXPIRED           // Trial expired without conversion
+  CANCELLED         // Manually cancelled by admin
+}
+
 model GiftCode {
   id               String         @id @default(uuid())
   code             String         @unique
@@ -868,4 +876,38 @@ model GiftCodeUsage {
 
   @@index([giftCodeId])
   @@index([customerId])
+}
+
+// ========== VIP Invitations (SUPERADMIN Dashboard) ==========
+
+model VipInvitation {
+  id                 String              @id @default(uuid())
+  email              String
+  token              String              @unique @default(uuid())
+  status             VipInvitationStatus @default(PENDING)
+
+  // Invitation parameters
+  platformPlanName   String              // "starter", "growth", "pro"
+  trialDays          Int                 // Duration of free trial
+
+  // Tracking
+  emailSentAt        DateTime?
+  activatedAt        DateTime?
+  convertedAt        DateTime?
+  expiresAt          DateTime?           // Trial expiration date (set on activation)
+
+  // Metrics (populated after activation)
+  organizationId     String?             // Organization created by VIP
+  offersCreated      Int                 @default(0)
+  salesGenerated     Int                 @default(0) // In cents
+
+  // Admin info
+  createdById        String              // SUPERADMIN who created invitation
+  notes              String?             // Internal notes
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([token])
 }

@@ -315,6 +315,53 @@ export class NotificationsService implements OnModuleInit {
   }
 
   /**
+   * Send VIP invitation email with special trial offer
+   */
+  async sendVipInvitationEmail(data: {
+    to: string;
+    activationLink: string;
+    planName: string;
+    trialDays: number;
+    notes?: string;
+  }): Promise<void> {
+    const subject = `🎁 Invitation VIP - ${data.trialDays} jours d'essai gratuit sur Sublynk`;
+    const body = `
+      <h1>🎁 Vous êtes invité(e) en VIP !</h1>
+      <p>Bonjour,</p>
+      <p>Vous avez été sélectionné(e) pour bénéficier d'un accès privilégié à <strong>Sublynk</strong>, la plateforme de monétisation de communautés Telegram.</p>
+
+      <h2>Votre offre exclusive</h2>
+      <ul>
+        <li><strong>Plan :</strong> ${data.planName}</li>
+        <li><strong>Durée d'essai :</strong> ${data.trialDays} jours gratuits</li>
+        <li><strong>Aucune carte bancaire requise</strong> pour commencer</li>
+      </ul>
+
+      ${data.notes ? `<p><em>Message personnalisé : ${data.notes}</em></p>` : ''}
+
+      <p style="margin: 30px 0;">
+        <a href="${data.activationLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+          Activer mon essai gratuit
+        </a>
+      </p>
+
+      <h2>Pourquoi Sublynk ?</h2>
+      <ul>
+        <li>✅ Vendez l'accès à vos channels Telegram en quelques clics</li>
+        <li>✅ Gestion automatique des membres et des paiements</li>
+        <li>✅ Tableau de bord complet avec analytics</li>
+        <li>✅ Support réactif et communauté active</li>
+      </ul>
+
+      <p>Cette invitation est personnelle et liée à votre adresse email.</p>
+      <p>À très bientôt sur Sublynk ! 🚀</p>
+    `;
+
+    await this.sendEmail(data.to, subject, body);
+    this.logger.log(`VIP invitation email sent to ${data.to}`);
+  }
+
+  /**
    * Send notification to admin when a new platform subscription is created
    */
   async sendAdminNewSubscriptionNotification(data: {
@@ -697,9 +744,6 @@ export class NotificationsService implements OnModuleInit {
   private redactSensitiveUrls(body: string): string {
     // Redact token query parameters in URLs
     // Matches: ?token=xxx or &token=xxx
-    return body.replace(
-      /([?&]token=)[A-Za-z0-9_-]+/gi,
-      '$1[REDACTED]',
-    );
+    return body.replace(/([?&]token=)[A-Za-z0-9_-]+/gi, '$1[REDACTED]');
   }
 }

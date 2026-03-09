@@ -2,15 +2,28 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Building2, CreditCard, Gift, LayoutDashboard } from 'lucide-react';
+import {
+  AlertCircle,
+  Building2,
+  CreditCard,
+  Gift,
+  LayoutDashboard,
+  Star,
+  Users,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const t = useTranslations('admin');
+
+  // SUPERADMIN navigation - organized by priority
   const navigation = [
     { key: 'home', href: '/admin', icon: LayoutDashboard },
+    { key: 'vip', href: '/admin/vip', icon: Star },
+    { key: 'payments', href: '/admin/payments', icon: AlertCircle },
+    { key: 'creators', href: '/admin/creators', icon: Users },
     { key: 'organizations', href: '/admin/organizations', icon: Building2 },
     { key: 'giftCodes', href: '/admin/gift-codes', icon: Gift },
     { key: 'billing', href: '/admin/billing', icon: CreditCard },

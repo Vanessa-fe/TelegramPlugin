@@ -27,7 +27,10 @@ export type ValidateGiftCodeResult = {
 export class GiftCodesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateGiftCodeDto, createdById: string): Promise<GiftCode> {
+  async create(
+    data: CreateGiftCodeDto,
+    createdById: string,
+  ): Promise<GiftCode> {
     const existing = await this.prisma.giftCode.findUnique({
       where: { code: data.code },
     });
@@ -85,7 +88,9 @@ export class GiftCodesService {
       });
 
       if (existing) {
-        throw new BadRequestException('Un code cadeau avec ce code existe déjà');
+        throw new BadRequestException(
+          'Un code cadeau avec ce code existe déjà',
+        );
       }
     }
 
@@ -97,8 +102,12 @@ export class GiftCodesService {
       ...(data.expiresAt !== undefined && { expiresAt: data.expiresAt }),
       ...(data.planIds && { planIds: data.planIds }),
       ...(data.organizationIds && { organizationIds: data.organizationIds }),
-      ...(data.isPlatformTrial !== undefined && { isPlatformTrial: data.isPlatformTrial }),
-      ...(data.platformPlanName !== undefined && { platformPlanName: data.platformPlanName }),
+      ...(data.isPlatformTrial !== undefined && {
+        isPlatformTrial: data.isPlatformTrial,
+      }),
+      ...(data.platformPlanName !== undefined && {
+        platformPlanName: data.platformPlanName,
+      }),
       ...(data.trialDays !== undefined && { trialDays: data.trialDays }),
     };
 
@@ -123,15 +132,27 @@ export class GiftCodesService {
     });
 
     if (!giftCode) {
-      return { valid: false, isFreeAccess: true, error: 'Code cadeau introuvable' };
+      return {
+        valid: false,
+        isFreeAccess: true,
+        error: 'Code cadeau introuvable',
+      };
     }
 
     if (giftCode.status !== GiftCodeStatus.ACTIVE) {
-      return { valid: false, isFreeAccess: true, error: 'Ce code cadeau est désactivé' };
+      return {
+        valid: false,
+        isFreeAccess: true,
+        error: 'Ce code cadeau est désactivé',
+      };
     }
 
     if (giftCode.expiresAt && giftCode.expiresAt < new Date()) {
-      return { valid: false, isFreeAccess: true, error: 'Ce code cadeau a expiré' };
+      return {
+        valid: false,
+        isFreeAccess: true,
+        error: 'Ce code cadeau a expiré',
+      };
     }
 
     if (giftCode.maxUses && giftCode.usedCount >= giftCode.maxUses) {
@@ -143,7 +164,10 @@ export class GiftCodesService {
     }
 
     // Vérifier si le plan est autorisé
-    if (giftCode.planIds.length > 0 && !giftCode.planIds.includes(data.planId)) {
+    if (
+      giftCode.planIds.length > 0 &&
+      !giftCode.planIds.includes(data.planId)
+    ) {
       return {
         valid: false,
         isFreeAccess: true,

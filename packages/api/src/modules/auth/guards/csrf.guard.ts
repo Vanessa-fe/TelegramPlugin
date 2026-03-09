@@ -27,7 +27,7 @@ export class CsrfGuard implements CanActivate {
       (process.env.CORS_ORIGIN ?? '')
         .split(',')
         .map((origin) => this.normalizeOrigin(origin))
-        .filter(Boolean),
+        .filter((origin): origin is string => origin !== null),
     );
   }
 

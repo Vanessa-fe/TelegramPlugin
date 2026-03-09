@@ -224,7 +224,9 @@ describe('AuthService', () => {
       };
 
       mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.organization.create.mockResolvedValue({ id: 'new-org-id' });
+      mockPrismaService.organization.create.mockResolvedValue({
+        id: 'new-org-id',
+      });
       mockPrismaService.user.create.mockResolvedValue({
         id: '1',
         email: registerDto.email.toLowerCase(),
