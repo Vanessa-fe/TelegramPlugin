@@ -11,6 +11,6 @@ import { AuditLogModule } from '../audit-log/audit-log.module';
   imports: [PrismaModule, ConfigModule, NotificationsModule, AuditLogModule],
   controllers: [ChannelAccessController],
   providers: [ChannelAccessService, ChannelAccessQueue],
-  exports: [ChannelAccessService],
+  exports: [ChannelAccessService, ChannelAccessQueue],
 })
 export class ChannelAccessModule {}

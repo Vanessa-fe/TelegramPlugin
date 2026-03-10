@@ -28,6 +28,7 @@ export interface FailedPaymentItem {
   currency: string;
   customerEmail: string | null;
   customerName: string | null;
+  organizationId: string;
   organizationName: string;
   subscriptionId: string | null;
   invoiceUrl: string | null;
@@ -39,6 +40,7 @@ export interface CreatorListItem {
   slug: string;
   billingEmail: string;
   saasActive: boolean;
+  suspendedAt: Date | null;
   createdAt: Date;
   ownerEmail: string | null;
   channelsCount: number;
@@ -173,6 +175,7 @@ export class AdminDashboardService {
         currency: payload?.currency ?? 'eur',
         customerEmail: customer?.email ?? payload?.customer_email ?? null,
         customerName: customer?.displayName ?? payload?.customer_name ?? null,
+        organizationId: event.organizationId,
         organizationName: event.organization.name,
         subscriptionId: event.subscriptionId,
         invoiceUrl: payload?.hosted_invoice_url ?? null,
@@ -223,6 +226,7 @@ export class AdminDashboardService {
       slug: org.slug,
       billingEmail: org.billingEmail,
       saasActive: org.saasActive,
+      suspendedAt: org.suspendedAt,
       createdAt: org.createdAt,
       ownerEmail: org.users[0]?.email ?? null,
       channelsCount: org.channels.length,

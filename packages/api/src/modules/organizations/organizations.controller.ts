@@ -15,10 +15,12 @@ import { ZodValidationPipe } from '../../common';
 import {
   createOrganizationSchema,
   updateOrganizationSchema,
+  suspendOrganizationSchema,
 } from './organizations.schema';
 import type {
   CreateOrganizationDto,
   UpdateOrganizationDto,
+  SuspendOrganizationDto,
 } from './organizations.schema';
 import { OrganizationsService } from './organizations.service';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -125,5 +127,25 @@ export class OrganizationsController {
     return {
       message: 'Customer deletion completed',
     };
+  }
+
+  @Post(':id/suspend')
+  @Roles(UserRole.SUPERADMIN)
+  suspend(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new ZodValidationPipe(suspendOrganizationSchema))
+    body: SuspendOrganizationDto,
+  ) {
+    return this.organizationsService.suspend(id, body.reason, user.userId);
+  }
+
+  @Post(':id/unsuspend')
+  @Roles(UserRole.SUPERADMIN)
+  unsuspend(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    return this.organizationsService.unsuspend(id, user.userId);
   }
 }

@@ -10,9 +10,11 @@ import {
   Building2,
   Mail,
   User,
+  Ban,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import apiClient from '@/lib/api-client';
+import { organizationsApi } from '@/lib/api/organizations';
 
 interface FailedPayment {
   id: string;
@@ -21,6 +23,7 @@ interface FailedPayment {
   currency: string;
   customerEmail: string | null;
   customerName: string | null;
+  organizationId: string;
   organizationName: string;
   subscriptionId: string | null;
   invoiceUrl: string | null;
@@ -32,6 +35,28 @@ export default function PaymentsPage() {
   const [payments, setPayments] = useState<FailedPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [daysFilter, setDaysFilter] = useState(30);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const handleSuspend = async (payment: FailedPayment) => {
+    const reason = prompt(
+      `Suspendre l'organisation "${payment.organizationName}" ?\n\nRaison (optionnelle) :`
+    );
+    if (reason === null) return; // User cancelled
+
+    setActionLoading(payment.id);
+    try {
+      await organizationsApi.suspend(
+        payment.organizationId,
+        reason || `Impayé du ${new Date(payment.occurredAt).toLocaleDateString()}`
+      );
+      await loadPayments();
+      alert(`Organisation "${payment.organizationName}" suspendue`);
+    } catch {
+      alert('Erreur lors de la suspension');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   async function loadPayments() {
     setIsLoading(true);
@@ -195,19 +220,33 @@ export default function PaymentsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {payment.invoiceUrl ? (
-                      <a
-                        href={payment.invoiceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
+                    <div className="flex items-center justify-end gap-2">
+                      {payment.invoiceUrl && (
+                        <a
+                          href={payment.invoiceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Facture
+                        </a>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSuspend(payment)}
+                        disabled={actionLoading === payment.id}
+                        className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                       >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Voir facture
-                      </a>
-                    ) : (
-                      <span className="text-sm text-gray-400">—</span>
-                    )}
+                        {actionLoading === payment.id ? (
+                          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                        ) : (
+                          <Ban className="h-3.5 w-3.5" />
+                        )}
+                        <span className="ml-1">Suspendre</span>
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

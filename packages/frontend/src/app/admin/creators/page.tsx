@@ -14,9 +14,21 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  MoreHorizontal,
+  ExternalLink,
+  Ban,
+  PlayCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import apiClient from '@/lib/api-client';
+import { organizationsApi } from '@/lib/api/organizations';
 
 interface Creator {
   id: string;
@@ -24,6 +36,7 @@ interface Creator {
   slug: string;
   billingEmail: string;
   saasActive: boolean;
+  suspendedAt: string | null;
   createdAt: string;
   ownerEmail: string | null;
   channelsCount: number;
@@ -61,7 +74,39 @@ export default function CreatorsPage() {
   const locale = useLocale();
   const [creators, setCreators] = useState<Creator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const handleSuspend = async (creator: Creator) => {
+    const reason = prompt(
+      `Suspendre "${creator.name}" ?\n\nRaison (optionnelle) :`
+    );
+    if (reason === null) return; // User cancelled
+
+    setActionLoading(creator.id);
+    try {
+      await organizationsApi.suspend(creator.id, reason || undefined);
+      await loadCreators();
+    } catch {
+      alert('Erreur lors de la suspension');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUnsuspend = async (creator: Creator) => {
+    if (!confirm(`Réactiver "${creator.name}" ?`)) return;
+
+    setActionLoading(creator.id);
+    try {
+      await organizationsApi.unsuspend(creator.id);
+      await loadCreators();
+    } catch {
+      alert('Erreur lors de la réactivation');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   async function loadCreators() {
     setIsLoading(true);
@@ -80,8 +125,9 @@ export default function CreatorsPage() {
   }, []);
 
   const filteredCreators = creators.filter((creator) => {
-    if (filter === 'active') return creator.saasActive;
-    if (filter === 'inactive') return !creator.saasActive;
+    if (filter === 'active') return creator.saasActive && !creator.suspendedAt;
+    if (filter === 'inactive') return !creator.saasActive && !creator.suspendedAt;
+    if (filter === 'suspended') return !!creator.suspendedAt;
     return true;
   });
 
@@ -167,19 +213,22 @@ export default function CreatorsPage() {
 
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'active', 'inactive'] as const).map((f) => (
+        {(['all', 'active', 'inactive', 'suspended'] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               filter === f
-                ? 'bg-purple-100 text-purple-700'
+                ? f === 'suspended'
+                  ? 'bg-red-100 text-red-700'
+                  : 'bg-purple-100 text-purple-700'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             {f === 'all' && `Tous (${creators.length})`}
-            {f === 'active' && `Actifs (${creators.filter((c) => c.saasActive).length})`}
-            {f === 'inactive' && `Inactifs (${creators.filter((c) => !c.saasActive).length})`}
+            {f === 'active' && `Actifs (${creators.filter((c) => c.saasActive && !c.suspendedAt).length})`}
+            {f === 'inactive' && `Inactifs (${creators.filter((c) => !c.saasActive && !c.suspendedAt).length})`}
+            {f === 'suspended' && `Suspendus (${creators.filter((c) => c.suspendedAt).length})`}
           </button>
         ))}
       </div>
@@ -229,6 +278,9 @@ export default function CreatorsPage() {
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
                   Inscrit le
                 </th>
+                <th className="px-6 py-4 text-right text-sm font-medium text-gray-500">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -259,7 +311,12 @@ export default function CreatorsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {creator.platformPlan ? (
+                      {creator.suspendedAt ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                          <Ban className="h-3 w-3" />
+                          Suspendu
+                        </span>
+                      ) : creator.platformPlan ? (
                         <div className="space-y-1">
                           <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
                             {creator.platformPlan}
@@ -310,6 +367,50 @@ export default function CreatorsPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {formatDate(creator.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            disabled={actionLoading === creator.id}
+                          >
+                            {actionLoading === creator.id ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
+                            ) : (
+                              <MoreHorizontal className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/admin/organizations/${creator.id}`}>
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              Voir détails
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {creator.suspendedAt ? (
+                            <DropdownMenuItem
+                              onClick={() => handleUnsuspend(creator)}
+                              className="text-green-600 focus:text-green-600"
+                            >
+                              <PlayCircle className="mr-2 h-4 w-4" />
+                              Réactiver
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              onClick={() => handleSuspend(creator)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Ban className="mr-2 h-4 w-4" />
+                              Suspendre
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );

@@ -6,6 +6,8 @@ export interface Organization {
   currency: string;
   stripeAccountId?: string | null;
   saasActive?: boolean;
+  suspendedAt?: string | null;
+  suspendReason?: string | null;
   timezone?: string | null;
   metadata?: Record<string, unknown> | null;
   createdAt: string;

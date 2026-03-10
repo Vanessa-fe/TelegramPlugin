@@ -168,6 +168,8 @@ model Organization {
   currency        String   @default("EUR")
   stripeAccountId String?  @unique
   saasActive      Boolean  @default(false)
+  suspendedAt     DateTime? // Manual suspension by SUPERADMIN - null = not suspended
+  suspendReason   String?   // Reason for manual suspension
   timezone        String?  @default("UTC")
   metadata        Json?
   createdAt       DateTime @default(now())
