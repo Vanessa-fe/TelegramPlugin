@@ -18,6 +18,8 @@ import {
   ExternalLink,
   Ban,
   PlayCircle,
+  AlertTriangle,
+  Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,6 +31,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import apiClient from '@/lib/api-client';
 import { organizationsApi } from '@/lib/api/organizations';
+
+type HealthScoreLevel = 'green' | 'orange' | 'red';
+
+interface HealthScore {
+  level: HealthScoreLevel;
+  score: number;
+  factors: {
+    loginRecency: HealthScoreLevel;
+    activityLevel: HealthScoreLevel;
+    paymentStatus: HealthScoreLevel;
+    revenueHealth: HealthScoreLevel;
+  };
+  lastLoginAt: string | null;
+  daysSinceLogin: number | null;
+  recentSalesCount: number;
+  recentRevenueChange: number | null;
+}
 
 interface Creator {
   id: string;
@@ -44,6 +63,13 @@ interface Creator {
   activeSubscriptionsCount: number;
   platformPlan: string | null;
   platformStatus: string | null;
+  paymentRisk: {
+    isAtRisk: boolean;
+    daysOverdue: number | null;
+    failedAttempts: number;
+    daysUntilBlock: number | null;
+  } | null;
+  healthScore: HealthScore;
 }
 
 const statusConfig: Record<string, { className: string; label: string; icon: typeof CheckCircle }> = {
@@ -74,7 +100,7 @@ export default function CreatorsPage() {
   const locale = useLocale();
   const [creators, setCreators] = useState<Creator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'suspended' | 'at_risk'>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const handleSuspend = async (creator: Creator) => {
@@ -128,6 +154,11 @@ export default function CreatorsPage() {
     if (filter === 'active') return creator.saasActive && !creator.suspendedAt;
     if (filter === 'inactive') return !creator.saasActive && !creator.suspendedAt;
     if (filter === 'suspended') return !!creator.suspendedAt;
+    if (filter === 'at_risk') {
+      // Use health score for churn risk (orange or red) instead of just payment risk
+      return !creator.suspendedAt && creator.saasActive &&
+        (creator.healthScore.level === 'red' || creator.healthScore.level === 'orange');
+    }
     return true;
   });
 
@@ -213,7 +244,7 @@ export default function CreatorsPage() {
 
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'active', 'inactive', 'suspended'] as const).map((f) => (
+        {(['all', 'active', 'inactive', 'at_risk', 'suspended'] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -221,13 +252,16 @@ export default function CreatorsPage() {
               filter === f
                 ? f === 'suspended'
                   ? 'bg-red-100 text-red-700'
-                  : 'bg-purple-100 text-purple-700'
+                  : f === 'at_risk'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'bg-purple-100 text-purple-700'
                 : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             {f === 'all' && `Tous (${creators.length})`}
             {f === 'active' && `Actifs (${creators.filter((c) => c.saasActive && !c.suspendedAt).length})`}
             {f === 'inactive' && `Inactifs (${creators.filter((c) => !c.saasActive && !c.suspendedAt).length})`}
+            {f === 'at_risk' && `⚠️ À risque (${creators.filter((c) => !c.suspendedAt && c.saasActive && (c.healthScore.level === 'red' || c.healthScore.level === 'orange')).length})`}
             {f === 'suspended' && `Suspendus (${creators.filter((c) => c.suspendedAt).length})`}
           </button>
         ))}
@@ -276,6 +310,12 @@ export default function CreatorsPage() {
                   </span>
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <Activity className="h-4 w-4" />
+                    Santé
+                  </span>
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
                   Inscrit le
                 </th>
                 <th className="px-6 py-4 text-right text-sm font-medium text-gray-500">
@@ -298,7 +338,7 @@ export default function CreatorsPage() {
                     <td className="px-6 py-4">
                       <div className="space-y-1">
                         <Link
-                          href={`/admin/organizations/${creator.id}`}
+                          href={`/admin/creators/${creator.id}`}
                           className="flex items-center gap-2 font-medium text-gray-900 hover:text-purple-600"
                         >
                           <Building2 className="h-4 w-4 text-gray-400" />
@@ -321,14 +361,21 @@ export default function CreatorsPage() {
                           <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
                             {creator.platformPlan}
                           </span>
-                          {status && StatusIcon && (
+                          {creator.paymentRisk?.isAtRisk ? (
+                            <span className="flex items-center gap-1 text-xs bg-orange-100 text-orange-700 rounded-full px-2 py-0.5 w-fit">
+                              <AlertTriangle className="h-3 w-3" />
+                              {creator.paymentRisk.daysUntilBlock === 0
+                                ? 'Blocage imminent'
+                                : `Blocage dans ${creator.paymentRisk.daysUntilBlock}j`}
+                            </span>
+                          ) : status && StatusIcon ? (
                             <span
                               className={`flex items-center gap-1 text-xs ${status.className} rounded-full px-2 py-0.5 w-fit`}
                             >
                               <StatusIcon className="h-3 w-3" />
                               {status.label}
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       ) : (
                         <span className="text-sm text-gray-400">
@@ -365,6 +412,30 @@ export default function CreatorsPage() {
                         {creator.activeSubscriptionsCount}
                       </span>
                     </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            creator.healthScore.level === 'green'
+                              ? 'bg-green-100 text-green-700'
+                              : creator.healthScore.level === 'orange'
+                                ? 'bg-orange-100 text-orange-700'
+                                : 'bg-red-100 text-red-700'
+                          }`}
+                          title={`Score: ${creator.healthScore.score}/100\nConnexion: ${creator.healthScore.factors.loginRecency}\nActivité: ${creator.healthScore.factors.activityLevel}\nPaiement: ${creator.healthScore.factors.paymentStatus}\nRevenus: ${creator.healthScore.factors.revenueHealth}`}
+                        >
+                          {creator.healthScore.level === 'green' && '🟢'}
+                          {creator.healthScore.level === 'orange' && '🟠'}
+                          {creator.healthScore.level === 'red' && '🔴'}
+                          {creator.healthScore.score}%
+                        </span>
+                        {creator.healthScore.daysSinceLogin !== null && creator.healthScore.daysSinceLogin > 14 && (
+                          <span className="text-xs text-gray-400" title="Jours depuis dernière connexion">
+                            {creator.healthScore.daysSinceLogin}j
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {formatDate(creator.createdAt)}
                     </td>
@@ -386,7 +457,7 @@ export default function CreatorsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/organizations/${creator.id}`}>
+                            <Link href={`/admin/creators/${creator.id}`}>
                               <ExternalLink className="mr-2 h-4 w-4" />
                               Voir détails
                             </Link>

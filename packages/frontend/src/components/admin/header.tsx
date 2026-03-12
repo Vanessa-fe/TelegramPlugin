@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AdminSearchBar } from "./search-bar";
 
 export function AdminHeader() {
   const { user, logout } = useAuth();
@@ -44,8 +45,9 @@ export function AdminHeader() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
-      <div>
+      <div className="flex items-center gap-6">
         <h2 className="text-lg font-semibold">{tAdmin("home.title")}</h2>
+        <AdminSearchBar />
       </div>
       <div className="flex items-center gap-4">
         <Button variant="outline" size="sm" onClick={handleSwitchToClient}>

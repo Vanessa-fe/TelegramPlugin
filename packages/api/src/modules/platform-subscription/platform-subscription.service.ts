@@ -629,16 +629,30 @@ export class PlatformSubscriptionService {
     const graceUntil = new Date();
     graceUntil.setDate(graceUntil.getDate() + gracePeriodDays);
 
+    // Track failed payment attempts
+    const existingMetadata =
+      (platformSub.metadata as Record<string, unknown> | null) ?? {};
+    const failedAttempts =
+      (existingMetadata.failedPaymentAttempts as number) ?? 0;
+    const firstFailedAt =
+      (existingMetadata.firstFailedAt as string) ?? new Date().toISOString();
+
     await this.prisma.platformSubscription.update({
       where: { id: platformSub.id },
       data: {
         status: PlatformSubscriptionStatus.PAST_DUE,
         graceUntil,
+        metadata: {
+          ...existingMetadata,
+          failedPaymentAttempts: failedAttempts + 1,
+          firstFailedAt,
+          lastFailedAt: new Date().toISOString(),
+        },
       },
     });
 
     this.logger.warn(
-      `Platform subscription ${platformSub.id} payment failed, grace until ${graceUntil.toISOString()}`,
+      `Platform subscription ${platformSub.id} payment failed (attempt ${failedAttempts + 1}), grace until ${graceUntil.toISOString()}`,
     );
   }
 

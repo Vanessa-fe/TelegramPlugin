@@ -13,6 +13,7 @@ import {
   FileText,
   Globe,
   Hash,
+  HelpCircle,
   Key,
   LayoutDashboard,
   Lock,
@@ -64,6 +65,7 @@ const navigation = [
   { key: "channels", href: "/dashboard/channels", icon: Hash },
   { key: "access", href: "/dashboard/access", icon: Key },
   { key: "billing", href: "/dashboard/billing", icon: CreditCard },
+  { key: "support", href: "/dashboard/support", icon: HelpCircle },
 ];
 
 export function Sidebar() {

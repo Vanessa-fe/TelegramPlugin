@@ -5,10 +5,14 @@ import {
   AccessStatus,
   PlatformSubscriptionStatus,
   SubscriptionStatus,
+  AmbassadorTier,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { DataExportsService } from '../data-exports/data-exports.service';
+import { OrganizationsService } from '../organizations/organizations.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { AdminDashboardService } from '../admin-dashboard/admin-dashboard.service';
 
 const DEFAULT_AUDIT_LOG_RETENTION_DAYS = 400;
 const DEFAULT_PAYMENT_EVENT_RETENTION_DAYS = 730;
@@ -28,6 +32,9 @@ export class SchedulerService {
     private readonly channelAccessService: ChannelAccessService,
     private readonly config: ConfigService,
     private readonly dataExportsService: DataExportsService,
+    private readonly organizationsService: OrganizationsService,
+    private readonly notifications: NotificationsService,
+    private readonly adminDashboardService: AdminDashboardService,
   ) {}
 
   /**
@@ -546,6 +553,145 @@ export class SchedulerService {
     }
   }
 
+  /**
+   * Check platform subscriptions for overdue payments
+   * - Send warning email at day 5
+   * - Auto-suspend at 7 days OR 3 failed attempts
+   * Runs at 9:00 AM every day
+   */
+  @Cron('0 9 * * *')
+  async handlePlatformPaymentOverdue(): Promise<void> {
+    this.logger.log('Starting platform payment overdue check...');
+
+    const now = new Date();
+
+    // Find all PAST_DUE platform subscriptions
+    const pastDueSubscriptions = await this.prisma.platformSubscription.findMany(
+      {
+        where: {
+          status: PlatformSubscriptionStatus.PAST_DUE,
+        },
+        include: {
+          organization: true,
+          platformPlan: true,
+        },
+      },
+    );
+
+    if (pastDueSubscriptions.length === 0) {
+      this.logger.debug('No past due platform subscriptions found');
+      return;
+    }
+
+    this.logger.log(
+      `Found ${pastDueSubscriptions.length} past due platform subscriptions`,
+    );
+
+    let warningsSent = 0;
+    let suspensions = 0;
+    let errors = 0;
+
+    for (const subscription of pastDueSubscriptions) {
+      try {
+        const metadata =
+          (subscription.metadata as Record<string, unknown> | null) ?? {};
+        const failedAttempts =
+          (metadata.failedPaymentAttempts as number) ?? 0;
+        const firstFailedAt = metadata.firstFailedAt
+          ? new Date(metadata.firstFailedAt as string)
+          : null;
+        const warningSentAt = metadata.paymentWarningSentAt as string | null;
+
+        // Skip if organization is already suspended
+        if (subscription.organization.suspendedAt) {
+          continue;
+        }
+
+        // Calculate days since first failure
+        const daysSinceFirstFailure = firstFailedAt
+          ? Math.floor(
+              (now.getTime() - firstFailedAt.getTime()) / DAY_IN_MS,
+            )
+          : 0;
+
+        // Auto-suspend if 7 days OR 3 failed attempts
+        if (daysSinceFirstFailure >= 7 || failedAttempts >= 3) {
+          const reason =
+            failedAttempts >= 3
+              ? `Échec de paiement répété (${failedAttempts} tentatives)`
+              : `Impayé depuis ${daysSinceFirstFailure} jours`;
+
+          await this.organizationsService.suspend(
+            subscription.organizationId,
+            reason,
+          );
+
+          // Send suspension email
+          await this.notifications.sendPlatformSuspensionEmail({
+            to: subscription.organization.billingEmail,
+            organizationName: subscription.organization.name,
+            reason,
+            supportEmail: this.config.get<string>('SUPPORT_EMAIL'),
+          });
+
+          // Clear metadata
+          await this.prisma.platformSubscription.update({
+            where: { id: subscription.id },
+            data: {
+              metadata: {
+                ...metadata,
+                suspendedAt: now.toISOString(),
+                suspendedReason: reason,
+              },
+            },
+          });
+
+          suspensions++;
+          this.logger.log(
+            `Auto-suspended organization ${subscription.organizationId}: ${reason}`,
+          );
+          continue;
+        }
+
+        // Send warning email at day 5 (if not already sent)
+        if (daysSinceFirstFailure >= 5 && !warningSentAt) {
+          const daysRemaining = 7 - daysSinceFirstFailure;
+
+          await this.notifications.sendPlatformPaymentWarningEmail({
+            to: subscription.organization.billingEmail,
+            organizationName: subscription.organization.name,
+            daysRemaining: Math.max(1, daysRemaining),
+          });
+
+          // Mark warning as sent
+          await this.prisma.platformSubscription.update({
+            where: { id: subscription.id },
+            data: {
+              metadata: {
+                ...metadata,
+                paymentWarningSentAt: now.toISOString(),
+              },
+            },
+          });
+
+          warningsSent++;
+          this.logger.log(
+            `Payment warning sent to organization ${subscription.organizationId}`,
+          );
+        }
+      } catch (error) {
+        errors++;
+        this.logger.error(
+          `Error processing overdue subscription ${subscription.id}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Platform payment overdue check complete: ${warningsSent} warnings sent, ${suspensions} suspended, ${errors} errors`,
+    );
+  }
+
   private getRetentionDays(key: string, fallback: number): number {
     const rawValue = this.config.get<string>(key);
     if (!rawValue) {
@@ -558,5 +704,244 @@ export class SchedulerService {
     }
 
     return parsed;
+  }
+
+  /**
+   * Send monthly VIP reports to activated VIP users
+   * Runs on the 1st of each month at 10:00 AM
+   */
+  @Cron('0 10 1 * *')
+  async sendVipMonthlyReports(): Promise<void> {
+    this.logger.log('Starting VIP monthly reports...');
+
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    // VIPs activated at least 1 month ago, never had a report OR report > 30 days ago
+    const vips = await this.prisma.vipInvitation.findMany({
+      where: {
+        status: { in: ['ACTIVATED', 'CONVERTED'] },
+        activatedAt: { lte: oneMonthAgo },
+        OR: [
+          { lastReportSentAt: null },
+          { lastReportSentAt: { lte: oneMonthAgo } },
+        ],
+      },
+    });
+
+    if (vips.length === 0) {
+      this.logger.debug('No VIP reports to send');
+      return;
+    }
+
+    this.logger.log(`Sending VIP reports to ${vips.length} VIP(s)`);
+
+    let sent = 0;
+    let errors = 0;
+
+    for (const vip of vips) {
+      try {
+        if (!vip.organizationId) continue;
+
+        // Get organization stats
+        const org = await this.prisma.organization.findUnique({
+          where: { id: vip.organizationId },
+          select: {
+            name: true,
+            _count: {
+              select: {
+                channels: true,
+                customers: { where: { deletedAt: null } },
+              },
+            },
+          },
+        });
+
+        if (!org) continue;
+
+        await this.notifications.sendVipReportEmail({
+          to: vip.email,
+          organizationName: org.name,
+          channelsCount: org._count.channels,
+          customersCount: org._count.customers,
+          salesGenerated: vip.salesGenerated,
+          offersCreated: vip.offersCreated,
+        });
+
+        await this.prisma.vipInvitation.update({
+          where: { id: vip.id },
+          data: { lastReportSentAt: new Date() },
+        });
+
+        sent++;
+      } catch (error) {
+        errors++;
+        this.logger.error(
+          `Failed to send VIP report to ${vip.email}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `VIP monthly reports complete: ${sent} sent, ${errors} errors`,
+    );
+  }
+
+  /**
+   * Evaluate ambassador eligibility for all organizations
+   * Runs on the 1st of each month at 8:00 AM
+   */
+  @Cron('0 8 1 * *')
+  async evaluateAmbassadorEligibility(): Promise<void> {
+    this.logger.log('Starting ambassador eligibility evaluation...');
+
+    const now = new Date();
+
+    try {
+      const creators = await this.adminDashboardService.getCreatorsList();
+
+      let updated = 0;
+
+      for (const creator of creators) {
+        if (creator.suspendedAt || !creator.saasActive) continue;
+        if (creator.healthScore.level !== 'green') continue;
+
+        const tenureMonths = Math.floor(
+          (now.getTime() - new Date(creator.createdAt).getTime()) /
+            (30 * DAY_IN_MS),
+        );
+
+        let tier: AmbassadorTier = AmbassadorTier.NONE;
+        if (tenureMonths >= 12) {
+          tier = AmbassadorTier.GOLD;
+        } else if (tenureMonths >= 6) {
+          tier = AmbassadorTier.SILVER;
+        } else if (tenureMonths >= 3) {
+          tier = AmbassadorTier.BRONZE;
+        }
+
+        // Only update if tier changed
+        const currentOrg = await this.prisma.organization.findUnique({
+          where: { id: creator.id },
+          select: { ambassadorTier: true },
+        });
+
+        if (currentOrg && currentOrg.ambassadorTier !== tier) {
+          await this.prisma.organization.update({
+            where: { id: creator.id },
+            data: {
+              ambassadorTier: tier,
+              ambassadorSince: tier !== AmbassadorTier.NONE ? now : null,
+            },
+          });
+          updated++;
+        }
+      }
+
+      this.logger.log(
+        `Ambassador eligibility evaluation complete: ${updated} organization(s) updated`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to evaluate ambassador eligibility: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * Process loyalty rewards for SILVER+ ambassadors
+   * Gives 1 free month every 6 months
+   * Runs on the 1st of each month at 9:00 AM
+   */
+  @Cron('0 9 1 * *')
+  async processLoyaltyRewards(): Promise<void> {
+    this.logger.log('Starting loyalty rewards processing...');
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    // Ambassadors SILVER+ who haven't received a reward in 6 months
+    const eligible = await this.prisma.organization.findMany({
+      where: {
+        ambassadorTier: { in: [AmbassadorTier.SILVER, AmbassadorTier.GOLD] },
+        saasActive: true,
+        suspendedAt: null,
+        OR: [
+          { lastLoyaltyRewardAt: null },
+          { lastLoyaltyRewardAt: { lte: sixMonthsAgo } },
+        ],
+      },
+      include: {
+        platformSubscription: true,
+        users: { where: { role: 'ORG_ADMIN' }, take: 1 },
+      },
+    });
+
+    if (eligible.length === 0) {
+      this.logger.debug('No loyalty rewards to process');
+      return;
+    }
+
+    this.logger.log(
+      `Processing loyalty rewards for ${eligible.length} ambassador(s)`,
+    );
+
+    let rewarded = 0;
+    let errors = 0;
+
+    for (const org of eligible) {
+      try {
+        if (!org.platformSubscription) continue;
+
+        const currentEnd = org.platformSubscription.currentPeriodEnd;
+        if (!currentEnd) continue;
+
+        // Extend subscription by 1 month
+        const newEnd = new Date(currentEnd);
+        newEnd.setMonth(newEnd.getMonth() + 1);
+
+        const existingMetadata =
+          (org.platformSubscription.metadata as Record<string, unknown>) ?? {};
+
+        await this.prisma.$transaction([
+          this.prisma.platformSubscription.update({
+            where: { id: org.platformSubscription.id },
+            data: {
+              currentPeriodEnd: newEnd,
+              metadata: {
+                ...existingMetadata,
+                loyaltyRewardGranted: new Date().toISOString(),
+              },
+            },
+          }),
+          this.prisma.organization.update({
+            where: { id: org.id },
+            data: { lastLoyaltyRewardAt: new Date() },
+          }),
+        ]);
+
+        // Send thank you email
+        const ownerEmail = org.users[0]?.email ?? org.billingEmail;
+        await this.notifications.sendLoyaltyRewardEmail({
+          to: ownerEmail,
+          organizationName: org.name,
+          tier: org.ambassadorTier,
+        });
+
+        rewarded++;
+        this.logger.debug(
+          `Loyalty reward granted to ${org.name} (${org.ambassadorTier})`,
+        );
+      } catch (error) {
+        errors++;
+        this.logger.error(
+          `Failed to process loyalty reward for ${org.id}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Loyalty rewards processing complete: ${rewarded} rewarded, ${errors} errors`,
+    );
   }
 }

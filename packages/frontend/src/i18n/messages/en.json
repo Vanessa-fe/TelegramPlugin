@@ -54,7 +54,8 @@
     "billing": "Billing",
     "coupons": "Coupons",
     "affiliates": "Affiliates",
-    "team": "Team"
+    "team": "Team",
+    "support": "Support"
   },
   "sidebar": {
     "currentPlan": "Subscription",
@@ -2485,6 +2486,7 @@
     "nav": {
       "home": "Dashboard",
       "vip": "VIP Guests",
+      "tickets": "Tickets",
       "payments": "Payments",
       "creators": "Creators",
       "organizations": "Organizations",

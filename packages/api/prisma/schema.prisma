@@ -176,6 +176,11 @@ model Organization {
   updatedAt       DateTime @updatedAt
   deletedAt       DateTime?
 
+  // Ambassador program fields
+  ambassadorTier      AmbassadorTier @default(NONE)
+  ambassadorSince     DateTime?
+  lastLoyaltyRewardAt DateTime?
+
   users                 User[]
   customers             Customer[]
   products              Product[]
@@ -190,6 +195,7 @@ model Organization {
   coupons               Coupon[]
   landingPage           LandingPage?
   teamInvites           TeamInvite[]
+  tickets               Ticket[]
 
   @@index([slug])
 }
@@ -216,6 +222,8 @@ model User {
   verificationTokens EmailVerificationToken[]
   refreshTokens  RefreshToken[]
   sentTeamInvites TeamInvite[] @relation("TeamInviteInvitedBy")
+  assignedTickets Ticket[]       @relation("TicketAssignedTo")
+  ticketMessages  TicketMessage[]
 }
 
 model PasswordResetToken {
@@ -839,6 +847,27 @@ enum VipInvitationStatus {
   CANCELLED         // Manually cancelled by admin
 }
 
+enum AmbassadorTier {
+  NONE
+  BRONZE    // 3+ mois 🟢
+  SILVER    // 6+ mois 🟢
+  GOLD      // 12+ mois 🟢 + high revenue
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model GiftCode {
   id               String         @id @default(uuid())
   code             String         @unique
@@ -897,6 +926,7 @@ model VipInvitation {
   activatedAt        DateTime?
   convertedAt        DateTime?
   expiresAt          DateTime?           // Trial expiration date (set on activation)
+  lastReportSentAt   DateTime?           // For VIP monthly reports
 
   // Metrics (populated after activation)
   organizationId     String?             // Organization created by VIP
@@ -912,4 +942,40 @@ model VipInvitation {
   @@index([email])
   @@index([status])
   @@index([token])
+}
+
+// ========== Support Tickets ==========
+
+model Ticket {
+  id             String         @id @default(uuid())
+  organizationId String
+  subject        String
+  status         TicketStatus   @default(OPEN)
+  priority       TicketPriority @default(MEDIUM)
+  assignedToId   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  closedAt       DateTime?
+
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  assignedTo     User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
+  messages       TicketMessage[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String
+  authorId  String
+  content   String
+  isInternal Boolean @default(false)  // Internal notes not visible to creator
+  createdAt DateTime @default(now())
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId])
 }

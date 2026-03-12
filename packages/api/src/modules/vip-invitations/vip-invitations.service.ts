@@ -240,4 +240,35 @@ export class VipInvitationsService {
       conversionRate: Math.round(conversionRate * 10) / 10,
     };
   }
+
+  /**
+   * Increment offersCreated counter for VIP invitation linked to an organization
+   * Called when a creator creates a new product
+   */
+  async incrementOffersCreated(organizationId: string): Promise<void> {
+    await this.prisma.vipInvitation.updateMany({
+      where: {
+        organizationId,
+        status: { in: ['ACTIVATED', 'CONVERTED'] },
+      },
+      data: { offersCreated: { increment: 1 } },
+    });
+  }
+
+  /**
+   * Add sales amount to salesGenerated counter for VIP invitation linked to an organization
+   * Called when a payment is received for a subscription
+   */
+  async addSalesGenerated(
+    organizationId: string,
+    amountCents: number,
+  ): Promise<void> {
+    await this.prisma.vipInvitation.updateMany({
+      where: {
+        organizationId,
+        status: { in: ['ACTIVATED', 'CONVERTED'] },
+      },
+      data: { salesGenerated: { increment: amountCents } },
+    });
+  }
 }

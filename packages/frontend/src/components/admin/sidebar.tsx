@@ -9,6 +9,7 @@ import {
   CreditCard,
   Gift,
   LayoutDashboard,
+  MessageSquare,
   Star,
   Users,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ export function AdminSidebar() {
   const navigation = [
     { key: 'home', href: '/admin', icon: LayoutDashboard },
     { key: 'vip', href: '/admin/vip', icon: Star },
+    { key: 'tickets', href: '/admin/tickets', icon: MessageSquare },
     { key: 'payments', href: '/admin/payments', icon: AlertCircle },
     { key: 'creators', href: '/admin/creators', icon: Users },
     { key: 'organizations', href: '/admin/organizations', icon: Building2 },
