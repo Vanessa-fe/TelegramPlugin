@@ -28,4 +28,19 @@ export const organizationsApi = {
     );
     return data;
   },
+
+  async suspend(id: string, reason?: string) {
+    const { data } = await apiClient.post<Organization>(
+      `/organizations/${id}/suspend`,
+      { reason }
+    );
+    return data;
+  },
+
+  async unsuspend(id: string) {
+    const { data } = await apiClient.post<Organization>(
+      `/organizations/${id}/unsuspend`
+    );
+    return data;
+  },
 };

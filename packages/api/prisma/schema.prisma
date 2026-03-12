@@ -168,11 +168,18 @@ model Organization {
   currency        String   @default("EUR")
   stripeAccountId String?  @unique
   saasActive      Boolean  @default(false)
+  suspendedAt     DateTime? // Manual suspension by SUPERADMIN - null = not suspended
+  suspendReason   String?   // Reason for manual suspension
   timezone        String?  @default("UTC")
   metadata        Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   deletedAt       DateTime?
+
+  // Ambassador program fields
+  ambassadorTier      AmbassadorTier @default(NONE)
+  ambassadorSince     DateTime?
+  lastLoyaltyRewardAt DateTime?
 
   users                 User[]
   customers             Customer[]
@@ -188,6 +195,7 @@ model Organization {
   coupons               Coupon[]
   landingPage           LandingPage?
   teamInvites           TeamInvite[]
+  tickets               Ticket[]
 
   @@index([slug])
 }
@@ -214,6 +222,8 @@ model User {
   verificationTokens EmailVerificationToken[]
   refreshTokens  RefreshToken[]
   sentTeamInvites TeamInvite[] @relation("TeamInviteInvitedBy")
+  assignedTickets Ticket[]       @relation("TicketAssignedTo")
+  ticketMessages  TicketMessage[]
 }
 
 model PasswordResetToken {
@@ -819,4 +829,153 @@ model CustomerDiscordAccount {
   updatedAt       DateTime @updatedAt
 
   customer        Customer @relation(fields: [customerId], references: [id])
+}
+
+// ========== Gift Codes (Platform Admin Only) ==========
+
+enum GiftCodeStatus {
+  ACTIVE
+  DISABLED
+  EXPIRED
+}
+
+enum VipInvitationStatus {
+  PENDING           // Email sent, waiting for activation
+  ACTIVATED         // User created account
+  CONVERTED         // Trial ended, user subscribed
+  EXPIRED           // Trial expired without conversion
+  CANCELLED         // Manually cancelled by admin
+}
+
+enum AmbassadorTier {
+  NONE
+  BRONZE    // 3+ mois 🟢
+  SILVER    // 6+ mois 🟢
+  GOLD      // 12+ mois 🟢 + high revenue
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model GiftCode {
+  id               String         @id @default(uuid())
+  code             String         @unique
+  description      String?        // Note interne pour l'admin
+  status           GiftCodeStatus @default(ACTIVE)
+  maxUses          Int?           // null = illimité
+  usedCount        Int            @default(0)
+  expiresAt        DateTime?
+  // Restrictions optionnelles (pour codes produit)
+  planIds          String[]       // Vide = tous les plans
+  organizationIds  String[]       // Vide = toutes les organisations
+  // Mode essai plateforme (pour testeurs SaaS)
+  isPlatformTrial  Boolean        @default(false)
+  platformPlanName String?        // "starter", "growth", "pro"
+  trialDays        Int?           // Durée de l'essai en jours
+  createdById      String         // SUPERADMIN qui a créé le code
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  usages           GiftCodeUsage[]
+
+  @@index([code])
+  @@index([status])
+}
+
+model GiftCodeUsage {
+  id             String   @id @default(uuid())
+  giftCodeId     String
+  subscriptionId String   @unique
+  customerId     String
+  customerEmail  String?
+  planId         String
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  giftCode       GiftCode @relation(fields: [giftCodeId], references: [id])
+
+  @@index([giftCodeId])
+  @@index([customerId])
+}
+
+// ========== VIP Invitations (SUPERADMIN Dashboard) ==========
+
+model VipInvitation {
+  id                 String              @id @default(uuid())
+  email              String
+  token              String              @unique @default(uuid())
+  status             VipInvitationStatus @default(PENDING)
+
+  // Invitation parameters
+  platformPlanName   String              // "starter", "growth", "pro"
+  trialDays          Int                 // Duration of free trial
+
+  // Tracking
+  emailSentAt        DateTime?
+  activatedAt        DateTime?
+  convertedAt        DateTime?
+  expiresAt          DateTime?           // Trial expiration date (set on activation)
+  lastReportSentAt   DateTime?           // For VIP monthly reports
+
+  // Metrics (populated after activation)
+  organizationId     String?             // Organization created by VIP
+  offersCreated      Int                 @default(0)
+  salesGenerated     Int                 @default(0) // In cents
+
+  // Admin info
+  createdById        String              // SUPERADMIN who created invitation
+  notes              String?             // Internal notes
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([token])
+}
+
+// ========== Support Tickets ==========
+
+model Ticket {
+  id             String         @id @default(uuid())
+  organizationId String
+  subject        String
+  status         TicketStatus   @default(OPEN)
+  priority       TicketPriority @default(MEDIUM)
+  assignedToId   String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  closedAt       DateTime?
+
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  assignedTo     User?          @relation("TicketAssignedTo", fields: [assignedToId], references: [id])
+  messages       TicketMessage[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String
+  authorId  String
+  content   String
+  isInternal Boolean @default(false)  // Internal notes not visible to creator
+  createdAt DateTime @default(now())
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId])
 }

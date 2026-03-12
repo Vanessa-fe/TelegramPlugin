@@ -336,7 +336,10 @@ describe('Platform Subscription (e2e)', () => {
           },
         });
 
-        const cookies = await loginUser('grandfathered@example.com', 'Test1234!');
+        const cookies = await loginUser(
+          'grandfathered@example.com',
+          'Test1234!',
+        );
 
         // Should be able to access coupons even on starter plan
         const couponsResponse = await app.inject({

@@ -54,7 +54,8 @@
     "billing": "Billing",
     "coupons": "Coupons",
     "affiliates": "Affiliates",
-    "team": "Team"
+    "team": "Team",
+    "support": "Support"
   },
   "sidebar": {
     "currentPlan": "Subscription",
@@ -2431,8 +2432,42 @@
   },
   "admin": {
     "home": {
-      "title": "Back-office",
-      "subtitle": "Manage customer organizations and billing.",
+      "title": "SUPERADMIN Dashboard",
+      "subtitle": "Overview of SaaS health and quick actions.",
+      "kpis": {
+        "title": "Weekly KPIs",
+        "newClients": "New clients",
+        "revenue": "Revenue",
+        "vipActive": "Active VIPs",
+        "failedPayments": "Failed payments",
+        "thisWeek": "This week",
+        "expiringSoon": "Expiring soon",
+        "requiresAction": "Action required"
+      },
+      "alerts": {
+        "title": "Alerts to handle",
+        "tickets": {
+          "title": "Unanswered tickets",
+          "description": "Support requests pending for +24h"
+        },
+        "payments": {
+          "title": "Failed payments",
+          "description": "Creators with payment failures"
+        },
+        "churn": {
+          "title": "Churn risk",
+          "description": "Creators showing signs of inactivity"
+        }
+      },
+      "quickActions": {
+        "title": "Quick actions",
+        "inviteVip": "Invite VIP",
+        "inviteVipDesc": "Send an influencer invitation",
+        "organizations": "Organizations",
+        "organizationsDesc": "Manage customer accounts",
+        "giftCodes": "Gift codes",
+        "giftCodesDesc": "Create free access codes"
+      },
       "cards": {
         "organizations": {
           "title": "Organizations",
@@ -2441,12 +2476,21 @@
         "billing": {
           "title": "Billing",
           "description": "Track Stripe status and billing setup"
+        },
+        "giftCodes": {
+          "title": "Gift Codes",
+          "description": "Create codes to offer free access"
         }
       }
     },
     "nav": {
-      "home": "Overview",
+      "home": "Dashboard",
+      "vip": "VIP Guests",
+      "tickets": "Tickets",
+      "payments": "Payments",
+      "creators": "Creators",
       "organizations": "Organizations",
+      "giftCodes": "Gift Codes",
       "billing": "Billing"
     },
     "header": {

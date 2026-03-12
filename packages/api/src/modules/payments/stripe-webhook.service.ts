@@ -14,6 +14,7 @@ import { AuditLogService } from '../audit-log/audit-log.service';
 import { MetricsService } from '../metrics/metrics.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 
 export type StripeRawBodyRequest = {
   rawBody?: Buffer | string;
@@ -37,6 +38,7 @@ export class StripeWebhookService {
     private readonly metricsService: MetricsService,
     private readonly platformSubscriptionService: PlatformSubscriptionService,
     private readonly analyticsService: AnalyticsService,
+    private readonly vipInvitationsService: VipInvitationsService,
   ) {
     const apiKey = this.config.get<string>('STRIPE_SECRET_KEY');
     if (!apiKey) {
@@ -197,6 +199,21 @@ export class StripeWebhookService {
         currency: (invoice.currency ?? 'eur').toUpperCase(),
         clientId: context.subscriptionId,
       });
+
+      // Track VIP ROI: add sales generated for VIP invitation linked to this org
+      try {
+        const amountPaid = invoice.amount_paid ?? 0;
+        if (amountPaid > 0) {
+          await this.vipInvitationsService.addSalesGenerated(
+            context.organizationId,
+            amountPaid,
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Failed to track VIP sales for org ${context.organizationId}: ${(error as Error).message}`,
+        );
+      }
     }
 
     try {

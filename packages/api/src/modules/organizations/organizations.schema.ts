@@ -34,3 +34,9 @@ export const updateOrganizationSchema = createOrganizationSchema
   });
 
 export type UpdateOrganizationDto = z.infer<typeof updateOrganizationSchema>;
+
+export const suspendOrganizationSchema = z.object({
+  reason: z.string().optional(),
+});
+
+export type SuspendOrganizationDto = z.infer<typeof suspendOrganizationSchema>;

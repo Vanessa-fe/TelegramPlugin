@@ -5,6 +5,7 @@ import { StripeWebhookService } from './stripe-webhook.service';
 import { ChannelAccessModule } from '../channel-access/channel-access.module';
 import { AuditLogModule } from '../audit-log/audit-log.module';
 import { PlatformSubscriptionModule } from '../platform-subscription/platform-subscription.module';
+import { VipInvitationsModule } from '../vip-invitations/vip-invitations.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { PlatformSubscriptionModule } from '../platform-subscription/platform-su
     ChannelAccessModule,
     AuditLogModule,
     PlatformSubscriptionModule,
+    VipInvitationsModule,
   ],
   controllers: [StripeWebhookController],
   providers: [StripeWebhookService],

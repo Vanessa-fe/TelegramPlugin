@@ -15,7 +15,7 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<User>;
   register: (data: RegisterData) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
@@ -47,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function login(credentials: LoginCredentials) {
     const { user: userData } = await authApi.login(credentials);
     setUser(userData);
+    return userData;
   }
 
   async function register(data: RegisterData) {

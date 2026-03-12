@@ -36,6 +36,10 @@ import { CouponsModule } from './modules/coupons/coupons.module';
 import { AffiliatesModule } from './modules/affiliates/affiliates.module';
 import { LandingPagesModule } from './modules/landing-pages/landing-pages.module';
 import { TeamModule } from './modules/team/team.module';
+import { GiftCodesModule } from './modules/gift-codes/gift-codes.module';
+import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.module';
+import { VipInvitationsModule } from './modules/vip-invitations/vip-invitations.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
 
 function findRepoRoot(startDir: string): string {
   let dir = startDir;
@@ -145,6 +149,10 @@ function resolveEnvFiles(): string[] {
     AffiliatesModule,
     LandingPagesModule,
     TeamModule,
+    GiftCodesModule,
+    AdminDashboardModule,
+    VipInvitationsModule,
+    TicketsModule,
   ],
   controllers: [AppController],
   providers: [

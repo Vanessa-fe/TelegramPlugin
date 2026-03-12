@@ -315,6 +315,53 @@ export class NotificationsService implements OnModuleInit {
   }
 
   /**
+   * Send VIP invitation email with special trial offer
+   */
+  async sendVipInvitationEmail(data: {
+    to: string;
+    activationLink: string;
+    planName: string;
+    trialDays: number;
+    notes?: string;
+  }): Promise<void> {
+    const subject = `🎁 Invitation VIP - ${data.trialDays} jours d'essai gratuit sur Sublynk`;
+    const body = `
+      <h1>🎁 Vous êtes invité(e) en VIP !</h1>
+      <p>Bonjour,</p>
+      <p>Vous avez été sélectionné(e) pour bénéficier d'un accès privilégié à <strong>Sublynk</strong>, la plateforme de monétisation de communautés Telegram.</p>
+
+      <h2>Votre offre exclusive</h2>
+      <ul>
+        <li><strong>Plan :</strong> ${data.planName}</li>
+        <li><strong>Durée d'essai :</strong> ${data.trialDays} jours gratuits</li>
+        <li><strong>Aucune carte bancaire requise</strong> pour commencer</li>
+      </ul>
+
+      ${data.notes ? `<p><em>Message personnalisé : ${data.notes}</em></p>` : ''}
+
+      <p style="margin: 30px 0;">
+        <a href="${data.activationLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+          Activer mon essai gratuit
+        </a>
+      </p>
+
+      <h2>Pourquoi Sublynk ?</h2>
+      <ul>
+        <li>✅ Vendez l'accès à vos channels Telegram en quelques clics</li>
+        <li>✅ Gestion automatique des membres et des paiements</li>
+        <li>✅ Tableau de bord complet avec analytics</li>
+        <li>✅ Support réactif et communauté active</li>
+      </ul>
+
+      <p>Cette invitation est personnelle et liée à votre adresse email.</p>
+      <p>À très bientôt sur Sublynk ! 🚀</p>
+    `;
+
+    await this.sendEmail(data.to, subject, body);
+    this.logger.log(`VIP invitation email sent to ${data.to}`);
+  }
+
+  /**
    * Send notification to admin when a new platform subscription is created
    */
   async sendAdminNewSubscriptionNotification(data: {
@@ -697,9 +744,205 @@ export class NotificationsService implements OnModuleInit {
   private redactSensitiveUrls(body: string): string {
     // Redact token query parameters in URLs
     // Matches: ?token=xxx or &token=xxx
-    return body.replace(
-      /([?&]token=)[A-Za-z0-9_-]+/gi,
-      '$1[REDACTED]',
+    return body.replace(/([?&]token=)[A-Za-z0-9_-]+/gi, '$1[REDACTED]');
+  }
+
+  /**
+   * Send VIP monthly report email with performance metrics
+   */
+  async sendVipReportEmail(data: {
+    to: string;
+    organizationName: string;
+    channelsCount: number;
+    customersCount: number;
+    salesGenerated: number;
+    offersCreated: number;
+  }): Promise<void> {
+    const formattedSales = new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(data.salesGenerated / 100);
+
+    const subject = `📊 Votre rapport mensuel - ${data.organizationName}`;
+    const body = `
+      <h1>📊 Votre activité ce mois</h1>
+      <p>Bonjour,</p>
+      <p>Voici un résumé de votre activité sur <strong>Sublynk</strong> :</p>
+
+      <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
+              <strong>📦 Offres créées</strong>
+            </td>
+            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">
+              <strong>${data.offersCreated}</strong>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
+              <strong>📺 Canaux configurés</strong>
+            </td>
+            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">
+              <strong>${data.channelsCount}</strong>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
+              <strong>👥 Clients</strong>
+            </td>
+            <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e5e7eb;">
+              <strong>${data.customersCount}</strong>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px;">
+              <strong>💰 Ventes générées</strong>
+            </td>
+            <td style="padding: 10px; text-align: right;">
+              <strong style="color: #059669;">${formattedSales}</strong>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <p>Continuez comme ça ! 🎉</p>
+      <p>L'équipe Sublynk</p>
+    `;
+
+    await this.sendEmail(data.to, subject, body);
+    this.logger.log(`VIP report email sent to ${data.to}`);
+  }
+
+  /**
+   * Send loyalty reward notification email to ambassadors
+   */
+  async sendLoyaltyRewardEmail(data: {
+    to: string;
+    organizationName: string;
+    tier: string;
+  }): Promise<void> {
+    const tierEmoji =
+      data.tier === 'GOLD'
+        ? '🥇'
+        : data.tier === 'SILVER'
+          ? '🥈'
+          : data.tier === 'BRONZE'
+            ? '🥉'
+            : '⭐';
+
+    const subject = `🎁 Récompense fidélité - 1 mois offert !`;
+    const body = `
+      <h1>🎁 Merci pour votre fidélité !</h1>
+      <p>Bonjour,</p>
+      <p>En tant qu'ambassadeur <strong>${tierEmoji} ${data.tier}</strong> de <strong>${data.organizationName}</strong>, nous tenons à vous remercier pour votre fidélité.</p>
+
+      <div style="background-color: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+        <p style="font-size: 24px; margin: 0;">🎉</p>
+        <p style="font-size: 18px; font-weight: bold; margin: 10px 0;">
+          Vous avez reçu <span style="color: #059669;">1 mois gratuit</span> !
+        </p>
+        <p style="margin: 0; color: #065f46;">
+          Votre abonnement a été prolongé automatiquement.
+        </p>
+      </div>
+
+      <p>Continuez à développer votre communauté avec Sublynk !</p>
+      <p>L'équipe Sublynk</p>
+    `;
+
+    await this.sendEmail(data.to, subject, body);
+    this.logger.log(`Loyalty reward email sent to ${data.to}`);
+  }
+
+  /**
+   * Send payment warning email to organization (J+5 before suspension)
+   */
+  async sendPlatformPaymentWarningEmail(data: {
+    to: string;
+    organizationName: string;
+    daysRemaining: number;
+    billingPortalUrl?: string;
+  }): Promise<void> {
+    const subject = `⚠️ Action requise : Paiement en attente pour ${data.organizationName}`;
+    const billingLink = data.billingPortalUrl
+      ? `<p><a href="${data.billingPortalUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Mettre à jour mes informations de paiement</a></p>`
+      : '';
+
+    const body = `
+      <h1>⚠️ Votre abonnement Sublynk est en attente de paiement</h1>
+      <p>Bonjour,</p>
+      <p>Nous n'avons pas pu traiter le paiement pour votre compte <strong>${data.organizationName}</strong>.</p>
+
+      <p style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0;">
+        <strong>⏰ Il vous reste ${data.daysRemaining} jour${data.daysRemaining > 1 ? 's' : ''}</strong> pour régulariser votre situation avant la suspension de votre compte.
+      </p>
+
+      <h2>Que se passe-t-il si je ne régularise pas ?</h2>
+      <ul>
+        <li>❌ Votre compte sera suspendu</li>
+        <li>❌ Vos abonnés perdront l'accès à vos channels</li>
+        <li>❌ Vous ne pourrez plus recevoir de paiements</li>
+      </ul>
+
+      ${billingLink}
+
+      <p>Si vous rencontrez des difficultés, n'hésitez pas à nous contacter.</p>
+      <p>L'équipe Sublynk</p>
+    `;
+
+    await this.sendEmail(data.to, subject, body);
+    this.logger.log(
+      `Platform payment warning email sent to ${data.to} for ${data.organizationName}`,
+    );
+  }
+
+  /**
+   * Send suspension notification email to organization
+   */
+  async sendPlatformSuspensionEmail(data: {
+    to: string;
+    organizationName: string;
+    reason: string;
+    supportEmail?: string;
+  }): Promise<void> {
+    const subject = `🚫 Compte suspendu : ${data.organizationName}`;
+    const supportContact = data.supportEmail
+      ? `<p>Pour toute question, contactez-nous à <a href="mailto:${data.supportEmail}">${data.supportEmail}</a></p>`
+      : '';
+
+    const body = `
+      <h1>🚫 Votre compte Sublynk a été suspendu</h1>
+      <p>Bonjour,</p>
+      <p>Nous avons dû suspendre votre compte <strong>${data.organizationName}</strong>.</p>
+
+      <p style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 16px; margin: 20px 0;">
+        <strong>Raison :</strong> ${data.reason}
+      </p>
+
+      <h2>Conséquences de la suspension</h2>
+      <ul>
+        <li>❌ Tous les accès de vos abonnés ont été révoqués</li>
+        <li>❌ Vous ne pouvez plus recevoir de nouveaux paiements</li>
+        <li>❌ Votre page de vente est désactivée</li>
+      </ul>
+
+      <h2>Comment réactiver mon compte ?</h2>
+      <p>Pour réactiver votre compte, vous devez :</p>
+      <ol>
+        <li>Régulariser votre situation de paiement</li>
+        <li>Contacter notre équipe support</li>
+      </ol>
+
+      ${supportContact}
+
+      <p>Nous restons à votre disposition.</p>
+      <p>L'équipe Sublynk</p>
+    `;
+
+    await this.sendEmail(data.to, subject, body);
+    this.logger.log(
+      `Platform suspension email sent to ${data.to} for ${data.organizationName}`,
     );
   }
 }

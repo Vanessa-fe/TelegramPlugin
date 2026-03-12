@@ -1,25 +1,43 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Building2, CreditCard, LayoutDashboard } from 'lucide-react';
+import {
+  AlertCircle,
+  Building2,
+  CreditCard,
+  Gift,
+  LayoutDashboard,
+  MessageSquare,
+  Star,
+  Users,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const t = useTranslations('admin');
+
+  // SUPERADMIN navigation - organized by priority
   const navigation = [
     { key: 'home', href: '/admin', icon: LayoutDashboard },
+    { key: 'vip', href: '/admin/vip', icon: Star },
+    { key: 'tickets', href: '/admin/tickets', icon: MessageSquare },
+    { key: 'payments', href: '/admin/payments', icon: AlertCircle },
+    { key: 'creators', href: '/admin/creators', icon: Users },
     { key: 'organizations', href: '/admin/organizations', icon: Building2 },
+    { key: 'giftCodes', href: '/admin/gift-codes', icon: Gift },
     { key: 'billing', href: '/admin/billing', icon: CreditCard },
   ];
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-gray-50">
-      <div className="flex h-16 items-center border-b px-6">
-        <h1 className="text-xl font-bold text-purple-600">{t('home.title')}</h1>
-      </div>
+      <Link href="/admin" className="flex h-16 items-center border-b px-6">
+        <Image src="/logo_160.svg" alt="Sublynk" width={32} height={32} />
+        <span className="ml-2 text-xl font-bold text-purple-600">Sublynk</span>
+      </Link>
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
           const isActive =

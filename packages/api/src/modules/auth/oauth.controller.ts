@@ -1,5 +1,6 @@
 import { Controller, Get, Logger, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { UserRole } from '@prisma/client';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from './decorators/public.decorator';
 import { OAuthProfile, OAuthService } from './oauth.service';
@@ -87,10 +88,16 @@ export class OAuthController {
         maxAge: 7 * 24 * 60 * 60, // 7 days (seconds)
       });
 
+      // Redirect SUPERADMIN to admin dashboard
+      let finalRedirectUrl = successUrl;
+      if (authResult.user.role === UserRole.SUPERADMIN) {
+        finalRedirectUrl = '/admin';
+      }
+
       // Add signup param for new user registrations (for GTM tracking)
       const redirectUrl = authResult.isNewUser
-        ? `${successUrl}?signup=google`
-        : successUrl;
+        ? `${finalRedirectUrl}?signup=google`
+        : finalRedirectUrl;
 
       return reply.status(302).redirect(redirectUrl);
     } catch (error) {

@@ -54,7 +54,8 @@
     "billing": "Facturation",
     "coupons": "Coupons",
     "affiliates": "Affiliés",
-    "team": "Équipe"
+    "team": "Équipe",
+    "support": "Support"
   },
   "sidebar": {
     "currentPlan": "Abonnement",
@@ -2431,8 +2432,42 @@
   },
   "admin": {
     "home": {
-      "title": "Back-office",
-      "subtitle": "Gérez les organisations clientes et la facturation.",
+      "title": "Dashboard SUPERADMIN",
+      "subtitle": "Vue d'ensemble de la santé du SaaS et actions rapides.",
+      "kpis": {
+        "title": "KPIs de la semaine",
+        "newClients": "Nouveaux clients",
+        "revenue": "Revenus",
+        "vipActive": "VIP actifs",
+        "failedPayments": "Impayés",
+        "thisWeek": "Cette semaine",
+        "expiringSoon": "Expirent bientôt",
+        "requiresAction": "Action requise"
+      },
+      "alerts": {
+        "title": "Alertes à traiter",
+        "tickets": {
+          "title": "Tickets non répondus",
+          "description": "Demandes de support en attente depuis +24h"
+        },
+        "payments": {
+          "title": "Paiements en échec",
+          "description": "Créateurs avec paiements échoués"
+        },
+        "churn": {
+          "title": "Risque de churn",
+          "description": "Créateurs montrant des signes d'inactivité"
+        }
+      },
+      "quickActions": {
+        "title": "Actions rapides",
+        "inviteVip": "Inviter un VIP",
+        "inviteVipDesc": "Envoyer une invitation influenceur",
+        "organizations": "Organisations",
+        "organizationsDesc": "Gérer les comptes clients",
+        "giftCodes": "Codes cadeaux",
+        "giftCodesDesc": "Créer des accès gratuits"
+      },
       "cards": {
         "organizations": {
           "title": "Organisations",
@@ -2441,12 +2476,21 @@
         "billing": {
           "title": "Facturation",
           "description": "Suivez l'état Stripe et la configuration de facturation"
+        },
+        "giftCodes": {
+          "title": "Codes cadeaux",
+          "description": "Créez des codes pour offrir des accès gratuits"
         }
       }
     },
     "nav": {
-      "home": "Vue d'ensemble",
+      "home": "Dashboard",
+      "vip": "Invités VIP",
+      "tickets": "Tickets",
+      "payments": "Paiements",
+      "creators": "Créateurs",
       "organizations": "Organisations",
+      "giftCodes": "Codes cadeaux",
       "billing": "Facturation"
     },
     "header": {

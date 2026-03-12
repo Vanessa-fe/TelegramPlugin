@@ -40,9 +40,14 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await login({ email, password });
+      const user = await login({ email, password });
       toast.success(t("success"));
-      router.push("/dashboard");
+      // Redirect SUPERADMIN to admin dashboard
+      if (user.role === "SUPERADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
       const msg = axiosError.response?.data?.message || t("error");
