@@ -99,17 +99,6 @@ export function createBot(config) {
         }
         return response.json();
     }
-    async function getApi(path) {
-        const response = await fetch(`${apiBaseUrl}${path}`, {
-            method: "GET",
-            headers: apiHeaders,
-        });
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API ${response.status} ${response.statusText}: ${errorText}`);
-        }
-        return response.json();
-    }
     // Check if bot has required permissions in guild
     function hasRequiredPermissions(guild) {
         const botMember = guild.members.me;
@@ -193,7 +182,7 @@ export function createBot(config) {
         });
     });
     // Handle bot joining a new guild
-    client.on(Events.GuildCreate, async (guild) => {
+    client.on(Events.GuildCreate, (guild) => {
         log("info", "Bot joined new guild", {
             guildId: guild.id,
             guildName: guild.name,
@@ -215,7 +204,7 @@ export function createBot(config) {
         });
     });
     // Handle messages for verification code detection
-    client.on(Events.MessageCreate, async (message) => {
+    async function handleMessageCreate(message) {
         // Ignore bot messages and DMs
         if (message.author.bot || !message.guild)
             return;
@@ -297,6 +286,9 @@ export function createBot(config) {
             });
             await message.reply("❌ Une erreur est survenue lors de la vérification. Veuillez réessayer.");
         }
+    }
+    client.on(Events.MessageCreate, (message) => {
+        void handleMessageCreate(message);
     });
     // Expose methods for worker to use
     return {
@@ -395,9 +387,9 @@ export async function startBot() {
         apiBaseUrl: botConfig.apiBaseUrl,
     });
     // Handle graceful shutdown
-    const shutdown = async () => {
+    const shutdown = () => {
         log("info", "Shutting down Discord bot...");
-        bot.client.destroy();
+        void bot.client.destroy();
         process.exit(0);
     };
     process.on("SIGINT", shutdown);
