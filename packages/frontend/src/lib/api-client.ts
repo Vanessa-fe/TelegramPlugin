@@ -1,7 +1,14 @@
 import axios, { type AxiosRequestConfig } from 'axios';
 
+// Use /api proxy in production to avoid third-party cookie issues
+// In development, use the direct API URL
+const isServer = typeof window === 'undefined';
+const baseURL = isServer
+  ? process.env.NEXT_PUBLIC_API_URL // SSR uses direct URL
+  : '/api'; // Client uses proxy to avoid CORS/cookie issues
+
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL,
   withCredentials: true, // CRITICAL: sends cookies
   headers: {
     'Content-Type': 'application/json',
