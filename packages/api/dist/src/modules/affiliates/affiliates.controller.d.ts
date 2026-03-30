@@ -23,10 +23,10 @@ export declare class AffiliatesController {
         createdAt: Date;
         status: import("@prisma/client").$Enums.PayoutStatus;
         processedAt: Date | null;
+        notes: string | null;
         method: string | null;
         affiliateId: string;
         amountCents: number;
-        notes: string | null;
     }[]>;
     create(user: AuthUser, body: CreateAffiliateDto): Promise<{
         id: string;
@@ -79,10 +79,10 @@ export declare class AffiliatesController {
         createdAt: Date;
         status: import("@prisma/client").$Enums.PayoutStatus;
         processedAt: Date | null;
+        notes: string | null;
         method: string | null;
         affiliateId: string;
         amountCents: number;
-        notes: string | null;
     }>;
     updatePayout(user: AuthUser, payoutId: string, body: UpdatePayoutDto): Promise<{
         id: string;
@@ -90,10 +90,10 @@ export declare class AffiliatesController {
         createdAt: Date;
         status: import("@prisma/client").$Enums.PayoutStatus;
         processedAt: Date | null;
+        notes: string | null;
         method: string | null;
         affiliateId: string;
         amountCents: number;
-        notes: string | null;
     }>;
     validate(body: ValidateAffiliateDto): Promise<import("./affiliates.service").ValidateAffiliateResult>;
 }

@@ -66,13 +66,13 @@ export declare const createPayoutSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     currency: string;
     amountCents: number;
-    method?: string | undefined;
     notes?: string | undefined;
+    method?: string | undefined;
 }, {
     amountCents: number;
     currency?: string | undefined;
-    method?: string | undefined;
     notes?: string | undefined;
+    method?: string | undefined;
 }>;
 export type CreatePayoutDto = z.infer<typeof createPayoutSchema>;
 export declare const updatePayoutSchema: z.ZodObject<{
