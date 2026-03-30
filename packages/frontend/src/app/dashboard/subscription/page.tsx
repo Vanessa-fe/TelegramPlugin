@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { organizationsApi } from "@/lib/api/organizations";
 import { platformSubscriptionApi } from "@/lib/api/platform-subscription";
+import { cn } from "@/lib/utils";
 import type {
   PlatformPlan,
   PlatformPlanName,
@@ -101,6 +102,10 @@ export default function PlatformSubscriptionPage() {
     subscription?.status === "ACTIVE" || subscription?.status === "TRIALING";
   const isStarterActive =
     hasActiveOrTrialingSubscription && subscription?.plan?.name === "starter";
+  const currentPlanName =
+    hasActiveOrTrialingSubscription && subscription?.plan?.name
+      ? (subscription.plan.name as PlatformPlanName)
+      : null;
 
   const canCheckoutPlan = useCallback(
     (planName: PlatformPlanName) => {
@@ -317,67 +322,91 @@ export default function PlatformSubscriptionPage() {
         )}
 
         <div className="mt-4 grid gap-4 md:grid-cols-3">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={`relative rounded-lg border p-4 ${
-                plan.name === "growth"
-                  ? "border-2 border-purple-500"
-                  : "border-border-custom"
-              }`}
-            >
-              {plan.name === "growth" && (
-                <span className="absolute -top-3 left-4 rounded-full bg-purple-600 px-3 py-1 text-xs font-semibold text-white">
-                  {t("plans.recommended")}
-                </span>
-              )}
-              <p className="font-semibold text-text-primary">{plan.displayName}</p>
-              <p className="mt-1 text-xl font-bold text-text-primary">
-                {formatPrice(plan.priceCents, plan.currency)}
-                <span className="ml-1 text-sm font-normal text-text-secondary">
-                  {t("plans.perMonth")}
-                </span>
-              </p>
-              {(plan.name === "starter" ||
-                plan.name === "growth" ||
-                plan.name === "pro") && (
-                <p className="mt-1 text-sm font-medium text-purple-700">
-                  {getPlanConfig(plan.name).commission}
-                </p>
-              )}
+          {plans.map((plan) => {
+            const planName = plan.name as PlatformPlanName;
+            const isCurrentPlan = currentPlanName === planName;
+            const isRecommendedPlan = planName === "growth";
+            const isStandardPlan =
+              planName === "starter" ||
+              planName === "growth" ||
+              planName === "pro";
 
-              {(plan.name === "starter" ||
-                plan.name === "growth" ||
-                plan.name === "pro") && (
-                <ul className="mt-3 space-y-1 text-sm text-text-secondary">
-                  {getPlanConfig(plan.name).features.map((feature) => (
-                    <li key={feature}>• {feature}</li>
-                  ))}
-                </ul>
-              )}
-
-              <Button
-                className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white"
-                disabled={
-                  !canCheckoutPlan(plan.name as PlatformPlanName) ||
-                  isProcessing === plan.name
-                }
-                onClick={() => handleCheckout(plan.name as PlatformPlanName)}
-              >
-                {isProcessing === plan.name ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("plans.redirecting")}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    {t("plans.choose")}
-                  </>
+            return (
+              <div
+                key={plan.id}
+                className={cn(
+                  "relative rounded-lg border p-4 transition-colors",
+                  isCurrentPlan
+                    ? "border-2 border-purple-500 bg-gradient-to-b from-purple-50 via-white to-white shadow-sm"
+                    : isRecommendedPlan
+                      ? "border-2 border-purple-500"
+                      : "border-border-custom",
                 )}
-              </Button>
-            </div>
-          ))}
+              >
+                {(isRecommendedPlan || isCurrentPlan) && (
+                  <div className="absolute -top-3 left-4 flex flex-wrap gap-2">
+                    {isRecommendedPlan && (
+                      <span className="rounded-full bg-purple-600 px-3 py-1 text-xs font-semibold text-white">
+                        {t("plans.recommended")}
+                      </span>
+                    )}
+                    {isCurrentPlan && (
+                      <span className="rounded-full border border-purple-200 bg-white px-3 py-1 text-xs font-semibold text-purple-700">
+                        {t("plans.current")}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <p className="font-semibold text-text-primary">{plan.displayName}</p>
+                <p className="mt-1 text-xl font-bold text-text-primary">
+                  {formatPrice(plan.priceCents, plan.currency)}
+                  <span className="ml-1 text-sm font-normal text-text-secondary">
+                    {t("plans.perMonth")}
+                  </span>
+                </p>
+                {isStandardPlan && (
+                  <p className="mt-1 text-sm font-medium text-purple-700">
+                    {getPlanConfig(planName).commission}
+                  </p>
+                )}
+
+                {isStandardPlan && (
+                  <ul className="mt-3 space-y-1 text-sm text-text-secondary">
+                    {getPlanConfig(planName).features.map((feature) => (
+                      <li key={feature}>• {feature}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {isCurrentPlan ? (
+                  <div className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-purple-200 bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700">
+                    <CheckCircle2 className="h-4 w-4" />
+                    {t("plans.current")}
+                  </div>
+                ) : (
+                  <Button
+                    className="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white"
+                    disabled={
+                      !canCheckoutPlan(planName) || isProcessing === planName
+                    }
+                    onClick={() => handleCheckout(planName)}
+                  >
+                    {isProcessing === planName ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("plans.redirecting")}
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        {t("plans.choose")}
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

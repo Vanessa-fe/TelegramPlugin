@@ -3289,6 +3289,7 @@
       "activeLockedHint": "Ton abonnement est déjà actif. Utilise la gestion Stripe pour le modifier.",
       "starterUpgradeHint": "Ton plan Starter est actif. Tu peux passer sur Growth ou Pro ci-dessous.",
       "recommended": "Plan recommandé",
+      "current": "Plan actif",
       "perMonth": "/mois",
       "trialDays": "{count} jours avant facturation",
       "choose": "Choisir ce plan",
@@ -3309,7 +3310,7 @@
       }
     },
     "branding": {
-      "title": "Branding v1",
+      "title": "Branding",
       "subtitle": "Configure ton branding public pour renforcer ta marque sur toutes tes pages.",
       "logoUrlLabel": "URL du logo",
       "logoUrlPlaceholder": "https://...",
