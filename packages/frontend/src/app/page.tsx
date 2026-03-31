@@ -10,7 +10,6 @@ import {
   HowItWorks,
   Features,
   Differentiators,
-  Testimonials,
   PricingTeaser,
   FinalCTA,
   Footer,
@@ -39,7 +38,6 @@ export default function Home() {
       <HowItWorks />
       <Features />
       <Differentiators />
-      <Testimonials />
       <PricingTeaser />
       <FinalCTA />
       <Footer />
