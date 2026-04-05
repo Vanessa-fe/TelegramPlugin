@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
+import { PricingViewTracker } from '@/components/analytics/pricing-view-tracker';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('pricing');
@@ -62,6 +63,7 @@ export default async function PricingPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <PricingViewTracker />
       <Navbar />
 
       {/* Hero */}

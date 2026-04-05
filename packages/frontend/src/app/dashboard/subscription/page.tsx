@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
+import { Analytics } from "@/lib/analytics/events";
 import { organizationsApi } from "@/lib/api/organizations";
 import { platformSubscriptionApi } from "@/lib/api/platform-subscription";
 import { cn } from "@/lib/utils";
@@ -135,10 +136,16 @@ export default function PlatformSubscriptionPage() {
     };
   }
 
-  async function handleCheckout(planName: PlatformPlanName) {
+  async function handleCheckout(plan: PlatformPlan) {
+    const planName = plan.name as PlatformPlanName;
+
     try {
       setIsProcessing(planName);
       const { url } = await platformSubscriptionApi.createCheckout(planName);
+      Analytics.planSelected({
+        plan: planName,
+        price: plan.priceCents / 100,
+      });
       window.location.href = url;
     } catch (error) {
       const axiosError = error as {
@@ -389,7 +396,7 @@ export default function PlatformSubscriptionPage() {
                     disabled={
                       !canCheckoutPlan(planName) || isProcessing === planName
                     }
-                    onClick={() => handleCheckout(planName)}
+                    onClick={() => handleCheckout(plan)}
                   >
                     {isProcessing === planName ? (
                       <>

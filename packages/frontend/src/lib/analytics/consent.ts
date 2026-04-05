@@ -1,5 +1,7 @@
 const ANALYTICS_CONSENT_COOKIE = process.env.NEXT_PUBLIC_ANALYTICS_CONSENT_COOKIE;
 const ANALYTICS_CONSENT_VALUE = process.env.NEXT_PUBLIC_ANALYTICS_CONSENT_VALUE;
+const ANALYTICS_CONSENT_STORAGE_KEY = "sublynk_analytics_consent";
+const IS_INTERNAL_ENV = process.env.NEXT_PUBLIC_IS_INTERNAL === "true";
 
 const FALLBACK_ANALYTICS_CONSENT_COOKIES = [
   "cm_consent",
@@ -61,29 +63,103 @@ function hasAffirmativeConsent(value: string): boolean {
   return false;
 }
 
+function readStoredAnalyticsConsent(): boolean | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const storedValue = window.localStorage.getItem(
+      ANALYTICS_CONSENT_STORAGE_KEY,
+    );
+
+    if (storedValue === "granted") {
+      return true;
+    }
+
+    if (storedValue === "denied") {
+      return false;
+    }
+  } catch {
+    // Ignore storage access errors (private mode, blocked storage, etc.)
+  }
+
+  return null;
+}
+
+function resolveConfiguredConsentCookie(): boolean | null {
+  if (!ANALYTICS_CONSENT_COOKIE) {
+    return null;
+  }
+
+  const configuredCookieValue = readCookieValue(ANALYTICS_CONSENT_COOKIE);
+
+  if (!configuredCookieValue) {
+    return false;
+  }
+
+  if (!ANALYTICS_CONSENT_VALUE) {
+    return hasAffirmativeConsent(configuredCookieValue);
+  }
+
+  const normalizedCookieValue = normalizeValue(configuredCookieValue);
+  const expectedValue = ANALYTICS_CONSENT_VALUE.trim().toLowerCase();
+
+  if (normalizedCookieValue === expectedValue) {
+    return true;
+  }
+
+  if (hasAffirmativeConsent(configuredCookieValue)) {
+    return true;
+  }
+
+  // CMP values can evolve over time; a mismatch is inconclusive.
+  return null;
+}
+
+export function persistAnalyticsConsent(value: boolean): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      ANALYTICS_CONSENT_STORAGE_KEY,
+      value ? "granted" : "denied",
+    );
+  } catch {
+    // Ignore storage access errors (private mode, blocked storage, etc.)
+  }
+}
+
 export function hasAnalyticsConsent(): boolean {
+  // Internal dev/staging environments should not depend on CMP interaction
+  // before emitting analytics needed for validation.
+  if (IS_INTERNAL_ENV) {
+    return true;
+  }
+
   if (typeof document === "undefined") {
     return false;
   }
 
-  if (ANALYTICS_CONSENT_COOKIE) {
-    const configuredCookieValue = readCookieValue(ANALYTICS_CONSENT_COOKIE);
+  const storedConsent = readStoredAnalyticsConsent();
 
-    if (!configuredCookieValue) {
-      return false;
-    }
-
-    if (!ANALYTICS_CONSENT_VALUE) {
-      return hasAffirmativeConsent(configuredCookieValue);
-    }
-
-    return (
-      normalizeValue(configuredCookieValue) ===
-      ANALYTICS_CONSENT_VALUE.trim().toLowerCase()
-    );
+  if (storedConsent === false) {
+    return false;
   }
 
-  return FALLBACK_ANALYTICS_CONSENT_COOKIES.some((cookieName) => {
+  if (storedConsent === true) {
+    return true;
+  }
+
+  const configuredCookieConsent = resolveConfiguredConsentCookie();
+
+  if (configuredCookieConsent !== null) {
+    return configuredCookieConsent;
+  }
+
+  const fallbackConsent = FALLBACK_ANALYTICS_CONSENT_COOKIES.some((cookieName) => {
     const cookieValue = readCookieValue(cookieName);
 
     if (!cookieValue) {
@@ -92,4 +168,10 @@ export function hasAnalyticsConsent(): boolean {
 
     return hasAffirmativeConsent(cookieValue);
   });
+
+  if (fallbackConsent) {
+    return true;
+  }
+
+  return false;
 }

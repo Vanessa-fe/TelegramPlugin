@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import pino from "pino";
 import { $Enums, PrismaClient } from "@prisma/client";
-import { GrantAccessPayload as GrantAccessPayloadSchema, RevokeAccessPayload as RevokeAccessPayloadSchema, computeJobLatencyMs, queueNames, } from "@telegram-plugin/shared";
+import { GrantAccessPayload as GrantAccessPayloadSchema, RevokeAccessPayload as RevokeAccessPayloadSchema, computeJobLatencyMs, queueNames, initPostHog, getPostHog, shutdownPostHog, ServerEvents, } from "@telegram-plugin/shared";
 import { env as processEnv, argv } from "node:process";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
@@ -24,6 +24,8 @@ const BaseEnvSchema = z.object({
     TELEGRAM_INVITE_TTL_SECONDS: z.string().optional(),
     TELEGRAM_INVITE_MAX_USES: z.string().optional(),
     ACCESS_LATENCY_ALERT_MS: z.string().optional(),
+    POSTHOG_API_KEY: z.string().optional(),
+    POSTHOG_HOST: z.string().optional(),
 });
 function parseOptionalInteger(value, { varName, min, max, }) {
     if (!value || value.trim().length === 0) {
@@ -199,6 +201,14 @@ async function processGrantAccess(job) {
         await processDiscordGrant(job, channelAccess);
         return;
     }
+    if (channelAccess.channel.provider === $Enums.ChannelProvider.WHATSAPP) {
+        logger.info({
+            jobId: job.id,
+            subscriptionId: data.subscriptionId,
+            channelId: data.channelId,
+        }, "WhatsApp access requires manual confirmation, skipping grant job");
+        return;
+    }
     if (channelAccess.channel.provider !== $Enums.ChannelProvider.TELEGRAM) {
         logger.warn({
             jobId: job.id,
@@ -283,6 +293,20 @@ async function processGrantAccess(job) {
                     telegramUserId: channelAccess.customer.telegramUserId,
                 }, "Invite link notification sent to customer");
             }
+        }
+        // Track event in PostHog
+        const posthog = getPostHog();
+        if (posthog) {
+            posthog.capture({
+                distinctId: channelAccess.customerId,
+                event: ServerEvents.CHANNEL_ACCESS_GRANTED,
+                properties: {
+                    subscriptionId: data.subscriptionId,
+                    channelId: data.channelId,
+                    channelProvider: "telegram",
+                    provider: data.provider,
+                },
+            });
         }
         logger.info({
             jobId: job.id,
@@ -476,6 +500,20 @@ async function processDiscordGrant(job, channelAccess) {
             discordUserId,
         }, "Discord access notification sent to customer");
     }
+    // Track event in PostHog
+    const posthog = getPostHog();
+    if (posthog) {
+        posthog.capture({
+            distinctId: channelAccess.customerId,
+            event: ServerEvents.CHANNEL_ACCESS_GRANTED,
+            properties: {
+                subscriptionId: channelAccess.subscriptionId,
+                channelId: channelAccess.channelId,
+                channelProvider: "discord",
+                guildId: discordGuild.guildId,
+            },
+        });
+    }
     logger.info({
         jobId: job.id,
         subscriptionId: channelAccess.subscriptionId,
@@ -534,6 +572,21 @@ async function processDiscordRevoke(job, access, reason) {
         `Votre accès à "${serverName}" a été révoqué.\n\n` +
         `Raison : ${reasonMessages[reason] || reason}`;
     await sendDiscordNotification(discordUserId, message);
+    // Track event in PostHog
+    const posthog = getPostHog();
+    if (posthog) {
+        posthog.capture({
+            distinctId: access.customerId,
+            event: ServerEvents.CHANNEL_ACCESS_REVOKED,
+            properties: {
+                subscriptionId: access.subscriptionId,
+                channelId: access.channelId,
+                channelProvider: "discord",
+                reason,
+                guildId: discordGuild.guildId,
+            },
+        });
+    }
     logger.info({
         jobId: job.id,
         channelId: access.channelId,
@@ -568,6 +621,14 @@ async function processRevokeAccess(job) {
         // Handle Discord channels
         if (access.channel.provider === $Enums.ChannelProvider.DISCORD) {
             await processDiscordRevoke(job, access, data.reason);
+            continue;
+        }
+        if (access.channel.provider === $Enums.ChannelProvider.WHATSAPP) {
+            logger.info({
+                jobId: job.id,
+                channelId: access.channelId,
+                subscriptionId: data.subscriptionId,
+            }, "WhatsApp access requires manual confirmation, skipping revoke job");
             continue;
         }
         // Handle non-Telegram channels
@@ -657,6 +718,24 @@ async function processRevokeAccess(job) {
             });
         });
     }
+    // Track events in PostHog for Telegram accesses
+    const posthog = getPostHog();
+    if (posthog) {
+        for (const access of channelAccesses) {
+            if (access.channel.provider === $Enums.ChannelProvider.TELEGRAM) {
+                posthog.capture({
+                    distinctId: access.customerId,
+                    event: ServerEvents.CHANNEL_ACCESS_REVOKED,
+                    properties: {
+                        subscriptionId: data.subscriptionId,
+                        channelId: access.channelId,
+                        channelProvider: "telegram",
+                        reason: data.reason,
+                    },
+                });
+            }
+        }
+    }
     logger.info({
         jobId: job.id,
         subscriptionId: data.subscriptionId,
@@ -669,6 +748,10 @@ async function shutdown(signal) {
     }
     isShuttingDown = true;
     logger.info({ signal }, "Shutting down workers");
+    // Shutdown PostHog first to ensure all events are flushed
+    await shutdownPostHog().catch((error) => {
+        logger.error({ error: error }, "Failed to shutdown PostHog");
+    });
     await Promise.allSettled([
         ...workers.map((worker) => worker.close()),
         grantDlq?.close(),
@@ -711,6 +794,14 @@ async function moveToDlq(job, error, dlq, queueName) {
     });
 }
 export async function bootstrapWorkers() {
+    // Initialize PostHog if configured
+    if (baseEnv.POSTHOG_API_KEY) {
+        initPostHog({
+            apiKey: baseEnv.POSTHOG_API_KEY,
+            host: baseEnv.POSTHOG_HOST ?? "https://eu.i.posthog.com",
+        });
+        logger.info("PostHog initialized");
+    }
     // Initialize Redis connection first
     connection = await initRedis();
     grantDlq = new Queue(queueNames.grantAccessDlq, { connection });

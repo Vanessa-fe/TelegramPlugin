@@ -15,6 +15,16 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
 fi
 
+is_local_database_url() {
+  local database_url="${1:-}"
+  [[ -n "$database_url" ]] || return 1
+  [[ "$database_url" =~ @localhost([:/]|$) ]] && return 0
+  [[ "$database_url" =~ @127\.0\.0\.1([:/]|$) ]] && return 0
+  [[ "$database_url" =~ @postgres([:/]|$) ]] && return 0
+  [[ "$database_url" =~ @telegram_plugin_postgres([:/]|$) ]] && return 0
+  return 1
+}
+
 is_port_in_use() {
   local port="$1"
   if command -v lsof >/dev/null 2>&1; then
@@ -103,11 +113,19 @@ cd "$ROOT_DIR"
 echo "🔧 Generating Prisma client..."
 pnpm --filter api prisma:generate
 
-echo "🗃️ Running database migrations..."
 if [[ "${NODE_ENV:-development}" == "production" ]]; then
+  echo "🗃️ Running production migrations..."
+  pnpm --filter api prisma:deploy
+elif is_local_database_url "${DATABASE_URL:-}"; then
+  echo "🗃️ Running local database migrations..."
+  pnpm --filter api prisma:migrate
+elif [[ "${RUN_REMOTE_MIGRATIONS:-0}" == "1" ]]; then
+  echo "🗃️ Running checked-in migrations on remote database..."
   pnpm --filter api prisma:deploy
 else
-  pnpm --filter api prisma:migrate
+  echo "⚠️  Remote DATABASE_URL detected."
+  echo "   Skipping 'prisma migrate dev' to avoid advisory-lock contention on the shared database."
+  echo "   Set RUN_REMOTE_MIGRATIONS=1 if you explicitly want to apply checked-in migrations with 'prisma migrate deploy'."
 fi
 
 echo "🚀 Starting dev stack (API + Frontend + Bot + Worker)..."

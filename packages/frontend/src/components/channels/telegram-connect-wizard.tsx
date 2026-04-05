@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Analytics } from "@/lib/analytics/events";
 import { channelsApi } from "@/lib/api/channels";
 import {
   ChannelType,
@@ -171,6 +172,7 @@ export function TelegramConnectWizard({
     setIsLoading(true);
     try {
       await channelsApi.confirmVerification(verification.id);
+      Analytics.communityCreated({ platform: "telegram" });
       toast.success(t("success"));
       router.push("/dashboard/channels");
     } catch (error) {

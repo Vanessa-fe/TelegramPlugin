@@ -21,6 +21,7 @@ import { OAuthButtons } from '@/components/auth/oauth-buttons';
 import { OAuthDivider } from '@/components/auth/oauth-divider';
 import { ORG_CURRENCY_OPTIONS } from '@/lib/currencies';
 import { authApi } from '@/lib/api/auth';
+import { Analytics } from '@/lib/analytics/events';
 
 function generateSecurePassword(length = 16): string {
   const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -136,6 +137,7 @@ export default function RegisterPage() {
       });
       setSubmittedEmail(result.email || formData.email.trim().toLowerCase());
       toast.success(t('success'));
+      Analytics.userSignedUp();
 
       // Send registration_success event to GTM
       if (typeof window !== 'undefined' && window.dataLayer) {

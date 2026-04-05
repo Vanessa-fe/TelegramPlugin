@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Analytics } from "@/lib/analytics/events";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export default function LoginPage() {
     try {
       const user = await login({ email, password });
       toast.success(t("success"));
+      Analytics.userLoggedIn();
       // Redirect SUPERADMIN to admin dashboard
       if (user.role === "SUPERADMIN") {
         router.push("/admin");

@@ -104,6 +104,9 @@ importers:
       pino:
         specifier: ^9.5.0
         version: 9.14.0
+      posthog-node:
+        specifier: ^5.28.11
+        version: 5.28.11(rxjs@7.8.2)
       prom-client:
         specifier: ^15.1.3
         version: 15.1.3
@@ -363,6 +366,9 @@ importers:
 
   packages/shared:
     dependencies:
+      posthog-node:
+        specifier: ^5.28.11
+        version: 5.28.11(rxjs@7.8.2)
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -415,6 +421,9 @@ importers:
       pino:
         specifier: ^9.5.0
         version: 9.14.0
+      posthog-node:
+        specifier: ^5.28.11
+        version: 5.28.11(rxjs@7.8.2)
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -3284,6 +3293,10 @@ packages:
     resolution: {integrity: sha512-GViD5mOv/mcbZcyzz3z9CS0R79JzxVaqEz4sP5Dsea178M/j3ZWe6gaHDZB9yuyGfcmIMQ/8K14yv+7QrK4sQQ==}
     dependencies:
       cross-spawn: 7.0.6
+    dev: false
+
+  /@posthog/core@1.24.6:
+    resolution: {integrity: sha512-9WkcRKqmXSWIJcca6m3VwA9YbFd4HiG2hKEtDq6FcwEHlvfDhQQUZ5/sJZ47Fw8OtyNMHQ6rW4+COttk4Bg5NQ==}
     dev: false
 
   /@posthog/types@1.356.1:
@@ -10031,6 +10044,19 @@ packages:
       preact: 10.28.4
       query-selector-shadow-dom: 1.0.1
       web-vitals: 5.1.0
+    dev: false
+
+  /posthog-node@5.28.11(rxjs@7.8.2):
+    resolution: {integrity: sha512-H4FOiqKUBO8SVXyXlU5tyifeS11hyTGVwBirFPR5rPtw8X6OFs5xVLx38YL7ZBLjaa9u8is+nIWXKBwWsZ2vlw==}
+    engines: {node: ^20.20.0 || >=22.22.0}
+    peerDependencies:
+      rxjs: ^7.0.0
+    peerDependenciesMeta:
+      rxjs:
+        optional: true
+    dependencies:
+      '@posthog/core': 1.24.6
+      rxjs: 7.8.2
     dev: false
 
   /preact@10.28.4:

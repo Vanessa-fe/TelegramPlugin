@@ -1,4 +1,5 @@
 import { z } from "zod";
+export { initPostHog, getPostHog, shutdownPostHog, ServerEvents, type PostHogConfig, type ServerEvent, } from "./posthog.js";
 export declare const queueNames: {
     readonly grantAccess: "grant-access";
     readonly revokeAccess: "revoke-access";
@@ -35,9 +36,9 @@ export declare const RevokeAccessPayload: z.ZodObject<{
     reason: z.ZodEnum<["payment_failed", "canceled", "manual", "refund", "expired"]>;
 }, "strip", z.ZodTypeAny, {
     subscriptionId: string;
-    reason: "canceled" | "expired" | "payment_failed" | "manual" | "refund";
+    reason: "payment_failed" | "canceled" | "expired" | "manual" | "refund";
 }, {
     subscriptionId: string;
-    reason: "canceled" | "expired" | "payment_failed" | "manual" | "refund";
+    reason: "payment_failed" | "canceled" | "expired" | "manual" | "refund";
 }>;
 export type RevokeAccessPayload = z.infer<typeof RevokeAccessPayload>;

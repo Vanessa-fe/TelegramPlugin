@@ -12,6 +12,10 @@ import {
   RevokeAccessPayload as RevokeAccessPayloadSchema,
   computeJobLatencyMs,
   queueNames,
+  initPostHog,
+  getPostHog,
+  shutdownPostHog,
+  ServerEvents,
 } from "@telegram-plugin/shared";
 import type {
   GrantAccessPayload,
@@ -36,6 +40,8 @@ const BaseEnvSchema = z.object({
   TELEGRAM_INVITE_TTL_SECONDS: z.string().optional(),
   TELEGRAM_INVITE_MAX_USES: z.string().optional(),
   ACCESS_LATENCY_ALERT_MS: z.string().optional(),
+  POSTHOG_API_KEY: z.string().optional(),
+  POSTHOG_HOST: z.string().optional(),
 });
 
 type BaseEnv = z.infer<typeof BaseEnvSchema>;
@@ -407,6 +413,21 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
       }
     }
 
+    // Track event in PostHog
+    const posthog = getPostHog();
+    if (posthog) {
+      posthog.capture({
+        distinctId: channelAccess.customerId,
+        event: ServerEvents.CHANNEL_ACCESS_GRANTED,
+        properties: {
+          subscriptionId: data.subscriptionId,
+          channelId: data.channelId,
+          channelProvider: "telegram",
+          provider: data.provider,
+        },
+      });
+    }
+
     logger.info(
       {
         jobId: job.id,
@@ -710,6 +731,21 @@ async function processDiscordGrant(
     );
   }
 
+  // Track event in PostHog
+  const posthog = getPostHog();
+  if (posthog) {
+    posthog.capture({
+      distinctId: channelAccess.customerId,
+      event: ServerEvents.CHANNEL_ACCESS_GRANTED,
+      properties: {
+        subscriptionId: channelAccess.subscriptionId,
+        channelId: channelAccess.channelId,
+        channelProvider: "discord",
+        guildId: discordGuild.guildId,
+      },
+    });
+  }
+
   logger.info(
     {
       jobId: job.id,
@@ -796,6 +832,22 @@ async function processDiscordRevoke(
     `Raison : ${reasonMessages[reason] || reason}`;
 
   await sendDiscordNotification(discordUserId, message);
+
+  // Track event in PostHog
+  const posthog = getPostHog();
+  if (posthog) {
+    posthog.capture({
+      distinctId: access.customerId,
+      event: ServerEvents.CHANNEL_ACCESS_REVOKED,
+      properties: {
+        subscriptionId: access.subscriptionId,
+        channelId: access.channelId,
+        channelProvider: "discord",
+        reason,
+        guildId: discordGuild.guildId,
+      },
+    });
+  }
 
   logger.info(
     {
@@ -970,6 +1022,25 @@ async function processRevokeAccess(
     });
   }
 
+  // Track events in PostHog for Telegram accesses
+  const posthog = getPostHog();
+  if (posthog) {
+    for (const access of channelAccesses) {
+      if (access.channel.provider === $Enums.ChannelProvider.TELEGRAM) {
+        posthog.capture({
+          distinctId: access.customerId,
+          event: ServerEvents.CHANNEL_ACCESS_REVOKED,
+          properties: {
+            subscriptionId: data.subscriptionId,
+            channelId: access.channelId,
+            channelProvider: "telegram",
+            reason: data.reason,
+          },
+        });
+      }
+    }
+  }
+
   logger.info(
     {
       jobId: job.id,
@@ -988,6 +1059,11 @@ async function shutdown(signal?: NodeJS.Signals): Promise<void> {
   isShuttingDown = true;
 
   logger.info({ signal }, "Shutting down workers");
+
+  // Shutdown PostHog first to ensure all events are flushed
+  await shutdownPostHog().catch((error: unknown) => {
+    logger.error({ error: error as Error }, "Failed to shutdown PostHog");
+  });
 
   await Promise.allSettled([
     ...workers.map((worker) => worker.close()),
@@ -1053,6 +1129,15 @@ async function moveToDlq<T>(
 }
 
 export async function bootstrapWorkers(): Promise<void> {
+  // Initialize PostHog if configured
+  if (baseEnv.POSTHOG_API_KEY) {
+    initPostHog({
+      apiKey: baseEnv.POSTHOG_API_KEY,
+      host: baseEnv.POSTHOG_HOST ?? "https://eu.i.posthog.com",
+    });
+    logger.info("PostHog initialized");
+  }
+
   // Initialize Redis connection first
   connection = await initRedis();
   grantDlq = new Queue(queueNames.grantAccessDlq, { connection });

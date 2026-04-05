@@ -1,4 +1,5 @@
 import { z } from "zod";
+export { initPostHog, getPostHog, shutdownPostHog, ServerEvents, } from "./posthog.js";
 export const queueNames = {
     grantAccess: "grant-access",
     revokeAccess: "revoke-access",

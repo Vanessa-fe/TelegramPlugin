@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { Analytics } from '@/lib/analytics/events';
 
 declare global {
   interface Window {
@@ -22,6 +23,8 @@ export function SignupTracker() {
     const signupMethod = searchParams.get('signup');
 
     if (signupMethod && typeof window !== 'undefined') {
+      Analytics.userSignedUp();
+
       // Fire GTM event
       if (window.dataLayer) {
         window.dataLayer.push({
