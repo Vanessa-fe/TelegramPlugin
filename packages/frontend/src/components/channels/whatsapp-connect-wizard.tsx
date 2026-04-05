@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { channelsApi } from "@/lib/api/channels";
+import { Analytics } from "@/lib/analytics/events";
 import { ChannelProvider, ChannelType } from "@/types/channel";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -47,6 +48,7 @@ export function WhatsAppConnectWizard() {
         },
       });
 
+      Analytics.communityCreated({ platform: "whatsapp" });
       toast.success(t("success"));
       router.push("/dashboard/channels");
     } catch (error) {

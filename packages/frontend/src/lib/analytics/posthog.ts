@@ -5,7 +5,12 @@ export const isPostHogConfigured = Boolean(posthogKey && posthogHost);
 
 type PostHogClient = (typeof import("posthog-js"))["default"];
 
+let posthogClient: PostHogClient | null = null;
 let posthogPromise: Promise<PostHogClient | null> | null = null;
+
+export function getPostHog(): PostHogClient | null {
+  return posthogClient;
+}
 
 export async function ensurePostHogInitialized(): Promise<PostHogClient | null> {
   if (!isPostHogConfigured) {
@@ -23,9 +28,13 @@ export async function ensurePostHogInitialized(): Promise<PostHogClient | null> 
           disable_surveys: true,
         });
 
+        posthogClient = posthog;
         return posthog;
       })
-      .catch(() => null);
+      .catch(() => {
+        posthogClient = null;
+        return null;
+      });
   }
 
   return posthogPromise;

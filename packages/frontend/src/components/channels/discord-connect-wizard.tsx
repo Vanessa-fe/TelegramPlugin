@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Analytics } from "@/lib/analytics/events";
 import { channelsApi } from "@/lib/api/channels";
 import {
   ChannelProvider,
@@ -225,6 +226,7 @@ export function DiscordConnectWizard({
     setIsLoading(true);
     try {
       await channelsApi.confirmDiscordVerification(verification.id);
+      Analytics.communityCreated({ platform: "discord" });
       toast.success(t("success"));
       router.push("/dashboard/channels");
     } catch (error) {

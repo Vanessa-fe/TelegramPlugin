@@ -6,6 +6,7 @@ import {
   hasAnalyticsConsent,
   persistAnalyticsConsent,
 } from "@/lib/analytics/consent";
+import { Analytics } from "@/lib/analytics/events";
 import { PostHogPageview } from "@/components/analytics/posthog-pageview";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
@@ -27,6 +28,7 @@ declare global {
 
 export function AnalyticsGate() {
   const [isConsentGranted, setIsConsentGranted] = useState(false);
+  const isInternalEnvironment = process.env.NEXT_PUBLIC_IS_INTERNAL === "true";
 
   useEffect(() => {
     const refreshConsent = () => {
@@ -105,6 +107,14 @@ export function AnalyticsGate() {
       document.removeEventListener("visibilitychange", refreshConsent);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isConsentGranted || !isInternalEnvironment) {
+      return;
+    }
+
+    Analytics.identifyInternal();
+  }, [isConsentGranted, isInternalEnvironment]);
 
   if (!isConsentGranted) {
     return null;
