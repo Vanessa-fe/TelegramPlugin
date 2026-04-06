@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 export function AdminSidebar() {
   const pathname = usePathname();
   const t = useTranslations('admin');
+  const tCommon = useTranslations('common');
 
   // SUPERADMIN navigation - organized by priority
   const navigation = [
@@ -35,8 +36,10 @@ export function AdminSidebar() {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-gray-50">
       <Link href="/admin" className="flex h-16 items-center border-b px-6">
-        <Image src="/logo_160.svg" alt="Sublynk" width={32} height={32} />
-        <span className="ml-2 text-xl font-bold text-purple-600">Sublynk</span>
+        <Image src="/logo_160.svg" alt={tCommon('appName')} width={32} height={32} />
+        <span className="ml-2 text-xl font-bold text-purple-600">
+          {tCommon('appName')}
+        </span>
       </Link>
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {

@@ -79,6 +79,41 @@ function extractZodErrors(message: ErrorMessage): string[] {
   return errors;
 }
 
+function extractApiErrorMessage(error: unknown, fallback: string): string {
+  const axiosError = error as {
+    response?: { data?: { message?: ErrorMessage; error?: string } | string };
+    message?: string;
+  };
+
+  const responseData = axiosError.response?.data;
+
+  if (typeof responseData === 'string' && responseData.trim()) {
+    return responseData;
+  }
+
+  if (responseData && typeof responseData === 'object') {
+    const serverMessage = responseData.message;
+    const zodErrors = extractZodErrors(serverMessage);
+    if (zodErrors.length > 0) {
+      return zodErrors.join(' ');
+    }
+
+    if (typeof serverMessage === 'string' && serverMessage.trim()) {
+      return serverMessage;
+    }
+
+    if (typeof responseData.error === 'string' && responseData.error.trim()) {
+      return responseData.error;
+    }
+  }
+
+  if (typeof axiosError.message === 'string' && axiosError.message.trim()) {
+    return axiosError.message;
+  }
+
+  return fallback;
+}
+
 export default function RegisterPage() {
   const searchParams = useSearchParams();
   const { register } = useAuth();
@@ -147,17 +182,7 @@ export default function RegisterPage() {
         });
       }
     } catch (err) {
-      const axiosError = err as {
-        response?: { data?: { message?: ErrorMessage } };
-      };
-      const serverMessage = axiosError.response?.data?.message;
-      const zodErrors = extractZodErrors(serverMessage);
-      const msg =
-        zodErrors.length > 0
-          ? zodErrors.join(' ')
-          : typeof serverMessage === 'string'
-            ? serverMessage
-            : t('error');
+      const msg = extractApiErrorMessage(err, t('error'));
       setError(msg);
       toast.error(msg);
     } finally {

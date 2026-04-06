@@ -1,3 +1,4 @@
+import axios from 'axios';
 import apiClient from '../api-client';
 import type {
   User,
@@ -27,7 +28,14 @@ export const authApi = {
   },
 
   async logout() {
-    await apiClient.post('/auth/logout');
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        return;
+      }
+      throw error;
+    }
   },
 
   async getProfile() {
