@@ -35,7 +35,12 @@ export const Analytics = {
       posthog.capture("pricing_viewed");
     });
   },
-  planSelected: (properties: { plan: string; price: number }) => {
+  planSelected: (properties: {
+    plan: string;
+    price?: number;
+    currency?: string;
+    source?: string;
+  }) => {
     withPostHog((posthog) => {
       posthog.capture("plan_selected", properties, { send_instantly: true });
     });

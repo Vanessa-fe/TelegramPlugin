@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { X, Sparkles, Check, ArrowRight, CreditCard, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Analytics } from '@/lib/analytics/events';
 import { platformSubscriptionApi } from '@/lib/api/platform-subscription';
 import { billingApi } from '@/lib/api/billing';
 import { useAuth } from '@/contexts/auth-context';
@@ -64,14 +63,6 @@ export function SubscriptionPrompt({ dismissible = true }: SubscriptionPromptPro
   const handleSelectPlan = async (planName: string) => {
     setCheckoutLoading(planName);
     try {
-      const selectedPlan = plans.find((plan) => plan.name === planName);
-      if (selectedPlan) {
-        Analytics.planSelected({
-          plan: selectedPlan.name,
-          price: selectedPlan.priceCents / 100,
-        });
-      }
-
       const { url } = await platformSubscriptionApi.createCheckout(
         planName as 'starter' | 'growth' | 'pro'
       );

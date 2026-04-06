@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 declare global {
   interface Window {
@@ -22,6 +22,18 @@ import { OAuthDivider } from '@/components/auth/oauth-divider';
 import { ORG_CURRENCY_OPTIONS } from '@/lib/currencies';
 import { authApi } from '@/lib/api/auth';
 import { Analytics } from '@/lib/analytics/events';
+
+const PRICING_PLAN_DETAILS = {
+  starter: { price: 0, currency: 'EUR' },
+  growth: { price: 29, currency: 'EUR' },
+  pro: { price: 99, currency: 'EUR' },
+} as const;
+
+type PricingPlanName = keyof typeof PRICING_PLAN_DETAILS;
+
+function isPricingPlanName(value: string | null): value is PricingPlanName {
+  return value === 'starter' || value === 'growth' || value === 'pro';
+}
 
 function generateSecurePassword(length = 16): string {
   const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -131,6 +143,12 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
+  const trackedPlanSelectionRef = useRef<string | null>(null);
+  const selectedPlanParam = searchParams.get('plan');
+  const selectedPlan = isPricingPlanName(selectedPlanParam)
+    ? selectedPlanParam
+    : null;
+  const planSource = searchParams.get('source') || 'register';
 
   // Handle OAuth error from redirect
   useEffect(() => {
@@ -140,6 +158,25 @@ export default function RegisterPage() {
       toast.error(tOAuth('error'));
     }
   }, [searchParams, tOAuth]);
+
+  useEffect(() => {
+    if (!selectedPlan) {
+      return;
+    }
+
+    const trackingKey = `${selectedPlan}:${planSource}`;
+    if (trackedPlanSelectionRef.current === trackingKey) {
+      return;
+    }
+
+    trackedPlanSelectionRef.current = trackingKey;
+    Analytics.planSelected({
+      plan: selectedPlan,
+      price: PRICING_PLAN_DETAILS[selectedPlan].price,
+      currency: PRICING_PLAN_DETAILS[selectedPlan].currency,
+      source: planSource,
+    });
+  }, [planSource, selectedPlan]);
 
   const handleSuggestPassword = useCallback(() => {
     const newPassword = generateSecurePassword(16);
@@ -172,7 +209,9 @@ export default function RegisterPage() {
       });
       setSubmittedEmail(result.email || formData.email.trim().toLowerCase());
       toast.success(t('success'));
-      Analytics.userSignedUp();
+      Analytics.userSignedUp(
+        selectedPlan ? { plan: selectedPlan } : undefined,
+      );
 
       // Send registration_success event to GTM
       if (typeof window !== 'undefined' && window.dataLayer) {

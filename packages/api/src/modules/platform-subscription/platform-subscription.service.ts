@@ -169,6 +169,15 @@ export class PlatformSubscriptionService {
       );
     }
 
+    this.capturePlanSelected({
+      organizationId: organization.id,
+      planName: plan.name,
+      planDisplayName: plan.displayName,
+      priceCents: plan.priceCents,
+      currency: plan.currency,
+      source: plan.priceCents <= 0 ? 'free_plan' : 'stripe_checkout',
+    });
+
     // Free plan: no Stripe subscription, activate directly.
     if (plan.priceCents <= 0) {
       const now = new Date();
@@ -823,6 +832,41 @@ export class PlatformSubscriptionService {
     } catch (error) {
       this.logger.warn(
         `Failed to capture subscription_created: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private capturePlanSelected(params: {
+    organizationId: string;
+    planName: string;
+    planDisplayName: string;
+    priceCents: number;
+    currency: string;
+    source: 'free_plan' | 'stripe_checkout';
+  }): void {
+    try {
+      this.posthog.capture(
+        params.organizationId,
+        this.posthog.events.PLAN_SELECTED,
+        {
+          organization_id: params.organizationId,
+          plan: params.planName,
+          plan_display_name: params.planDisplayName,
+          price: params.priceCents / 100,
+          price_cents: params.priceCents,
+          currency: params.currency,
+          source: params.source,
+        },
+      );
+
+      void this.posthog.flush().catch((error) => {
+        this.logger.warn(
+          `Failed to flush plan_selected: ${(error as Error).message}`,
+        );
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to capture plan_selected: ${(error as Error).message}`,
       );
     }
   }
