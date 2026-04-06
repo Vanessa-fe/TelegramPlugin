@@ -213,7 +213,7 @@ export class AuthService {
     frontendUrl: string,
   ): Promise<void> {
     const token = await this.issueEmailVerificationToken(user.id);
-    const verificationLink = `${frontendUrl}/verify-email?token=${encodeURIComponent(
+    const verificationLink = `${frontendUrl}/verify-email#token=${encodeURIComponent(
       token,
     )}`;
 
@@ -584,7 +584,7 @@ export class AuthService {
       },
     });
 
-    const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(
+    const resetLink = `${frontendUrl}/reset-password#token=${encodeURIComponent(
       token,
     )}`;
 

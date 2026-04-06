@@ -154,7 +154,7 @@ describe('AuthService', () => {
         mockNotificationsService.sendEmailVerificationEmail,
       ).toHaveBeenCalledWith(
         registerDto.email.toLowerCase(),
-        expect.stringContaining('/verify-email?token='),
+        expect.stringContaining('/verify-email#token='),
         registerDto.firstName,
       );
       expect(result.verificationRequired).toBe(true);
