@@ -582,6 +582,74 @@ describe('AuthService', () => {
     });
   });
 
+  describe('logout', () => {
+    it('should revoke all refresh tokens when userId is provided', async () => {
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 2 });
+
+      await service.logout({ userId: 'user-1' });
+
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', revokedAt: null },
+        data: { revokedAt: expect.any(Date) },
+      });
+    });
+
+    it('should fall back to refresh token when access token cannot be used', async () => {
+      mockJwtService.verifyAsync
+        .mockRejectedValueOnce(new Error('expired'))
+        .mockResolvedValueOnce({
+          sub: 'user-2',
+          email: 'user@example.com',
+          role: UserRole.SUPERADMIN,
+          organizationId: null,
+        });
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.logout({
+        accessToken: 'expired-access-token',
+        refreshToken: 'valid-refresh-token',
+      });
+
+      expect(mockJwtService.verifyAsync).toHaveBeenNthCalledWith(
+        1,
+        'expired-access-token',
+        {
+          secret: 'test-access-secret',
+          ignoreExpiration: true,
+        },
+      );
+      expect(mockJwtService.verifyAsync).toHaveBeenNthCalledWith(
+        2,
+        'valid-refresh-token',
+        {
+          secret: 'test-refresh-secret',
+          ignoreExpiration: true,
+        },
+      );
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', revokedAt: null },
+        data: { revokedAt: expect.any(Date) },
+      });
+    });
+
+    it('should revoke the specific refresh token when no user can be resolved', async () => {
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('invalid'));
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.logout({
+        refreshToken: 'orphan-refresh-token',
+      });
+
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: {
+          tokenHash: expect.any(String),
+          revokedAt: null,
+        },
+        data: { revokedAt: expect.any(Date) },
+      });
+    });
+  });
+
   describe('profile', () => {
     it('should return user profile', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({

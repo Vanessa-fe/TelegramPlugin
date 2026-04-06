@@ -404,13 +404,76 @@ export class AuthService {
     };
   }
 
-  async logout(userId: string): Promise<void> {
-    await this.revokeAllUserRefreshTokens(userId);
+  async logout(params: {
+    userId?: string;
+    accessToken?: string;
+    refreshToken?: string;
+  }): Promise<void> {
+    const userId =
+      params.userId ??
+      (await this.resolveUserIdForLogout(
+        params.accessToken,
+        params.refreshToken,
+      ));
+
+    if (userId) {
+      await this.revokeAllUserRefreshTokens(userId);
+      return;
+    }
+
+    if (params.refreshToken) {
+      await this.revokeRefreshToken(params.refreshToken);
+    }
   }
 
   private async revokeAllUserRefreshTokens(userId: string): Promise<void> {
     await this.prisma.refreshToken.updateMany({
       where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  private async resolveUserIdForLogout(
+    accessToken?: string,
+    refreshToken?: string,
+  ): Promise<string | null> {
+    const accessTokenUserId = await this.extractUserIdFromToken(
+      accessToken,
+      'JWT_ACCESS_SECRET',
+    );
+
+    if (accessTokenUserId) {
+      return accessTokenUserId;
+    }
+
+    return this.extractUserIdFromToken(refreshToken, 'JWT_REFRESH_SECRET');
+  }
+
+  private async extractUserIdFromToken(
+    token: string | undefined,
+    secretEnvKey: string,
+  ): Promise<string | null> {
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret: this.config.getOrThrow<string>(secretEnvKey),
+        ignoreExpiration: true,
+      });
+      return payload.sub;
+    } catch {
+      return null;
+    }
+  }
+
+  private async revokeRefreshToken(refreshToken: string): Promise<void> {
+    await this.prisma.refreshToken.updateMany({
+      where: {
+        tokenHash: this.hashRefreshToken(refreshToken),
+        revokedAt: null,
+      },
       data: { revokedAt: new Date() },
     });
   }
