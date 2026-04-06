@@ -42,6 +42,7 @@ export const registerSchema = z.object({
     .regex(/^[A-Za-z]{3}$/, 'Le code devise doit être au format ISO 4217')
     .transform((value) => value.toUpperCase())
     .optional(),
+  platformPlanName: z.enum(['starter', 'growth', 'pro']).optional(),
 });
 
 export type RegisterDto = z.infer<typeof registerSchema>;

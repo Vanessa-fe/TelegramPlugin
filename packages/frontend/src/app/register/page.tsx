@@ -206,6 +206,7 @@ export default function RegisterPage() {
         firstName: formData.firstName || undefined,
         lastName: formData.lastName || undefined,
         currency: formData.currency,
+        platformPlanName: selectedPlan ?? undefined,
       });
       setSubmittedEmail(result.email || formData.email.trim().toLowerCase());
       toast.success(t('success'));

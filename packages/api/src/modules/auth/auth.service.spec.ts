@@ -7,11 +7,13 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -25,6 +27,7 @@ describe('AuthService', () => {
     organization: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
     emailVerificationToken: {
       findFirst: jest.fn(),
@@ -76,6 +79,10 @@ describe('AuthService', () => {
     sendAccountAlreadyExistsEmail: jest.fn(),
   };
 
+  const mockPlatformSubscriptionService = {
+    activateFreePlan: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -84,6 +91,10 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: NotificationsService, useValue: mockNotificationsService },
+        {
+          provide: PlatformSubscriptionService,
+          useValue: mockPlatformSubscriptionService,
+        },
       ],
     }).compile();
 
@@ -254,6 +265,38 @@ describe('AuthService', () => {
         }),
       });
     });
+
+    it('should store the selected plan on organization metadata during registration', async () => {
+      const registerDto = {
+        email: 'starter@example.com',
+        password: 'Test1234!',
+        platformPlanName: 'starter' as const,
+      };
+
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.user.create.mockResolvedValue({
+        id: '1',
+        email: registerDto.email,
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        isActive: true,
+        passwordHash: 'hashed',
+        firstName: null,
+        lastName: null,
+        emailVerifiedAt: null,
+        lastLoginAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.register(registerDto);
+
+      expect(mockPrismaService.organization.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          metadata: { pendingPlatformPlan: 'starter' },
+        }),
+      });
+    });
   });
 
   describe('verifyEmail', () => {
@@ -295,6 +338,9 @@ describe('AuthService', () => {
         createdAt: now,
         updatedAt: now,
       });
+      mockPrismaService.organization.findUnique.mockResolvedValue({
+        metadata: null,
+      });
       mockPrismaService.emailVerificationToken.updateMany.mockResolvedValue({
         count: 1,
       });
@@ -321,6 +367,68 @@ describe('AuthService', () => {
         },
       });
       expect(result.user.email).toBe('test@example.com');
+      expect(result.accessToken).toBe('token');
+    });
+
+    it('should activate starter after email verification when selected during registration', async () => {
+      const now = new Date();
+      mockPrismaService.emailVerificationToken.findFirst.mockResolvedValue({
+        id: 'token-1',
+        userId: '1',
+        tokenHash: 'hash',
+        expiresAt: new Date(Date.now() + 1000 * 60),
+        usedAt: null,
+        createdAt: new Date(),
+        user: {
+          id: '1',
+          email: 'starter@example.com',
+          role: UserRole.ORG_ADMIN,
+          organizationId: 'org-1',
+          passwordHash: 'hashed',
+          firstName: 'Starter',
+          lastName: 'User',
+          isActive: true,
+          emailVerifiedAt: null,
+          lastLoginAt: null,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      mockPrismaService.user.update.mockResolvedValue({
+        id: '1',
+        email: 'starter@example.com',
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        passwordHash: 'hashed',
+        firstName: 'Starter',
+        lastName: 'User',
+        isActive: true,
+        emailVerifiedAt: now,
+        lastLoginAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      mockPrismaService.organization.findUnique.mockResolvedValue({
+        metadata: { pendingPlatformPlan: 'starter' },
+      });
+      mockPrismaService.organization.update.mockResolvedValue({
+        id: 'org-1',
+      });
+      mockPrismaService.emailVerificationToken.updateMany.mockResolvedValue({
+        count: 1,
+      });
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1' });
+      mockJwtService.signAsync.mockResolvedValue('token');
+
+      const result = await service.verifyEmail('plain-token');
+
+      expect(
+        mockPlatformSubscriptionService.activateFreePlan,
+      ).toHaveBeenCalledWith('org-1', 'starter');
+      expect(mockPrismaService.organization.update).toHaveBeenCalledWith({
+        where: { id: 'org-1' },
+        data: { metadata: Prisma.DbNull },
+      });
       expect(result.accessToken).toBe('token');
     });
 

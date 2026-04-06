@@ -180,40 +180,7 @@ export class PlatformSubscriptionService {
 
     // Free plan: no Stripe subscription, activate directly.
     if (plan.priceCents <= 0) {
-      const now = new Date();
-
-      await this.prisma.platformSubscription.upsert({
-        where: { organizationId: organization.id },
-        create: {
-          organizationId: organization.id,
-          platformPlanId: plan.id,
-          status: PlatformSubscriptionStatus.ACTIVE,
-          currentPeriodStart: now,
-          currentPeriodEnd: null,
-          trialEndsAt: null,
-          cancelAtPeriodEnd: false,
-          metadata: {
-            freePlan: true,
-          },
-        },
-        update: {
-          platformPlanId: plan.id,
-          status: PlatformSubscriptionStatus.ACTIVE,
-          stripeSubscriptionId: null,
-          stripeCustomerId: null,
-          currentPeriodStart: now,
-          currentPeriodEnd: null,
-          trialEndsAt: null,
-          canceledAt: null,
-          cancelAtPeriodEnd: false,
-          graceUntil: null,
-          metadata: {
-            freePlan: true,
-          },
-        },
-      });
-
-      await this.updateSaasActive(organization.id);
+      await this.activateFreePlan(organization.id, plan.name);
       this.captureSubscriptionCreated({
         organizationId: organization.id,
         planName: plan.name,
@@ -332,6 +299,58 @@ export class PlatformSubscriptionService {
     }
 
     return { url: session.url };
+  }
+
+  async activateFreePlan(
+    organizationId: string,
+    planName: string,
+  ): Promise<void> {
+    const plan = await this.prisma.platformPlan.findUnique({
+      where: { name: planName },
+    });
+
+    if (!plan || !plan.isActive) {
+      throw new NotFoundException('Plan introuvable ou inactif');
+    }
+
+    if (plan.priceCents > 0) {
+      throw new BadRequestException("Ce plan n'est pas gratuit");
+    }
+
+    const now = new Date();
+
+    await this.prisma.platformSubscription.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        platformPlanId: plan.id,
+        status: PlatformSubscriptionStatus.ACTIVE,
+        currentPeriodStart: now,
+        currentPeriodEnd: null,
+        trialEndsAt: null,
+        cancelAtPeriodEnd: false,
+        metadata: {
+          freePlan: true,
+        },
+      },
+      update: {
+        platformPlanId: plan.id,
+        status: PlatformSubscriptionStatus.ACTIVE,
+        stripeSubscriptionId: null,
+        stripeCustomerId: null,
+        currentPeriodStart: now,
+        currentPeriodEnd: null,
+        trialEndsAt: null,
+        canceledAt: null,
+        cancelAtPeriodEnd: false,
+        graceUntil: null,
+        metadata: {
+          freePlan: true,
+        },
+      },
+    });
+
+    await this.updateSaasActive(organizationId);
   }
 
   /**
