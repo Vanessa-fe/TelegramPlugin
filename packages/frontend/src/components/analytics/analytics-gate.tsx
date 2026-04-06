@@ -7,9 +7,9 @@ import {
   persistAnalyticsConsent,
 } from "@/lib/analytics/consent";
 import { Analytics } from "@/lib/analytics/events";
-import { PostHogPageview } from "@/components/analytics/posthog-pageview";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+const isInternalEnvironment = process.env.NEXT_PUBLIC_IS_INTERNAL === "true";
 
 type CmpEventHandler = () => void;
 
@@ -28,7 +28,6 @@ declare global {
 
 export function AnalyticsGate() {
   const [isConsentGranted, setIsConsentGranted] = useState(false);
-  const isInternalEnvironment = process.env.NEXT_PUBLIC_IS_INTERNAL === "true";
 
   useEffect(() => {
     const refreshConsent = () => {
@@ -114,7 +113,7 @@ export function AnalyticsGate() {
     }
 
     Analytics.identifyInternal();
-  }, [isConsentGranted, isInternalEnvironment]);
+  }, [isConsentGranted]);
 
   if (!isConsentGranted) {
     return null;
@@ -135,7 +134,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           }}
         />
       )}
-      <PostHogPageview />
     </>
   );
 }

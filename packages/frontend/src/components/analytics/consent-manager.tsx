@@ -1,9 +1,10 @@
 import Script from 'next/script';
 
 const CMP_ID = process.env.NEXT_PUBLIC_CMP_ID?.trim();
+const IS_INTERNAL_ENV = process.env.NEXT_PUBLIC_IS_INTERNAL === "true";
 
 export function ConsentManager() {
-  if (!CMP_ID) {
+  if (IS_INTERNAL_ENV || !CMP_ID) {
     return null;
   }
 

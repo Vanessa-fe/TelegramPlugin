@@ -40,6 +40,7 @@ import { GiftCodesModule } from './modules/gift-codes/gift-codes.module';
 import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.module';
 import { VipInvitationsModule } from './modules/vip-invitations/vip-invitations.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
+import { PostHogModule } from './modules/posthog/posthog.module';
 
 function findRepoRoot(startDir: string): string {
   let dir = startDir;
@@ -153,6 +154,7 @@ function resolveEnvFiles(): string[] {
     AdminDashboardModule,
     VipInvitationsModule,
     TicketsModule,
+    PostHogModule,
   ],
   controllers: [AppController],
   providers: [

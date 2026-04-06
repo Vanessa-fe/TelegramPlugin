@@ -1,21 +1,17 @@
-import { ensurePostHogInitialized, getPostHog } from "@/lib/analytics/posthog";
+import posthog from "posthog-js";
 
 type CommunityPlatform = "telegram" | "discord" | "whatsapp";
-type PostHogInstance = NonNullable<ReturnType<typeof getPostHog>>;
+const isPostHogConfigured = Boolean(
+  process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ||
+    process.env.NEXT_PUBLIC_POSTHOG_KEY,
+) && Boolean(process.env.NEXT_PUBLIC_POSTHOG_HOST);
 
-function withPostHog(callback: (posthog: PostHogInstance) => void): void {
-  const posthog = getPostHog();
-
-  if (posthog) {
-    callback(posthog);
+function withPostHog(callback: (client: typeof posthog) => void): void {
+  if (!isPostHogConfigured) {
     return;
   }
 
-  void ensurePostHogInitialized().then((initializedPostHog) => {
-    if (initializedPostHog) {
-      callback(initializedPostHog);
-    }
-  });
+  callback(posthog);
 }
 
 export const Analytics = {

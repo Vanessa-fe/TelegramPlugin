@@ -1,6 +1,7 @@
 const ANALYTICS_CONSENT_COOKIE = process.env.NEXT_PUBLIC_ANALYTICS_CONSENT_COOKIE;
 const ANALYTICS_CONSENT_VALUE = process.env.NEXT_PUBLIC_ANALYTICS_CONSENT_VALUE;
 const ANALYTICS_CONSENT_STORAGE_KEY = "sublynk_analytics_consent";
+const IS_INTERNAL_ENV = process.env.NEXT_PUBLIC_IS_INTERNAL === "true";
 
 const FALLBACK_ANALYTICS_CONSENT_COOKIES = [
   "cm_consent",
@@ -130,6 +131,12 @@ export function persistAnalyticsConsent(value: boolean): void {
 }
 
 export function hasAnalyticsConsent(): boolean {
+  // Internal dev/staging environments should not depend on CMP interaction
+  // before emitting analytics needed for validation.
+  if (IS_INTERNAL_ENV) {
+    return true;
+  }
+
   if (typeof document === "undefined") {
     return false;
   }
