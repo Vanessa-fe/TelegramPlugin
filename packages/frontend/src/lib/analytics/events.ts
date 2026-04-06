@@ -37,7 +37,7 @@ export const Analytics = {
   },
   planSelected: (properties: { plan: string; price: number }) => {
     withPostHog((posthog) => {
-      posthog.capture("plan_selected", properties);
+      posthog.capture("plan_selected", properties, { send_instantly: true });
     });
   },
   identifyInternal: () => {

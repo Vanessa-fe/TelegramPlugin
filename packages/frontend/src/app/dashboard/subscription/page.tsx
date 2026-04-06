@@ -141,11 +141,11 @@ export default function PlatformSubscriptionPage() {
 
     try {
       setIsProcessing(planName);
-      const { url } = await platformSubscriptionApi.createCheckout(planName);
       Analytics.planSelected({
         plan: planName,
         price: plan.priceCents / 100,
       });
+      const { url } = await platformSubscriptionApi.createCheckout(planName);
       window.location.href = url;
     } catch (error) {
       const axiosError = error as {
