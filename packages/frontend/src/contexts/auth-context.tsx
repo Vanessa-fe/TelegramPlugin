@@ -37,6 +37,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: user.email,
         role: user.role,
       });
+      if (user.role === "SUPERADMIN") {
+        posthog.opt_out_capturing();
+      }
     } else {
       posthog.reset(); // important : réinitialise quand l'user se déconnecte
     }
