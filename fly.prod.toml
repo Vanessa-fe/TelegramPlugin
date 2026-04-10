@@ -6,7 +6,7 @@ primary_region = 'fra'
   dockerfile = 'packages/api/Dockerfile'
 
 [deploy]
-  release_command = 'pnpm --filter api prisma:deploy'
+   release_command = 'pnpm --filter api prisma:deploy'
 
 [env]
   NODE_ENV = 'production'

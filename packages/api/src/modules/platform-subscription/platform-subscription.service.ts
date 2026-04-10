@@ -180,16 +180,9 @@ export class PlatformSubscriptionService {
 
     // Free plan: no Stripe subscription, activate directly.
     if (plan.priceCents <= 0) {
-      await this.activateFreePlan(organization.id, plan.name);
-      this.captureSubscriptionCreated({
-        organizationId: organization.id,
-        planName: plan.name,
-        planDisplayName: plan.displayName,
-        priceCents: plan.priceCents,
-        currency: plan.currency,
-        status: PlatformSubscriptionStatus.ACTIVE,
+      await this.activateFreePlan(organization.id, plan.name, {
+        captureSubscriptionCreated: true,
         source: 'free_plan',
-        isFreePlan: true,
       });
 
       const separator = successUrl.includes('?') ? '&' : '?';
@@ -304,6 +297,10 @@ export class PlatformSubscriptionService {
   async activateFreePlan(
     organizationId: string,
     planName: string,
+    options?: {
+      captureSubscriptionCreated?: boolean;
+      source?: 'free_plan' | 'email_verification';
+    },
   ): Promise<void> {
     const plan = await this.prisma.platformPlan.findUnique({
       where: { name: planName },
@@ -351,6 +348,19 @@ export class PlatformSubscriptionService {
     });
 
     await this.updateSaasActive(organizationId);
+
+    if (options?.captureSubscriptionCreated) {
+      this.captureSubscriptionCreated({
+        organizationId,
+        planName: plan.name,
+        planDisplayName: plan.displayName,
+        priceCents: plan.priceCents,
+        currency: plan.currency,
+        status: PlatformSubscriptionStatus.ACTIVE,
+        source: options.source ?? 'free_plan',
+        isFreePlan: true,
+      });
+    }
   }
 
   /**
@@ -827,7 +837,7 @@ export class PlatformSubscriptionService {
     priceCents: number;
     currency: string;
     status: PlatformSubscriptionStatus;
-    source: 'free_plan' | 'stripe_checkout';
+    source: 'free_plan' | 'stripe_checkout' | 'email_verification';
     isFreePlan: boolean;
     stripeSubscriptionId?: string;
   }): void {
@@ -848,6 +858,12 @@ export class PlatformSubscriptionService {
           stripe_subscription_id: params.stripeSubscriptionId ?? null,
         },
       );
+
+      void this.posthog.flush().catch((error) => {
+        this.logger.warn(
+          `Failed to flush subscription_created: ${(error as Error).message}`,
+        );
+      });
     } catch (error) {
       this.logger.warn(
         `Failed to capture subscription_created: ${(error as Error).message}`,

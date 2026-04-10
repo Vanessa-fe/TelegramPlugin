@@ -257,6 +257,10 @@ export class AuthService {
       await this.platformSubscriptionService.activateFreePlan(
         organizationId,
         metadata.pendingPlatformPlan,
+        {
+          captureSubscriptionCreated: true,
+          source: 'email_verification',
+        },
       );
 
       const { pendingPlatformPlan, ...nextMetadata } =

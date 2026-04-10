@@ -424,7 +424,10 @@ describe('AuthService', () => {
 
       expect(
         mockPlatformSubscriptionService.activateFreePlan,
-      ).toHaveBeenCalledWith('org-1', 'starter');
+      ).toHaveBeenCalledWith('org-1', 'starter', {
+        captureSubscriptionCreated: true,
+        source: 'email_verification',
+      });
       expect(mockPrismaService.organization.update).toHaveBeenCalledWith({
         where: { id: 'org-1' },
         data: { metadata: Prisma.DbNull },
