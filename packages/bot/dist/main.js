@@ -52,6 +52,7 @@ const EnvSchema = z.object({
     TELEGRAM_STARS_API_URL: z.string().url().optional(),
     TELEGRAM_STARS_WEBHOOK_SECRET: z.string().optional(),
     NEXT_PUBLIC_API_URL: z.string().url().optional(),
+    API_URL: z.string().url().optional(),
 });
 // Pattern pour détecter les codes de vérification (ex: TGPLUGIN-a1b2c3d4)
 const VERIFICATION_CODE_PATTERN = /^TGPLUGIN-[a-z0-9]{8}$/i;
@@ -68,6 +69,7 @@ function loadEnv() {
         throw new Error(`Configuration bot invalide: ${issues}`);
     }
     const apiBaseUrl = parsed.data.TELEGRAM_STARS_API_URL ??
+        parsed.data.API_URL ??
         parsed.data.NEXT_PUBLIC_API_URL ??
         "http://localhost:3000";
     return {

@@ -13,6 +13,8 @@ primary_region = 'fra'
 [env]
   NODE_ENV = 'production'
   PORT = '3000'
+  CHANNEL_ACCESS_QUEUE_ENABLED = 'false'
+  CHANNEL_ACCESS_QUEUE_METRICS_ENABLED = 'false'
 
 [http_service]
   internal_port = 3000
