@@ -129,12 +129,19 @@ export class AuthController {
     return this.authService.refresh(refreshToken);
   }
 
+  @Public()
   @Post('logout')
   @UseInterceptors(CookieClearInterceptor)
   @ClearAuthCookies()
-  async logout(@CurrentUser() user: AuthUser): Promise<{ message: string }> {
-    // Revoke all refresh tokens for the user
-    await this.authService.logout(user.userId);
+  async logout(@Req() req: FastifyRequest): Promise<{ message: string }> {
+    const cookies = (
+      req as { cookies?: { accessToken?: string; refreshToken?: string } }
+    ).cookies;
+
+    await this.authService.logout({
+      accessToken: cookies?.accessToken,
+      refreshToken: cookies?.refreshToken,
+    });
     return { message: 'Déconnexion réussie' };
   }
 

@@ -205,13 +205,16 @@ export function Sidebar() {
     <div className="hidden lg:flex h-full w-64 flex-col border-r border-border-custom bg-white">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-border-custom px-6">
-        <Link href="/" className="inline-flex items-center" aria-label={tCommon("appName")}>
+        <Link href="/" className="inline-flex items-center gap-2" aria-label={tCommon("appName")}>
           <Image
             src="/logo_160.svg"
             alt=""
             width={40}
             height={40}
           />
+          <span className="text-xl font-bold text-purple-600">
+            {tCommon("appName")}
+          </span>
         </Link>
       </div>
 

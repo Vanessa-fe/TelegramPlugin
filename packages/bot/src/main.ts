@@ -57,6 +57,7 @@ const EnvSchema = z.object({
   TELEGRAM_STARS_API_URL: z.string().url().optional(),
   TELEGRAM_STARS_WEBHOOK_SECRET: z.string().optional(),
   NEXT_PUBLIC_API_URL: z.string().url().optional(),
+  API_URL: z.string().url().optional(),
 });
 
 type BotConfig = {
@@ -103,6 +104,7 @@ function loadEnv(): BotConfig {
 
   const apiBaseUrl =
     parsed.data.TELEGRAM_STARS_API_URL ??
+    parsed.data.API_URL ??
     parsed.data.NEXT_PUBLIC_API_URL ??
     "http://localhost:3000";
 

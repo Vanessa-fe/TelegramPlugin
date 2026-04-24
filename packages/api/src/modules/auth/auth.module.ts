@@ -11,16 +11,18 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { CookieResponseInterceptor } from './interceptors/cookie-response.interceptor';
 import { CookieClearInterceptor } from './interceptors/cookie-clear.interceptor';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PlatformSubscriptionModule } from '../platform-subscription/platform-subscription.module';
 
 @Module({
   imports: [
     ConfigModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     NotificationsModule,
+    PlatformSubscriptionModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
+      useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
       }),
     }),

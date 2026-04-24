@@ -28,6 +28,7 @@ export default async function PricingPage() {
     commission: t(`plans.${planName}.commission`),
     cta: t(`plans.${planName}.cta`),
     ctaNote: t(`plans.${planName}.ctaNote`),
+    href: `/register?plan=${planName}&source=pricing`,
     features: [
       t(`plans.${planName}.features.item1`),
       t(`plans.${planName}.features.item2`),
@@ -119,7 +120,7 @@ export default async function PricingPage() {
                   </div>
 
                   <Link
-                    href="/register"
+                    href={plan.href}
                     className={`block w-full font-semibold px-6 py-4 rounded-lg text-center transition-colors duration-150 mb-4 ${
                       isRecommended
                         ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm hover:shadow-md'

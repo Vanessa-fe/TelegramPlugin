@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authApi } from '@/lib/api/auth';
+import { authApi } from "@/lib/api/auth";
 import type {
-  User,
   LoginCredentials,
   RegisterData,
   RegisterResponse,
-  UpdateProfileData,
   UpdatePasswordData,
-} from '@/types/auth';
+  UpdateProfileData,
+  User,
+} from "@/types/auth";
+import { usePostHog } from "posthog-js/react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface AuthContextValue {
   user: User | null;
@@ -26,8 +27,23 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const posthog = usePostHog();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      posthog.identify(user.id, {
+        email: user.email,
+        role: user.role,
+      });
+      if (user.role === "SUPERADMIN") {
+        posthog.opt_out_capturing();
+      }
+    } else {
+      posthog.reset(); // important : réinitialise quand l'user se déconnecte
+    }
+  }, [user, posthog]);
 
   useEffect(() => {
     loadUser();
@@ -96,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

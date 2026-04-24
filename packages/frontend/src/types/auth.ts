@@ -26,6 +26,7 @@ export interface RegisterData {
   lastName?: string;
   organizationId?: string;
   currency?: string;
+  platformPlanName?: 'starter' | 'growth' | 'pro';
 }
 
 export interface RegisterResponse {

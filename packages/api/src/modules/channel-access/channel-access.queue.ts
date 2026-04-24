@@ -18,25 +18,77 @@ import type {
 } from '@telegram-plugin/shared';
 import { MetricsService } from '../metrics/metrics.service';
 
+function readBooleanConfig(
+  config: ConfigService,
+  key: string,
+  defaultValue: boolean,
+): boolean {
+  const value = config.get<string | boolean>(key);
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return defaultValue;
+  }
+  return !['0', 'false', 'no', 'off'].includes(value.trim().toLowerCase());
+}
+
+function readPositiveIntegerConfig(
+  config: ConfigService,
+  key: string,
+  defaultValue: number,
+): number {
+  const value = config.get<string | number>(key);
+  const parsed =
+    typeof value === 'number' ? value : Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultValue;
+}
+
 @Injectable()
 export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
   private readonly logger = new Logger(ChannelAccessQueue.name);
-  private readonly connection: IORedis;
-  private readonly grantQueue: Queue<GrantAccessPayload>;
-  private readonly revokeQueue: Queue<RevokeAccessPayload>;
-  private readonly grantDlq: Queue;
-  private readonly revokeDlq: Queue;
+  private readonly queueEnabled: boolean;
+  private readonly metricsEnabled: boolean;
+  private readonly metricsIntervalMs: number;
+  private readonly connection: IORedis | null = null;
+  private readonly grantQueue: Queue<GrantAccessPayload> | null = null;
+  private readonly revokeQueue: Queue<RevokeAccessPayload> | null = null;
+  private readonly grantDlq: Queue | null = null;
+  private readonly revokeDlq: Queue | null = null;
   private metricsInterval: ReturnType<typeof setInterval> | null = null;
 
   // 10 attempts with 5m exponential backoff ~= 42h retry window.
   private static readonly RETRY_ATTEMPTS = 10;
   private static readonly RETRY_BACKOFF_DELAY_MS = 5 * 60 * 1000;
-  private static readonly METRICS_INTERVAL_MS = 15_000;
+  private static readonly DEFAULT_METRICS_INTERVAL_MS = 10 * 60 * 1000;
 
   constructor(
     private readonly config: ConfigService,
     private readonly metricsService: MetricsService,
   ) {
+    this.queueEnabled = readBooleanConfig(
+      this.config,
+      'CHANNEL_ACCESS_QUEUE_ENABLED',
+      true,
+    );
+    this.metricsEnabled = readBooleanConfig(
+      this.config,
+      'CHANNEL_ACCESS_QUEUE_METRICS_ENABLED',
+      this.queueEnabled,
+    );
+    this.metricsIntervalMs = readPositiveIntegerConfig(
+      this.config,
+      'CHANNEL_ACCESS_QUEUE_METRICS_INTERVAL_MS',
+      ChannelAccessQueue.DEFAULT_METRICS_INTERVAL_MS,
+    );
+
+    if (!this.queueEnabled) {
+      this.logger.warn(
+        'Channel access queue is disabled; Redis/BullMQ will not be initialized',
+      );
+      return;
+    }
+
     const redisUrl = this.config.get<string>('REDIS_URL');
     if (!redisUrl) {
       throw new Error('REDIS_URL is not configured');
@@ -74,11 +126,15 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
   }
 
   onModuleInit(): void {
+    if (!this.queueEnabled || !this.metricsEnabled) {
+      return;
+    }
+
     this.metricsInterval = setInterval(() => {
       this.updateQueueMetrics().catch((error) => {
         this.logger.error('Failed to update queue metrics', error as Error);
       });
-    }, ChannelAccessQueue.METRICS_INTERVAL_MS);
+    }, this.metricsIntervalMs);
 
     this.updateQueueMetrics().catch((error) => {
       this.logger.error(
@@ -94,13 +150,14 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
       this.metricsInterval = null;
     }
 
-    await Promise.all([
-      this.grantQueue.close(),
-      this.revokeQueue.close(),
-      this.grantDlq.close(),
-      this.revokeDlq.close(),
-      this.connection.quit(),
-    ]).catch((error) => {
+    const shutdownTasks: Array<Promise<unknown>> = [];
+    if (this.grantQueue) shutdownTasks.push(this.grantQueue.close());
+    if (this.revokeQueue) shutdownTasks.push(this.revokeQueue.close());
+    if (this.grantDlq) shutdownTasks.push(this.grantDlq.close());
+    if (this.revokeDlq) shutdownTasks.push(this.revokeDlq.close());
+    if (this.connection) shutdownTasks.push(this.connection.quit());
+
+    await Promise.all(shutdownTasks).catch((error) => {
       this.logger.error(
         'Error shutting down ChannelAccessQueue',
         error as Error,
@@ -109,6 +166,15 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
   }
 
   private async updateQueueMetrics(): Promise<void> {
+    if (
+      !this.grantQueue ||
+      !this.revokeQueue ||
+      !this.grantDlq ||
+      !this.revokeDlq
+    ) {
+      return;
+    }
+
     const [grantCounts, revokeCounts, grantDlqCounts, revokeDlqCounts] =
       await Promise.all([
         this.grantQueue.getJobCounts(
@@ -147,6 +213,13 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
 
   async enqueueGrantAccess(payload: GrantAccessPayload): Promise<void> {
     const data = GrantAccessPayloadSchema.parse(payload);
+    if (!this.grantQueue) {
+      this.logger.warn(
+        `Channel access queue disabled; grant job skipped (subscription=${data.subscriptionId}, channel=${data.channelId})`,
+      );
+      return;
+    }
+
     const jobId = `grant:${data.subscriptionId}:${data.channelId}`;
 
     await this.grantQueue.add(queueNames.grantAccess, data, {
@@ -162,6 +235,13 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
 
   async enqueueRevokeAccess(payload: RevokeAccessPayload): Promise<void> {
     const data = RevokeAccessPayloadSchema.parse(payload);
+    if (!this.revokeQueue) {
+      this.logger.warn(
+        `Channel access queue disabled; revoke job skipped (subscription=${data.subscriptionId}, reason=${data.reason})`,
+      );
+      return;
+    }
+
     const jobId = `revoke:${data.subscriptionId}:${data.reason}`;
 
     await this.revokeQueue.add(queueNames.revokeAccess, data, {
@@ -175,6 +255,13 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
   }
 
   async replayGrantAccess(jobId: string): Promise<void> {
+    if (!this.grantDlq || !this.grantQueue) {
+      this.logger.warn(
+        `Channel access queue disabled; replay skipped (${jobId})`,
+      );
+      return;
+    }
+
     await this.replayDeadLetter(
       this.grantDlq,
       this.grantQueue,
@@ -185,6 +272,13 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
   }
 
   async replayRevokeAccess(jobId: string): Promise<void> {
+    if (!this.revokeDlq || !this.revokeQueue) {
+      this.logger.warn(
+        `Channel access queue disabled; replay skipped (${jobId})`,
+      );
+      return;
+    }
+
     await this.replayDeadLetter(
       this.revokeDlq,
       this.revokeQueue,

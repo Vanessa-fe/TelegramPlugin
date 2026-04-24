@@ -1,11 +1,11 @@
 import posthog from "posthog-js";
 
-const isPostHogConfigured = Boolean(
-  process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ||
-    process.env.NEXT_PUBLIC_POSTHOG_KEY,
-) && Boolean(process.env.NEXT_PUBLIC_POSTHOG_HOST);
-
 type CommunityPlatform = "telegram" | "discord" | "whatsapp";
+const isPostHogConfigured =
+  Boolean(
+    process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ||
+      process.env.NEXT_PUBLIC_POSTHOG_KEY,
+  ) && Boolean(process.env.NEXT_PUBLIC_POSTHOG_HOST);
 
 function withPostHog(callback: (client: typeof posthog) => void): void {
   if (!isPostHogConfigured) {
@@ -36,9 +36,14 @@ export const Analytics = {
       posthog.capture("pricing_viewed");
     });
   },
-  planSelected: (properties: { plan: string; price: number }) => {
+  planSelected: (properties: {
+    plan: string;
+    price?: number;
+    currency?: string;
+    source?: string;
+  }) => {
     withPostHog((posthog) => {
-      posthog.capture("plan_selected", properties);
+      posthog.capture("plan_selected", properties, { send_instantly: true });
     });
   },
   identifyInternal: () => {

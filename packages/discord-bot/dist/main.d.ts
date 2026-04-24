@@ -1,4 +1,5 @@
-import { Client, GuildMember, Role } from "discord.js";
+import { Client } from "discord.js";
+import type { GuildMember, Role } from "discord.js";
 type BotConfig = {
     token: string;
     apiBaseUrl: string;

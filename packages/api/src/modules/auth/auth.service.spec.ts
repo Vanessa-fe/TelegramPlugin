@@ -7,11 +7,13 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -25,6 +27,7 @@ describe('AuthService', () => {
     organization: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
     },
     emailVerificationToken: {
       findFirst: jest.fn(),
@@ -76,6 +79,10 @@ describe('AuthService', () => {
     sendAccountAlreadyExistsEmail: jest.fn(),
   };
 
+  const mockPlatformSubscriptionService = {
+    activateFreePlan: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -84,6 +91,10 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: NotificationsService, useValue: mockNotificationsService },
+        {
+          provide: PlatformSubscriptionService,
+          useValue: mockPlatformSubscriptionService,
+        },
       ],
     }).compile();
 
@@ -154,7 +165,7 @@ describe('AuthService', () => {
         mockNotificationsService.sendEmailVerificationEmail,
       ).toHaveBeenCalledWith(
         registerDto.email.toLowerCase(),
-        expect.stringContaining('/verify-email?token='),
+        expect.stringContaining('/verify-email#token='),
         registerDto.firstName,
       );
       expect(result.verificationRequired).toBe(true);
@@ -254,6 +265,38 @@ describe('AuthService', () => {
         }),
       });
     });
+
+    it('should store the selected plan on organization metadata during registration', async () => {
+      const registerDto = {
+        email: 'starter@example.com',
+        password: 'Test1234!',
+        platformPlanName: 'starter' as const,
+      };
+
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.user.create.mockResolvedValue({
+        id: '1',
+        email: registerDto.email,
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        isActive: true,
+        passwordHash: 'hashed',
+        firstName: null,
+        lastName: null,
+        emailVerifiedAt: null,
+        lastLoginAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.register(registerDto);
+
+      expect(mockPrismaService.organization.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          metadata: { pendingPlatformPlan: 'starter' },
+        }),
+      });
+    });
   });
 
   describe('verifyEmail', () => {
@@ -295,6 +338,9 @@ describe('AuthService', () => {
         createdAt: now,
         updatedAt: now,
       });
+      mockPrismaService.organization.findUnique.mockResolvedValue({
+        metadata: null,
+      });
       mockPrismaService.emailVerificationToken.updateMany.mockResolvedValue({
         count: 1,
       });
@@ -321,6 +367,71 @@ describe('AuthService', () => {
         },
       });
       expect(result.user.email).toBe('test@example.com');
+      expect(result.accessToken).toBe('token');
+    });
+
+    it('should activate starter after email verification when selected during registration', async () => {
+      const now = new Date();
+      mockPrismaService.emailVerificationToken.findFirst.mockResolvedValue({
+        id: 'token-1',
+        userId: '1',
+        tokenHash: 'hash',
+        expiresAt: new Date(Date.now() + 1000 * 60),
+        usedAt: null,
+        createdAt: new Date(),
+        user: {
+          id: '1',
+          email: 'starter@example.com',
+          role: UserRole.ORG_ADMIN,
+          organizationId: 'org-1',
+          passwordHash: 'hashed',
+          firstName: 'Starter',
+          lastName: 'User',
+          isActive: true,
+          emailVerifiedAt: null,
+          lastLoginAt: null,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      mockPrismaService.user.update.mockResolvedValue({
+        id: '1',
+        email: 'starter@example.com',
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        passwordHash: 'hashed',
+        firstName: 'Starter',
+        lastName: 'User',
+        isActive: true,
+        emailVerifiedAt: now,
+        lastLoginAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      mockPrismaService.organization.findUnique.mockResolvedValue({
+        metadata: { pendingPlatformPlan: 'starter' },
+      });
+      mockPrismaService.organization.update.mockResolvedValue({
+        id: 'org-1',
+      });
+      mockPrismaService.emailVerificationToken.updateMany.mockResolvedValue({
+        count: 1,
+      });
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1' });
+      mockJwtService.signAsync.mockResolvedValue('token');
+
+      const result = await service.verifyEmail('plain-token');
+
+      expect(
+        mockPlatformSubscriptionService.activateFreePlan,
+      ).toHaveBeenCalledWith('org-1', 'starter', {
+        captureSubscriptionCreated: true,
+        source: 'email_verification',
+      });
+      expect(mockPrismaService.organization.update).toHaveBeenCalledWith({
+        where: { id: 'org-1' },
+        data: { metadata: Prisma.DbNull },
+      });
       expect(result.accessToken).toBe('token');
     });
 
@@ -579,6 +690,74 @@ describe('AuthService', () => {
       await expect(service.refresh('valid-refresh-token')).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe('logout', () => {
+    it('should revoke all refresh tokens when userId is provided', async () => {
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 2 });
+
+      await service.logout({ userId: 'user-1' });
+
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', revokedAt: null },
+        data: { revokedAt: expect.any(Date) },
+      });
+    });
+
+    it('should fall back to refresh token when access token cannot be used', async () => {
+      mockJwtService.verifyAsync
+        .mockRejectedValueOnce(new Error('expired'))
+        .mockResolvedValueOnce({
+          sub: 'user-2',
+          email: 'user@example.com',
+          role: UserRole.SUPERADMIN,
+          organizationId: null,
+        });
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.logout({
+        accessToken: 'expired-access-token',
+        refreshToken: 'valid-refresh-token',
+      });
+
+      expect(mockJwtService.verifyAsync).toHaveBeenNthCalledWith(
+        1,
+        'expired-access-token',
+        {
+          secret: 'test-access-secret',
+          ignoreExpiration: true,
+        },
+      );
+      expect(mockJwtService.verifyAsync).toHaveBeenNthCalledWith(
+        2,
+        'valid-refresh-token',
+        {
+          secret: 'test-refresh-secret',
+          ignoreExpiration: true,
+        },
+      );
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', revokedAt: null },
+        data: { revokedAt: expect.any(Date) },
+      });
+    });
+
+    it('should revoke the specific refresh token when no user can be resolved', async () => {
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('invalid'));
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.logout({
+        refreshToken: 'orphan-refresh-token',
+      });
+
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: {
+          tokenHash: expect.any(String),
+          revokedAt: null,
+        },
+        data: { revokedAt: expect.any(Date) },
+      });
     });
   });
 

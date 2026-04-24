@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma } from '@prisma/client';
 import type { User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
@@ -25,6 +26,7 @@ import type {
   UpdateProfileDto,
 } from './auth.schema';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +37,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly notifications: NotificationsService,
+    private readonly platformSubscriptionService: PlatformSubscriptionService,
   ) {}
 
   async register(
@@ -100,6 +103,9 @@ export class AuthService {
         slug,
         billingEmail: normalizedEmail,
         currency: organizationCurrency,
+        metadata: data.platformPlanName
+          ? { pendingPlatformPlan: data.platformPlanName }
+          : undefined,
       },
     });
     const organizationId = org.id;
@@ -170,6 +176,8 @@ export class AuthService {
       return verifiedUser;
     });
 
+    await this.activatePendingFreePlan(updatedUser.organizationId);
+
     const payload = this.buildPayload(updatedUser);
     const tokens = await this.signTokens(payload);
 
@@ -213,7 +221,7 @@ export class AuthService {
     frontendUrl: string,
   ): Promise<void> {
     const token = await this.issueEmailVerificationToken(user.id);
-    const verificationLink = `${frontendUrl}/verify-email?token=${encodeURIComponent(
+    const verificationLink = `${frontendUrl}/verify-email#token=${encodeURIComponent(
       token,
     )}`;
 
@@ -222,6 +230,58 @@ export class AuthService {
       verificationLink,
       user.firstName ?? undefined,
     );
+  }
+
+  private async activatePendingFreePlan(
+    organizationId?: string | null,
+  ): Promise<void> {
+    if (!organizationId) {
+      return;
+    }
+
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { metadata: true },
+    });
+
+    const metadata =
+      organization?.metadata && typeof organization.metadata === 'object'
+        ? (organization.metadata as Record<string, unknown>)
+        : null;
+
+    if (metadata?.pendingPlatformPlan !== 'starter') {
+      return;
+    }
+
+    try {
+      await this.platformSubscriptionService.activateFreePlan(
+        organizationId,
+        metadata.pendingPlatformPlan,
+        {
+          captureSubscriptionCreated: true,
+          source: 'email_verification',
+        },
+      );
+
+      const { pendingPlatformPlan, ...nextMetadata } =
+        metadata as Prisma.InputJsonObject & {
+          pendingPlatformPlan?: string;
+        };
+      void pendingPlatformPlan;
+      const metadataUpdate =
+        Object.keys(nextMetadata).length > 0 ? nextMetadata : Prisma.DbNull;
+
+      await this.prisma.organization.update({
+        where: { id: organizationId },
+        data: {
+          metadata: metadataUpdate,
+        },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to activate pending free plan for organization ${organizationId}: ${(error as Error).message}`,
+      );
+    }
   }
 
   private async issueEmailVerificationToken(userId: string): Promise<string> {
@@ -404,13 +464,76 @@ export class AuthService {
     };
   }
 
-  async logout(userId: string): Promise<void> {
-    await this.revokeAllUserRefreshTokens(userId);
+  async logout(params: {
+    userId?: string;
+    accessToken?: string;
+    refreshToken?: string;
+  }): Promise<void> {
+    const userId =
+      params.userId ??
+      (await this.resolveUserIdForLogout(
+        params.accessToken,
+        params.refreshToken,
+      ));
+
+    if (userId) {
+      await this.revokeAllUserRefreshTokens(userId);
+      return;
+    }
+
+    if (params.refreshToken) {
+      await this.revokeRefreshToken(params.refreshToken);
+    }
   }
 
   private async revokeAllUserRefreshTokens(userId: string): Promise<void> {
     await this.prisma.refreshToken.updateMany({
       where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  private async resolveUserIdForLogout(
+    accessToken?: string,
+    refreshToken?: string,
+  ): Promise<string | null> {
+    const accessTokenUserId = await this.extractUserIdFromToken(
+      accessToken,
+      'JWT_ACCESS_SECRET',
+    );
+
+    if (accessTokenUserId) {
+      return accessTokenUserId;
+    }
+
+    return this.extractUserIdFromToken(refreshToken, 'JWT_REFRESH_SECRET');
+  }
+
+  private async extractUserIdFromToken(
+    token: string | undefined,
+    secretEnvKey: string,
+  ): Promise<string | null> {
+    if (!token) {
+      return null;
+    }
+
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret: this.config.getOrThrow<string>(secretEnvKey),
+        ignoreExpiration: true,
+      });
+      return payload.sub;
+    } catch {
+      return null;
+    }
+  }
+
+  private async revokeRefreshToken(refreshToken: string): Promise<void> {
+    await this.prisma.refreshToken.updateMany({
+      where: {
+        tokenHash: this.hashRefreshToken(refreshToken),
+        revokedAt: null,
+      },
       data: { revokedAt: new Date() },
     });
   }
@@ -584,7 +707,7 @@ export class AuthService {
       },
     });
 
-    const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(
+    const resetLink = `${frontendUrl}/reset-password#token=${encodeURIComponent(
       token,
     )}`;
 

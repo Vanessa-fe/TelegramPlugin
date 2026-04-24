@@ -6,10 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PlatformSubscriptionStatus, Prisma } from '@prisma/client';
+import { PlatformSubscriptionStatus } from '@prisma/client';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PostHogService } from '../posthog/posthog.service';
 import type {
   PlatformPlanResponse,
   PlatformSubscriptionResponse,
@@ -24,6 +25,7 @@ export class PlatformSubscriptionService {
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly posthog: PostHogService,
   ) {
     const apiKey = this.config.get<string>('STRIPE_SECRET_KEY');
     if (!apiKey) {
@@ -167,42 +169,21 @@ export class PlatformSubscriptionService {
       );
     }
 
+    this.capturePlanSelected({
+      organizationId: organization.id,
+      planName: plan.name,
+      planDisplayName: plan.displayName,
+      priceCents: plan.priceCents,
+      currency: plan.currency,
+      source: plan.priceCents <= 0 ? 'free_plan' : 'stripe_checkout',
+    });
+
     // Free plan: no Stripe subscription, activate directly.
     if (plan.priceCents <= 0) {
-      const now = new Date();
-
-      await this.prisma.platformSubscription.upsert({
-        where: { organizationId: organization.id },
-        create: {
-          organizationId: organization.id,
-          platformPlanId: plan.id,
-          status: PlatformSubscriptionStatus.ACTIVE,
-          currentPeriodStart: now,
-          currentPeriodEnd: null,
-          trialEndsAt: null,
-          cancelAtPeriodEnd: false,
-          metadata: {
-            freePlan: true,
-          },
-        },
-        update: {
-          platformPlanId: plan.id,
-          status: PlatformSubscriptionStatus.ACTIVE,
-          stripeSubscriptionId: null,
-          stripeCustomerId: null,
-          currentPeriodStart: now,
-          currentPeriodEnd: null,
-          trialEndsAt: null,
-          canceledAt: null,
-          cancelAtPeriodEnd: false,
-          graceUntil: null,
-          metadata: {
-            freePlan: true,
-          },
-        },
+      await this.activateFreePlan(organization.id, plan.name, {
+        captureSubscriptionCreated: true,
+        source: 'free_plan',
       });
-
-      await this.updateSaasActive(organization.id);
 
       const separator = successUrl.includes('?') ? '&' : '?';
       return {
@@ -311,6 +292,75 @@ export class PlatformSubscriptionService {
     }
 
     return { url: session.url };
+  }
+
+  async activateFreePlan(
+    organizationId: string,
+    planName: string,
+    options?: {
+      captureSubscriptionCreated?: boolean;
+      source?: 'free_plan' | 'email_verification';
+    },
+  ): Promise<void> {
+    const plan = await this.prisma.platformPlan.findUnique({
+      where: { name: planName },
+    });
+
+    if (!plan || !plan.isActive) {
+      throw new NotFoundException('Plan introuvable ou inactif');
+    }
+
+    if (plan.priceCents > 0) {
+      throw new BadRequestException("Ce plan n'est pas gratuit");
+    }
+
+    const now = new Date();
+
+    await this.prisma.platformSubscription.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        platformPlanId: plan.id,
+        status: PlatformSubscriptionStatus.ACTIVE,
+        currentPeriodStart: now,
+        currentPeriodEnd: null,
+        trialEndsAt: null,
+        cancelAtPeriodEnd: false,
+        metadata: {
+          freePlan: true,
+        },
+      },
+      update: {
+        platformPlanId: plan.id,
+        status: PlatformSubscriptionStatus.ACTIVE,
+        stripeSubscriptionId: null,
+        stripeCustomerId: null,
+        currentPeriodStart: now,
+        currentPeriodEnd: null,
+        trialEndsAt: null,
+        canceledAt: null,
+        cancelAtPeriodEnd: false,
+        graceUntil: null,
+        metadata: {
+          freePlan: true,
+        },
+      },
+    });
+
+    await this.updateSaasActive(organizationId);
+
+    if (options?.captureSubscriptionCreated) {
+      this.captureSubscriptionCreated({
+        organizationId,
+        planName: plan.name,
+        planDisplayName: plan.displayName,
+        priceCents: plan.priceCents,
+        currency: plan.currency,
+        status: PlatformSubscriptionStatus.ACTIVE,
+        source: options.source ?? 'free_plan',
+        isFreePlan: true,
+      });
+    }
   }
 
   /**
@@ -470,17 +520,32 @@ export class PlatformSubscriptionService {
     // Update saasActive on organization
     await this.updateSaasActive(organizationId);
 
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: {
+        platformSubscription: {
+          include: { platformPlan: true },
+        },
+      },
+    });
+
+    if (organization?.platformSubscription?.platformPlan) {
+      const plan = organization.platformSubscription.platformPlan;
+      this.captureSubscriptionCreated({
+        organizationId,
+        planName: plan.name,
+        planDisplayName: plan.displayName,
+        priceCents: plan.priceCents,
+        currency: plan.currency,
+        status: this.mapStripeStatus(stripeSubscription.status),
+        source: 'stripe_checkout',
+        isFreePlan: false,
+        stripeSubscriptionId,
+      });
+    }
+
     // Send admin notification for new subscription
     try {
-      const organization = await this.prisma.organization.findUnique({
-        where: { id: organizationId },
-        include: {
-          platformSubscription: {
-            include: { platformPlan: true },
-          },
-        },
-      });
-
       if (organization?.platformSubscription?.platformPlan) {
         const plan = organization.platformSubscription.platformPlan;
         const isTrialing = stripeSubscription.status === 'trialing';
@@ -762,6 +827,82 @@ export class PlatformSubscriptionService {
       case 'paused':
       default:
         return PlatformSubscriptionStatus.EXPIRED;
+    }
+  }
+
+  private captureSubscriptionCreated(params: {
+    organizationId: string;
+    planName: string;
+    planDisplayName: string;
+    priceCents: number;
+    currency: string;
+    status: PlatformSubscriptionStatus;
+    source: 'free_plan' | 'stripe_checkout' | 'email_verification';
+    isFreePlan: boolean;
+    stripeSubscriptionId?: string;
+  }): void {
+    try {
+      this.posthog.capture(
+        params.organizationId,
+        this.posthog.events.SUBSCRIPTION_CREATED,
+        {
+          organization_id: params.organizationId,
+          plan: params.planName,
+          plan_display_name: params.planDisplayName,
+          price: params.priceCents / 100,
+          price_cents: params.priceCents,
+          currency: params.currency,
+          status: params.status,
+          source: params.source,
+          is_free_plan: params.isFreePlan,
+          stripe_subscription_id: params.stripeSubscriptionId ?? null,
+        },
+      );
+
+      void this.posthog.flush().catch((error) => {
+        this.logger.warn(
+          `Failed to flush subscription_created: ${(error as Error).message}`,
+        );
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to capture subscription_created: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private capturePlanSelected(params: {
+    organizationId: string;
+    planName: string;
+    planDisplayName: string;
+    priceCents: number;
+    currency: string;
+    source: 'free_plan' | 'stripe_checkout';
+  }): void {
+    try {
+      this.posthog.capture(
+        params.organizationId,
+        this.posthog.events.PLAN_SELECTED,
+        {
+          organization_id: params.organizationId,
+          plan: params.planName,
+          plan_display_name: params.planDisplayName,
+          price: params.priceCents / 100,
+          price_cents: params.priceCents,
+          currency: params.currency,
+          source: params.source,
+        },
+      );
+
+      void this.posthog.flush().catch((error) => {
+        this.logger.warn(
+          `Failed to flush plan_selected: ${(error as Error).message}`,
+        );
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to capture plan_selected: ${(error as Error).message}`,
+      );
     }
   }
 }

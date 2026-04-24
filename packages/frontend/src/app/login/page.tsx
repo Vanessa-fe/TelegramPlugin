@@ -6,15 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/auth-context";
+import { Analytics } from "@/lib/analytics/events";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Analytics } from "@/lib/analytics/events";
 
 export default function LoginPage() {
+  const posthog = usePostHog();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -42,6 +45,10 @@ export default function LoginPage() {
 
     try {
       const user = await login({ email, password });
+      posthog.identify(user.id, {
+        email: user.email,
+        role: user.role,
+      });
       toast.success(t("success"));
       Analytics.userLoggedIn();
       // Redirect SUPERADMIN to admin dashboard
@@ -65,13 +72,12 @@ export default function LoginPage() {
       {/* Header */}
       <header className="py-6 px-4">
         <div className="max-w-6xl mx-auto">
-          <Link href="/" className="inline-flex items-center" aria-label={tCommon("appName")}>
-            <Image
-              src="/logo_160.svg"
-              alt=""
-              width={40}
-              height={40}
-            />
+          <Link
+            href="/"
+            className="inline-flex items-center"
+            aria-label={tCommon("appName")}
+          >
+            <Image src="/logo_160.svg" alt="" width={40} height={40} />
           </Link>
         </div>
       </header>

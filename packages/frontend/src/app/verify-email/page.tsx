@@ -12,6 +12,31 @@ import { useAuth } from '@/contexts/auth-context';
 
 type VerificationStatus = 'idle' | 'loading' | 'success' | 'error';
 
+function extractTokenFromUrl(searchParams: URLSearchParams): string | null {
+  if (typeof window === 'undefined') {
+    return searchParams.get('token');
+  }
+
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const hashParams = new URLSearchParams(hash);
+  const token = hashParams.get('token') ?? searchParams.get('token');
+
+  if (token) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('token');
+    if (hashParams.has('token')) {
+      hashParams.delete('token');
+      url.hash = hashParams.toString();
+    }
+    const cleanUrl = `${url.pathname}${url.search}${url.hash ? `#${url.hash}` : ''}`;
+    window.history.replaceState({}, '', cleanUrl);
+  }
+
+  return token;
+}
+
 export default function VerifyEmailPage() {
   const t = useTranslations('auth.verifyEmail');
   const tCommon = useTranslations('common');
@@ -19,14 +44,7 @@ export default function VerifyEmailPage() {
   const router = useRouter();
   const { refreshProfile } = useAuth();
   const token = useMemo(() => {
-    const t = searchParams.get('token');
-    // Clean token from URL after reading to prevent exposure in history/bookmarks
-    if (typeof window !== 'undefined' && t) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('token');
-      window.history.replaceState({}, '', url.pathname + url.search);
-    }
-    return t;
+    return extractTokenFromUrl(searchParams);
   }, [searchParams]);
 
   const [status, setStatus] = useState<VerificationStatus>('idle');

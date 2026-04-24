@@ -1,4 +1,5 @@
-const ANALYTICS_CONSENT_COOKIE = process.env.NEXT_PUBLIC_ANALYTICS_CONSENT_COOKIE;
+const ANALYTICS_CONSENT_COOKIE =
+  process.env.NEXT_PUBLIC_ANALYTICS_CONSENT_COOKIE;
 const ANALYTICS_CONSENT_VALUE = process.env.NEXT_PUBLIC_ANALYTICS_CONSENT_VALUE;
 const ANALYTICS_CONSENT_STORAGE_KEY = "sublynk_analytics_consent";
 const IS_INTERNAL_ENV = process.env.NEXT_PUBLIC_IS_INTERNAL === "true";
@@ -36,7 +37,9 @@ function readCookieValue(name: string): string | null {
   }
 
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = document.cookie.match(new RegExp(`(?:^|; )${escapedName}=([^;]*)`));
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${escapedName}=([^;]*)`),
+  );
 
   return match?.[1] ?? null;
 }
@@ -72,6 +75,34 @@ function readStoredAnalyticsConsent(): boolean | null {
     const storedValue = window.localStorage.getItem(
       ANALYTICS_CONSENT_STORAGE_KEY,
     );
+
+    if (storedValue === "granted") {
+      return true;
+    }
+
+    if (storedValue === "denied") {
+      return false;
+    }
+  } catch {
+    // Ignore storage access errors (private mode, blocked storage, etc.)
+  }
+
+  return null;
+}
+
+function resolveConfiguredConsentCookie(): boolean | null {
+  if (!ANALYTICS_CONSENT_COOKIE) {
+    return null;
+  }
+
+  const configuredCookieValue = readCookieValue(ANALYTICS_CONSENT_COOKIE);
+function readStoredAnalyticsConsent(): boolean | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const storedValue = window.localStorage.getItem(ANALYTICS_CONSENT_STORAGE_KEY);
 
     if (storedValue === "granted") {
       return true;
@@ -162,9 +193,9 @@ export function hasAnalyticsConsent(): boolean {
   const fallbackConsent = FALLBACK_ANALYTICS_CONSENT_COOKIES.some((cookieName) => {
     const cookieValue = readCookieValue(cookieName);
 
-    if (!cookieValue) {
-      return false;
-    }
+      if (!cookieValue) {
+        return false;
+      }
 
     return hasAffirmativeConsent(cookieValue);
   });

@@ -88,13 +88,20 @@ export function Header() {
               <Menu className="h-6 w-6" />
             )}
           </button>
-          <Link href="/" className="inline-flex items-center" aria-label={tCommon('appName')}>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2"
+            aria-label={tCommon('appName')}
+          >
             <Image
               src="/logo_160.svg"
               alt=""
               width={40}
               height={40}
             />
+            <span className="text-xl font-bold text-purple-600">
+              {tCommon('appName')}
+            </span>
           </Link>
         </div>
 
