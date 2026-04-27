@@ -8,6 +8,10 @@ import { Reflector } from '@nestjs/core';
 import { FastifyReply } from 'fastify';
 import { Observable, map } from 'rxjs';
 import { CLEAR_AUTH_COOKIES_KEY } from '../decorators/clear-auth-cookies.decorator';
+import {
+  getClearedAccessTokenCookieOptions,
+  getClearedRefreshTokenCookieOptions,
+} from '../auth-cookie-options';
 
 @Injectable()
 export class CookieClearInterceptor implements NestInterceptor {
@@ -29,27 +33,17 @@ export class CookieClearInterceptor implements NestInterceptor {
       map((data) => {
         // Clear cookies by setting maxAge to 0
         // Use 'any' type assertion because @fastify/cookie types are not properly exposed
-        const isProduction = process.env.NODE_ENV === 'production';
-        // Use 'lax' by default for CSRF protection
-        // Only use 'none' if COOKIE_SAME_SITE_NONE is explicitly set (cross-domain setup)
-        const allowCrossSite = process.env.COOKIE_SAME_SITE_NONE === 'true';
-        const sameSite = isProduction && allowCrossSite ? 'none' : 'lax';
+        (reply as any).setCookie(
+          'accessToken',
+          '',
+          getClearedAccessTokenCookieOptions(),
+        );
 
-        (reply as any).setCookie('accessToken', '', {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite,
-          path: '/',
-          maxAge: 0,
-        });
-
-        (reply as any).setCookie('refreshToken', '', {
-          httpOnly: true,
-          secure: isProduction,
-          sameSite,
-          path: '/',
-          maxAge: 0,
-        });
+        (reply as any).setCookie(
+          'refreshToken',
+          '',
+          getClearedRefreshTokenCookieOptions(),
+        );
 
         return data;
       }),

@@ -8,6 +8,10 @@ import {
   GoogleAuthGuard,
   GoogleCallbackGuard,
 } from './guards/google-auth.guard';
+import {
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
+} from './auth-cookie-options';
 
 interface OAuthRequest extends FastifyRequest {
   user?: OAuthProfile;
@@ -64,29 +68,18 @@ export class OAuthController {
     try {
       const authResult = await this.oauthService.handleOAuthLogin(req.user);
 
-      const isProduction = process.env.NODE_ENV === 'production';
-      // Use 'lax' by default for CSRF protection (consistent with auth interceptors)
-      // Only use 'none' if COOKIE_SAME_SITE_NONE is explicitly set (cross-domain setup)
-      const allowCrossSite = process.env.COOKIE_SAME_SITE_NONE === 'true';
-      const sameSite: 'none' | 'lax' =
-        isProduction && allowCrossSite ? 'none' : 'lax';
-
       // FastifyReply has setCookie if @fastify/cookie is registered
-      reply.setCookie('accessToken', authResult.accessToken, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite,
-        path: '/',
-        maxAge: 15 * 60, // 15 minutes (seconds)
-      });
+      reply.setCookie(
+        'accessToken',
+        authResult.accessToken,
+        getAccessTokenCookieOptions(),
+      );
 
-      reply.setCookie('refreshToken', authResult.refreshToken, {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite,
-        path: '/',
-        maxAge: 7 * 24 * 60 * 60, // 7 days (seconds)
-      });
+      reply.setCookie(
+        'refreshToken',
+        authResult.refreshToken,
+        getRefreshTokenCookieOptions(),
+      );
 
       // Redirect SUPERADMIN to admin dashboard
       let finalRedirectUrl = successUrl;
