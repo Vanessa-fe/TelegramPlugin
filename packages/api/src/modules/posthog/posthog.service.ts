@@ -1,45 +1,16 @@
 import {
   Injectable,
   Logger,
-<<<<<<< HEAD
-  OnModuleInit,
   OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   initPostHog,
-  getPostHog,
-  shutdownPostHog,
   ServerEvents,
+  shutdownPostHog,
 } from '@telegram-plugin/shared';
 import type { PostHog } from 'posthog-node';
-=======
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PostHog } from 'posthog-node';
-
-export const ServerEvents = {
-  USER_SIGNED_UP: 'user_signed_up',
-  USER_LOGGED_IN: 'user_logged_in',
-  USER_LOGGED_OUT: 'user_logged_out',
-  PLAN_SELECTED: 'plan_selected',
-  SUBSCRIPTION_CREATED: 'subscription_created',
-  SUBSCRIPTION_ACTIVATED: 'subscription_activated',
-  SUBSCRIPTION_CANCELED: 'subscription_canceled',
-  SUBSCRIPTION_EXPIRED: 'subscription_expired',
-  PAYMENT_SUCCEEDED: 'payment_succeeded',
-  PAYMENT_FAILED: 'payment_failed',
-  REFUND_ISSUED: 'refund_issued',
-  CHANNEL_ACCESS_GRANTED: 'channel_access_granted',
-  CHANNEL_ACCESS_REVOKED: 'channel_access_revoked',
-  PRODUCT_CREATED: 'product_created',
-  PLAN_CREATED: 'plan_created',
-  CHANNEL_CONNECTED: 'channel_connected',
-  CHANNEL_DISCONNECTED: 'channel_disconnected',
-} as const;
->>>>>>> master
 
 @Injectable()
 export class PostHogService implements OnModuleInit, OnModuleDestroy {
@@ -59,12 +30,8 @@ export class PostHogService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-<<<<<<< HEAD
     this.client = initPostHog({
       apiKey: projectToken,
-=======
-    this.client = new PostHog(projectToken, {
->>>>>>> master
       host: host ?? 'https://eu.i.posthog.com',
     });
 
@@ -72,12 +39,8 @@ export class PostHogService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-<<<<<<< HEAD
     await shutdownPostHog();
-=======
-    await this.client?.shutdown();
     this.client = null;
->>>>>>> master
     this.logger.log('PostHog shutdown completed');
   }
 
@@ -105,14 +68,7 @@ export class PostHogService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-<<<<<<< HEAD
-  identify(
-    distinctId: string,
-    properties?: Record<string, unknown>,
-  ): void {
-=======
   identify(distinctId: string, properties?: Record<string, unknown>): void {
->>>>>>> master
     if (!this.client) {
       return;
     }

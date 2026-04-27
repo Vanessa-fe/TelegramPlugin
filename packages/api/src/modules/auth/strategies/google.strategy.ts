@@ -19,8 +19,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: config.get<string>('GOOGLE_CLIENT_SECRET') || '',
       callbackURL: config.get<string>('GOOGLE_CALLBACK_URL') || '',
       scope: ['email', 'profile'],
-      // Enable state parameter to protect against OAuth CSRF attacks
-      state: true,
+      // This API does not use Passport session storage. Enabling OAuth state
+      // without a custom store makes passport-google-oauth20 fail at runtime
+      // before the redirect to Google.
+      state: false,
     });
   }
 

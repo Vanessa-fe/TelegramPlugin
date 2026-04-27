@@ -2166,7 +2166,7 @@
         "features": {
           "item1": "Produits et clients illimités",
           "item2": "Paiements Stripe directs",
-          "item3": "Coupons et affiliés inclus"
+          "item3": "Support par email"
         }
       },
       "growth": {
@@ -2178,7 +2178,7 @@
         "cta": "Choisir Growth →",
         "ctaNote": "Facturation mensuelle",
         "features": {
-          "item1": "Analytics et exports avancés",
+          "item1": "Coupons, affiliés, analytics et exports",
           "item2": "Support prioritaire",
           "item3": "Tous les canaux sur un seul dashboard"
         }

@@ -42,6 +42,7 @@ export const ServerEvents = {
   USER_LOGGED_OUT: "user_logged_out",
 
   // Subscription events
+  PLAN_SELECTED: "plan_selected",
   SUBSCRIPTION_CREATED: "subscription_created",
   SUBSCRIPTION_ACTIVATED: "subscription_activated",
   SUBSCRIPTION_CANCELED: "subscription_canceled",

@@ -2166,7 +2166,7 @@
         "features": {
           "item1": "Unlimited products and customers",
           "item2": "Direct Stripe payouts",
-          "item3": "Coupons and affiliates included"
+          "item3": "Email support"
         }
       },
       "growth": {
@@ -2178,7 +2178,7 @@
         "cta": "Choose Growth →",
         "ctaNote": "Monthly billing",
         "features": {
-          "item1": "Advanced analytics and exports",
+          "item1": "Coupons, affiliates, analytics, and exports",
           "item2": "Priority support",
           "item3": "All channels in one dashboard"
         }
