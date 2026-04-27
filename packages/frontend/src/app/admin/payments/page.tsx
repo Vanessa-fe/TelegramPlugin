@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   AlertCircle,
@@ -37,6 +37,18 @@ export default function PaymentsPage() {
   const [daysFilter, setDaysFilter] = useState(30);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  const loadPayments = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiClient.get(`/admin/dashboard/unpaid?days=${daysFilter}`);
+      setPayments(response.data);
+    } catch {
+      setPayments([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [daysFilter]);
+
   const handleSuspend = async (payment: FailedPayment) => {
     const reason = prompt(
       `Suspendre l'organisation "${payment.organizationName}" ?\n\nRaison (optionnelle) :`
@@ -58,21 +70,9 @@ export default function PaymentsPage() {
     }
   };
 
-  async function loadPayments() {
-    setIsLoading(true);
-    try {
-      const response = await apiClient.get(`/admin/dashboard/unpaid?days=${daysFilter}`);
-      setPayments(response.data);
-    } catch {
-      setPayments([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   useEffect(() => {
     loadPayments();
-  }, [daysFilter]);
+  }, [loadPayments]);
 
   const formatCurrency = (amountInCents: number, currency: string) => {
     const amountInUnits = amountInCents / 100;
@@ -115,7 +115,7 @@ export default function PaymentsPage() {
         </div>
         <Button
           variant="outline"
-          onClick={() => loadPayments()}
+          onClick={loadPayments}
           className="gap-2"
         >
           <RefreshCw className="h-4 w-4" />

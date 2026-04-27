@@ -37,12 +37,7 @@ export function AnalyticsGate() {
     };
 
     let isCmpListenerRegistered = false;
-<<<<<<< HEAD
-    const cmpListeners: Array<{ eventName: string; handler: CmpEventHandler }> =
-      [];
-=======
     const cmpListeners: Array<{ eventName: string; handler: CmpEventHandler }> = [];
->>>>>>> master
 
     const tryRegisterCmpListeners = () => {
       if (isCmpListenerRegistered) {

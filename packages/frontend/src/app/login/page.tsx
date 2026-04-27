@@ -14,7 +14,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Analytics } from "@/lib/analytics/events";
 
 export default function LoginPage() {
   const posthog = usePostHog();
