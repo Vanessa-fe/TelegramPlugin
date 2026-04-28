@@ -1,9 +1,15 @@
 import { ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
 interface OAuthRequest {
   oauthError?: string;
+}
+
+interface VipQueryRequest extends FastifyRequest {
+  query: {
+    vip?: string;
+  };
 }
 
 @Injectable()
@@ -11,6 +17,23 @@ export class GoogleAuthGuard extends AuthGuard('google') {
   getResponse(context: ExecutionContext) {
     const response = context.switchToHttp().getResponse<FastifyReply>();
     return response.raw;
+  }
+
+  getAuthenticateOptions(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest<VipQueryRequest>();
+    const vipToken = request.query?.vip;
+    const callbackUrl = process.env.GOOGLE_CALLBACK_URL;
+
+    if (!vipToken || !callbackUrl) {
+      return undefined;
+    }
+
+    const url = new URL(callbackUrl);
+    url.searchParams.set('vip', vipToken);
+
+    return {
+      callbackURL: url.toString(),
+    };
   }
 }
 

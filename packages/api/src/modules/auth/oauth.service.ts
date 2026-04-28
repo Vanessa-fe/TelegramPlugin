@@ -1,4 +1,8 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { OAuthProvider, User, UserRole } from '@prisma/client';
@@ -6,6 +10,8 @@ import { createHash } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthTokens, JwtPayload, AuthProfile, AuthResult } from './auth.types';
 import type { GoogleProfile } from './strategies/google.strategy';
+import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
+import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 
 export type OAuthProfile = GoogleProfile;
 
@@ -19,9 +25,14 @@ export class OAuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly platformSubscriptionService: PlatformSubscriptionService,
+    private readonly vipInvitationsService: VipInvitationsService,
   ) {}
 
-  async handleOAuthLogin(profile: OAuthProfile): Promise<OAuthLoginResult> {
+  async handleOAuthLogin(
+    profile: OAuthProfile,
+    vipToken?: string,
+  ): Promise<OAuthLoginResult> {
     const provider = OAuthProvider.GOOGLE;
 
     // 1. Check if OAuth account already exists
@@ -51,6 +62,9 @@ export class OAuthService {
       });
 
       const ensuredUser = await this.ensureOrganization(updatedUser, profile);
+      if (vipToken) {
+        await this.applyVipInvitationToken(ensuredUser, vipToken);
+      }
       const authResult = await this.generateAuthResult(ensuredUser);
       return { ...authResult, isNewUser: false };
     }
@@ -87,6 +101,9 @@ export class OAuthService {
         });
 
         const ensuredUser = await this.ensureOrganization(updatedUser, profile);
+        if (vipToken) {
+          await this.applyVipInvitationToken(ensuredUser, vipToken);
+        }
         const authResult = await this.generateAuthResult(ensuredUser);
         return { ...authResult, isNewUser: false };
       }
@@ -124,6 +141,10 @@ export class OAuthService {
         },
       },
     });
+
+    if (vipToken) {
+      await this.applyVipInvitationToken(user, vipToken);
+    }
 
     const authResult = await this.generateAuthResult(user);
     return { ...authResult, isNewUser: true };
@@ -275,5 +296,45 @@ export class OAuthService {
         role: UserRole.ORG_ADMIN,
       },
     });
+  }
+
+  private async applyVipInvitationToken(
+    user: User,
+    vipToken: string,
+  ): Promise<void> {
+    if (!user.organizationId) {
+      return;
+    }
+
+    const invitation = await this.vipInvitationsService.findRedeemableByToken(
+      vipToken,
+      user.email,
+    );
+
+    if (
+      (invitation.status === 'ACTIVATED' ||
+        invitation.status === 'CONVERTED') &&
+      invitation.organizationId === user.organizationId
+    ) {
+      return;
+    }
+
+    if (invitation.status !== 'PENDING') {
+      throw new ConflictException(
+        "Cette invitation VIP n'est plus disponible",
+      );
+    }
+
+    const trialEndsAt = await this.platformSubscriptionService.activateVipTrial(
+      user.organizationId,
+      invitation.platformPlanName,
+      invitation.trialDays,
+    );
+
+    await this.vipInvitationsService.activate(
+      invitation.id,
+      user.organizationId,
+      trialEndsAt,
+    );
   }
 }

@@ -14,6 +14,7 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
+import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -81,6 +82,13 @@ describe('AuthService', () => {
 
   const mockPlatformSubscriptionService = {
     activateFreePlan: jest.fn(),
+    activateVipTrial: jest.fn(),
+  };
+
+  const mockVipInvitationsService = {
+    findRedeemableByToken: jest.fn(),
+    findOne: jest.fn(),
+    activate: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -94,6 +102,10 @@ describe('AuthService', () => {
         {
           provide: PlatformSubscriptionService,
           useValue: mockPlatformSubscriptionService,
+        },
+        {
+          provide: VipInvitationsService,
+          useValue: mockVipInvitationsService,
         },
       ],
     }).compile();
@@ -297,6 +309,44 @@ describe('AuthService', () => {
         }),
       });
     });
+
+    it('should store pending VIP invitation id on organization metadata during registration', async () => {
+      const registerDto = {
+        email: 'vip@example.com',
+        password: 'Test1234!',
+        vipToken: '68457d91-0e10-4cd1-bf0e-e893ee720f86',
+      };
+
+      mockVipInvitationsService.findRedeemableByToken.mockResolvedValue({
+        id: 'vip-1',
+      });
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.user.create.mockResolvedValue({
+        id: '1',
+        email: registerDto.email,
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        isActive: true,
+        passwordHash: 'hashed',
+        firstName: null,
+        lastName: null,
+        emailVerifiedAt: null,
+        lastLoginAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await service.register(registerDto);
+
+      expect(
+        mockVipInvitationsService.findRedeemableByToken,
+      ).toHaveBeenCalledWith(registerDto.vipToken, registerDto.email);
+      expect(mockPrismaService.organization.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          metadata: { pendingVipInvitationId: 'vip-1' },
+        }),
+      });
+    });
   });
 
   describe('verifyEmail', () => {
@@ -435,6 +485,87 @@ describe('AuthService', () => {
       expect(result.accessToken).toBe('token');
     });
 
+    it('should activate pending VIP invitation after email verification', async () => {
+      const now = new Date();
+      const trialEndsAt = new Date(now);
+      trialEndsAt.setDate(trialEndsAt.getDate() + 30);
+
+      mockPrismaService.emailVerificationToken.findFirst.mockResolvedValue({
+        id: 'token-1',
+        userId: '1',
+        tokenHash: 'hash',
+        expiresAt: new Date(Date.now() + 1000 * 60),
+        usedAt: null,
+        createdAt: new Date(),
+        user: {
+          id: '1',
+          email: 'vip@example.com',
+          role: UserRole.ORG_ADMIN,
+          organizationId: 'org-1',
+          passwordHash: 'hashed',
+          firstName: 'Vip',
+          lastName: 'User',
+          isActive: true,
+          emailVerifiedAt: null,
+          lastLoginAt: null,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      mockPrismaService.user.update.mockResolvedValue({
+        id: '1',
+        email: 'vip@example.com',
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        passwordHash: 'hashed',
+        firstName: 'Vip',
+        lastName: 'User',
+        isActive: true,
+        emailVerifiedAt: now,
+        lastLoginAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      mockPrismaService.organization.findUnique.mockResolvedValue({
+        metadata: { pendingVipInvitationId: 'vip-1' },
+      });
+      mockPrismaService.organization.update.mockResolvedValue({
+        id: 'org-1',
+      });
+      mockPrismaService.emailVerificationToken.updateMany.mockResolvedValue({
+        count: 1,
+      });
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1' });
+      mockJwtService.signAsync.mockResolvedValue('token');
+      mockVipInvitationsService.findOne.mockResolvedValue({
+        id: 'vip-1',
+        email: 'vip@example.com',
+        status: 'PENDING',
+        platformPlanName: 'pro',
+        trialDays: 30,
+      });
+      mockPlatformSubscriptionService.activateVipTrial.mockResolvedValue(
+        trialEndsAt,
+      );
+
+      const result = await service.verifyEmail('plain-token');
+
+      expect(mockVipInvitationsService.findOne).toHaveBeenCalledWith('vip-1');
+      expect(
+        mockPlatformSubscriptionService.activateVipTrial,
+      ).toHaveBeenCalledWith('org-1', 'pro', 30);
+      expect(mockVipInvitationsService.activate).toHaveBeenCalledWith(
+        'vip-1',
+        'org-1',
+        trialEndsAt,
+      );
+      expect(mockPrismaService.organization.update).toHaveBeenCalledWith({
+        where: { id: 'org-1' },
+        data: { metadata: Prisma.DbNull },
+      });
+      expect(result.accessToken).toBe('token');
+    });
+
     it('should throw BadRequestException for invalid token', async () => {
       mockPrismaService.emailVerificationToken.findFirst.mockResolvedValue(
         null,
@@ -565,6 +696,76 @@ describe('AuthService', () => {
       await expect(
         service.login('test@example.com', 'wrongPassword'),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should activate VIP invitation on login when vip token is provided', async () => {
+      const email = 'vip@example.com';
+      const password = 'Test1234!';
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const trialEndsAt = new Date();
+
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: '1',
+        email,
+        passwordHash: hashedPassword,
+        isActive: true,
+        role: UserRole.ORG_ADMIN,
+        firstName: null,
+        lastName: null,
+        organizationId: 'org-1',
+        emailVerifiedAt: new Date(),
+        lastLoginAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockVipInvitationsService.findRedeemableByToken.mockResolvedValue({
+        id: 'vip-1',
+        email,
+        status: 'PENDING',
+        platformPlanName: 'growth',
+        trialDays: 30,
+      });
+      mockPlatformSubscriptionService.activateVipTrial.mockResolvedValue(
+        trialEndsAt,
+      );
+      mockPrismaService.user.update.mockResolvedValue({
+        id: '1',
+        email,
+        passwordHash: hashedPassword,
+        isActive: true,
+        role: UserRole.ORG_ADMIN,
+        firstName: null,
+        lastName: null,
+        organizationId: 'org-1',
+        emailVerifiedAt: new Date(),
+        lastLoginAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockPrismaService.refreshToken.create.mockResolvedValue({ id: 'rt-1' });
+      mockJwtService.signAsync.mockResolvedValue('token');
+
+      const result = await service.login(
+        email,
+        password,
+        '68457d91-0e10-4cd1-bf0e-e893ee720f86',
+      );
+
+      expect(
+        mockVipInvitationsService.findRedeemableByToken,
+      ).toHaveBeenCalledWith(
+        '68457d91-0e10-4cd1-bf0e-e893ee720f86',
+        email,
+      );
+      expect(
+        mockPlatformSubscriptionService.activateVipTrial,
+      ).toHaveBeenCalledWith('org-1', 'growth', 30);
+      expect(mockVipInvitationsService.activate).toHaveBeenCalledWith(
+        'vip-1',
+        'org-1',
+        trialEndsAt,
+      );
+      expect(result.accessToken).toBe('token');
     });
   });
 

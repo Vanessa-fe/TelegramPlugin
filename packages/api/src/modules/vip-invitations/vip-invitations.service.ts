@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreateVipInvitationDto } from './vip-invitations.schema';
@@ -162,10 +163,79 @@ export class VipInvitationsService {
     return invitation;
   }
 
+  async findRedeemableByToken(
+    token: string,
+    email: string,
+  ): Promise<VipInvitation> {
+    const invitation = await this.findByToken(token);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (invitation.email !== normalizedEmail) {
+      throw new BadRequestException(
+        "Cette invitation VIP n'est pas associee a cette adresse email",
+      );
+    }
+
+    if (invitation.status === 'CANCELLED') {
+      throw new ConflictException('Cette invitation VIP a ete annulee');
+    }
+
+    if (invitation.status === 'EXPIRED') {
+      throw new ConflictException('Cette invitation VIP a expire');
+    }
+
+    return invitation;
+  }
+
   async markEmailSent(id: string): Promise<VipInvitation> {
     return this.prisma.vipInvitation.update({
       where: { id },
       data: { emailSentAt: new Date() },
+    });
+  }
+
+  async activate(
+    id: string,
+    organizationId: string,
+    expiresAt: Date,
+  ): Promise<VipInvitation> {
+    const invitation = await this.findOne(id);
+
+    if (
+      (invitation.status === 'ACTIVATED' ||
+        invitation.status === 'CONVERTED') &&
+      invitation.organizationId === organizationId
+    ) {
+      return invitation;
+    }
+
+    if (invitation.status !== 'PENDING') {
+      throw new ConflictException(
+        "Seules les invitations en attente peuvent etre activees",
+      );
+    }
+
+    return this.prisma.vipInvitation.update({
+      where: { id },
+      data: {
+        status: 'ACTIVATED',
+        organizationId,
+        activatedAt: new Date(),
+        expiresAt,
+      },
+    });
+  }
+
+  async markConvertedForOrganization(organizationId: string): Promise<void> {
+    await this.prisma.vipInvitation.updateMany({
+      where: {
+        organizationId,
+        status: 'ACTIVATED',
+      },
+      data: {
+        status: 'CONVERTED',
+        convertedAt: new Date(),
+      },
     });
   }
 

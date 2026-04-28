@@ -11,6 +11,7 @@ import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PostHogService } from '../posthog/posthog.service';
+import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 import type {
   PlatformPlanResponse,
   PlatformSubscriptionResponse,
@@ -26,6 +27,7 @@ export class PlatformSubscriptionService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly posthog: PostHogService,
+    private readonly vipInvitationsService: VipInvitationsService,
   ) {
     const apiKey = this.config.get<string>('STRIPE_SECRET_KEY');
     if (!apiKey) {
@@ -154,8 +156,15 @@ export class PlatformSubscriptionService {
       const isStarterUpgradePath =
         currentSubscription.platformPlan?.name === 'starter' &&
         plan.name !== 'starter';
+      const isManualTrialUpgradePath =
+        currentSubscription.status === PlatformSubscriptionStatus.TRIALING &&
+        !currentSubscription.stripeSubscriptionId;
 
-      if (isActiveSubscription && !isStarterUpgradePath) {
+      if (
+        isActiveSubscription &&
+        !isStarterUpgradePath &&
+        !isManualTrialUpgradePath
+      ) {
         throw new ForbiddenException('Un abonnement plateforme est déjà actif');
       }
     }
@@ -363,6 +372,73 @@ export class PlatformSubscriptionService {
     }
   }
 
+  async activateVipTrial(
+    organizationId: string,
+    planName: string,
+    trialDays: number,
+  ): Promise<Date> {
+    const plan = await this.prisma.platformPlan.findUnique({
+      where: { name: planName },
+    });
+
+    if (!plan || !plan.isActive) {
+      throw new NotFoundException('Plan introuvable ou inactif');
+    }
+
+    const existingSubscription =
+      await this.prisma.platformSubscription.findUnique({
+        where: { organizationId },
+      });
+
+    if (
+      existingSubscription?.stripeSubscriptionId ||
+      existingSubscription?.status === PlatformSubscriptionStatus.PAST_DUE
+    ) {
+      throw new ForbiddenException(
+        'Cette organisation a deja un abonnement plateforme gere par Stripe',
+      );
+    }
+
+    const now = new Date();
+    const trialEndsAt = new Date(now);
+    trialEndsAt.setDate(trialEndsAt.getDate() + trialDays);
+
+    await this.prisma.platformSubscription.upsert({
+      where: { organizationId },
+      create: {
+        organizationId,
+        platformPlanId: plan.id,
+        status: PlatformSubscriptionStatus.TRIALING,
+        currentPeriodStart: now,
+        currentPeriodEnd: trialEndsAt,
+        trialEndsAt,
+        cancelAtPeriodEnd: false,
+        metadata: {
+          vipTrial: true,
+        },
+      },
+      update: {
+        platformPlanId: plan.id,
+        status: PlatformSubscriptionStatus.TRIALING,
+        stripeSubscriptionId: null,
+        stripeCustomerId: null,
+        currentPeriodStart: now,
+        currentPeriodEnd: trialEndsAt,
+        trialEndsAt,
+        canceledAt: null,
+        cancelAtPeriodEnd: false,
+        graceUntil: null,
+        metadata: {
+          vipTrial: true,
+        },
+      },
+    });
+
+    await this.updateSaasActive(organizationId);
+
+    return trialEndsAt;
+  }
+
   /**
    * Create a Stripe Customer Portal link for managing subscription
    */
@@ -543,6 +619,10 @@ export class PlatformSubscriptionService {
         stripeSubscriptionId,
       });
     }
+
+    await this.vipInvitationsService.markConvertedForOrganization(
+      organizationId,
+    );
 
     // Send admin notification for new subscription
     try {

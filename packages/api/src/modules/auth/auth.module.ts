@@ -12,6 +12,7 @@ import { CookieResponseInterceptor } from './interceptors/cookie-response.interc
 import { CookieClearInterceptor } from './interceptors/cookie-clear.interceptor';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PlatformSubscriptionModule } from '../platform-subscription/platform-subscription.module';
+import { VipInvitationsModule } from '../vip-invitations/vip-invitations.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PlatformSubscriptionModule } from '../platform-subscription/platform-su
     PassportModule.register({ defaultStrategy: 'jwt' }),
     NotificationsModule,
     PlatformSubscriptionModule,
+    VipInvitationsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

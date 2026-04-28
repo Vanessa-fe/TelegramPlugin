@@ -66,7 +66,16 @@ export class OAuthController {
     }
 
     try {
-      const authResult = await this.oauthService.handleOAuthLogin(req.user);
+      const vipToken =
+        typeof (req.query as Record<string, unknown> | undefined)?.vip ===
+        'string'
+          ? ((req.query as Record<string, unknown>).vip as string)
+          : undefined;
+
+      const authResult = await this.oauthService.handleOAuthLogin(
+        req.user,
+        vipToken,
+      );
 
       // FastifyReply has setCookie if @fastify/cookie is registered
       reply.setCookie(

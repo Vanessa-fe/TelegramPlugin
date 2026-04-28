@@ -27,6 +27,7 @@ import type {
 } from './auth.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
+import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 
 @Injectable()
 export class AuthService {
@@ -38,6 +39,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly notifications: NotificationsService,
     private readonly platformSubscriptionService: PlatformSubscriptionService,
+    private readonly vipInvitationsService: VipInvitationsService,
   ) {}
 
   async register(
@@ -45,6 +47,12 @@ export class AuthService {
     frontendOrigin?: string,
   ): Promise<RegisterResult> {
     const normalizedEmail = data.email.trim().toLowerCase();
+    const vipInvitation = data.vipToken
+      ? await this.vipInvitationsService.findRedeemableByToken(
+          data.vipToken,
+          normalizedEmail,
+        )
+      : null;
 
     const frontendUrl = this.resolveFrontendBaseUrl(frontendOrigin);
     if (!frontendUrl) {
@@ -103,9 +111,17 @@ export class AuthService {
         slug,
         billingEmail: normalizedEmail,
         currency: organizationCurrency,
-        metadata: data.platformPlanName
-          ? { pendingPlatformPlan: data.platformPlanName }
-          : undefined,
+        metadata:
+          vipInvitation || data.platformPlanName
+            ? {
+                ...(data.platformPlanName
+                  ? { pendingPlatformPlan: data.platformPlanName }
+                  : {}),
+                ...(vipInvitation
+                  ? { pendingVipInvitationId: vipInvitation.id }
+                  : {}),
+              }
+            : undefined,
       },
     });
     const organizationId = org.id;
@@ -176,7 +192,7 @@ export class AuthService {
       return verifiedUser;
     });
 
-    await this.activatePendingFreePlan(updatedUser.organizationId);
+    await this.applyPendingOrganizationBenefits(updatedUser);
 
     const payload = this.buildPayload(updatedUser);
     const tokens = await this.signTokens(payload);
@@ -232,56 +248,119 @@ export class AuthService {
     );
   }
 
-  private async activatePendingFreePlan(
-    organizationId?: string | null,
-  ): Promise<void> {
-    if (!organizationId) {
+  private async applyPendingOrganizationBenefits(user: User): Promise<void> {
+    if (!user.organizationId) {
       return;
     }
 
     const organization = await this.prisma.organization.findUnique({
-      where: { id: organizationId },
+      where: { id: user.organizationId },
       select: { metadata: true },
     });
 
     const metadata =
       organization?.metadata && typeof organization.metadata === 'object'
-        ? (organization.metadata as Record<string, unknown>)
+        ? { ...(organization.metadata as Record<string, unknown>) }
         : null;
 
-    if (metadata?.pendingPlatformPlan !== 'starter') {
+    if (!metadata) {
       return;
     }
 
-    try {
-      await this.platformSubscriptionService.activateFreePlan(
-        organizationId,
-        metadata.pendingPlatformPlan,
-        {
-          captureSubscriptionCreated: true,
-          source: 'email_verification',
-        },
-      );
+    let metadataChanged = false;
 
-      const { pendingPlatformPlan, ...nextMetadata } =
-        metadata as Prisma.InputJsonObject & {
-          pendingPlatformPlan?: string;
-        };
-      void pendingPlatformPlan;
-      const metadataUpdate =
-        Object.keys(nextMetadata).length > 0 ? nextMetadata : Prisma.DbNull;
+    const pendingVipInvitationId =
+      typeof metadata.pendingVipInvitationId === 'string'
+        ? metadata.pendingVipInvitationId
+        : null;
 
-      await this.prisma.organization.update({
-        where: { id: organizationId },
-        data: {
-          metadata: metadataUpdate,
-        },
-      });
-    } catch (error) {
-      this.logger.warn(
-        `Failed to activate pending free plan for organization ${organizationId}: ${(error as Error).message}`,
+    if (pendingVipInvitationId) {
+      try {
+        await this.activatePendingVipInvitation(user, pendingVipInvitationId);
+        delete metadata.pendingVipInvitationId;
+        metadataChanged = true;
+      } catch (error) {
+        this.logger.warn(
+          `Failed to activate pending VIP invitation ${pendingVipInvitationId} for organization ${user.organizationId}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    if (metadata.pendingPlatformPlan === 'starter') {
+      try {
+        await this.platformSubscriptionService.activateFreePlan(
+          user.organizationId,
+          metadata.pendingPlatformPlan,
+          {
+            captureSubscriptionCreated: true,
+            source: 'email_verification',
+          },
+        );
+        delete metadata.pendingPlatformPlan;
+        metadataChanged = true;
+      } catch (error) {
+        this.logger.warn(
+          `Failed to activate pending free plan for organization ${user.organizationId}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    if (!metadataChanged) {
+      return;
+    }
+
+    await this.prisma.organization.update({
+      where: { id: user.organizationId },
+      data: {
+        metadata:
+          Object.keys(metadata).length > 0
+            ? (metadata as Prisma.InputJsonObject)
+            : Prisma.DbNull,
+      },
+    });
+  }
+
+  private async activatePendingVipInvitation(
+    user: User,
+    invitationId: string,
+  ): Promise<void> {
+    const invitation = await this.vipInvitationsService.findOne(invitationId);
+
+    if (invitation.email !== user.email.toLowerCase()) {
+      throw new ConflictException(
+        "Cette invitation VIP ne correspond pas a l'email du compte",
       );
     }
+
+    if (!user.organizationId) {
+      return;
+    }
+
+    if (
+      (invitation.status === 'ACTIVATED' ||
+        invitation.status === 'CONVERTED') &&
+      invitation.organizationId === user.organizationId
+    ) {
+      return;
+    }
+
+    if (invitation.status !== 'PENDING') {
+      throw new ConflictException(
+        "Cette invitation VIP n'est plus disponible",
+      );
+    }
+
+    const trialEndsAt = await this.platformSubscriptionService.activateVipTrial(
+      user.organizationId,
+      invitation.platformPlanName,
+      invitation.trialDays,
+    );
+
+    await this.vipInvitationsService.activate(
+      invitation.id,
+      user.organizationId,
+      trialEndsAt,
+    );
   }
 
   private async issueEmailVerificationToken(userId: string): Promise<string> {
@@ -356,11 +435,19 @@ export class AuthService {
     return slug;
   }
 
-  async login(email: string, password: string): Promise<AuthResult> {
+  async login(
+    email: string,
+    password: string,
+    vipToken?: string,
+  ): Promise<AuthResult> {
     let user = await this.validateUser(email, password);
 
     // Ensure user has an organization
     user = await this.ensureOrganization(user);
+
+    if (vipToken) {
+      await this.applyVipInvitationToken(user, vipToken);
+    }
 
     // Update lastLoginAt
     await this.prisma.user.update({
@@ -408,6 +495,46 @@ export class AuthService {
         role: 'ORG_ADMIN',
       },
     });
+  }
+
+  private async applyVipInvitationToken(
+    user: User,
+    vipToken: string,
+  ): Promise<void> {
+    if (!user.organizationId) {
+      return;
+    }
+
+    const invitation = await this.vipInvitationsService.findRedeemableByToken(
+      vipToken,
+      user.email,
+    );
+
+    if (
+      (invitation.status === 'ACTIVATED' ||
+        invitation.status === 'CONVERTED') &&
+      invitation.organizationId === user.organizationId
+    ) {
+      return;
+    }
+
+    if (invitation.status !== 'PENDING') {
+      throw new ConflictException(
+        "Cette invitation VIP n'est plus disponible",
+      );
+    }
+
+    const trialEndsAt = await this.platformSubscriptionService.activateVipTrial(
+      user.organizationId,
+      invitation.platformPlanName,
+      invitation.trialDays,
+    );
+
+    await this.vipInvitationsService.activate(
+      invitation.id,
+      user.organizationId,
+      trialEndsAt,
+    );
   }
 
   async refresh(refreshToken: string): Promise<AuthResult> {

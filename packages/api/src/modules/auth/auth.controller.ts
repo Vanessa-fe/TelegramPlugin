@@ -106,7 +106,7 @@ export class AuthController {
     @Body(new ZodValidationPipe(loginSchema))
     body: LoginDto,
   ): Promise<AuthResult> {
-    return this.authService.login(body.email, body.password);
+    return this.authService.login(body.email, body.password, body.vipToken);
   }
 
   @Public()

@@ -144,6 +144,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const trackedPlanSelectionRef = useRef<string | null>(null);
+  const vipToken = searchParams.get("vip");
   const selectedPlanParam = searchParams.get("plan");
   const selectedPlan = isPricingPlanName(selectedPlanParam)
     ? selectedPlanParam
@@ -207,6 +208,7 @@ export default function RegisterPage() {
         lastName: formData.lastName || undefined,
         currency: formData.currency,
         platformPlanName: selectedPlan ?? undefined,
+        vipToken: vipToken || undefined,
       });
       setSubmittedEmail(result.email || formData.email.trim().toLowerCase());
       toast.success(t("success"));
@@ -272,7 +274,11 @@ export default function RegisterPage() {
                 </div>
 
                 {/* OAuth Buttons */}
-                <OAuthButtons mode="register" disabled={isLoading} />
+                <OAuthButtons
+                  mode="register"
+                  disabled={isLoading}
+                  vipToken={vipToken}
+                />
 
                 <OAuthDivider />
 
@@ -443,7 +449,11 @@ export default function RegisterPage() {
                   <p className="text-text-secondary">
                     {t("hasAccount")}{" "}
                     <Link
-                      href="/login"
+                      href={
+                        vipToken
+                          ? `/login?vip=${encodeURIComponent(vipToken)}`
+                          : "/login"
+                      }
                       className="text-purple-600 hover:text-purple-700 font-medium"
                     >
                       {t("signIn")}
@@ -491,7 +501,11 @@ export default function RegisterPage() {
                     {isLoading ? t("resending") : t("resend")}
                   </Button>
                   <Link
-                    href="/login"
+                    href={
+                      vipToken
+                        ? `/login?vip=${encodeURIComponent(vipToken)}`
+                        : "/login"
+                    }
                     className="inline-flex items-center justify-center w-full h-12 border border-border-custom text-text-primary font-medium rounded-lg hover:bg-surface transition-colors"
                   >
                     {t("backToLogin")}

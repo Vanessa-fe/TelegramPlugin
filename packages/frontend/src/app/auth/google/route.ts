@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export function GET() {
+export function GET(request: NextRequest) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   if (!apiUrl) {
@@ -9,5 +9,12 @@ export function GET() {
     });
   }
 
-  return NextResponse.redirect(new URL('/auth/google', apiUrl));
+  const redirectUrl = new URL('/auth/google', apiUrl);
+  const vipToken = request.nextUrl.searchParams.get('vip');
+
+  if (vipToken) {
+    redirectUrl.searchParams.set('vip', vipToken);
+  }
+
+  return NextResponse.redirect(redirectUrl);
 }

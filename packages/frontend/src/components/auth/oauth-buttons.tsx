@@ -6,14 +6,28 @@ import { useTranslations } from 'next-intl';
 interface OAuthButtonsProps {
   mode: 'login' | 'register';
   disabled?: boolean;
+  vipToken?: string | null;
 }
 
-export function OAuthButtons({ mode, disabled }: OAuthButtonsProps) {
+export function OAuthButtons({
+  mode,
+  disabled,
+  vipToken,
+}: OAuthButtonsProps) {
   const t = useTranslations('auth.oauth');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   const handleGoogleAuth = () => {
-    window.open(`${apiUrl}/auth/google`, '_blank', 'noopener,noreferrer');
+    if (!apiUrl) {
+      return;
+    }
+
+    const url = new URL('/auth/google', apiUrl);
+    if (vipToken) {
+      url.searchParams.set('vip', vipToken);
+    }
+
+    window.location.assign(url.toString());
   };
 
   return (

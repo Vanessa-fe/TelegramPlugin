@@ -17,6 +17,7 @@ export const passwordSchema = basePasswordSchema.regex(
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1, 'Le mot de passe est requis'),
+  vipToken: z.string().uuid('Invitation VIP invalide').optional(),
 });
 
 export type LoginDto = z.infer<typeof loginSchema>;
@@ -43,6 +44,7 @@ export const registerSchema = z.object({
     .transform((value) => value.toUpperCase())
     .optional(),
   platformPlanName: z.enum(['starter', 'growth', 'pro']).optional(),
+  vipToken: z.string().uuid('Invitation VIP invalide').optional(),
 });
 
 export type RegisterDto = z.infer<typeof registerSchema>;

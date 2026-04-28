@@ -17,6 +17,7 @@ export interface User {
 export interface LoginCredentials {
   email: string;
   password: string;
+  vipToken?: string;
 }
 
 export interface RegisterData {
@@ -27,6 +28,7 @@ export interface RegisterData {
   organizationId?: string;
   currency?: string;
   platformPlanName?: 'starter' | 'growth' | 'pro';
+  vipToken?: string;
 }
 
 export interface RegisterResponse {

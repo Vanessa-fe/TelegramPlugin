@@ -23,6 +23,7 @@ export default function LoginPage() {
   const t = useTranslations("auth.login");
   const tOAuth = useTranslations("auth.oauth");
   const tCommon = useTranslations("common");
+  const vipToken = searchParams.get("vip");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +44,11 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const user = await login({ email, password });
+      const user = await login({
+        email,
+        password,
+        vipToken: vipToken || undefined,
+      });
       posthog.identify(user.id, {
         email: user.email,
         role: user.role,
@@ -94,7 +99,11 @@ export default function LoginPage() {
             </div>
 
             {/* OAuth Buttons */}
-            <OAuthButtons mode="login" disabled={isLoading} />
+            <OAuthButtons
+              mode="login"
+              disabled={isLoading}
+              vipToken={vipToken}
+            />
 
             <OAuthDivider />
 
@@ -168,7 +177,11 @@ export default function LoginPage() {
               <p className="text-text-secondary">
                 {t("noAccount")}{" "}
                 <Link
-                  href="/register"
+                  href={
+                    vipToken
+                      ? `/register?vip=${encodeURIComponent(vipToken)}`
+                      : "/register"
+                  }
                   className="text-purple-600 hover:text-purple-700 font-medium"
                 >
                   {t("signUp")}
