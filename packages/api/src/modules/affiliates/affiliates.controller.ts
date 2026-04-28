@@ -8,13 +8,16 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ParseUUIDPipe } from '@nestjs/common/pipes';
 import { UserRole } from '@prisma/client';
+import type { FastifyRequest } from 'fastify';
 import { ZodValidationPipe } from '../../common';
 import {
   createAffiliateSchema,
   createPayoutSchema,
+  trackClickSchema,
   updateAffiliateSchema,
   updatePayoutSchema,
   validateAffiliateSchema,
@@ -22,6 +25,7 @@ import {
 import type {
   CreateAffiliateDto,
   CreatePayoutDto,
+  TrackClickDto,
   UpdateAffiliateDto,
   UpdatePayoutDto,
   ValidateAffiliateDto,
@@ -172,5 +176,98 @@ export class AffiliatesController {
     body: ValidateAffiliateDto,
   ) {
     return this.affiliatesService.validate(body);
+  }
+
+  @Post('track-click')
+  @Public()
+  async trackClick(
+    @Body(new ZodValidationPipe(trackClickSchema))
+    body: TrackClickDto,
+    @Req() request: FastifyRequest,
+  ) {
+    const ipAddress =
+      (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ??
+      request.ip;
+    return this.affiliatesService.trackClick(body, ipAddress);
+  }
+
+  @Get('stats')
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
+  async getOrganizationStats(
+    @CurrentUser() user: AuthUser,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    const scopedOrgId = resolveOrganizationScope(user, organizationId);
+    if (!scopedOrgId) {
+      throw new BadRequestException('Organization ID is required');
+    }
+    return this.affiliatesService.getOrganizationStats(scopedOrgId);
+  }
+
+  @Get(':id/stats')
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
+  async getAffiliateStats(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ) {
+    const affiliate = await this.affiliatesService.findOne(id);
+    resolveOrganizationScope(user, affiliate.organizationId);
+    return this.affiliatesService.getAffiliateStats(id);
+  }
+
+  @Get(':id/clicks')
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
+  async getClicks(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Query('limit') limit?: string,
+  ) {
+    const affiliate = await this.affiliatesService.findOne(id);
+    resolveOrganizationScope(user, affiliate.organizationId);
+    const limitNum = limit ? parseInt(limit, 10) : 50;
+    return this.affiliatesService.getRecentClicks(id, limitNum);
+  }
+
+  @Post('referrals/:referralId/approve')
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
+  async approveReferral(
+    @CurrentUser() user: AuthUser,
+    @Param('referralId', new ParseUUIDPipe()) referralId: string,
+  ) {
+    const referral = await this.affiliatesService.approveReferral(referralId);
+    const affiliate = await this.affiliatesService.findOne(
+      referral.affiliateId,
+    );
+    resolveOrganizationScope(user, affiliate.organizationId);
+    return referral;
+  }
+
+  @Post('referrals/:referralId/cancel')
+  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
+  async cancelReferral(
+    @CurrentUser() user: AuthUser,
+    @Param('referralId', new ParseUUIDPipe()) referralId: string,
+  ) {
+    const referral = await this.affiliatesService.cancelReferral(referralId);
+    const affiliate = await this.affiliatesService.findOne(
+      referral.affiliateId,
+    );
+    resolveOrganizationScope(user, affiliate.organizationId);
+    return referral;
   }
 }

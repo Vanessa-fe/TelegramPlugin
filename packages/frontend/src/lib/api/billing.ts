@@ -12,6 +12,7 @@ export interface CreateCheckoutDto {
   quantity?: number;
   couponCode?: string;
   affiliateCode?: string;
+  affiliateClickId?: string;
 }
 
 export interface CheckoutResponse {

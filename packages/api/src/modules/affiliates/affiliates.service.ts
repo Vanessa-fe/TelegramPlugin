@@ -1,12 +1,19 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { randomBytes } from 'node:crypto';
-import { AffiliateStatus, PayoutStatus, Prisma } from '@prisma/client';
+import { createHash, randomBytes } from 'node:crypto';
+import {
+  AffiliateStatus,
+  ConversionStatus,
+  PayoutStatus,
+  Prisma,
+} from '@prisma/client';
 import type {
   Affiliate,
+  AffiliateClick,
   AffiliatePayout,
   AffiliateReferral,
 } from '@prisma/client';
@@ -14,6 +21,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import type {
   CreateAffiliateDto,
   CreatePayoutDto,
+  TrackClickDto,
   UpdateAffiliateDto,
   UpdatePayoutDto,
   ValidateAffiliateDto,
@@ -51,8 +59,37 @@ export type ValidateAffiliateResult = {
   error?: string;
 };
 
+export type AffiliateReferralWithDetails = AffiliateReferral & {
+  subscription?: {
+    id: string;
+    plan?: { name: string };
+    status?: string;
+  };
+  customer?: {
+    id: string;
+    email?: string | null;
+    telegramUsername?: string | null;
+  };
+};
+
+export type AffiliateStats = {
+  totalClicks: number;
+  totalConversions: number;
+  pendingConversions: number;
+  approvedConversions: number;
+  paidConversions: number;
+  cancelledConversions: number;
+  totalCommissions: number;
+  pendingCommissions: number;
+  approvedCommissions: number;
+  paidCommissions: number;
+  conversionRate: number;
+};
+
 @Injectable()
 export class AffiliatesService {
+  private readonly logger = new Logger(AffiliatesService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateAffiliateDto): Promise<Affiliate> {
@@ -336,12 +373,310 @@ export class AffiliatesService {
           where: {
             affiliateId: payout.affiliateId,
             isPaid: false,
+            status: ConversionStatus.APPROVED,
           },
-          data: { isPaid: true },
+          data: {
+            isPaid: true,
+            status: ConversionStatus.PAID,
+            paidAt: new Date(),
+          },
         }),
       ]);
     }
 
     return updated;
+  }
+
+  async trackClick(
+    data: TrackClickDto,
+    ipAddress?: string,
+  ): Promise<AffiliateClick> {
+    const affiliate = await this.prisma.affiliate.findUnique({
+      where: { referralCode: data.code.toUpperCase() },
+    });
+
+    if (!affiliate) {
+      throw new NotFoundException('Code affilié introuvable');
+    }
+
+    if (affiliate.organizationId !== data.organizationId) {
+      throw new NotFoundException('Code affilié introuvable');
+    }
+
+    if (affiliate.status !== AffiliateStatus.ACTIVE) {
+      throw new BadRequestException("Cet affilié n'est pas actif");
+    }
+
+    const ipHash = ipAddress
+      ? createHash('sha256').update(ipAddress).digest('hex').slice(0, 16)
+      : null;
+
+    const click = await this.prisma.affiliateClick.create({
+      data: {
+        affiliateId: affiliate.id,
+        visitorId: data.visitorId,
+        ipHash,
+        userAgent: data.userAgent?.slice(0, 500),
+        landingPage: data.landingPage,
+        referrer: data.referrer,
+      },
+    });
+
+    await this.prisma.affiliate.update({
+      where: { id: affiliate.id },
+      data: {
+        totalClicks: { increment: 1 },
+      },
+    });
+
+    this.logger.debug(
+      `Tracked click for affiliate ${affiliate.referralCode}: click ${click.id}`,
+    );
+
+    return click;
+  }
+
+  async getAffiliateStats(affiliateId: string): Promise<AffiliateStats> {
+    const [clicksCount, referralsAgg] = await Promise.all([
+      this.prisma.affiliateClick.count({
+        where: { affiliateId },
+      }),
+      this.prisma.affiliateReferral.groupBy({
+        by: ['status'],
+        where: { affiliateId },
+        _count: true,
+        _sum: {
+          commissionCents: true,
+        },
+      }),
+    ]);
+
+    let totalConversions = 0;
+    let pendingConversions = 0;
+    let approvedConversions = 0;
+    let paidConversions = 0;
+    let cancelledConversions = 0;
+    let totalCommissions = 0;
+    let pendingCommissions = 0;
+    let approvedCommissions = 0;
+    let paidCommissions = 0;
+
+    for (const group of referralsAgg) {
+      totalConversions += group._count;
+      const commission = group._sum.commissionCents ?? 0;
+      totalCommissions += commission;
+
+      switch (group.status) {
+        case ConversionStatus.PENDING:
+          pendingConversions += group._count;
+          pendingCommissions += commission;
+          break;
+        case ConversionStatus.APPROVED:
+          approvedConversions += group._count;
+          approvedCommissions += commission;
+          break;
+        case ConversionStatus.PAID:
+          paidConversions += group._count;
+          paidCommissions += commission;
+          break;
+        case ConversionStatus.CANCELLED:
+          cancelledConversions += group._count;
+          break;
+      }
+    }
+
+    const conversionRate =
+      clicksCount > 0 ? (totalConversions / clicksCount) * 100 : 0;
+
+    return {
+      totalClicks: clicksCount,
+      totalConversions,
+      pendingConversions,
+      approvedConversions,
+      paidConversions,
+      cancelledConversions,
+      totalCommissions,
+      pendingCommissions,
+      approvedCommissions,
+      paidCommissions,
+      conversionRate: Math.round(conversionRate * 100) / 100,
+    };
+  }
+
+  async getOrganizationStats(organizationId: string): Promise<AffiliateStats> {
+    const [clicksCount, referralsAgg] = await Promise.all([
+      this.prisma.affiliateClick.count({
+        where: {
+          affiliate: {
+            organizationId,
+          },
+        },
+      }),
+      this.prisma.affiliateReferral.groupBy({
+        by: ['status'],
+        where: {
+          affiliate: {
+            organizationId,
+          },
+        },
+        _count: true,
+        _sum: {
+          commissionCents: true,
+        },
+      }),
+    ]);
+
+    let totalConversions = 0;
+    let pendingConversions = 0;
+    let approvedConversions = 0;
+    let paidConversions = 0;
+    let cancelledConversions = 0;
+    let totalCommissions = 0;
+    let pendingCommissions = 0;
+    let approvedCommissions = 0;
+    let paidCommissions = 0;
+
+    for (const group of referralsAgg) {
+      totalConversions += group._count;
+      const commission = group._sum.commissionCents ?? 0;
+      totalCommissions += commission;
+
+      switch (group.status) {
+        case ConversionStatus.PENDING:
+          pendingConversions += group._count;
+          pendingCommissions += commission;
+          break;
+        case ConversionStatus.APPROVED:
+          approvedConversions += group._count;
+          approvedCommissions += commission;
+          break;
+        case ConversionStatus.PAID:
+          paidConversions += group._count;
+          paidCommissions += commission;
+          break;
+        case ConversionStatus.CANCELLED:
+          cancelledConversions += group._count;
+          break;
+      }
+    }
+
+    const conversionRate =
+      clicksCount > 0 ? (totalConversions / clicksCount) * 100 : 0;
+
+    return {
+      totalClicks: clicksCount,
+      totalConversions,
+      pendingConversions,
+      approvedConversions,
+      paidConversions,
+      cancelledConversions,
+      totalCommissions,
+      pendingCommissions,
+      approvedCommissions,
+      paidCommissions,
+      conversionRate: Math.round(conversionRate * 100) / 100,
+    };
+  }
+
+  async cancelReferral(referralId: string): Promise<AffiliateReferral> {
+    const referral = await this.prisma.affiliateReferral.findUnique({
+      where: { id: referralId },
+    });
+
+    if (!referral) {
+      throw new NotFoundException('Référence introuvable');
+    }
+
+    if (referral.status === ConversionStatus.PAID) {
+      throw new BadRequestException(
+        'Cette référence a déjà été payée et ne peut pas être annulée',
+      );
+    }
+
+    if (referral.status === ConversionStatus.CANCELLED) {
+      throw new BadRequestException('Cette référence est déjà annulée');
+    }
+
+    const updated = await this.prisma.affiliateReferral.update({
+      where: { id: referralId },
+      data: {
+        status: ConversionStatus.CANCELLED,
+        cancelledAt: new Date(),
+      },
+    });
+
+    if (
+      referral.status === ConversionStatus.PENDING ||
+      referral.status === ConversionStatus.APPROVED
+    ) {
+      await this.prisma.affiliate.update({
+        where: { id: referral.affiliateId },
+        data: {
+          pendingEarnings: { decrement: referral.commissionCents },
+          totalEarnings: { decrement: referral.commissionCents },
+        },
+      });
+    }
+
+    this.logger.debug(`Cancelled referral ${referralId}`);
+
+    return updated;
+  }
+
+  async approveReferral(referralId: string): Promise<AffiliateReferral> {
+    const referral = await this.prisma.affiliateReferral.findUnique({
+      where: { id: referralId },
+    });
+
+    if (!referral) {
+      throw new NotFoundException('Référence introuvable');
+    }
+
+    if (referral.status !== ConversionStatus.PENDING) {
+      throw new BadRequestException(
+        'Seules les références en attente peuvent être approuvées',
+      );
+    }
+
+    const updated = await this.prisma.affiliateReferral.update({
+      where: { id: referralId },
+      data: {
+        status: ConversionStatus.APPROVED,
+        approvedAt: new Date(),
+      },
+    });
+
+    this.logger.debug(`Approved referral ${referralId}`);
+
+    return updated;
+  }
+
+  async getRecentClicks(
+    affiliateId: string,
+    limit: number = 50,
+  ): Promise<AffiliateClick[]> {
+    return this.prisma.affiliateClick.findMany({
+      where: { affiliateId },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
+  async findClickByVisitor(
+    affiliateId: string,
+    visitorId: string,
+    withinDays: number,
+  ): Promise<AffiliateClick | null> {
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() - withinDays);
+
+    return this.prisma.affiliateClick.findFirst({
+      where: {
+        affiliateId,
+        visitorId,
+        createdAt: { gte: minDate },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }

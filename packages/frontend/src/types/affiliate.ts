@@ -12,6 +12,24 @@ export enum PayoutStatus {
   FAILED = 'FAILED',
 }
 
+export enum ConversionStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  CANCELLED = 'CANCELLED',
+  PAID = 'PAID',
+}
+
+export enum AffiliateProgramStatus {
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export enum CommissionAppliesTo {
+  ALL_PRODUCTS = 'ALL_PRODUCTS',
+  SPECIFIC_PRODUCTS = 'SPECIFIC_PRODUCTS',
+}
+
 export interface Affiliate {
   id: string;
   organizationId: string;
@@ -23,6 +41,7 @@ export interface Affiliate {
   totalEarnings: number;
   pendingEarnings: number;
   paidEarnings: number;
+  totalClicks: number;
   metadata?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
@@ -34,14 +53,21 @@ export interface AffiliateReferral {
   affiliateId: string;
   subscriptionId: string;
   customerId: string;
+  clickId?: string | null;
+  productId?: string | null;
   amountCents: number;
   commissionCents: number;
   currency: string;
   isPaid: boolean;
+  status: ConversionStatus;
+  approvedAt?: string | null;
+  paidAt?: string | null;
+  cancelledAt?: string | null;
   createdAt: string;
   subscription?: {
     id: string;
     plan?: { name: string };
+    status?: string;
   };
   customer?: {
     id: string;
@@ -102,4 +128,77 @@ export interface ValidateAffiliateResult {
   valid: boolean;
   affiliate?: Affiliate;
   error?: string;
+}
+
+export interface AffiliateProgram {
+  id: string;
+  organizationId: string;
+  name: string;
+  commissionValue: number;
+  attributionWindowDays: number;
+  validationDelayDays: number;
+  appliesTo: CommissionAppliesTo;
+  productIds: string[];
+  status: AffiliateProgramStatus;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { affiliates: number };
+  totalClicks?: number;
+  totalConversions?: number;
+  totalCommissions?: number;
+}
+
+export interface CreateAffiliateProgramDto {
+  organizationId: string;
+  name: string;
+  commissionValue: number;
+  attributionWindowDays?: number;
+  validationDelayDays?: number;
+  appliesTo?: CommissionAppliesTo;
+  productIds?: string[];
+  status?: AffiliateProgramStatus;
+}
+
+export interface UpdateAffiliateProgramDto {
+  name?: string;
+  commissionValue?: number;
+  attributionWindowDays?: number;
+  validationDelayDays?: number;
+  appliesTo?: CommissionAppliesTo;
+  productIds?: string[];
+  status?: AffiliateProgramStatus;
+}
+
+export interface AffiliateClick {
+  id: string;
+  affiliateId: string;
+  visitorId: string;
+  ipHash?: string | null;
+  userAgent?: string | null;
+  landingPage?: string | null;
+  referrer?: string | null;
+  createdAt: string;
+}
+
+export interface AffiliateStats {
+  totalClicks: number;
+  totalConversions: number;
+  pendingConversions: number;
+  approvedConversions: number;
+  paidConversions: number;
+  cancelledConversions: number;
+  totalCommissions: number;
+  pendingCommissions: number;
+  approvedCommissions: number;
+  paidCommissions: number;
+  conversionRate: number;
+}
+
+export interface TrackClickDto {
+  code: string;
+  organizationId: string;
+  visitorId: string;
+  landingPage?: string;
+  referrer?: string;
+  userAgent?: string;
 }

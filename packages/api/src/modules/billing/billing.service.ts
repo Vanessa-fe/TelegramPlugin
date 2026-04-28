@@ -435,6 +435,10 @@ export class BillingService {
       metadata.affiliateCode = validatedAffiliate.code;
     }
 
+    if (payload.affiliateClickId) {
+      metadata.affiliateClickId = payload.affiliateClickId;
+    }
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode:
         plan.interval === PlanInterval.ONE_TIME ? 'payment' : 'subscription',

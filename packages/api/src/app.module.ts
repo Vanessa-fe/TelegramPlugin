@@ -34,6 +34,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { AffiliatesModule } from './modules/affiliates/affiliates.module';
+import { AffiliateProgramModule } from './modules/affiliate-program/affiliate-program.module';
 import { LandingPagesModule } from './modules/landing-pages/landing-pages.module';
 import { TeamModule } from './modules/team/team.module';
 import { GiftCodesModule } from './modules/gift-codes/gift-codes.module';
@@ -148,6 +149,7 @@ function resolveEnvFiles(): string[] {
     ContactModule,
     CouponsModule,
     AffiliatesModule,
+    AffiliateProgramModule,
     LandingPagesModule,
     TeamModule,
     GiftCodesModule,

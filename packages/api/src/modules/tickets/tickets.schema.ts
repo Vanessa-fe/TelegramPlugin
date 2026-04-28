@@ -3,7 +3,10 @@ import { z } from 'zod';
 export const createTicketSchema = z.object({
   subject: z.string().min(1).max(255),
   message: z.string().min(1).max(5000),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().default('MEDIUM'),
+  priority: z
+    .enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+    .optional()
+    .default('MEDIUM'),
 });
 
 export const updateTicketSchema = z.object({

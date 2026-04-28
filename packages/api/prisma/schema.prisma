@@ -125,6 +125,24 @@ enum PayoutStatus {
   FAILED
 }
 
+enum ConversionStatus {
+  PENDING
+  APPROVED
+  CANCELLED
+  PAID
+}
+
+enum AffiliateProgramStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum CommissionAppliesTo {
+  ALL_PRODUCTS
+  SPECIFIC_PRODUCTS
+}
+
 enum CouponType {
   PERCENTAGE    // ex: 20% off
   FIXED_AMOUNT  // ex: 5€ off
@@ -191,6 +209,7 @@ model Organization {
   auditLogs             AuditLog[]
   dataExports           DataExport[]
   platformSubscription  PlatformSubscription?
+  affiliateProgram      AffiliateProgram?
   affiliates            Affiliate[]
   coupons               Coupon[]
   landingPage           LandingPage?
@@ -646,17 +665,34 @@ model OAuthAccount {
   @@index([userId])
 }
 
+model AffiliateProgram {
+  id                    String                 @id @default(uuid())
+  organizationId        String                 @unique
+  name                  String
+  commissionValue       Int                    // Default commission rate (%)
+  attributionWindowDays Int                    @default(30)
+  validationDelayDays   Int                    @default(14)
+  appliesTo             CommissionAppliesTo    @default(ALL_PRODUCTS)
+  productIds            String[]               // Only used when appliesTo = SPECIFIC_PRODUCTS
+  status                AffiliateProgramStatus @default(ACTIVE)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
 model Affiliate {
   id              String          @id @default(uuid())
   organizationId  String
   email           String
   name            String?
   referralCode    String          @unique
-  commissionRate  Int             // Percentage (10 = 10%)
+  commissionRate  Int             // Percentage (10 = 10%) - overrides program default
   status          AffiliateStatus @default(PENDING)
   totalEarnings   Int             @default(0)
   pendingEarnings Int             @default(0)
   paidEarnings    Int             @default(0)
+  totalClicks     Int             @default(0)
   metadata        Json?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -664,28 +700,57 @@ model Affiliate {
   organization Organization        @relation(fields: [organizationId], references: [id])
   referrals    AffiliateReferral[]
   payouts      AffiliatePayout[]
+  clicks       AffiliateClick[]
 
   @@unique([organizationId, email])
   @@index([organizationId, status])
   @@index([referralCode])
 }
 
+model AffiliateClick {
+  id          String   @id @default(uuid())
+  affiliateId String
+  visitorId   String   // Unique visitor identifier (cookie/localStorage)
+  ipHash      String?  // Hashed IP for fraud detection
+  userAgent   String?
+  landingPage String?
+  referrer    String?
+  createdAt   DateTime @default(now())
+
+  affiliate Affiliate           @relation(fields: [affiliateId], references: [id])
+  referrals AffiliateReferral[]
+
+  @@index([affiliateId, createdAt])
+  @@index([visitorId])
+}
+
 model AffiliateReferral {
-  id              String   @id @default(uuid())
+  id              String           @id @default(uuid())
   affiliateId     String
-  subscriptionId  String   @unique
+  subscriptionId  String           @unique
   customerId      String
+  clickId         String?          // Link to the click that led to this conversion
+  productId       String?          // Product associated with this referral
   amountCents     Int
   commissionCents Int
-  currency        String   @default("eur")
-  isPaid          Boolean  @default(false)
-  createdAt       DateTime @default(now())
+  currency        String           @default("eur")
+  // Legacy field - kept for backwards compatibility, use status instead
+  isPaid          Boolean          @default(false)
+  // New status workflow
+  status          ConversionStatus @default(PENDING)
+  approvedAt      DateTime?
+  paidAt          DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime         @default(now())
 
-  affiliate    Affiliate    @relation(fields: [affiliateId], references: [id])
-  subscription Subscription @relation(fields: [subscriptionId], references: [id])
-  customer     Customer     @relation(fields: [customerId], references: [id])
+  affiliate    Affiliate       @relation(fields: [affiliateId], references: [id])
+  subscription Subscription    @relation(fields: [subscriptionId], references: [id])
+  customer     Customer        @relation(fields: [customerId], references: [id])
+  click        AffiliateClick? @relation(fields: [clickId], references: [id])
 
+  @@index([affiliateId, status])
   @@index([affiliateId, isPaid])
+  @@index([status, createdAt])
 }
 
 model AffiliatePayout {

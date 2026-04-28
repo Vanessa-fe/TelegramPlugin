@@ -3,9 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import {
   AccessStatus,
+  AmbassadorTier,
+  ConversionStatus,
   PlatformSubscriptionStatus,
   SubscriptionStatus,
-  AmbassadorTier,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
@@ -566,8 +567,8 @@ export class SchedulerService {
     const now = new Date();
 
     // Find all PAST_DUE platform subscriptions
-    const pastDueSubscriptions = await this.prisma.platformSubscription.findMany(
-      {
+    const pastDueSubscriptions =
+      await this.prisma.platformSubscription.findMany({
         where: {
           status: PlatformSubscriptionStatus.PAST_DUE,
         },
@@ -575,8 +576,7 @@ export class SchedulerService {
           organization: true,
           platformPlan: true,
         },
-      },
-    );
+      });
 
     if (pastDueSubscriptions.length === 0) {
       this.logger.debug('No past due platform subscriptions found');
@@ -595,8 +595,7 @@ export class SchedulerService {
       try {
         const metadata =
           (subscription.metadata as Record<string, unknown> | null) ?? {};
-        const failedAttempts =
-          (metadata.failedPaymentAttempts as number) ?? 0;
+        const failedAttempts = (metadata.failedPaymentAttempts as number) ?? 0;
         const firstFailedAt = metadata.firstFailedAt
           ? new Date(metadata.firstFailedAt as string)
           : null;
@@ -609,9 +608,7 @@ export class SchedulerService {
 
         // Calculate days since first failure
         const daysSinceFirstFailure = firstFailedAt
-          ? Math.floor(
-              (now.getTime() - firstFailedAt.getTime()) / DAY_IN_MS,
-            )
+          ? Math.floor((now.getTime() - firstFailedAt.getTime()) / DAY_IN_MS)
           : 0;
 
         // Auto-suspend if 7 days OR 3 failed attempts
@@ -942,6 +939,140 @@ export class SchedulerService {
 
     this.logger.log(
       `Loyalty rewards processing complete: ${rewarded} rewarded, ${errors} errors`,
+    );
+  }
+
+  /**
+   * Validate pending affiliate commissions after validation delay period
+   * - Check if subscription is still active after the delay period
+   * - If active: PENDING -> APPROVED
+   * - If cancelled/refunded: PENDING -> CANCELLED
+   * Runs every hour at minute 30
+   */
+  @Cron('30 * * * *')
+  async validateAffiliateCommissions(): Promise<void> {
+    this.logger.log('Starting affiliate commission validation...');
+
+    const now = new Date();
+    let approved = 0;
+    let cancelled = 0;
+    let errors = 0;
+
+    // Get all pending referrals that are past their validation delay
+    // We need to check each organization's affiliate program settings
+    const pendingReferrals = await this.prisma.affiliateReferral.findMany({
+      where: {
+        status: ConversionStatus.PENDING,
+      },
+      include: {
+        subscription: {
+          select: {
+            id: true,
+            status: true,
+            canceledAt: true,
+            endedAt: true,
+            organizationId: true,
+          },
+        },
+        affiliate: {
+          select: {
+            id: true,
+            organizationId: true,
+          },
+        },
+      },
+    });
+
+    if (pendingReferrals.length === 0) {
+      this.logger.debug('No pending affiliate referrals to validate');
+      return;
+    }
+
+    // Get all affiliate programs for the relevant organizations
+    const orgIds = [
+      ...new Set(pendingReferrals.map((r) => r.affiliate.organizationId)),
+    ];
+    const programs = await this.prisma.affiliateProgram.findMany({
+      where: {
+        organizationId: { in: orgIds },
+      },
+    });
+
+    const programByOrgId = new Map(programs.map((p) => [p.organizationId, p]));
+    const defaultValidationDelayDays = 14;
+
+    for (const referral of pendingReferrals) {
+      try {
+        const program = programByOrgId.get(referral.affiliate.organizationId);
+        const validationDelayDays =
+          program?.validationDelayDays ?? defaultValidationDelayDays;
+
+        // Calculate when the referral should be validated
+        const validationDate = new Date(referral.createdAt);
+        validationDate.setDate(validationDate.getDate() + validationDelayDays);
+
+        // Skip if not yet past validation delay
+        if (now < validationDate) {
+          continue;
+        }
+
+        const subscription = referral.subscription;
+
+        // Check if subscription is cancelled, expired, or ended
+        const isSubscriptionInvalid =
+          subscription.status === SubscriptionStatus.CANCELED ||
+          subscription.status === SubscriptionStatus.EXPIRED ||
+          subscription.canceledAt !== null ||
+          subscription.endedAt !== null;
+
+        if (isSubscriptionInvalid) {
+          // Cancel the referral
+          await this.prisma.$transaction([
+            this.prisma.affiliateReferral.update({
+              where: { id: referral.id },
+              data: {
+                status: ConversionStatus.CANCELLED,
+                cancelledAt: now,
+              },
+            }),
+            this.prisma.affiliate.update({
+              where: { id: referral.affiliateId },
+              data: {
+                totalEarnings: { decrement: referral.commissionCents },
+                pendingEarnings: { decrement: referral.commissionCents },
+              },
+            }),
+          ]);
+
+          cancelled++;
+          this.logger.debug(
+            `Cancelled affiliate referral ${referral.id} - subscription inactive`,
+          );
+        } else {
+          // Approve the referral
+          await this.prisma.affiliateReferral.update({
+            where: { id: referral.id },
+            data: {
+              status: ConversionStatus.APPROVED,
+              approvedAt: now,
+            },
+          });
+
+          approved++;
+          this.logger.debug(
+            `Approved affiliate referral ${referral.id} - subscription still active`,
+          );
+        }
+      } catch (error) {
+        errors++;
+        this.logger.error(
+          `Failed to validate affiliate referral ${referral.id}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `Affiliate commission validation complete: ${approved} approved, ${cancelled} cancelled, ${errors} errors`,
     );
   }
 }

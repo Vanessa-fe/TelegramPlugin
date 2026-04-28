@@ -1,14 +1,17 @@
 import apiClient from '../api-client';
 import type {
   Affiliate,
+  AffiliateClick,
   AffiliateReferral,
   AffiliatePayout,
+  AffiliateStats,
   CreateAffiliateDto,
   UpdateAffiliateDto,
   CreatePayoutDto,
   UpdatePayoutDto,
   ValidateAffiliateDto,
   ValidateAffiliateResult,
+  TrackClickDto,
 } from '@/types/affiliate';
 
 export const affiliatesApi = {
@@ -73,6 +76,52 @@ export const affiliatesApi = {
     const { data } = await apiClient.post<ValidateAffiliateResult>(
       '/affiliates/validate',
       dto,
+    );
+    return data;
+  },
+
+  async trackClick(dto: TrackClickDto) {
+    const { data } = await apiClient.post<AffiliateClick>(
+      '/affiliates/track-click',
+      dto,
+    );
+    return data;
+  },
+
+  async getOrganizationStats(organizationId?: string) {
+    const { data } = await apiClient.get<AffiliateStats>('/affiliates/stats', {
+      params: organizationId ? { organizationId } : undefined,
+    });
+    return data;
+  },
+
+  async getAffiliateStats(id: string) {
+    const { data } = await apiClient.get<AffiliateStats>(
+      `/affiliates/${id}/stats`,
+    );
+    return data;
+  },
+
+  async getClicks(id: string, limit?: number) {
+    const { data } = await apiClient.get<AffiliateClick[]>(
+      `/affiliates/${id}/clicks`,
+      {
+        params: limit ? { limit: String(limit) } : undefined,
+      },
+    );
+    return data;
+  },
+
+  async approveReferral(referralId: string) {
+    const { data } = await apiClient.post<AffiliateReferral>(
+      `/affiliates/referrals/${referralId}/approve`,
+    );
+    return data;
+  },
+
+  async cancelReferral(referralId: string) {
+    const { data } = await apiClient.post<AffiliateReferral>(
+      `/affiliates/referrals/${referralId}/cancel`,
     );
     return data;
   },
