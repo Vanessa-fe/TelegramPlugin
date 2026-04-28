@@ -327,9 +327,11 @@ export class AdminDashboardService {
 
       if (org.platformSubscription?.status === 'PAST_DUE') {
         const metadata =
-          (org.platformSubscription.metadata as Record<string, unknown> | null) ?? {};
-        const failedAttempts =
-          (metadata.failedPaymentAttempts as number) ?? 0;
+          (org.platformSubscription.metadata as Record<
+            string,
+            unknown
+          > | null) ?? {};
+        const failedAttempts = (metadata.failedPaymentAttempts as number) ?? 0;
         const firstFailedAt = metadata.firstFailedAt
           ? new Date(metadata.firstFailedAt as string)
           : null;
@@ -737,7 +739,9 @@ export class AdminDashboardService {
         where: {
           organizationId,
           type: PaymentEventType.INVOICE_PAID,
-          ...(since && { occurredAt: { gte: since, ...(until && { lt: until }) } }),
+          ...(since && {
+            occurredAt: { gte: since, ...(until && { lt: until }) },
+          }),
         },
         select: { payload: true },
       });

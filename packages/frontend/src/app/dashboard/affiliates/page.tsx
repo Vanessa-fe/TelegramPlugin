@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { affiliatesApi } from "@/lib/api/affiliates";
 import { getAffiliateDisplayLabel, getVisibleAffiliateEmail } from "@/lib/affiliate-utils";
-import type { Affiliate, AffiliateStatus } from "@/types/affiliate";
-import { MoreHorizontal, Plus, Users, Coins } from "lucide-react";
+import type { Affiliate, AffiliateStats, AffiliateStatus, ConversionStatus } from "@/types/affiliate";
+import { MoreHorizontal, Plus, Users, Coins, Settings, MousePointerClick, TrendingUp, Clock } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -25,6 +25,7 @@ const statusClassNames: Record<AffiliateStatus, string> = {
 
 export default function AffiliatesPage() {
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
+  const [stats, setStats] = useState<AffiliateStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const t = useTranslations("affiliates");
   const locale = useLocale();
@@ -36,10 +37,21 @@ export default function AffiliatesPage() {
     DEACTIVATED: t("statusLabels.DEACTIVATED"),
   };
 
-  const loadAffiliates = useCallback(async () => {
+  const _conversionStatusLabels: Record<ConversionStatus, string> = {
+    PENDING: t("conversionStatusLabels.PENDING"),
+    APPROVED: t("conversionStatusLabels.APPROVED"),
+    CANCELLED: t("conversionStatusLabels.CANCELLED"),
+    PAID: t("conversionStatusLabels.PAID"),
+  };
+
+  const loadData = useCallback(async () => {
     try {
-      const data = await affiliatesApi.findAll();
-      setAffiliates(data);
+      const [affiliatesData, statsData] = await Promise.all([
+        affiliatesApi.findAll(),
+        affiliatesApi.getOrganizationStats(),
+      ]);
+      setAffiliates(affiliatesData);
+      setStats(statsData);
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
@@ -51,14 +63,14 @@ export default function AffiliatesPage() {
   }, [t]);
 
   useEffect(() => {
-    loadAffiliates();
-  }, [loadAffiliates]);
+    loadData();
+  }, [loadData]);
 
   async function handleDeactivate(id: string) {
     try {
       await affiliatesApi.deactivate(id);
       toast.success(t("toast.deactivateSuccess"));
-      loadAffiliates();
+      loadData();
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
@@ -95,13 +107,93 @@ export default function AffiliatesPage() {
           </h1>
           <p className="mt-1 text-text-secondary">{t("subtitle")}</p>
         </div>
-        <Link href="/dashboard/affiliates/new">
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-            <Plus className="mr-2 h-4 w-4" />
-            {t("create")}
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/affiliates/program">
+            <Button variant="outline" className="border-border-custom">
+              <Settings className="mr-2 h-4 w-4" />
+              {t("program.settings")}
+            </Button>
+          </Link>
+          <Link href="/dashboard/affiliates/new">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              {t("create")}
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-border-custom p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                <MousePointerClick className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">{t("stats.clicks")}</p>
+                <p className="text-xl font-bold text-text-primary">
+                  {stats.totalClicks.toLocaleString(locale)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-border-custom p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">{t("stats.conversions")}</p>
+                <p className="text-xl font-bold text-text-primary">
+                  {stats.totalConversions.toLocaleString(locale)}
+                </p>
+                {stats.conversionRate > 0 && (
+                  <p className="text-xs text-text-secondary">
+                    {stats.conversionRate}% {t("stats.conversionRate")}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-border-custom p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">{t("stats.pending")}</p>
+                <p className="text-xl font-bold text-text-primary">
+                  {formatCurrency(stats.pendingCommissions)}
+                </p>
+                <p className="text-xs text-text-secondary">
+                  {stats.pendingConversions} {t("stats.conversionsCount")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-border-custom p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                <Coins className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">{t("stats.total")}</p>
+                <p className="text-xl font-bold text-green-600">
+                  {formatCurrency(stats.totalCommissions)}
+                </p>
+                <p className="text-xs text-text-secondary">
+                  {formatCurrency(stats.paidCommissions)} {t("stats.paid")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Affiliates list */}
       {affiliates.length === 0 ? (

@@ -1,14 +1,37 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import type { Ticket, TicketMessage, TicketStatus, TicketPriority } from '@prisma/client';
-import type { CreateTicketDto, UpdateTicketDto, CreateMessageDto } from './tickets.schema';
+import type {
+  Ticket,
+  TicketMessage,
+  TicketStatus,
+  TicketPriority,
+} from '@prisma/client';
+import type {
+  CreateTicketDto,
+  UpdateTicketDto,
+  CreateMessageDto,
+} from './tickets.schema';
 
 export interface TicketWithMessages extends Ticket {
   messages: (TicketMessage & {
-    author: { id: string; email: string; firstName: string | null; lastName: string | null };
+    author: {
+      id: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+    };
   })[];
   organization: { id: string; name: string };
-  assignedTo: { id: string; email: string; firstName: string | null; lastName: string | null } | null;
+  assignedTo: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
   _count: { messages: number };
 }
 
@@ -169,7 +192,12 @@ export class TicketsService {
           where: options?.includeInternal ? undefined : { isInternal: false },
           include: {
             author: {
-              select: { id: true, email: true, firstName: true, lastName: true },
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+              },
             },
           },
           orderBy: { createdAt: 'asc' },
@@ -235,7 +263,10 @@ export class TicketsService {
     }
 
     // If checkOrganization is provided, verify the ticket belongs to that org
-    if (options?.checkOrganization && ticket.organizationId !== options.checkOrganization) {
+    if (
+      options?.checkOrganization &&
+      ticket.organizationId !== options.checkOrganization
+    ) {
       throw new ForbiddenException('You cannot access this ticket');
     }
 
@@ -279,7 +310,12 @@ export class TicketsService {
       this.prisma.ticket.count({ where: { status: 'IN_PROGRESS' } }),
       this.prisma.ticket.count({ where: { status: 'RESOLVED' } }),
       this.prisma.ticket.count({ where: { status: 'CLOSED' } }),
-      this.prisma.ticket.count({ where: { priority: 'URGENT', status: { notIn: ['CLOSED', 'RESOLVED'] } } }),
+      this.prisma.ticket.count({
+        where: {
+          priority: 'URGENT',
+          status: { notIn: ['CLOSED', 'RESOLVED'] },
+        },
+      }),
     ]);
 
     return { open, inProgress, resolved, closed, urgent };

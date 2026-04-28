@@ -129,7 +129,9 @@ export class VipInvitationsService {
 
     // Enrich each invitation
     return invitations.map((inv) => {
-      const orgData = inv.organizationId ? orgMap.get(inv.organizationId) : null;
+      const orgData = inv.organizationId
+        ? orgMap.get(inv.organizationId)
+        : null;
       return {
         ...inv,
         organizationName: orgData?.name ?? null,

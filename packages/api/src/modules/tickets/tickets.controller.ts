@@ -69,10 +69,7 @@ export class TicketsController {
 
   @Patch('admin/:id')
   @Roles(UserRole.SUPERADMIN, UserRole.SUPPORT)
-  async updateTicket(
-    @Param('id') id: string,
-    @Body() body: UpdateTicketDto,
-  ) {
+  async updateTicket(@Param('id') id: string, @Body() body: UpdateTicketDto) {
     const dto = updateTicketSchema.parse(body);
     return this.ticketsService.update(id, dto);
   }
@@ -122,7 +119,9 @@ export class TicketsController {
   @Get(':id')
   @Roles(UserRole.ORG_ADMIN, UserRole.VIEWER)
   async findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
-    const ticket = await this.ticketsService.findOne(id, { includeInternal: false });
+    const ticket = await this.ticketsService.findOne(id, {
+      includeInternal: false,
+    });
 
     // Verify the ticket belongs to the user's organization
     if (user.organizationId && ticket.organizationId !== user.organizationId) {

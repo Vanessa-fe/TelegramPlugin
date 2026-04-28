@@ -10,9 +10,11 @@ import type { Organization } from "@/types/organization";
 import { AffiliateStatus, type CreateAffiliateDto, type Affiliate } from "@/types/affiliate";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
+import { Copy, Link as LinkIcon, Check } from "lucide-react";
+import { toast } from "sonner";
 
 type FormData = {
   organizationId: string;
@@ -84,6 +86,7 @@ export function AffiliateForm({
     register,
     handleSubmit,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(affiliateSchema),
@@ -96,6 +99,27 @@ export function AffiliateForm({
       status: initialData?.status ?? AffiliateStatus.ACTIVE,
     },
   });
+
+  const watchedReferralCode = useWatch({ control, name: "referralCode" });
+  const watchedOrgId = useWatch({ control, name: "organizationId" });
+  const [copied, setCopied] = useState(false);
+
+  const selectedOrg = organizations?.find((org) => org.id === watchedOrgId);
+  const affiliateLink = useMemo(() => {
+    if (!watchedReferralCode || watchedReferralCode.length < 3) return null;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const orgSlug = selectedOrg?.slug || "";
+    if (!orgSlug) return null;
+    return `${baseUrl}/${orgSlug}?ref=${watchedReferralCode.toUpperCase()}`;
+  }, [watchedReferralCode, selectedOrg]);
+
+  function copyToClipboard() {
+    if (!affiliateLink) return;
+    navigator.clipboard.writeText(affiliateLink);
+    setCopied(true);
+    toast.success(t("form.linkCopied"));
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   useEffect(() => {
     const nextOrganizationId = organizationId ?? organizations?.[0]?.id;
@@ -212,6 +236,37 @@ export function AffiliateForm({
               {t("form.referralCode.help")}
             </p>
           </div>
+
+          {/* Link Preview */}
+          {affiliateLink && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <LinkIcon className="h-4 w-4" />
+                {t("form.linkPreview.label")}
+              </Label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-muted p-3 rounded-md font-mono text-sm break-all">
+                  {affiliateLink}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={copyToClipboard}
+                  className="shrink-0"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("form.linkPreview.help")}
+              </p>
+            </div>
+          )}
 
           {/* Commission Rate */}
           <div className="space-y-2">

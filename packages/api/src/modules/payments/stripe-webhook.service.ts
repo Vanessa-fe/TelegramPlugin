@@ -5,6 +5,7 @@ import {
   PaymentEventType,
   PaymentProvider,
   AuditActorType,
+  ConversionStatus,
   Prisma,
   SubscriptionStatus,
 } from '@prisma/client';
@@ -457,7 +458,14 @@ export class StripeWebhookService {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id: subscriptionId },
       include: {
-        plan: true,
+        plan: {
+          select: {
+            id: true,
+            priceCents: true,
+            currency: true,
+            productId: true,
+          },
+        },
       },
     });
 
@@ -515,6 +523,8 @@ export class StripeWebhookService {
 
     // Process affiliate referral
     const affiliateId = metadata.affiliateId;
+    const clickId = metadata.clickId ?? metadata.affiliateClickId;
+
     if (affiliateId) {
       try {
         // Check if referral already exists
@@ -533,15 +543,21 @@ export class StripeWebhookService {
               (finalAmount * affiliate.commissionRate) / 100,
             );
 
+            // Get productId from the subscription's plan
+            const productId = subscription.plan.productId;
+
             await this.prisma.$transaction([
               this.prisma.affiliateReferral.create({
                 data: {
                   affiliateId,
                   subscriptionId,
                   customerId: subscription.customerId,
+                  clickId: clickId ?? null,
+                  productId,
                   amountCents: finalAmount,
                   commissionCents,
                   currency: subscription.plan.currency.toLowerCase(),
+                  status: ConversionStatus.PENDING,
                 },
               }),
               this.prisma.affiliate.update({
@@ -554,7 +570,7 @@ export class StripeWebhookService {
             ]);
 
             this.logger.debug(
-              `Recorded affiliate referral for subscription ${subscriptionId}, commission: ${commissionCents} cents`,
+              `Recorded affiliate referral for subscription ${subscriptionId}, commission: ${commissionCents} cents, status: PENDING`,
             );
           }
         }
@@ -661,6 +677,8 @@ export class StripeWebhookService {
           context.subscriptionId,
           'refund',
         );
+        // Cancel any pending/approved affiliate referral on refund
+        await this.cancelAffiliateReferral(context.subscriptionId);
         break;
 
       default:
@@ -709,6 +727,58 @@ export class StripeWebhookService {
 
     // Update saasActive via PlatformSubscriptionService which checks both Connect and Platform subscription
     await this.platformSubscriptionService.updateSaasActive(organization.id);
+  }
+
+  /**
+   * Cancel affiliate referral for a subscription (on refund or subscription cancellation)
+   */
+  private async cancelAffiliateReferral(subscriptionId: string): Promise<void> {
+    try {
+      const referral = await this.prisma.affiliateReferral.findUnique({
+        where: { subscriptionId },
+      });
+
+      if (!referral) {
+        return;
+      }
+
+      // Only cancel if not already paid or cancelled
+      if (
+        referral.status === ConversionStatus.PAID ||
+        referral.status === ConversionStatus.CANCELLED
+      ) {
+        this.logger.debug(
+          `Affiliate referral ${referral.id} already ${referral.status}, skipping cancellation`,
+        );
+        return;
+      }
+
+      await this.prisma.$transaction([
+        this.prisma.affiliateReferral.update({
+          where: { id: referral.id },
+          data: {
+            status: ConversionStatus.CANCELLED,
+            cancelledAt: new Date(),
+          },
+        }),
+        this.prisma.affiliate.update({
+          where: { id: referral.affiliateId },
+          data: {
+            totalEarnings: { decrement: referral.commissionCents },
+            pendingEarnings: { decrement: referral.commissionCents },
+          },
+        }),
+      ]);
+
+      this.logger.debug(
+        `Cancelled affiliate referral ${referral.id} for subscription ${subscriptionId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to cancel affiliate referral for subscription ${subscriptionId}`,
+        error as Error,
+      );
+    }
   }
 
   /**

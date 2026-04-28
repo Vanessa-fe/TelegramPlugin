@@ -7,6 +7,13 @@ import { Label } from "@/components/ui/label";
 import { billingApi } from "@/lib/api/billing";
 import { couponsApi } from "@/lib/api/coupons";
 import { affiliatesApi } from "@/lib/api/affiliates";
+import {
+  getVisitorId,
+  storeAffiliateCode,
+  storeAffiliateClickId,
+  getStoredAffiliateCode,
+  getStoredAffiliateClickId,
+} from "@/lib/affiliate-tracking";
 import type { PublicPlan, PublicProduct } from "@/lib/api/storefront";
 import type { ValidateCouponResult } from "@/types/coupon";
 import type { ValidateAffiliateResult } from "@/types/affiliate";
@@ -58,6 +65,7 @@ export function CheckoutPageContent({
   const [affiliateCode, setAffiliateCode] = useState("");
   const [affiliateResult, setAffiliateResult] = useState<ValidateAffiliateResult | null>(null);
   const [validatingAffiliate, setValidatingAffiliate] = useState(false);
+  const [affiliateClickId, setAffiliateClickId] = useState<string | null>(null);
 
   const isCheckoutReady = Boolean(
     selectedPlan && telegramUsername && !submitting
@@ -149,10 +157,45 @@ export function CheckoutPageContent({
     }
   }, [affiliateCode, product, t]);
 
-  // Auto-validate affiliate code when pre-filled from URL
+  // Track affiliate click and auto-validate when pre-filled from URL
   useEffect(() => {
+    async function trackAffiliateClick() {
+      if (!affiliateCode || !product) return;
+
+      // Check if we already have a stored click ID for this code
+      const storedClickId = getStoredAffiliateClickId();
+      const storedCode = getStoredAffiliateCode();
+
+      if (storedClickId && storedCode === affiliateCode) {
+        setAffiliateClickId(storedClickId);
+        return;
+      }
+
+      // Track the click
+      try {
+        const visitorId = getVisitorId();
+        const click = await affiliatesApi.trackClick({
+          code: affiliateCode,
+          organizationId: product.organization.id,
+          visitorId,
+          landingPage: typeof window !== "undefined" ? window.location.href : undefined,
+          referrer: typeof document !== "undefined" ? document.referrer || undefined : undefined,
+          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+        });
+
+        // Store the click ID and affiliate code
+        storeAffiliateCode(affiliateCode);
+        storeAffiliateClickId(click.id);
+        setAffiliateClickId(click.id);
+      } catch (error) {
+        // Tracking failure should not block checkout
+        console.warn("Failed to track affiliate click:", error);
+      }
+    }
+
     if (affiliateCode && product && !affiliateResult) {
       validateAffiliateCode();
+      trackAffiliateClick();
     }
   }, [affiliateCode, product, affiliateResult, validateAffiliateCode]);
 
@@ -191,6 +234,7 @@ export function CheckoutPageContent({
           },
           couponCode: couponResult?.valid ? couponCode : undefined,
           affiliateCode: affiliateResult?.valid ? affiliateCode : undefined,
+          affiliateClickId: affiliateClickId || getStoredAffiliateClickId() || undefined,
         });
 
         // Redirect to Stripe checkout

@@ -11,6 +11,7 @@ export const createCheckoutSchema = z.object({
   }),
   couponCode: z.string().max(32).optional(),
   affiliateCode: z.string().max(32).optional(),
+  affiliateClickId: z.string().uuid().optional(),
 });
 
 export type CreateCheckoutDto = z.infer<typeof createCheckoutSchema>;

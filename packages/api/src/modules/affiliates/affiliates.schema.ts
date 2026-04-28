@@ -1,4 +1,8 @@
-import { AffiliateStatus, PayoutStatus } from '@prisma/client';
+import {
+  AffiliateStatus,
+  ConversionStatus,
+  PayoutStatus,
+} from '@prisma/client';
 import { z } from 'zod';
 
 export const createAffiliateSchema = z.object({
@@ -81,3 +85,22 @@ export const validateAffiliateSchema = z.object({
 });
 
 export type ValidateAffiliateDto = z.infer<typeof validateAffiliateSchema>;
+
+export const trackClickSchema = z.object({
+  code: z.string().min(1),
+  organizationId: z.string().uuid(),
+  visitorId: z.string().min(1).max(100),
+  landingPage: z.string().url().optional(),
+  referrer: z.string().url().optional(),
+  userAgent: z.string().max(500).optional(),
+});
+
+export type TrackClickDto = z.infer<typeof trackClickSchema>;
+
+export const updateReferralStatusSchema = z.object({
+  status: z.nativeEnum(ConversionStatus),
+});
+
+export type UpdateReferralStatusDto = z.infer<
+  typeof updateReferralStatusSchema
+>;

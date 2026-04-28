@@ -14,7 +14,9 @@ import type { Product } from "@/types/product";
 import type {
   Affiliate,
   AffiliateReferral,
+  AffiliateStats,
   AffiliateStatus,
+  ConversionStatus,
 } from "@/types/affiliate";
 import {
   ArrowLeft,
@@ -27,6 +29,7 @@ import {
   Link2,
   Copy,
   ExternalLink,
+  MousePointerClick,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
@@ -49,6 +52,7 @@ export default function AffiliateDetailPage() {
 
   const [affiliate, setAffiliate] = useState<Affiliate | null>(null);
   const [referrals, setReferrals] = useState<AffiliateReferral[]>([]);
+  const [stats, setStats] = useState<AffiliateStats | null>(null);
   const [organizationSlug, setOrganizationSlug] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -61,6 +65,20 @@ export default function AffiliateDetailPage() {
     ACTIVE: t("statusLabels.ACTIVE"),
     SUSPENDED: t("statusLabels.SUSPENDED"),
     DEACTIVATED: t("statusLabels.DEACTIVATED"),
+  };
+
+  const conversionStatusLabels: Record<ConversionStatus, string> = {
+    PENDING: t("conversionStatusLabels.PENDING"),
+    APPROVED: t("conversionStatusLabels.APPROVED"),
+    CANCELLED: t("conversionStatusLabels.CANCELLED"),
+    PAID: t("conversionStatusLabels.PAID"),
+  };
+
+  const conversionStatusClassNames: Record<ConversionStatus, string> = {
+    PENDING: "bg-yellow-100 text-yellow-700",
+    APPROVED: "bg-blue-100 text-blue-700",
+    CANCELLED: "bg-red-100 text-red-700",
+    PAID: "bg-green-100 text-green-700",
   };
 
   const loadShareLinkContext = useCallback(
@@ -107,12 +125,14 @@ export default function AffiliateDetailPage() {
   const loadAffiliate = useCallback(async () => {
     try {
       const id = params.id as string;
-      const [affiliateData, referralsData] = await Promise.all([
+      const [affiliateData, referralsData, statsData] = await Promise.all([
         affiliatesApi.findOne(id),
         affiliatesApi.getReferrals(id),
+        affiliatesApi.getAffiliateStats(id),
       ]);
       setAffiliate(affiliateData);
       setReferrals(referralsData);
+      setStats(statsData);
       await loadShareLinkContext(affiliateData.organizationId);
     } catch (error) {
       const axiosError = error as {
@@ -266,16 +286,33 @@ export default function AffiliateDetailPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-text-secondary flex items-center gap-2">
+              <MousePointerClick className="h-4 w-4" />
+              {t("detail.stats.clicks")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <span className="text-2xl font-bold">{stats?.totalClicks ?? affiliate.totalClicks ?? 0}</span>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-text-secondary flex items-center gap-2">
               <Users className="h-4 w-4" />
-              {t("detail.stats.referrals")}
+              {t("detail.stats.conversions")}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <span className="text-2xl font-bold">{referrals.length}</span>
+            <span className="text-2xl font-bold">{stats?.totalConversions ?? referrals.length}</span>
+            {stats && stats.conversionRate > 0 && (
+              <span className="text-xs text-text-secondary ml-2">
+                ({stats.conversionRate}%)
+              </span>
+            )}
           </CardContent>
         </Card>
 
@@ -483,14 +520,10 @@ export default function AffiliateDetailPage() {
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          referral.isPaid
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
+                          conversionStatusClassNames[referral.status]
                         }`}
                       >
-                        {referral.isPaid
-                          ? t("detail.referrals.paid")
-                          : t("detail.referrals.pending")}
+                        {conversionStatusLabels[referral.status]}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-text-secondary">
