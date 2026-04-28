@@ -1,6 +1,7 @@
 import { ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { getVipOAuthTokenCookieOptions } from '../auth-cookie-options';
 
 interface OAuthRequest {
   oauthError?: string;
@@ -19,21 +20,20 @@ export class GoogleAuthGuard extends AuthGuard('google') {
     return response.raw;
   }
 
-  getAuthenticateOptions(context: ExecutionContext) {
+  canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<VipQueryRequest>();
-    const vipToken = request.query?.vip;
-    const callbackUrl = process.env.GOOGLE_CALLBACK_URL;
+    const reply = context.switchToHttp().getResponse<FastifyReply>();
+    const vipToken = request.query?.vip?.trim();
 
-    if (!vipToken || !callbackUrl) {
-      return undefined;
+    if (vipToken) {
+      reply.setCookie(
+        'vipOAuthToken',
+        vipToken,
+        getVipOAuthTokenCookieOptions(),
+      );
     }
 
-    const url = new URL(callbackUrl);
-    url.searchParams.set('vip', vipToken);
-
-    return {
-      callbackURL: url.toString(),
-    };
+    return super.canActivate(context);
   }
 }
 

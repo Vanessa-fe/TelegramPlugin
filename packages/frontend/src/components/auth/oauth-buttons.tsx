@@ -17,10 +17,36 @@ export function OAuthButtons({
   const t = useTranslations('auth.oauth');
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
+  const persistVipTokenForOAuth = () => {
+    if (!vipToken || typeof window === 'undefined') {
+      return;
+    }
+
+    const cookieParts = [
+      `vipOAuthToken=${encodeURIComponent(vipToken)}`,
+      'Max-Age=600',
+      'Path=/auth/google',
+      'SameSite=Lax',
+    ];
+
+    if (window.location.protocol === 'https:') {
+      cookieParts.push('Secure');
+    }
+
+    const { hostname } = window.location;
+    if (hostname === 'sublynk.fr' || hostname.endsWith('.sublynk.fr')) {
+      cookieParts.push('Domain=.sublynk.fr');
+    }
+
+    document.cookie = cookieParts.join('; ');
+  };
+
   const handleGoogleAuth = () => {
     if (!apiUrl) {
       return;
     }
+
+    persistVipTokenForOAuth();
 
     const url = new URL('/auth/google', apiUrl);
     if (vipToken) {

@@ -10,12 +10,16 @@ import {
 } from './guards/google-auth.guard';
 import {
   getAccessTokenCookieOptions,
+  getClearedVipOAuthTokenCookieOptions,
   getRefreshTokenCookieOptions,
 } from './auth-cookie-options';
 
 interface OAuthRequest extends FastifyRequest {
   user?: OAuthProfile;
   oauthError?: string;
+  cookies: {
+    vipOAuthToken?: string;
+  };
 }
 
 @Controller('auth')
@@ -57,6 +61,12 @@ export class OAuthController {
 
     // If the guard captured an OAuth error or no user was provided
     if (req.oauthError || !req.user) {
+      reply.setCookie(
+        'vipOAuthToken',
+        '',
+        getClearedVipOAuthTokenCookieOptions(),
+      );
+
       if (req.oauthError) {
         this.logger.warn(`OAuth failed: ${req.oauthError}`);
       } else {
@@ -67,9 +77,8 @@ export class OAuthController {
 
     try {
       const vipToken =
-        typeof (req.query as Record<string, unknown> | undefined)?.vip ===
-        'string'
-          ? ((req.query as Record<string, unknown>).vip as string)
+        typeof req.cookies?.vipOAuthToken === 'string'
+          ? req.cookies.vipOAuthToken
           : undefined;
 
       const authResult = await this.oauthService.handleOAuthLogin(
@@ -90,6 +99,12 @@ export class OAuthController {
         getRefreshTokenCookieOptions(),
       );
 
+      reply.setCookie(
+        'vipOAuthToken',
+        '',
+        getClearedVipOAuthTokenCookieOptions(),
+      );
+
       // Redirect SUPERADMIN to admin dashboard
       let finalRedirectUrl = successUrl;
       if (authResult.user.role === UserRole.SUPERADMIN) {
@@ -103,6 +118,12 @@ export class OAuthController {
 
       return reply.status(302).redirect(redirectUrl);
     } catch (error) {
+      reply.setCookie(
+        'vipOAuthToken',
+        '',
+        getClearedVipOAuthTokenCookieOptions(),
+      );
+
       const message =
         error instanceof Error ? (error.stack ?? error.message) : String(error);
       this.logger.error(`OAuth callback failed: ${message}`);

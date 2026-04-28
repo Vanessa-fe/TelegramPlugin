@@ -1,5 +1,6 @@
 const ACCESS_TOKEN_MAX_AGE_SECONDS = 15 * 60;
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+const OAUTH_VIP_TOKEN_MAX_AGE_SECONDS = 10 * 60;
 
 function getSameSite(): 'lax' | 'none' {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -32,6 +33,20 @@ function createAuthCookieOptions(maxAge: number) {
   };
 }
 
+function createTransientCookieOptions(maxAge: number, path: string) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const domain = getCookieDomain();
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: getSameSite(),
+    path,
+    maxAge,
+    ...(domain ? { domain } : {}),
+  };
+}
+
 export function getAccessTokenCookieOptions() {
   return createAuthCookieOptions(ACCESS_TOKEN_MAX_AGE_SECONDS);
 }
@@ -46,4 +61,15 @@ export function getClearedAccessTokenCookieOptions() {
 
 export function getClearedRefreshTokenCookieOptions() {
   return createAuthCookieOptions(0);
+}
+
+export function getVipOAuthTokenCookieOptions() {
+  return createTransientCookieOptions(
+    OAUTH_VIP_TOKEN_MAX_AGE_SECONDS,
+    '/auth/google',
+  );
+}
+
+export function getClearedVipOAuthTokenCookieOptions() {
+  return createTransientCookieOptions(0, '/auth/google');
 }
