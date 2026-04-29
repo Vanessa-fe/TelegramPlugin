@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateAffiliateSchema = exports.updatePayoutSchema = exports.createPayoutSchema = exports.updateAffiliateSchema = exports.createAffiliateSchema = void 0;
+exports.updateReferralStatusSchema = exports.trackClickSchema = exports.validateAffiliateSchema = exports.updatePayoutSchema = exports.createPayoutSchema = exports.updateAffiliateSchema = exports.createAffiliateSchema = void 0;
 const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
 exports.createAffiliateSchema = zod_1.z.object({
@@ -64,5 +64,16 @@ exports.updatePayoutSchema = zod_1.z.object({
 exports.validateAffiliateSchema = zod_1.z.object({
     code: zod_1.z.string().min(1),
     organizationId: zod_1.z.string().uuid(),
+});
+exports.trackClickSchema = zod_1.z.object({
+    code: zod_1.z.string().min(1),
+    organizationId: zod_1.z.string().uuid(),
+    visitorId: zod_1.z.string().min(1).max(100),
+    landingPage: zod_1.z.string().url().optional(),
+    referrer: zod_1.z.string().url().optional(),
+    userAgent: zod_1.z.string().max(500).optional(),
+});
+exports.updateReferralStatusSchema = zod_1.z.object({
+    status: zod_1.z.nativeEnum(client_1.ConversionStatus),
 });
 //# sourceMappingURL=affiliates.schema.js.map

@@ -79,6 +79,41 @@ let AffiliatesController = class AffiliatesController {
     async validate(body) {
         return this.affiliatesService.validate(body);
     }
+    async trackClick(body, request) {
+        const ipAddress = request.headers['x-forwarded-for']?.split(',')[0]?.trim() ??
+            request.ip;
+        return this.affiliatesService.trackClick(body, ipAddress);
+    }
+    async getOrganizationStats(user, organizationId) {
+        const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, organizationId);
+        if (!scopedOrgId) {
+            throw new common_1.BadRequestException('Organization ID is required');
+        }
+        return this.affiliatesService.getOrganizationStats(scopedOrgId);
+    }
+    async getAffiliateStats(user, id) {
+        const affiliate = await this.affiliatesService.findOne(id);
+        (0, organization_scope_1.resolveOrganizationScope)(user, affiliate.organizationId);
+        return this.affiliatesService.getAffiliateStats(id);
+    }
+    async getClicks(user, id, limit) {
+        const affiliate = await this.affiliatesService.findOne(id);
+        (0, organization_scope_1.resolveOrganizationScope)(user, affiliate.organizationId);
+        const limitNum = limit ? parseInt(limit, 10) : 50;
+        return this.affiliatesService.getRecentClicks(id, limitNum);
+    }
+    async approveReferral(user, referralId) {
+        const referral = await this.affiliatesService.approveReferral(referralId);
+        const affiliate = await this.affiliatesService.findOne(referral.affiliateId);
+        (0, organization_scope_1.resolveOrganizationScope)(user, affiliate.organizationId);
+        return referral;
+    }
+    async cancelReferral(user, referralId) {
+        const referral = await this.affiliatesService.cancelReferral(referralId);
+        const affiliate = await this.affiliatesService.findOne(referral.affiliateId);
+        (0, organization_scope_1.resolveOrganizationScope)(user, affiliate.organizationId);
+        return referral;
+    }
 };
 exports.AffiliatesController = AffiliatesController;
 __decorate([
@@ -173,6 +208,61 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AffiliatesController.prototype, "validate", null);
+__decorate([
+    (0, common_1.Post)('track-click'),
+    (0, public_decorator_1.Public)(),
+    __param(0, (0, common_1.Body)(new common_2.ZodValidationPipe(affiliates_schema_1.trackClickSchema))),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AffiliatesController.prototype, "trackClick", null);
+__decorate([
+    (0, common_1.Get)('stats'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('organizationId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], AffiliatesController.prototype, "getOrganizationStats", null);
+__decorate([
+    (0, common_1.Get)(':id/stats'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], AffiliatesController.prototype, "getAffiliateStats", null);
+__decorate([
+    (0, common_1.Get)(':id/clicks'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', new pipes_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], AffiliatesController.prototype, "getClicks", null);
+__decorate([
+    (0, common_1.Post)('referrals/:referralId/approve'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('referralId', new pipes_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], AffiliatesController.prototype, "approveReferral", null);
+__decorate([
+    (0, common_1.Post)('referrals/:referralId/cancel'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('referralId', new pipes_1.ParseUUIDPipe())),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], AffiliatesController.prototype, "cancelReferral", null);
 exports.AffiliatesController = AffiliatesController = __decorate([
     (0, common_1.Controller)('affiliates'),
     (0, require_plan_decorator_1.RequirePlan)('growth', 'pro'),

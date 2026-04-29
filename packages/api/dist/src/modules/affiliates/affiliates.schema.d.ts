@@ -102,3 +102,39 @@ export declare const validateAffiliateSchema: z.ZodObject<{
     code: string;
 }>;
 export type ValidateAffiliateDto = z.infer<typeof validateAffiliateSchema>;
+export declare const trackClickSchema: z.ZodObject<{
+    code: z.ZodString;
+    organizationId: z.ZodString;
+    visitorId: z.ZodString;
+    landingPage: z.ZodOptional<z.ZodString>;
+    referrer: z.ZodOptional<z.ZodString>;
+    userAgent: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    organizationId: string;
+    code: string;
+    visitorId: string;
+    landingPage?: string | undefined;
+    referrer?: string | undefined;
+    userAgent?: string | undefined;
+}, {
+    organizationId: string;
+    code: string;
+    visitorId: string;
+    landingPage?: string | undefined;
+    referrer?: string | undefined;
+    userAgent?: string | undefined;
+}>;
+export type TrackClickDto = z.infer<typeof trackClickSchema>;
+export declare const updateReferralStatusSchema: z.ZodObject<{
+    status: z.ZodNativeEnum<{
+        PENDING: "PENDING";
+        APPROVED: "APPROVED";
+        CANCELLED: "CANCELLED";
+        PAID: "PAID";
+    }>;
+}, "strip", z.ZodTypeAny, {
+    status: "PENDING" | "CANCELLED" | "APPROVED" | "PAID";
+}, {
+    status: "PENDING" | "CANCELLED" | "APPROVED" | "PAID";
+}>;
+export type UpdateReferralStatusDto = z.infer<typeof updateReferralStatusSchema>;

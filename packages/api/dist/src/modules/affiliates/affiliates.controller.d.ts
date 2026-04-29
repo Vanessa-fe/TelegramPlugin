@@ -1,4 +1,5 @@
-import type { CreateAffiliateDto, CreatePayoutDto, UpdateAffiliateDto, UpdatePayoutDto, ValidateAffiliateDto } from './affiliates.schema';
+import type { FastifyRequest } from 'fastify';
+import type { CreateAffiliateDto, CreatePayoutDto, TrackClickDto, UpdateAffiliateDto, UpdatePayoutDto, ValidateAffiliateDto } from './affiliates.schema';
 import { AffiliatesService } from './affiliates.service';
 import type { AuthUser } from '../auth/auth.types';
 export declare class AffiliatesController {
@@ -10,12 +11,18 @@ export declare class AffiliatesController {
         id: string;
         currency: string;
         createdAt: Date;
+        status: import("@prisma/client").$Enums.ConversionStatus;
+        productId: string | null;
         customerId: string;
         subscriptionId: string;
         affiliateId: string;
+        clickId: string | null;
         amountCents: number;
         commissionCents: number;
         isPaid: boolean;
+        approvedAt: Date | null;
+        paidAt: Date | null;
+        cancelledAt: Date | null;
     }[]>;
     getPayouts(user: AuthUser, id: string): Promise<{
         id: string;
@@ -42,6 +49,7 @@ export declare class AffiliatesController {
         totalEarnings: number;
         pendingEarnings: number;
         paidEarnings: number;
+        totalClicks: number;
     }>;
     update(user: AuthUser, id: string, body: UpdateAffiliateDto): Promise<{
         id: string;
@@ -57,6 +65,7 @@ export declare class AffiliatesController {
         totalEarnings: number;
         pendingEarnings: number;
         paidEarnings: number;
+        totalClicks: number;
     }>;
     deactivate(user: AuthUser, id: string): Promise<{
         id: string;
@@ -72,6 +81,7 @@ export declare class AffiliatesController {
         totalEarnings: number;
         pendingEarnings: number;
         paidEarnings: number;
+        totalClicks: number;
     }>;
     createPayout(user: AuthUser, id: string, body: CreatePayoutDto): Promise<{
         id: string;
@@ -96,4 +106,60 @@ export declare class AffiliatesController {
         amountCents: number;
     }>;
     validate(body: ValidateAffiliateDto): Promise<import("./affiliates.service").ValidateAffiliateResult>;
+    trackClick(body: TrackClickDto, request: FastifyRequest): Promise<{
+        id: string;
+        createdAt: Date;
+        landingPage: string | null;
+        affiliateId: string;
+        visitorId: string;
+        referrer: string | null;
+        userAgent: string | null;
+        ipHash: string | null;
+    }>;
+    getOrganizationStats(user: AuthUser, organizationId?: string): Promise<import("./affiliates.service").AffiliateStats>;
+    getAffiliateStats(user: AuthUser, id: string): Promise<import("./affiliates.service").AffiliateStats>;
+    getClicks(user: AuthUser, id: string, limit?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        landingPage: string | null;
+        affiliateId: string;
+        visitorId: string;
+        referrer: string | null;
+        userAgent: string | null;
+        ipHash: string | null;
+    }[]>;
+    approveReferral(user: AuthUser, referralId: string): Promise<{
+        id: string;
+        currency: string;
+        createdAt: Date;
+        status: import("@prisma/client").$Enums.ConversionStatus;
+        productId: string | null;
+        customerId: string;
+        subscriptionId: string;
+        affiliateId: string;
+        clickId: string | null;
+        amountCents: number;
+        commissionCents: number;
+        isPaid: boolean;
+        approvedAt: Date | null;
+        paidAt: Date | null;
+        cancelledAt: Date | null;
+    }>;
+    cancelReferral(user: AuthUser, referralId: string): Promise<{
+        id: string;
+        currency: string;
+        createdAt: Date;
+        status: import("@prisma/client").$Enums.ConversionStatus;
+        productId: string | null;
+        customerId: string;
+        subscriptionId: string;
+        affiliateId: string;
+        clickId: string | null;
+        amountCents: number;
+        commissionCents: number;
+        isPaid: boolean;
+        approvedAt: Date | null;
+        paidAt: Date | null;
+        cancelledAt: Date | null;
+    }>;
 }
