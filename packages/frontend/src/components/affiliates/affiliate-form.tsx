@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { getVisibleAffiliateEmail } from "@/lib/affiliate-utils";
 import type { Organization } from "@/types/organization";
-import { AffiliateStatus, type CreateAffiliateDto, type Affiliate } from "@/types/affiliate";
+import { AffiliateStatus, type CreateAffiliateDto, type Affiliate, type AffiliateProgram } from "@/types/affiliate";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
@@ -32,6 +32,7 @@ interface AffiliateFormProps {
   lockOrganization?: boolean;
   initialData?: Affiliate;
   isEdit?: boolean;
+  affiliateProgram?: AffiliateProgram | null;
 }
 
 export function AffiliateForm({
@@ -41,8 +42,11 @@ export function AffiliateForm({
   lockOrganization = false,
   initialData,
   isEdit = false,
+  affiliateProgram,
 }: AffiliateFormProps) {
   const t = useTranslations("affiliates");
+  const [useCustomCommission, setUseCustomCommission] = useState(false);
+  const defaultCommissionRate = affiliateProgram?.commissionValue ?? 10;
 
   const affiliateSchema = useMemo(
     () =>
@@ -95,10 +99,17 @@ export function AffiliateForm({
       email: initialVisibleEmail ?? "",
       name: initialData?.name ?? "",
       referralCode: initialData?.referralCode ?? "",
-      commissionRate: initialData?.commissionRate ?? 10,
+      commissionRate: initialData?.commissionRate ?? defaultCommissionRate,
       status: initialData?.status ?? AffiliateStatus.ACTIVE,
     },
   });
+
+  // Determine if this affiliate has a custom commission (different from program default)
+  useEffect(() => {
+    if (isEdit && initialData && affiliateProgram) {
+      setUseCustomCommission(initialData.commissionRate !== affiliateProgram.commissionValue);
+    }
+  }, [isEdit, initialData, affiliateProgram]);
 
   const watchedReferralCode = useWatch({ control, name: "referralCode" });
   const watchedOrgId = useWatch({ control, name: "organizationId" });
@@ -238,16 +249,25 @@ export function AffiliateForm({
           </div>
 
           {/* Link Preview */}
-          {affiliateLink && (
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <LinkIcon className="h-4 w-4" />
-                {t("form.linkPreview.label")}
-              </Label>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-muted p-3 rounded-md font-mono text-sm break-all">
-                  {affiliateLink}
-                </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <LinkIcon className="h-4 w-4" />
+              {t("form.linkPreview.label")}
+            </Label>
+            <div className="flex items-center gap-2">
+              <div className={cn(
+                "flex-1 bg-muted p-3 rounded-md font-mono text-sm break-all",
+                !affiliateLink && "text-muted-foreground"
+              )}>
+                {affiliateLink || (
+                  <span className="italic">
+                    {selectedOrg?.slug
+                      ? `${typeof window !== "undefined" ? window.location.origin : ""}/${selectedOrg.slug}?ref=CODE`
+                      : t("form.linkPreview.help")}
+                  </span>
+                )}
+              </div>
+              {affiliateLink && (
                 <Button
                   type="button"
                   variant="outline"
@@ -261,38 +281,65 @@ export function AffiliateForm({
                     <Copy className="h-4 w-4" />
                   )}
                 </Button>
-              </div>
+              )}
+            </div>
+            {!affiliateLink && (
               <p className="text-xs text-muted-foreground">
                 {t("form.linkPreview.help")}
               </p>
+            )}
+          </div>
+
+          {/* Custom Commission Checkbox */}
+          {affiliateProgram && !isEdit && (
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="useCustomCommission"
+                checked={useCustomCommission}
+                onChange={(e) => {
+                  setUseCustomCommission(e.target.checked);
+                  if (!e.target.checked) {
+                    setValue("commissionRate", defaultCommissionRate);
+                  }
+                }}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <Label htmlFor="useCustomCommission" className="text-sm font-normal cursor-pointer">
+                {t("form.customCommission.label")}
+              </Label>
             </div>
           )}
 
-          {/* Commission Rate */}
-          <div className="space-y-2">
-            <Label htmlFor="commissionRate">{t("form.commissionRate.label")}</Label>
-            <div className="relative">
-              <Input
-                id="commissionRate"
-                type="number"
-                {...register("commissionRate")}
-                disabled={isSubmitting}
-                min={1}
-                max={100}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                %
-              </span>
-            </div>
-            {errors.commissionRate && (
-              <p className="text-sm text-destructive">
-                {errors.commissionRate.message as string}
+          {/* Commission Rate - show always in edit mode, or when custom commission is checked in create mode */}
+          {(isEdit || useCustomCommission || !affiliateProgram) && (
+            <div className="space-y-2">
+              <Label htmlFor="commissionRate">
+                {useCustomCommission ? t("form.customCommission.rateLabel") : t("form.commissionRate.label")}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="commissionRate"
+                  type="number"
+                  {...register("commissionRate")}
+                  disabled={isSubmitting}
+                  min={1}
+                  max={100}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  %
+                </span>
+              </div>
+              {errors.commissionRate && (
+                <p className="text-sm text-destructive">
+                  {errors.commissionRate.message as string}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {t("form.commissionRate.help")}
               </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              {t("form.commissionRate.help")}
-            </p>
-          </div>
+            </div>
+          )}
 
           {/* Status */}
           <div className="space-y-2">

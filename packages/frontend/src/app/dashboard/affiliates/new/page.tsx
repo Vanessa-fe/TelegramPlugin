@@ -4,9 +4,10 @@ import { AffiliateForm } from "@/components/affiliates/affiliate-form";
 import { useAuth } from "@/contexts/auth-context";
 import { organizationsApi } from "@/lib/api/organizations";
 import { affiliatesApi } from "@/lib/api/affiliates";
+import { affiliateProgramApi } from "@/lib/api/affiliate-program";
 import { UserRole } from "@/types/auth";
 import type { Organization } from "@/types/organization";
-import type { CreateAffiliateDto } from "@/types/affiliate";
+import type { CreateAffiliateDto, AffiliateProgram } from "@/types/affiliate";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -18,12 +19,17 @@ export default function NewAffiliatePage() {
   const router = useRouter();
   const { user } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [affiliateProgram, setAffiliateProgram] = useState<AffiliateProgram | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadOrganizations = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const data = await organizationsApi.findAll();
-      setOrganizations(data);
+      const [orgsData, programData] = await Promise.all([
+        organizationsApi.findAll(),
+        affiliateProgramApi.findOne(),
+      ]);
+      setOrganizations(orgsData);
+      setAffiliateProgram(programData);
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
@@ -36,16 +42,27 @@ export default function NewAffiliatePage() {
     }
   }, [t]);
 
+  const loadAffiliateProgram = useCallback(async () => {
+    try {
+      const programData = await affiliateProgramApi.findOne();
+      setAffiliateProgram(programData);
+    } catch {
+      // Program may not exist, that's fine
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) return;
 
     if (user.role !== UserRole.SUPERADMIN) {
-      setIsLoading(false);
+      loadAffiliateProgram();
       return;
     }
 
-    loadOrganizations();
-  }, [user, loadOrganizations]);
+    loadData();
+  }, [user, loadData, loadAffiliateProgram]);
 
   async function handleSubmit(data: CreateAffiliateDto) {
     try {
@@ -90,6 +107,7 @@ export default function NewAffiliatePage() {
         organizations={organizations}
         organizationId={defaultOrganizationId}
         lockOrganization={lockOrganization}
+        affiliateProgram={affiliateProgram}
       />
     </div>
   );

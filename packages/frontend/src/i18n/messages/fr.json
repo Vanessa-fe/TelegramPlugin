@@ -2970,17 +2970,17 @@
   },
   "affiliates": {
     "loading": "Chargement...",
-    "title": "Affiliés",
-    "subtitle": "Gère tes partenaires affiliés et leurs commissions",
-    "create": "Ajouter un affilié",
+    "title": "Liens affiliés",
+    "subtitle": "Gère tes partenaires affiliés et leurs liens de promotion",
+    "create": "Créer un lien affilié",
     "empty": {
-      "title": "Aucun affilié",
-      "description": "Ajoute ton premier partenaire affilié pour gagner grâce aux parrainages.",
-      "cta": "Ajouter mon premier affilié"
+      "title": "Aucun lien affilié",
+      "description": "Crée ton premier lien affilié pour que tes partenaires puissent promouvoir tes offres.",
+      "cta": "Créer mon premier lien affilié"
     },
     "table": {
       "affiliate": "Affilié",
-      "code": "Code parrainage",
+      "code": "Code affilié",
       "commission": "Commission",
       "earnings": "Gains",
       "pending": "En attente",
@@ -3001,8 +3001,8 @@
       "DEACTIVATED": "Désactivé"
     },
     "new": {
-      "title": "Nouvel affilié",
-      "subtitle": "Ajouter un nouveau partenaire affilié"
+      "title": "Créer un lien affilié",
+      "subtitle": "Crée un lien personnel pour une personne qui va promouvoir ton offre."
     },
     "detail": {
       "back": "Retour",
@@ -3047,25 +3047,34 @@
       }
     },
     "form": {
-      "title": "Détails de l'affilié",
+      "title": "Lien affilié",
       "titleEdit": "Modifier l'affilié",
       "organization": {
         "label": "Organisation"
       },
       "email": {
-        "label": "Email (optionnel)",
-        "placeholder": "affilié@exemple.com",
-        "help": "Optionnel : laisse vide pour créer un lien affilié sans compte email."
+        "label": "Email de l'affilié",
+        "placeholder": "affilie@example.com",
+        "help": "Optionnel, utile pour lui envoyer son lien et ses résultats."
       },
       "name": {
-        "label": "Nom (optionnel)",
-        "placeholder": "Jean Dupont"
+        "label": "Nom de l'affilié",
+        "placeholder": "Sarah Instagram, Agence Nova, Coach Julie"
       },
       "referralCode": {
-        "label": "Code parrainage (optionnel)",
-        "placeholder": "JEAN10",
+        "label": "Code affilié",
+        "placeholder": "sarah10",
         "help": "Laisser vide pour générer automatiquement. Lettres, chiffres, tirets et underscores uniquement."
       },
+      "customCommission": {
+        "label": "Utiliser une commission différente pour cet affilié",
+        "rateLabel": "Taux personnalisé"
+      },
+      "linkPreview": {
+        "label": "Lien généré",
+        "help": "Ce lien sera généré automatiquement à la création."
+      },
+      "linkCopied": "Lien copié !",
       "commissionRate": {
         "label": "Taux de commission",
         "help": "Pourcentage de chaque vente que l'affilié gagne (1-100%)"
@@ -3074,7 +3083,7 @@
         "label": "Statut"
       },
       "submit": {
-        "create": "Ajouter l'affilié",
+        "create": "Créer le lien affilié",
         "update": "Mettre à jour l'affilié",
         "saving": "Enregistrement..."
       },

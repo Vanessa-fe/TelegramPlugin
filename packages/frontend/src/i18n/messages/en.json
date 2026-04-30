@@ -2970,17 +2970,17 @@
   },
   "affiliates": {
     "loading": "Loading...",
-    "title": "Affiliates",
-    "subtitle": "Manage your affiliate partners and their commissions",
-    "create": "Add affiliate",
+    "title": "Affiliate links",
+    "subtitle": "Manage your affiliate partners and their promotion links",
+    "create": "Create affiliate link",
     "empty": {
-      "title": "No affiliates yet",
-      "description": "Add your first affiliate partner to start earning through referrals.",
-      "cta": "Add my first affiliate"
+      "title": "No affiliate links",
+      "description": "Create your first affiliate link so your partners can promote your offers.",
+      "cta": "Create my first affiliate link"
     },
     "table": {
       "affiliate": "Affiliate",
-      "code": "Referral code",
+      "code": "Affiliate code",
       "commission": "Commission",
       "earnings": "Earnings",
       "pending": "Pending",
@@ -3001,8 +3001,8 @@
       "DEACTIVATED": "Deactivated"
     },
     "new": {
-      "title": "New affiliate",
-      "subtitle": "Add a new affiliate partner"
+      "title": "Create affiliate link",
+      "subtitle": "Create a personal link for someone who will promote your offer."
     },
     "detail": {
       "back": "Back",
@@ -3047,25 +3047,34 @@
       }
     },
     "form": {
-      "title": "Affiliate details",
+      "title": "Affiliate link",
       "titleEdit": "Edit affiliate",
       "organization": {
         "label": "Organization"
       },
       "email": {
-        "label": "Email (optional)",
+        "label": "Affiliate email",
         "placeholder": "affiliate@example.com",
-        "help": "Optional: leave blank to create an affiliate link without an email account."
+        "help": "Optional, useful for sending them their link and results."
       },
       "name": {
-        "label": "Name (optional)",
-        "placeholder": "John Doe"
+        "label": "Affiliate name",
+        "placeholder": "Sarah Instagram, Nova Agency, Coach Julie"
       },
       "referralCode": {
-        "label": "Referral code (optional)",
-        "placeholder": "JOHN10",
+        "label": "Affiliate code",
+        "placeholder": "sarah10",
         "help": "Leave empty to auto-generate. Letters, numbers, hyphens and underscores only."
       },
+      "customCommission": {
+        "label": "Use a different commission for this affiliate",
+        "rateLabel": "Custom rate"
+      },
+      "linkPreview": {
+        "label": "Generated link",
+        "help": "This link will be generated automatically upon creation."
+      },
+      "linkCopied": "Link copied!",
       "commissionRate": {
         "label": "Commission rate",
         "help": "Percentage of each sale the affiliate earns (1-100%)"
@@ -3074,7 +3083,7 @@
         "label": "Status"
       },
       "submit": {
-        "create": "Add affiliate",
+        "create": "Create affiliate link",
         "update": "Update affiliate",
         "saving": "Saving..."
       },
