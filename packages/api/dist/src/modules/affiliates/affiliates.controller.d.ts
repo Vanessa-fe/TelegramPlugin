@@ -6,6 +6,7 @@ export declare class AffiliatesController {
     private readonly affiliatesService;
     constructor(affiliatesService: AffiliatesService);
     findAll(user: AuthUser, organizationId?: string): Promise<import("./affiliates.service").AffiliateWithStats[]>;
+    getOrganizationStats(user: AuthUser, organizationId?: string): Promise<import("./affiliates.service").AffiliateStats>;
     findOne(user: AuthUser, id: string): Promise<import("./affiliates.service").AffiliateWithStats>;
     getReferrals(user: AuthUser, id: string): Promise<{
         id: string;
@@ -116,7 +117,6 @@ export declare class AffiliatesController {
         userAgent: string | null;
         ipHash: string | null;
     }>;
-    getOrganizationStats(user: AuthUser, organizationId?: string): Promise<import("./affiliates.service").AffiliateStats>;
     getAffiliateStats(user: AuthUser, id: string): Promise<import("./affiliates.service").AffiliateStats>;
     getClicks(user: AuthUser, id: string, limit?: string): Promise<{
         id: string;
