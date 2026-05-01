@@ -61,6 +61,25 @@ export class AffiliatesController {
     return this.affiliatesService.findAll(scopedOrgId);
   }
 
+  // IMPORTANT: Static routes MUST come before parameterized routes (:id)
+  @Get('stats')
+  @Roles(
+    UserRole.SUPERADMIN,
+    UserRole.ORG_ADMIN,
+    UserRole.SUPPORT,
+    UserRole.VIEWER,
+  )
+  async getOrganizationStats(
+    @CurrentUser() user: AuthUser,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    const scopedOrgId = resolveOrganizationScope(user, organizationId);
+    if (!scopedOrgId) {
+      throw new BadRequestException('Organization ID is required');
+    }
+    return this.affiliatesService.getOrganizationStats(scopedOrgId);
+  }
+
   @Get(':id')
   @Roles(
     UserRole.SUPERADMIN,
@@ -189,24 +208,6 @@ export class AffiliatesController {
       (request.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ??
       request.ip;
     return this.affiliatesService.trackClick(body, ipAddress);
-  }
-
-  @Get('stats')
-  @Roles(
-    UserRole.SUPERADMIN,
-    UserRole.ORG_ADMIN,
-    UserRole.SUPPORT,
-    UserRole.VIEWER,
-  )
-  async getOrganizationStats(
-    @CurrentUser() user: AuthUser,
-    @Query('organizationId') organizationId?: string,
-  ) {
-    const scopedOrgId = resolveOrganizationScope(user, organizationId);
-    if (!scopedOrgId) {
-      throw new BadRequestException('Organization ID is required');
-    }
-    return this.affiliatesService.getOrganizationStats(scopedOrgId);
   }
 
   @Get(':id/stats')

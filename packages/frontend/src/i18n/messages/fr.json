@@ -3000,6 +3000,24 @@
       "SUSPENDED": "Suspendu",
       "DEACTIVATED": "Désactivé"
     },
+    "conversionStatusLabels": {
+      "PENDING": "En attente",
+      "APPROVED": "Approuvé",
+      "CANCELLED": "Annulé",
+      "PAID": "Payé"
+    },
+    "program": {
+      "settings": "Programme"
+    },
+    "stats": {
+      "clicks": "Clics",
+      "conversions": "Conversions",
+      "conversionRate": "taux de conversion",
+      "pending": "En attente",
+      "total": "Total commissions",
+      "paid": "payé",
+      "conversionsCount": "conversions"
+    },
     "new": {
       "title": "Créer un lien affilié",
       "subtitle": "Crée un lien personnel pour une personne qui va promouvoir ton offre."

@@ -3000,6 +3000,24 @@
       "SUSPENDED": "Suspended",
       "DEACTIVATED": "Deactivated"
     },
+    "conversionStatusLabels": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "CANCELLED": "Cancelled",
+      "PAID": "Paid"
+    },
+    "program": {
+      "settings": "Program"
+    },
+    "stats": {
+      "clicks": "Clicks",
+      "conversions": "Conversions",
+      "conversionRate": "conversion rate",
+      "pending": "Pending",
+      "total": "Total commissions",
+      "paid": "paid",
+      "conversionsCount": "conversions"
+    },
     "new": {
       "title": "Create affiliate link",
       "subtitle": "Create a personal link for someone who will promote your offer."
