@@ -3028,6 +3028,8 @@
       "deactivate": "Deactivate",
       "payouts": "Payouts",
       "stats": {
+        "clicks": "Clicks",
+        "conversions": "Conversions",
         "referrals": "Total referrals",
         "commission": "Commission rate",
         "totalEarnings": "Total earnings",

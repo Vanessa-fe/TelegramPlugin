@@ -2,6 +2,7 @@ import { BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  ConversionStatus,
   PaymentEventType,
   PaymentProvider,
   SubscriptionStatus,
@@ -14,6 +15,29 @@ import { AuditLogService } from '../audit-log/audit-log.service';
 import { MetricsService } from '../metrics/metrics.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
+
+jest.mock('@telegram-plugin/shared', () => ({
+  queueNames: {
+    grantAccess: 'grant-access',
+    revokeAccess: 'revoke-access',
+    grantAccessDlq: 'grant-access-dlq',
+    revokeAccessDlq: 'revoke-access-dlq',
+  },
+  GrantAccessPayload: {
+    parse: jest.fn((value) => value),
+  },
+  RevokeAccessPayload: {
+    parse: jest.fn((value) => value),
+  },
+  initPostHog: jest.fn(() => null),
+  getPostHog: jest.fn(() => null),
+  shutdownPostHog: jest.fn(),
+  ServerEvents: {
+    PLAN_SELECTED: 'plan_selected',
+    SUBSCRIPTION_CREATED: 'subscription_created',
+  },
+}));
 
 describe('StripeWebhookService', () => {
   let service: StripeWebhookService;
@@ -29,6 +53,9 @@ describe('StripeWebhookService', () => {
       constructEvent: jest.fn(),
     },
     invoices: {
+      retrieve: jest.fn(),
+    },
+    paymentIntents: {
       retrieve: jest.fn(),
     },
   };
@@ -70,6 +97,23 @@ describe('StripeWebhookService', () => {
             organization: {
               findFirst: jest.fn(),
             },
+            couponUsage: {
+              findUnique: jest.fn(),
+              create: jest.fn(),
+            },
+            coupon: {
+              update: jest.fn(),
+            },
+            affiliateReferral: {
+              findUnique: jest.fn(),
+              create: jest.fn(),
+              update: jest.fn(),
+            },
+            affiliate: {
+              findUnique: jest.fn(),
+              update: jest.fn(),
+            },
+            $transaction: jest.fn(),
           },
         },
         {
@@ -96,12 +140,19 @@ describe('StripeWebhookService', () => {
           provide: PlatformSubscriptionService,
           useValue: {
             handleWebhookEvent: jest.fn(),
+            updateSaasActive: jest.fn(),
           },
         },
         {
           provide: AnalyticsService,
           useValue: {
             trackPurchase: jest.fn(),
+          },
+        },
+        {
+          provide: VipInvitationsService,
+          useValue: {
+            addSalesGenerated: jest.fn(),
           },
         },
       ],
@@ -263,6 +314,31 @@ describe('StripeWebhookService', () => {
       expect(prisma.paymentEvent.update).not.toHaveBeenCalled();
       expect(channelAccessService.handlePaymentSuccess).not.toHaveBeenCalled();
     });
+
+    it('should route no-account invoice events to PlatformSubscriptionService', async () => {
+      const mockEvent: Stripe.Event = {
+        id: 'evt_platform_invoice',
+        type: 'invoice.payment_succeeded',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'in_platform_123',
+            subscription: 'sub_platform_123',
+          } as Stripe.Invoice,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+
+      await service.handleWebhook('sig_platform', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      expect(platformSubscriptionService.handleWebhookEvent).toHaveBeenCalledWith(
+        mockEvent,
+      );
+      expect(prisma.paymentEvent.upsert).not.toHaveBeenCalled();
+    });
   });
 
   describe('Event Type Mapping', () => {
@@ -386,6 +462,42 @@ describe('StripeWebhookService', () => {
       expect(prisma.paymentEvent.upsert).toHaveBeenCalledWith({
         create: expect.objectContaining({
           organizationId: 'org-789',
+        }),
+        where: expect.any(Object),
+        update: expect.any(Object),
+      });
+    });
+
+    it('should resolve internalSubscriptionId metadata as local subscription context', async () => {
+      const internalSubscriptionId = '11111111-1111-4111-8111-111111111111';
+      const mockEvent: Stripe.Event = {
+        id: 'evt_internal_sub',
+        type: 'checkout.session.completed',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'cs_123',
+            metadata: {
+              organizationId: 'org-123',
+              internalSubscriptionId,
+            },
+          } as Stripe.Checkout.Session,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+      prisma.paymentEvent.upsert.mockResolvedValue({ id: 'pe-123' } as any);
+      prisma.paymentEvent.update.mockResolvedValue({} as any);
+
+      await service.handleWebhook('sig_internal_sub', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      expect(prisma.paymentEvent.upsert).toHaveBeenCalledWith({
+        create: expect.objectContaining({
+          organizationId: 'org-123',
+          subscriptionId: internalSubscriptionId,
         }),
         where: expect.any(Object),
         update: expect.any(Object),
@@ -653,6 +765,358 @@ describe('StripeWebhookService', () => {
           update: expect.any(Object),
         });
       }
+    });
+  });
+
+  describe('Affiliate Referral Cancellation on Refund', () => {
+    it('should cancel PENDING affiliate referral on charge.refunded via PaymentIntent metadata', async () => {
+      const internalSubscriptionId = '11111111-1111-4111-8111-111111111111';
+      const mockEvent: Stripe.Event = {
+        id: 'evt_refund_affiliate',
+        type: 'charge.refunded',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'ch_123',
+            payment_intent: 'pi_123',
+            metadata: {}, // Empty - metadata is on PaymentIntent
+          } as Stripe.Charge,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_123',
+        metadata: {
+          organizationId: 'org-123',
+          internalSubscriptionId,
+        },
+      } as Stripe.PaymentIntent);
+      prisma.subscription.findUnique.mockResolvedValue({
+        id: internalSubscriptionId,
+        organizationId: 'org-123',
+      } as any);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-refund',
+        processedAt: null,
+      } as any);
+      prisma.paymentEvent.update.mockResolvedValue({} as any);
+      prisma.subscription.update.mockResolvedValue({} as any);
+      prisma.affiliateReferral.findUnique.mockResolvedValue({
+        id: 'ref-123',
+        affiliateId: 'aff-123',
+        subscriptionId: 'sub-uuid-123',
+        status: ConversionStatus.PENDING,
+        commissionCents: 500,
+      } as any);
+      prisma.$transaction.mockImplementation(async (operations) => {
+        return Promise.all(operations);
+      });
+
+      await service.handleWebhook('sig_refund', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      expect(mockStripe.paymentIntents.retrieve).toHaveBeenCalledWith(
+        'pi_123',
+        undefined,
+        { stripeAccount: 'acct_123' },
+      );
+      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledWith(
+        internalSubscriptionId,
+        'refund',
+      );
+      expect(prisma.affiliateReferral.findUnique).toHaveBeenCalledWith({
+        where: { subscriptionId: internalSubscriptionId },
+      });
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should cancel APPROVED affiliate referral and decrement pending earnings on refund', async () => {
+      const internalSubscriptionId = '22222222-2222-4222-8222-222222222222';
+      const mockEvent: Stripe.Event = {
+        id: 'evt_refund_approved',
+        type: 'charge.refunded',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'ch_approved',
+            payment_intent: 'pi_approved',
+            metadata: {},
+          } as Stripe.Charge,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_approved',
+        metadata: {
+          organizationId: 'org-123',
+          internalSubscriptionId,
+        },
+      } as Stripe.PaymentIntent);
+      prisma.subscription.findUnique.mockResolvedValue({
+        id: internalSubscriptionId,
+        organizationId: 'org-123',
+      } as any);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-refund-approved',
+        processedAt: null,
+      } as any);
+      prisma.paymentEvent.update.mockResolvedValue({} as any);
+      prisma.subscription.update.mockResolvedValue({} as any);
+      prisma.affiliateReferral.findUnique.mockResolvedValue({
+        id: 'ref-approved',
+        affiliateId: 'aff-123',
+        subscriptionId: internalSubscriptionId,
+        status: ConversionStatus.APPROVED,
+        commissionCents: 500,
+      } as any);
+      prisma.affiliateReferral.update.mockReturnValue({} as any);
+      prisma.affiliate.update.mockReturnValue({} as any);
+      prisma.$transaction.mockImplementation(async (operations) => {
+        return Promise.all(operations);
+      });
+
+      await service.handleWebhook('sig_refund_approved', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      expect(prisma.affiliate.update).toHaveBeenCalledWith({
+        where: { id: 'aff-123' },
+        data: {
+          totalEarnings: { decrement: 500 },
+          pendingEarnings: { decrement: 500 },
+        },
+      });
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('should not cancel already CANCELLED affiliate referral (idempotent)', async () => {
+      const internalSubscriptionId = '33333333-3333-4333-8333-333333333333';
+      const mockEvent: Stripe.Event = {
+        id: 'evt_refund_already_cancelled',
+        type: 'charge.refunded',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'ch_123',
+            payment_intent: 'pi_123',
+            metadata: {},
+          } as Stripe.Charge,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_123',
+        metadata: {
+          organizationId: 'org-123',
+          internalSubscriptionId,
+        },
+      } as Stripe.PaymentIntent);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-refund',
+        processedAt: null,
+      } as any);
+      prisma.paymentEvent.update.mockResolvedValue({} as any);
+      prisma.subscription.update.mockResolvedValue({} as any);
+      prisma.affiliateReferral.findUnique.mockResolvedValue({
+        id: 'ref-123',
+        affiliateId: 'aff-123',
+        subscriptionId: internalSubscriptionId,
+        status: ConversionStatus.CANCELLED, // Already cancelled
+        commissionCents: 500,
+      } as any);
+
+      await service.handleWebhook('sig_refund', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should warn but not cancel PAID affiliate referral', async () => {
+      const internalSubscriptionId = '44444444-4444-4444-8444-444444444444';
+      const mockEvent: Stripe.Event = {
+        id: 'evt_refund_paid',
+        type: 'charge.refunded',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'ch_123',
+            payment_intent: 'pi_123',
+            metadata: {},
+          } as Stripe.Charge,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_123',
+        metadata: {
+          organizationId: 'org-123',
+          internalSubscriptionId,
+        },
+      } as Stripe.PaymentIntent);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-refund',
+        processedAt: null,
+      } as any);
+      prisma.paymentEvent.update.mockResolvedValue({} as any);
+      prisma.subscription.update.mockResolvedValue({} as any);
+      prisma.affiliateReferral.findUnique.mockResolvedValue({
+        id: 'ref-123',
+        affiliateId: 'aff-123',
+        subscriptionId: internalSubscriptionId,
+        status: ConversionStatus.PAID, // Already paid out
+        commissionCents: 500,
+      } as any);
+
+      await service.handleWebhook('sig_refund', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      // Should not cancel - requires manual review
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should handle charge.refunded when no affiliate referral exists', async () => {
+      const internalSubscriptionId = '55555555-5555-4555-8555-555555555555';
+      const mockEvent: Stripe.Event = {
+        id: 'evt_refund_no_affiliate',
+        type: 'charge.refunded',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'ch_123',
+            payment_intent: 'pi_123',
+            metadata: {},
+          } as Stripe.Charge,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_123',
+        metadata: {
+          organizationId: 'org-123',
+          internalSubscriptionId,
+        },
+      } as Stripe.PaymentIntent);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-refund',
+        processedAt: null,
+      } as any);
+      prisma.paymentEvent.update.mockResolvedValue({} as any);
+      prisma.subscription.update.mockResolvedValue({} as any);
+      prisma.affiliateReferral.findUnique.mockResolvedValue(null); // No referral
+
+      await service.handleWebhook('sig_refund', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should skip refund cancellation when the webhook event was already processed', async () => {
+      const internalSubscriptionId = '66666666-6666-4666-8666-666666666666';
+      const mockEvent: Stripe.Event = {
+        id: 'evt_refund_replay',
+        type: 'charge.refunded',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'ch_replay',
+            payment_intent: 'pi_replay',
+            metadata: {},
+          } as Stripe.Charge,
+        },
+      } as Stripe.Event;
+
+      mockStripe.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_replay',
+        metadata: {
+          organizationId: 'org-123',
+          internalSubscriptionId,
+        },
+      } as Stripe.PaymentIntent);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-replay',
+        processedAt: new Date(),
+      } as any);
+
+      await service.handleWebhook('sig_refund_replay', {
+        rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      });
+
+      expect(prisma.affiliateReferral.findUnique).not.toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Affiliate Referral Creation', () => {
+    it('should create affiliate referral from checkout metadata using affiliate commission only', async () => {
+      const subscriptionId = '77777777-7777-4777-8777-777777777777';
+
+      prisma.subscription.findUnique.mockResolvedValue({
+        id: subscriptionId,
+        customerId: 'cust-123',
+        plan: {
+          id: 'plan-123',
+          priceCents: 1000,
+          currency: 'eur',
+          productId: 'prod-123',
+        },
+      } as any);
+      prisma.couponUsage.findUnique.mockResolvedValue(null);
+      prisma.affiliateReferral.findUnique.mockResolvedValue(null);
+      prisma.affiliate.findUnique.mockResolvedValue({
+        id: 'aff-123',
+        commissionRate: 10,
+      } as any);
+      prisma.affiliateReferral.create.mockReturnValue({} as any);
+      prisma.affiliate.update.mockReturnValue({} as any);
+      prisma.$transaction.mockImplementation(async (operations) => {
+        return Promise.all(operations);
+      });
+
+      await (service as any).processAffiliateAndCoupon(subscriptionId, {
+        affiliateId: 'aff-123',
+        affiliateCode: 'AFF10',
+        affiliateClickId: '88888888-8888-4888-8888-888888888888',
+        originalPriceCents: '1000',
+        discountCents: '200',
+        quantity: '3',
+      });
+
+      expect(prisma.affiliateReferral.create).toHaveBeenCalledWith({
+        data: {
+          affiliateId: 'aff-123',
+          subscriptionId,
+          customerId: 'cust-123',
+          clickId: '88888888-8888-4888-8888-888888888888',
+          productId: 'prod-123',
+          amountCents: 2400,
+          commissionCents: 240,
+          currency: 'eur',
+          status: ConversionStatus.PENDING,
+        },
+      });
+      expect(prisma.affiliate.update).toHaveBeenCalledWith({
+        where: { id: 'aff-123' },
+        data: {
+          totalEarnings: { increment: 240 },
+          pendingEarnings: { increment: 240 },
+        },
+      });
     });
   });
 });

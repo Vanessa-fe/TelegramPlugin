@@ -114,7 +114,8 @@ export class StripeWebhookService {
       return;
     }
 
-    // Route platform subscription events (no event.account = direct Stripe, not Connect)
+    // Direct-charge creator events always include event.account.
+    // Supported no-account billing events are therefore handled as platform SaaS events.
     if (!event.account && this.isPlatformEvent(event)) {
       this.logger.debug(
         `Routing platform event to PlatformSubscriptionService: ${event.type}`,
@@ -301,40 +302,85 @@ export class StripeWebhookService {
       }
       case 'charge.refunded': {
         const charge = event.data.object;
-        const metadataContext = await this.contextFromMetadata(
+        this.logger.debug(
+          `Processing charge.refunded: charge=${charge.id}, payment_intent=${charge.payment_intent}, invoice=${charge.invoice}`,
+        );
+
+        // 1. Try charge metadata first (usually empty for checkout sessions)
+        const chargeMetadataContext = await this.contextFromMetadata(
           charge.metadata ?? undefined,
         );
-        if (metadataContext) {
-          return metadataContext;
+        if (chargeMetadataContext?.subscriptionId) {
+          this.logger.debug(
+            `Found subscription from charge metadata: ${chargeMetadataContext.subscriptionId}`,
+          );
+          return chargeMetadataContext;
         }
 
+        // 2. Try PaymentIntent metadata (where checkout session stores subscriptionId)
+        const paymentIntentId =
+          typeof charge.payment_intent === 'string'
+            ? charge.payment_intent
+            : undefined;
+        if (paymentIntentId) {
+          try {
+            const paymentIntent = await this.stripe.paymentIntents.retrieve(
+              paymentIntentId,
+              undefined,
+              event.account ? { stripeAccount: event.account } : undefined,
+            );
+            const piMetadataContext = await this.contextFromMetadata(
+              paymentIntent.metadata ?? undefined,
+            );
+            if (piMetadataContext?.subscriptionId) {
+              this.logger.debug(
+                `Found subscription from PaymentIntent metadata: ${piMetadataContext.subscriptionId}`,
+              );
+              return piMetadataContext;
+            }
+          } catch (error) {
+            this.logger.warn(
+              `Failed to retrieve PaymentIntent ${paymentIntentId} for charge ${charge.id}: ${(error as Error).message}`,
+            );
+          }
+        }
+
+        // 3. Try invoice -> subscription path (for recurring subscriptions)
         const invoiceId =
           typeof charge.invoice === 'string' ? charge.invoice : undefined;
-        if (!invoiceId) {
-          return null;
+        if (invoiceId) {
+          try {
+            const invoice = await this.stripe.invoices.retrieve(
+              invoiceId,
+              undefined,
+              event.account ? { stripeAccount: event.account } : undefined,
+            );
+            const stripeSubscriptionId =
+              typeof invoice.subscription === 'string'
+                ? invoice.subscription
+                : undefined;
+            if (stripeSubscriptionId) {
+              const context =
+                await this.contextFromSubscription(stripeSubscriptionId);
+              if (context?.subscriptionId) {
+                this.logger.debug(
+                  `Found subscription from invoice: ${context.subscriptionId}`,
+                );
+                return context;
+              }
+            }
+          } catch (error) {
+            this.logger.warn(
+              `Failed to retrieve invoice ${invoiceId} for charge ${charge.id}: ${(error as Error).message}`,
+            );
+          }
         }
 
-        try {
-          const invoice = await this.stripe.invoices.retrieve(
-            invoiceId,
-            undefined,
-            event.account ? { stripeAccount: event.account } : undefined,
-          );
-          const subscriptionId =
-            typeof invoice.subscription === 'string'
-              ? invoice.subscription
-              : undefined;
-          if (!subscriptionId) {
-            return accountContext;
-          }
-          const context = await this.contextFromSubscription(subscriptionId);
-          return context ?? accountContext;
-        } catch (error) {
-          this.logger.warn(
-            `Failed to retrieve invoice ${invoiceId} for charge ${charge.id}: ${(error as Error).message}`,
-          );
-          return accountContext;
-        }
+        // 4. Fallback to account context only
+        this.logger.warn(
+          `Could not resolve subscription for charge.refunded: charge=${charge.id}`,
+        );
+        return accountContext;
       }
       default:
         return accountContext;
@@ -360,6 +406,8 @@ export class StripeWebhookService {
     }
 
     const subscriptionId =
+      this.getMetadataString(metadata.internalSubscriptionId) ??
+      this.getMetadataString(metadata.internal_subscription_id) ??
       this.getMetadataString(metadata.subscriptionId) ??
       this.getMetadataString(metadata.subscription_id) ??
       this.getMetadataString(metadata.subscription) ??
@@ -484,6 +532,9 @@ export class StripeWebhookService {
     const originalPriceCents = metadata.originalPriceCents
       ? parseInt(metadata.originalPriceCents, 10)
       : subscription.plan.priceCents;
+    const quantity = Math.max(1, parseInt(metadata.quantity ?? '1', 10) || 1);
+    const totalOriginalCents = originalPriceCents * quantity;
+    const totalDiscountCents = discountCents * quantity;
 
     if (couponId && discountCents > 0) {
       try {
@@ -499,8 +550,8 @@ export class StripeWebhookService {
                 couponId,
                 subscriptionId,
                 customerId: subscription.customerId,
-                discountCents,
-                originalCents: originalPriceCents,
+                discountCents: totalDiscountCents,
+                originalCents: totalOriginalCents,
               },
             }),
             this.prisma.coupon.update({
@@ -510,7 +561,7 @@ export class StripeWebhookService {
           ]);
 
           this.logger.debug(
-            `Recorded coupon usage for subscription ${subscriptionId}, discount: ${discountCents} cents`,
+            `Recorded coupon usage for subscription ${subscriptionId}, discount: ${totalDiscountCents} cents`,
           );
         }
       } catch (error) {
@@ -538,7 +589,10 @@ export class StripeWebhookService {
           });
 
           if (affiliate) {
-            const finalAmount = originalPriceCents - discountCents;
+            const finalAmount = Math.max(
+              0,
+              totalOriginalCents - totalDiscountCents,
+            );
             const commissionCents = Math.round(
               (finalAmount * affiliate.commissionRate) / 100,
             );
@@ -677,6 +731,8 @@ export class StripeWebhookService {
           context.subscriptionId,
           'refund',
         );
+        // TODO(stripe-connect): refund_application_fee must be handled explicitly
+        // if Sublynk wants platform fees reversed on creator refunds.
         // Cancel any pending/approved affiliate referral on refund
         await this.cancelAffiliateReferral(context.subscriptionId);
         break;
@@ -733,25 +789,45 @@ export class StripeWebhookService {
    * Cancel affiliate referral for a subscription (on refund or subscription cancellation)
    */
   private async cancelAffiliateReferral(subscriptionId: string): Promise<void> {
+    this.logger.debug(
+      `Attempting to cancel affiliate referral for subscription: ${subscriptionId}`,
+    );
+
     try {
       const referral = await this.prisma.affiliateReferral.findUnique({
         where: { subscriptionId },
       });
 
       if (!referral) {
-        return;
-      }
-
-      // Only cancel if not already paid or cancelled
-      if (
-        referral.status === ConversionStatus.PAID ||
-        referral.status === ConversionStatus.CANCELLED
-      ) {
         this.logger.debug(
-          `Affiliate referral ${referral.id} already ${referral.status}, skipping cancellation`,
+          `No affiliate referral found for subscription ${subscriptionId}`,
         );
         return;
       }
+
+      this.logger.debug(
+        `Found affiliate referral ${referral.id}, status=${referral.status}, commission=${referral.commissionCents} cents`,
+      );
+
+      // Already cancelled - idempotent, just skip
+      if (referral.status === ConversionStatus.CANCELLED) {
+        this.logger.debug(
+          `Affiliate referral ${referral.id} already CANCELLED, skipping`,
+        );
+        return;
+      }
+
+      // Already paid - log warning but don't cancel (manual intervention needed)
+      if (referral.status === ConversionStatus.PAID) {
+        this.logger.warn(
+          `Affiliate referral ${referral.id} is PAID - refund received but commission already paid out. Manual review required.`,
+        );
+        return;
+      }
+
+      const shouldDecrementPending =
+        referral.status === ConversionStatus.PENDING ||
+        referral.status === ConversionStatus.APPROVED;
 
       await this.prisma.$transaction([
         this.prisma.affiliateReferral.update({
@@ -765,13 +841,16 @@ export class StripeWebhookService {
           where: { id: referral.affiliateId },
           data: {
             totalEarnings: { decrement: referral.commissionCents },
-            pendingEarnings: { decrement: referral.commissionCents },
+            ...(shouldDecrementPending && {
+              pendingEarnings: { decrement: referral.commissionCents },
+            }),
           },
         }),
       ]);
 
-      this.logger.debug(
-        `Cancelled affiliate referral ${referral.id} for subscription ${subscriptionId}`,
+      this.logger.log(
+        `Cancelled affiliate referral ${referral.id} for subscription ${subscriptionId}. ` +
+          `Previous status: ${referral.status}, commission: ${referral.commissionCents} cents`,
       );
     } catch (error) {
       this.logger.error(
@@ -782,45 +861,24 @@ export class StripeWebhookService {
   }
 
   /**
-   * Detect if this is a platform subscription event (direct Stripe, not Connect)
-   * Platform events have metadata.type === 'platform' in the relevant object
+   * Supported platform billing events are sent without event.account.
+   * Creator direct-charge events always carry event.account.
    */
   private isPlatformEvent(event: Stripe.Event): boolean {
-    const metadata = this.extractMetadataFromEvent(event);
-    return metadata?.type === 'platform';
-  }
+    if (event.account) {
+      return false;
+    }
 
-  /**
-   * Extract metadata from various Stripe event object types
-   */
-  private extractMetadataFromEvent(
-    event: Stripe.Event,
-  ): Stripe.Metadata | null {
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        return session.metadata ?? null;
-      }
+      case 'checkout.session.completed':
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
-        return subscription.metadata ?? null;
-      }
+      case 'customer.subscription.deleted':
       case 'invoice.payment_succeeded':
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object;
-        // Try subscription metadata first, then invoice metadata
-        if (
-          typeof invoice.subscription === 'object' &&
-          invoice.subscription?.metadata
-        ) {
-          return invoice.subscription.metadata;
-        }
-        return invoice.metadata ?? null;
-      }
+      case 'invoice.payment_failed':
+        return true;
       default:
-        return null;
+        return false;
     }
   }
 }

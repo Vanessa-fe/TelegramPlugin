@@ -3028,6 +3028,8 @@
       "deactivate": "Désactiver",
       "payouts": "Versements",
       "stats": {
+        "clicks": "Clics",
+        "conversions": "Conversions",
         "referrals": "Total parrainages",
         "commission": "Taux de commission",
         "totalEarnings": "Gains totaux",
