@@ -187,10 +187,24 @@ export class StripeWebhookService {
       await this.syncSubscriptionFromCheckout(
         event.data.object,
         context.subscriptionId,
+        event.account ?? undefined,
       );
     }
 
-    await this.applyDomainSideEffects(mappedType, context);
+    // Extract charge data for refund events
+    let chargeData: { chargeId: string; paymentIntentId?: string } | undefined;
+    if (event.type === 'charge.refunded') {
+      const charge = event.data.object;
+      chargeData = {
+        chargeId: charge.id,
+        paymentIntentId:
+          typeof charge.payment_intent === 'string'
+            ? charge.payment_intent
+            : undefined,
+      };
+    }
+
+    await this.applyDomainSideEffects(mappedType, context, chargeData);
 
     // Track purchase in GA4 for successful invoice payments
     if (event.type === 'invoice.payment_succeeded') {
@@ -476,6 +490,7 @@ export class StripeWebhookService {
   private async syncSubscriptionFromCheckout(
     session: Stripe.Checkout.Session,
     subscriptionId: string,
+    stripeAccount?: string,
   ): Promise<void> {
     const update: Prisma.SubscriptionUpdateInput = {};
 
@@ -494,14 +509,27 @@ export class StripeWebhookService {
       });
     }
 
+    // Extract Stripe IDs for refund matching
+    const stripePaymentIntentId =
+      typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : undefined;
+
     // Process affiliate referral and coupon usage from metadata
     const metadata = session.metadata ?? {};
-    await this.processAffiliateAndCoupon(subscriptionId, metadata);
+    await this.processAffiliateAndCoupon(subscriptionId, metadata, {
+      stripePaymentIntentId,
+      stripeAccount,
+    });
   }
 
   private async processAffiliateAndCoupon(
     subscriptionId: string,
     metadata: Record<string, string>,
+    stripeIds?: {
+      stripePaymentIntentId?: string;
+      stripeAccount?: string;
+    },
   ): Promise<void> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id: subscriptionId },
@@ -600,6 +628,30 @@ export class StripeWebhookService {
             // Get productId from the subscription's plan
             const productId = subscription.plan.productId;
 
+            // Fetch stripeChargeId from PaymentIntent if available
+            let stripeChargeId: string | null = null;
+            if (stripeIds?.stripePaymentIntentId) {
+              try {
+                const paymentIntent = await this.stripe.paymentIntents.retrieve(
+                  stripeIds.stripePaymentIntentId,
+                  { expand: ['latest_charge'] },
+                  stripeIds.stripeAccount
+                    ? { stripeAccount: stripeIds.stripeAccount }
+                    : undefined,
+                );
+                const latestCharge = paymentIntent.latest_charge;
+                if (typeof latestCharge === 'string') {
+                  stripeChargeId = latestCharge;
+                } else if (latestCharge && typeof latestCharge === 'object') {
+                  stripeChargeId = latestCharge.id;
+                }
+              } catch (error) {
+                this.logger.warn(
+                  `Failed to retrieve PaymentIntent ${stripeIds.stripePaymentIntentId} for charge ID: ${(error as Error).message}`,
+                );
+              }
+            }
+
             await this.prisma.$transaction([
               this.prisma.affiliateReferral.create({
                 data: {
@@ -612,6 +664,8 @@ export class StripeWebhookService {
                   commissionCents,
                   currency: subscription.plan.currency.toLowerCase(),
                   status: ConversionStatus.PENDING,
+                  stripePaymentIntentId: stripeIds?.stripePaymentIntentId ?? null,
+                  stripeChargeId,
                 },
               }),
               this.prisma.affiliate.update({
@@ -624,7 +678,10 @@ export class StripeWebhookService {
             ]);
 
             this.logger.debug(
-              `Recorded affiliate referral for subscription ${subscriptionId}, commission: ${commissionCents} cents, status: PENDING`,
+              `Recorded affiliate referral for subscription ${subscriptionId}, ` +
+                `commission: ${commissionCents} cents, status: PENDING, ` +
+                `stripePaymentIntentId: ${stripeIds?.stripePaymentIntentId ?? 'null'}, ` +
+                `stripeChargeId: ${stripeChargeId ?? 'null'}`,
             );
           }
         }
@@ -691,7 +748,15 @@ export class StripeWebhookService {
   private async applyDomainSideEffects(
     eventType: PaymentEventType,
     context: EventContext,
+    chargeData?: { chargeId: string; paymentIntentId?: string },
   ): Promise<void> {
+    // For refunds, we can still cancel affiliate referral even without subscriptionId
+    // by using Stripe IDs (chargeId, paymentIntentId)
+    if (eventType === PaymentEventType.REFUND_CREATED) {
+      await this.handleRefundSideEffects(context, chargeData);
+      return;
+    }
+
     if (!context.subscriptionId) {
       this.logger.debug(
         `Skipping domain side-effects for event type ${eventType} due to missing subscription context`,
@@ -726,17 +791,6 @@ export class StripeWebhookService {
         );
         break;
 
-      case PaymentEventType.REFUND_CREATED:
-        await this.channelAccessService.handlePaymentFailure(
-          context.subscriptionId,
-          'refund',
-        );
-        // TODO(stripe-connect): refund_application_fee must be handled explicitly
-        // if Sublynk wants platform fees reversed on creator refunds.
-        // Cancel any pending/approved affiliate referral on refund
-        await this.cancelAffiliateReferral(context.subscriptionId);
-        break;
-
       default:
         break;
     }
@@ -746,6 +800,53 @@ export class StripeWebhookService {
         where: { id: context.subscriptionId },
         data: { status: statusUpdate },
       });
+    }
+  }
+
+  /**
+   * Handle refund side effects - supports both subscription-based and Stripe ID-based lookup
+   */
+  private async handleRefundSideEffects(
+    context: EventContext,
+    chargeData?: { chargeId: string; paymentIntentId?: string },
+  ): Promise<void> {
+    this.logger.debug(
+      `Refund received: subscriptionId=${context.subscriptionId ?? 'null'}, ` +
+        `chargeId=${chargeData?.chargeId ?? 'null'}, ` +
+        `paymentIntentId=${chargeData?.paymentIntentId ?? 'null'}`,
+    );
+
+    // If we have subscriptionId, use the subscription-based flow
+    if (context.subscriptionId) {
+      await this.channelAccessService.handlePaymentFailure(
+        context.subscriptionId,
+        'refund',
+      );
+
+      await this.prisma.subscription.update({
+        where: { id: context.subscriptionId },
+        data: { status: SubscriptionStatus.EXPIRED },
+      });
+
+      // TODO(stripe-connect): refund_application_fee must be handled explicitly
+      // if Sublynk wants platform fees reversed on creator refunds.
+      await this.cancelAffiliateReferral(context.subscriptionId);
+      return;
+    }
+
+    // No subscriptionId - try to find affiliate referral by Stripe IDs
+    if (chargeData?.chargeId) {
+      this.logger.debug(
+        `No subscriptionId for refund, attempting Stripe ID lookup`,
+      );
+      await this.cancelAffiliateReferralByStripeIds(
+        chargeData.chargeId,
+        chargeData.paymentIntentId,
+      );
+    } else {
+      this.logger.warn(
+        `Refund received but no subscriptionId or chargeId available for affiliate cancellation`,
+      );
     }
   }
 
@@ -805,59 +906,122 @@ export class StripeWebhookService {
         return;
       }
 
-      this.logger.debug(
-        `Found affiliate referral ${referral.id}, status=${referral.status}, commission=${referral.commissionCents} cents`,
-      );
-
-      // Already cancelled - idempotent, just skip
-      if (referral.status === ConversionStatus.CANCELLED) {
-        this.logger.debug(
-          `Affiliate referral ${referral.id} already CANCELLED, skipping`,
-        );
-        return;
-      }
-
-      // Already paid - log warning but don't cancel (manual intervention needed)
-      if (referral.status === ConversionStatus.PAID) {
-        this.logger.warn(
-          `Affiliate referral ${referral.id} is PAID - refund received but commission already paid out. Manual review required.`,
-        );
-        return;
-      }
-
-      const shouldDecrementPending =
-        referral.status === ConversionStatus.PENDING ||
-        referral.status === ConversionStatus.APPROVED;
-
-      await this.prisma.$transaction([
-        this.prisma.affiliateReferral.update({
-          where: { id: referral.id },
-          data: {
-            status: ConversionStatus.CANCELLED,
-            cancelledAt: new Date(),
-          },
-        }),
-        this.prisma.affiliate.update({
-          where: { id: referral.affiliateId },
-          data: {
-            totalEarnings: { decrement: referral.commissionCents },
-            ...(shouldDecrementPending && {
-              pendingEarnings: { decrement: referral.commissionCents },
-            }),
-          },
-        }),
-      ]);
-
-      this.logger.log(
-        `Cancelled affiliate referral ${referral.id} for subscription ${subscriptionId}. ` +
-          `Previous status: ${referral.status}, commission: ${referral.commissionCents} cents`,
-      );
+      await this.executeCancelReferral(referral, `subscription ${subscriptionId}`);
     } catch (error) {
       this.logger.error(
         `Failed to cancel affiliate referral for subscription ${subscriptionId}`,
         error as Error,
       );
     }
+  }
+
+  /**
+   * Cancel affiliate referral by Stripe IDs (charge.id or payment_intent)
+   * Used for refunds when subscription context is not available (one-time payments)
+   */
+  private async cancelAffiliateReferralByStripeIds(
+    chargeId: string,
+    paymentIntentId?: string,
+  ): Promise<void> {
+    this.logger.debug(
+      `Searching AffiliateReferral by Stripe IDs: chargeId=${chargeId}, paymentIntentId=${paymentIntentId ?? 'null'}`,
+    );
+
+    try {
+      // Try to find by stripeChargeId first
+      let referral = await this.prisma.affiliateReferral.findFirst({
+        where: { stripeChargeId: chargeId },
+      });
+
+      // If not found, try by stripePaymentIntentId
+      if (!referral && paymentIntentId) {
+        referral = await this.prisma.affiliateReferral.findFirst({
+          where: { stripePaymentIntentId: paymentIntentId },
+        });
+      }
+
+      if (!referral) {
+        this.logger.debug(
+          `No AffiliateReferral found for chargeId=${chargeId}, paymentIntentId=${paymentIntentId ?? 'null'}`,
+        );
+        return;
+      }
+
+      this.logger.debug(
+        `Found AffiliateReferral ${referral.id} by Stripe IDs`,
+      );
+
+      await this.executeCancelReferral(
+        referral,
+        `chargeId=${chargeId}, paymentIntentId=${paymentIntentId ?? 'null'}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to cancel affiliate referral by Stripe IDs: chargeId=${chargeId}, paymentIntentId=${paymentIntentId ?? 'null'}`,
+        error as Error,
+      );
+    }
+  }
+
+  /**
+   * Execute the actual cancellation of an affiliate referral
+   */
+  private async executeCancelReferral(
+    referral: {
+      id: string;
+      affiliateId: string;
+      status: ConversionStatus;
+      commissionCents: number;
+    },
+    lookupContext: string,
+  ): Promise<void> {
+    this.logger.debug(
+      `Found affiliate referral ${referral.id}, status=${referral.status}, commission=${referral.commissionCents} cents`,
+    );
+
+    // Already cancelled - idempotent, just skip
+    if (referral.status === ConversionStatus.CANCELLED) {
+      this.logger.debug(
+        `Affiliate referral ${referral.id} already CANCELLED, skipping`,
+      );
+      return;
+    }
+
+    // Already paid - log warning but don't cancel (manual intervention needed)
+    if (referral.status === ConversionStatus.PAID) {
+      this.logger.warn(
+        `Affiliate referral ${referral.id} is PAID - refund received but commission already paid out. Manual review required.`,
+      );
+      return;
+    }
+
+    const shouldDecrementPending =
+      referral.status === ConversionStatus.PENDING ||
+      referral.status === ConversionStatus.APPROVED;
+
+    await this.prisma.$transaction([
+      this.prisma.affiliateReferral.update({
+        where: { id: referral.id },
+        data: {
+          status: ConversionStatus.CANCELLED,
+          cancelledAt: new Date(),
+        },
+      }),
+      this.prisma.affiliate.update({
+        where: { id: referral.affiliateId },
+        data: {
+          totalEarnings: { decrement: referral.commissionCents },
+          ...(shouldDecrementPending && {
+            pendingEarnings: { decrement: referral.commissionCents },
+          }),
+        },
+      }),
+    ]);
+
+    this.logger.log(
+      `Cancelled affiliate referral ${referral.id} (${lookupContext}). ` +
+        `Previous status: ${referral.status}, commission: ${referral.commissionCents} cents`,
+    );
   }
 
   /**
