@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { OrganizationForm } from '@/components/organizations/organization-form';
+import { PageBackButton } from '@/components/ui/page-back-button';
 import type { CreateOrganizationDto } from '@/types/organization';
 import { organizationsApi } from '@/lib/api/organizations';
 import { toast } from 'sonner';
@@ -26,6 +27,8 @@ export default function NewOrganizationPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <PageBackButton href="/admin/organizations" />
+
       <div>
         <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="mt-2 text-gray-600">

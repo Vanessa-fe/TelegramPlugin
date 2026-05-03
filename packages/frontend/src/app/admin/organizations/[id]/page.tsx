@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { PageBackButton } from '@/components/ui/page-back-button';
 import { organizationsApi } from '@/lib/api/organizations';
 import type { Organization } from '@/types/organization';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,8 @@ export default function OrganizationDetailsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      <PageBackButton href="/admin/organizations" />
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">{organization.name}</h1>
         <Link href={`/admin/organizations/${organization.id}/edit`}>

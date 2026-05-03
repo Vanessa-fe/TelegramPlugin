@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { organizationsApi } from '@/lib/api/organizations';
 import { OrganizationForm } from '@/components/organizations/organization-form';
+import { PageBackButton } from '@/components/ui/page-back-button';
 import type {
   Organization,
   UpdateOrganizationDto,
@@ -71,6 +72,8 @@ export default function EditOrganizationPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <PageBackButton href={`/admin/organizations/${organizationId}`} />
+
       <div>
         <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="mt-2 text-gray-600">

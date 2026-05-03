@@ -1,5 +1,6 @@
 "use client";
 
+import { PageBackButton } from "@/components/ui/page-back-button";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
@@ -23,6 +24,12 @@ export default function SubscriptionSuccessPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <PageBackButton
+        href="/dashboard/subscription"
+        variant="outline"
+        className="mb-6 self-start"
+      />
+
       <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6">
         <CheckCircle2 className="w-10 h-10 text-green-600" />
       </div>

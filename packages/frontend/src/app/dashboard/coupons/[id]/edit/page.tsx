@@ -1,6 +1,7 @@
 "use client";
 
 import { CouponForm } from "@/components/coupons/coupon-form";
+import { PageBackButton } from "@/components/ui/page-back-button";
 import { useAuth } from "@/contexts/auth-context";
 import { couponsApi } from "@/lib/api/coupons";
 import { organizationsApi } from "@/lib/api/organizations";
@@ -107,6 +108,8 @@ export default function EditCouponPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <PageBackButton href={`/dashboard/coupons/${coupon.id}`} />
+
       <div>
         <h1 className="text-3xl font-bold">{t("form.titleEdit")}</h1>
         <p className="mt-2 text-gray-600">{coupon.code}</p>

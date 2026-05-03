@@ -1,6 +1,7 @@
 "use client";
 
 import { ProductForm } from "@/components/products/product-form";
+import { PageBackButton } from "@/components/ui/page-back-button";
 import { useAuth } from "@/contexts/auth-context";
 import { organizationsApi } from "@/lib/api/organizations";
 import { productsApi } from "@/lib/api/products";
@@ -93,6 +94,8 @@ export default function EditProductPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      <PageBackButton href="/dashboard/products" />
+
       <div>
         <h1 className="text-3xl font-bold">{t("edit.title")}</h1>
         <p className="mt-2 text-gray-600">{t("edit.subtitle", { name: product.name })}</p>
