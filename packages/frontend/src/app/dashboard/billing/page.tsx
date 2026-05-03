@@ -2,7 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { billingApi } from "@/lib/api/billing";
+import { platformSubscriptionApi } from "@/lib/api/platform-subscription";
 import type { StripeStatus } from "@/types/billing";
+import type { PlatformSubscription } from "@/types/platform-subscription";
 import {
   AlertCircle,
   CheckCircle2,
@@ -18,14 +20,21 @@ import { toast } from "sonner";
 export default function BillingPage() {
   const t = useTranslations("billing");
   const [status, setStatus] = useState<StripeStatus | null>(null);
+  const [subscription, setSubscription] = useState<PlatformSubscription | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isOpeningStripe, setIsOpeningStripe] = useState(false);
 
   const loadStatus = useCallback(async () => {
     try {
-      const data = await billingApi.getStripeStatus();
-      setStatus(data);
+      const [billingStatus, subscriptionStatus] = await Promise.all([
+        billingApi.getStripeStatus(),
+        platformSubscriptionApi.getSubscription(),
+      ]);
+      setStatus(billingStatus);
+      setSubscription(subscriptionStatus);
     } catch (error) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
@@ -77,6 +86,27 @@ export default function BillingPage() {
     return Boolean(status.chargesEnabled && status.detailsSubmitted);
   }, [status]);
 
+  const hasActiveSubscription = useMemo(() => {
+    if (!subscription) {
+      return false;
+    }
+
+    if (subscription.isGrandfathered) {
+      return true;
+    }
+
+    if (
+      subscription.status === "ACTIVE" ||
+      subscription.status === "TRIALING"
+    ) {
+      return true;
+    }
+
+    return Boolean(
+      subscription.graceUntil && new Date(subscription.graceUntil) > new Date(),
+    );
+  }, [subscription]);
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -102,8 +132,8 @@ export default function BillingPage() {
         <p className="mt-1 text-text-secondary">{t("subtitle")}</p>
       </div>
 
-      {/* SaaS subscription warning */}
-      {!status.saasActive && (
+      {/* Platform subscription warning */}
+      {!hasActiveSubscription && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
@@ -120,6 +150,31 @@ export default function BillingPage() {
               {t("saasWarning.choosePlan")}
               <ExternalLink className="w-3 h-3" />
             </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Stripe setup warning */}
+      {hasActiveSubscription && !stripeReady && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-blue-800">
+              {t("stripeSetupWarning.title")}
+            </p>
+            <p className="text-sm text-blue-700 mt-1">
+              {status.connected
+                ? t("stripeSetupWarning.descriptionIncomplete", {
+                    plan:
+                      subscription?.plan?.displayName ??
+                      t("stripeSetupWarning.planFallback"),
+                  })
+                : t("stripeSetupWarning.descriptionDisconnected", {
+                    plan:
+                      subscription?.plan?.displayName ??
+                      t("stripeSetupWarning.planFallback"),
+                  })}
+            </p>
           </div>
         </div>
       )}

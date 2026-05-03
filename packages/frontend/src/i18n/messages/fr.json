@@ -1348,6 +1348,12 @@
       "description": "Ton abonnement Sublynk n'est pas actif. Les paiements sont désactivés jusqu'à ton abonnement.",
       "choosePlan": "Choisir un plan"
     },
+    "stripeSetupWarning": {
+      "title": "Plan actif, Stripe à configurer",
+      "descriptionDisconnected": "Ton plan {plan} est bien actif. Connecte Stripe ci-dessous pour activer les paiements clients.",
+      "descriptionIncomplete": "Ton plan {plan} est bien actif. Ton compte Stripe est connecté, mais la configuration doit être finalisée pour activer les paiements clients.",
+      "planFallback": "actuel"
+    },
     "stripeConnect": {
       "title": "Stripe Connect",
       "subtitle": "Reçois les paiements directement sur ton compte Stripe",
