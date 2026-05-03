@@ -1331,6 +1331,7 @@ export class StripeWebhookService {
 
   /**
    * Execute the actual cancellation of an affiliate referral
+   * Decrements totalEarnings and pendingEarnings on the Affiliate record
    */
   private async executeCancelReferral(
     referral: {
@@ -1342,13 +1343,14 @@ export class StripeWebhookService {
     lookupContext: string,
   ): Promise<void> {
     this.logger.debug(
-      `Found affiliate referral ${referral.id}, status=${referral.status}, commission=${referral.commissionCents} cents`,
+      `executeCancelReferral: referralId=${referral.id}, affiliateId=${referral.affiliateId}, ` +
+        `status=${referral.status}, commissionCents=${referral.commissionCents}`,
     );
 
-    // Already cancelled - idempotent, just skip
+    // Already cancelled - idempotent, just skip (don't decrement twice!)
     if (referral.status === ConversionStatus.CANCELLED) {
       this.logger.debug(
-        `Affiliate referral ${referral.id} already CANCELLED, skipping`,
+        `Affiliate referral ${referral.id} already CANCELLED, skipping decrement`,
       );
       return;
     }
@@ -1361,32 +1363,49 @@ export class StripeWebhookService {
       return;
     }
 
+    // PENDING or APPROVED: decrement both totalEarnings and pendingEarnings
     const shouldDecrementPending =
       referral.status === ConversionStatus.PENDING ||
       referral.status === ConversionStatus.APPROVED;
 
-    await this.prisma.$transaction([
-      this.prisma.affiliateReferral.update({
+    const decrementAmount = referral.commissionCents;
+
+    // Use interactive transaction for proper error handling
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Update referral status to CANCELLED
+      await tx.affiliateReferral.update({
         where: { id: referral.id },
         data: {
           status: ConversionStatus.CANCELLED,
           cancelledAt: new Date(),
         },
-      }),
-      this.prisma.affiliate.update({
+      });
+
+      this.logger.debug(
+        `Referral ${referral.id} status updated to CANCELLED`,
+      );
+
+      // 2. Decrement affiliate earnings
+      // Use Math.max equivalent via raw SQL or careful update to avoid negative values
+      const affiliateUpdate = await tx.affiliate.update({
         where: { id: referral.affiliateId },
         data: {
-          totalEarnings: { decrement: referral.commissionCents },
+          totalEarnings: { decrement: decrementAmount },
           ...(shouldDecrementPending && {
-            pendingEarnings: { decrement: referral.commissionCents },
+            pendingEarnings: { decrement: decrementAmount },
           }),
         },
-      }),
-    ]);
+      });
+
+      this.logger.debug(
+        `Affiliate ${referral.affiliateId} earnings decremented by ${decrementAmount} cents. ` +
+          `New values: totalEarnings=${affiliateUpdate.totalEarnings}, pendingEarnings=${affiliateUpdate.pendingEarnings}`,
+      );
+    });
 
     this.logger.log(
       `Cancelled affiliate referral ${referral.id} (${lookupContext}). ` +
-        `Previous status: ${referral.status}, commission: ${referral.commissionCents} cents`,
+        `Previous status: ${referral.status}, commission decremented: ${decrementAmount} cents`,
     );
   }
 

@@ -452,11 +452,12 @@ export class AffiliatesService {
     ]);
 
     let totalConversions = 0;
+    let validConversions = 0; // Excludes CANCELLED
     let pendingConversions = 0;
     let approvedConversions = 0;
     let paidConversions = 0;
     let cancelledConversions = 0;
-    let totalCommissions = 0;
+    let totalCommissions = 0; // Sum of PENDING + APPROVED + PAID (excludes CANCELLED)
     let pendingCommissions = 0;
     let approvedCommissions = 0;
     let paidCommissions = 0;
@@ -464,38 +465,45 @@ export class AffiliatesService {
     for (const group of referralsAgg) {
       totalConversions += group._count;
       const commission = group._sum.commissionCents ?? 0;
-      totalCommissions += commission;
 
       switch (group.status) {
         case ConversionStatus.PENDING:
+          validConversions += group._count;
           pendingConversions += group._count;
           pendingCommissions += commission;
+          totalCommissions += commission; // Include in total
           break;
         case ConversionStatus.APPROVED:
+          validConversions += group._count;
           approvedConversions += group._count;
           approvedCommissions += commission;
+          totalCommissions += commission; // Include in total
           break;
         case ConversionStatus.PAID:
+          validConversions += group._count;
           paidConversions += group._count;
           paidCommissions += commission;
+          totalCommissions += commission; // Include in total
           break;
         case ConversionStatus.CANCELLED:
           cancelledConversions += group._count;
+          // Do NOT add to totalCommissions - cancelled referrals don't count
           break;
       }
     }
 
+    // Conversion rate based on valid conversions only (excludes cancelled)
     const conversionRate =
-      clicksCount > 0 ? (totalConversions / clicksCount) * 100 : 0;
+      clicksCount > 0 ? (validConversions / clicksCount) * 100 : 0;
 
     return {
       totalClicks: clicksCount,
-      totalConversions,
+      totalConversions, // All referrals including cancelled (for display)
       pendingConversions,
       approvedConversions,
       paidConversions,
       cancelledConversions,
-      totalCommissions,
+      totalCommissions, // Only valid commissions (excludes cancelled)
       pendingCommissions,
       approvedCommissions,
       paidCommissions,
@@ -527,11 +535,12 @@ export class AffiliatesService {
     ]);
 
     let totalConversions = 0;
+    let validConversions = 0; // Excludes CANCELLED
     let pendingConversions = 0;
     let approvedConversions = 0;
     let paidConversions = 0;
     let cancelledConversions = 0;
-    let totalCommissions = 0;
+    let totalCommissions = 0; // Sum of PENDING + APPROVED + PAID (excludes CANCELLED)
     let pendingCommissions = 0;
     let approvedCommissions = 0;
     let paidCommissions = 0;
@@ -539,29 +548,36 @@ export class AffiliatesService {
     for (const group of referralsAgg) {
       totalConversions += group._count;
       const commission = group._sum.commissionCents ?? 0;
-      totalCommissions += commission;
 
       switch (group.status) {
         case ConversionStatus.PENDING:
+          validConversions += group._count;
           pendingConversions += group._count;
           pendingCommissions += commission;
+          totalCommissions += commission; // Include in total
           break;
         case ConversionStatus.APPROVED:
+          validConversions += group._count;
           approvedConversions += group._count;
           approvedCommissions += commission;
+          totalCommissions += commission; // Include in total
           break;
         case ConversionStatus.PAID:
+          validConversions += group._count;
           paidConversions += group._count;
           paidCommissions += commission;
+          totalCommissions += commission; // Include in total
           break;
         case ConversionStatus.CANCELLED:
           cancelledConversions += group._count;
+          // Do NOT add to totalCommissions - cancelled referrals don't count
           break;
       }
     }
 
+    // Conversion rate based on valid conversions only (excludes cancelled)
     const conversionRate =
-      clicksCount > 0 ? (totalConversions / clicksCount) * 100 : 0;
+      clicksCount > 0 ? (validConversions / clicksCount) * 100 : 0;
 
     return {
       totalClicks: clicksCount,

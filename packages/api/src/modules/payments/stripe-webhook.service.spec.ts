@@ -814,8 +814,25 @@ describe('StripeWebhookService', () => {
         status: ConversionStatus.PENDING,
         commissionCents: 500,
       } as any);
-      prisma.$transaction.mockImplementation(async (operations) => {
-        return Promise.all(operations);
+      // Support both array-style and interactive transactions
+      prisma.$transaction.mockImplementation(async (operationsOrCallback) => {
+        if (typeof operationsOrCallback === 'function') {
+          // Interactive transaction - call with mock tx client
+          const txClient = {
+            affiliateReferral: {
+              update: jest.fn().mockResolvedValue({}),
+            },
+            affiliate: {
+              update: jest.fn().mockResolvedValue({
+                totalEarnings: 0,
+                pendingEarnings: 0,
+              }),
+            },
+          };
+          return operationsOrCallback(txClient);
+        }
+        // Array-style transaction
+        return Promise.all(operationsOrCallback);
       });
 
       await service.handleWebhook('sig_refund', {
@@ -880,14 +897,28 @@ describe('StripeWebhookService', () => {
       } as any);
       prisma.affiliateReferral.update.mockReturnValue({} as any);
       prisma.affiliate.update.mockReturnValue({} as any);
-      prisma.$transaction.mockImplementation(async (operations) => {
-        return Promise.all(operations);
+      // Support both array-style and interactive transactions
+      prisma.$transaction.mockImplementation(async (operationsOrCallback) => {
+        if (typeof operationsOrCallback === 'function') {
+          // Interactive transaction - track the calls
+          const txClient = {
+            affiliateReferral: {
+              update: prisma.affiliateReferral.update,
+            },
+            affiliate: {
+              update: prisma.affiliate.update,
+            },
+          };
+          return operationsOrCallback(txClient);
+        }
+        return Promise.all(operationsOrCallback);
       });
 
       await service.handleWebhook('sig_refund_approved', {
         rawBody: Buffer.from(JSON.stringify(mockEvent)),
       });
 
+      // Verify affiliate.update was called with decrement for both totalEarnings and pendingEarnings
       expect(prisma.affiliate.update).toHaveBeenCalledWith({
         where: { id: 'aff-123' },
         data: {
@@ -1088,8 +1119,16 @@ describe('StripeWebhookService', () => {
       } as any);
       prisma.affiliateReferral.create.mockReturnValue({} as any);
       prisma.affiliate.update.mockReturnValue({} as any);
-      prisma.$transaction.mockImplementation(async (operations) => {
-        return Promise.all(operations);
+      // Support both array-style and interactive transactions
+      prisma.$transaction.mockImplementation(async (operationsOrCallback) => {
+        if (typeof operationsOrCallback === 'function') {
+          const txClient = {
+            affiliateReferral: { update: prisma.affiliateReferral.update },
+            affiliate: { update: prisma.affiliate.update },
+          };
+          return operationsOrCallback(txClient);
+        }
+        return Promise.all(operationsOrCallback);
       });
 
       await (service as any).processAffiliateAndCoupon(
@@ -1153,8 +1192,16 @@ describe('StripeWebhookService', () => {
       } as any);
       prisma.affiliateReferral.create.mockReturnValue({} as any);
       prisma.affiliate.update.mockReturnValue({} as any);
-      prisma.$transaction.mockImplementation(async (operations) => {
-        return Promise.all(operations);
+      // Support both array-style and interactive transactions
+      prisma.$transaction.mockImplementation(async (operationsOrCallback) => {
+        if (typeof operationsOrCallback === 'function') {
+          const txClient = {
+            affiliateReferral: { update: prisma.affiliateReferral.update },
+            affiliate: { update: prisma.affiliate.update },
+          };
+          return operationsOrCallback(txClient);
+        }
+        return Promise.all(operationsOrCallback);
       });
 
       // Now stripeChargeId is pre-resolved and passed directly
@@ -1203,8 +1250,16 @@ describe('StripeWebhookService', () => {
       } as any);
       prisma.affiliateReferral.create.mockReturnValue({} as any);
       prisma.affiliate.update.mockReturnValue({} as any);
-      prisma.$transaction.mockImplementation(async (operations) => {
-        return Promise.all(operations);
+      // Support both array-style and interactive transactions
+      prisma.$transaction.mockImplementation(async (operationsOrCallback) => {
+        if (typeof operationsOrCallback === 'function') {
+          const txClient = {
+            affiliateReferral: { update: prisma.affiliateReferral.update },
+            affiliate: { update: prisma.affiliate.update },
+          };
+          return operationsOrCallback(txClient);
+        }
+        return Promise.all(operationsOrCallback);
       });
 
       // Simulate subscription mode checkout: payment_intent is null, but invoice and subscription are set
@@ -1357,8 +1412,16 @@ describe('StripeWebhookService', () => {
       } as any);
       prisma.affiliateReferral.update.mockReturnValue({} as any);
       prisma.affiliate.update.mockReturnValue({} as any);
-      prisma.$transaction.mockImplementation(async (operations) => {
-        return Promise.all(operations);
+      // Support both array-style and interactive transactions
+      prisma.$transaction.mockImplementation(async (operationsOrCallback) => {
+        if (typeof operationsOrCallback === 'function') {
+          const txClient = {
+            affiliateReferral: { update: prisma.affiliateReferral.update },
+            affiliate: { update: prisma.affiliate.update },
+          };
+          return operationsOrCallback(txClient);
+        }
+        return Promise.all(operationsOrCallback);
       });
 
       await service.handleWebhook('sig_refund', {
@@ -1408,8 +1471,16 @@ describe('StripeWebhookService', () => {
         } as any);
       prisma.affiliateReferral.update.mockReturnValue({} as any);
       prisma.affiliate.update.mockReturnValue({} as any);
-      prisma.$transaction.mockImplementation(async (operations) => {
-        return Promise.all(operations);
+      // Support both array-style and interactive transactions
+      prisma.$transaction.mockImplementation(async (operationsOrCallback) => {
+        if (typeof operationsOrCallback === 'function') {
+          const txClient = {
+            affiliateReferral: { update: prisma.affiliateReferral.update },
+            affiliate: { update: prisma.affiliate.update },
+          };
+          return operationsOrCallback(txClient);
+        }
+        return Promise.all(operationsOrCallback);
       });
 
       await service.handleWebhook('sig_refund', {
@@ -1468,8 +1539,16 @@ describe('StripeWebhookService', () => {
         } as any);
       prisma.affiliateReferral.update.mockReturnValue({} as any);
       prisma.affiliate.update.mockReturnValue({} as any);
-      prisma.$transaction.mockImplementation(async (operations) => {
-        return Promise.all(operations);
+      // Support both array-style and interactive transactions
+      prisma.$transaction.mockImplementation(async (operationsOrCallback) => {
+        if (typeof operationsOrCallback === 'function') {
+          const txClient = {
+            affiliateReferral: { update: prisma.affiliateReferral.update },
+            affiliate: { update: prisma.affiliate.update },
+          };
+          return operationsOrCallback(txClient);
+        }
+        return Promise.all(operationsOrCallback);
       });
 
       await service.handleWebhook('sig_refund', {
