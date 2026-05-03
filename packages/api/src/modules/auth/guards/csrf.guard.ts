@@ -7,6 +7,21 @@ import {
 import { FastifyRequest } from 'fastify';
 
 /**
+ * Route patterns excluded from CSRF Origin validation.
+ * These are server-to-server webhook endpoints that don't send Origin headers.
+ * Authentication for these routes is handled by signature verification or secrets.
+ *
+ * - Stripe webhooks: authenticated via stripe-signature header
+ * - Telegram Stars: authenticated via x-telegram-stars-secret header
+ */
+const WEBHOOK_ROUTES_EXCLUDED_FROM_CSRF = [
+  '/webhooks/stripe',
+  '/payments/telegram-stars/webhook',
+  '/payments/telegram-stars/invoice',
+  '/payments/telegram-stars/validate-pre-checkout',
+];
+
+/**
  * CSRF Guard - validates Origin header for state-changing requests
  * when cookies are configured for cross-site use (SameSite=None).
  *
@@ -42,6 +57,14 @@ export class CsrfGuard implements CanActivate {
     // Only validate state-changing methods
     const method = request.method.toUpperCase();
     if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+      return true;
+    }
+
+    // Exclude webhook routes from Origin check.
+    // These are server-to-server requests that don't include Origin headers.
+    // Authentication is handled by signature/secret verification.
+    const urlPath = request.url.split('?')[0];
+    if (WEBHOOK_ROUTES_EXCLUDED_FROM_CSRF.includes(urlPath)) {
       return true;
     }
 

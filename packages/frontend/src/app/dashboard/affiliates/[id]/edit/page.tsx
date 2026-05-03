@@ -1,6 +1,7 @@
 "use client";
 
 import { AffiliateForm } from "@/components/affiliates/affiliate-form";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { affiliatesApi } from "@/lib/api/affiliates";
 import { getAffiliateDisplayLabel } from "@/lib/affiliate-utils";
@@ -8,7 +9,9 @@ import { organizationsApi } from "@/lib/api/organizations";
 import { UserRole } from "@/types/auth";
 import type { CreateAffiliateDto, UpdateAffiliateDto } from "@/types/affiliate";
 import type { Organization } from "@/types/organization";
+import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -94,9 +97,17 @@ export default function EditAffiliatePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t("form.titleEdit")}</h1>
-        <p className="mt-2 text-gray-600">{getAffiliateDisplayLabel(affiliate)}</p>
+      <div className="flex items-center gap-4">
+        <Link href={`/dashboard/affiliates/${affiliate.id}`}>
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {t("detail.back")}
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold">{t("form.titleEdit")}</h1>
+          <p className="mt-2 text-gray-600">{getAffiliateDisplayLabel(affiliate)}</p>
+        </div>
       </div>
 
       <AffiliateForm

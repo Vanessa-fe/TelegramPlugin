@@ -322,6 +322,7 @@ let AffiliatesService = AffiliatesService_1 = class AffiliatesService {
             }),
         ]);
         let totalConversions = 0;
+        let validConversions = 0;
         let pendingConversions = 0;
         let approvedConversions = 0;
         let paidConversions = 0;
@@ -333,26 +334,31 @@ let AffiliatesService = AffiliatesService_1 = class AffiliatesService {
         for (const group of referralsAgg) {
             totalConversions += group._count;
             const commission = group._sum.commissionCents ?? 0;
-            totalCommissions += commission;
             switch (group.status) {
                 case client_1.ConversionStatus.PENDING:
+                    validConversions += group._count;
                     pendingConversions += group._count;
                     pendingCommissions += commission;
+                    totalCommissions += commission;
                     break;
                 case client_1.ConversionStatus.APPROVED:
+                    validConversions += group._count;
                     approvedConversions += group._count;
                     approvedCommissions += commission;
+                    totalCommissions += commission;
                     break;
                 case client_1.ConversionStatus.PAID:
+                    validConversions += group._count;
                     paidConversions += group._count;
                     paidCommissions += commission;
+                    totalCommissions += commission;
                     break;
                 case client_1.ConversionStatus.CANCELLED:
                     cancelledConversions += group._count;
                     break;
             }
         }
-        const conversionRate = clicksCount > 0 ? (totalConversions / clicksCount) * 100 : 0;
+        const conversionRate = clicksCount > 0 ? (validConversions / clicksCount) * 100 : 0;
         return {
             totalClicks: clicksCount,
             totalConversions,
@@ -390,6 +396,7 @@ let AffiliatesService = AffiliatesService_1 = class AffiliatesService {
             }),
         ]);
         let totalConversions = 0;
+        let validConversions = 0;
         let pendingConversions = 0;
         let approvedConversions = 0;
         let paidConversions = 0;
@@ -401,26 +408,31 @@ let AffiliatesService = AffiliatesService_1 = class AffiliatesService {
         for (const group of referralsAgg) {
             totalConversions += group._count;
             const commission = group._sum.commissionCents ?? 0;
-            totalCommissions += commission;
             switch (group.status) {
                 case client_1.ConversionStatus.PENDING:
+                    validConversions += group._count;
                     pendingConversions += group._count;
                     pendingCommissions += commission;
+                    totalCommissions += commission;
                     break;
                 case client_1.ConversionStatus.APPROVED:
+                    validConversions += group._count;
                     approvedConversions += group._count;
                     approvedCommissions += commission;
+                    totalCommissions += commission;
                     break;
                 case client_1.ConversionStatus.PAID:
+                    validConversions += group._count;
                     paidConversions += group._count;
                     paidCommissions += commission;
+                    totalCommissions += commission;
                     break;
                 case client_1.ConversionStatus.CANCELLED:
                     cancelledConversions += group._count;
                     break;
             }
         }
-        const conversionRate = clicksCount > 0 ? (totalConversions / clicksCount) * 100 : 0;
+        const conversionRate = clicksCount > 0 ? (validConversions / clicksCount) * 100 : 0;
         return {
             totalClicks: clicksCount,
             totalConversions,

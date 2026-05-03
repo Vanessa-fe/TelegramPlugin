@@ -36,6 +36,13 @@ let AffiliatesController = class AffiliatesController {
         }
         return this.affiliatesService.findAll(scopedOrgId);
     }
+    async getOrganizationStats(user, organizationId) {
+        const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, organizationId);
+        if (!scopedOrgId) {
+            throw new common_1.BadRequestException('Organization ID is required');
+        }
+        return this.affiliatesService.getOrganizationStats(scopedOrgId);
+    }
     async findOne(user, id) {
         const affiliate = await this.affiliatesService.findOne(id);
         (0, organization_scope_1.resolveOrganizationScope)(user, affiliate.organizationId);
@@ -84,13 +91,6 @@ let AffiliatesController = class AffiliatesController {
             request.ip;
         return this.affiliatesService.trackClick(body, ipAddress);
     }
-    async getOrganizationStats(user, organizationId) {
-        const scopedOrgId = (0, organization_scope_1.resolveOrganizationScope)(user, organizationId);
-        if (!scopedOrgId) {
-            throw new common_1.BadRequestException('Organization ID is required');
-        }
-        return this.affiliatesService.getOrganizationStats(scopedOrgId);
-    }
     async getAffiliateStats(user, id) {
         const affiliate = await this.affiliatesService.findOne(id);
         (0, organization_scope_1.resolveOrganizationScope)(user, affiliate.organizationId);
@@ -125,6 +125,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], AffiliatesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('stats'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('organizationId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], AffiliatesController.prototype, "getOrganizationStats", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
@@ -217,15 +226,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AffiliatesController.prototype, "trackClick", null);
-__decorate([
-    (0, common_1.Get)('stats'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Query)('organizationId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
-    __metadata("design:returntype", Promise)
-], AffiliatesController.prototype, "getOrganizationStats", null);
 __decorate([
     (0, common_1.Get)(':id/stats'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.SUPERADMIN, client_1.UserRole.ORG_ADMIN, client_1.UserRole.SUPPORT, client_1.UserRole.VIEWER),

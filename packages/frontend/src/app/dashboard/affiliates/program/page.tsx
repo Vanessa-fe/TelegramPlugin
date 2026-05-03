@@ -256,24 +256,26 @@ export default function AffiliateProgramPage() {
           {/* Applies To */}
           <div className="space-y-2">
             <Label>{t("program.form.appliesTo")}</Label>
-            <Select
-              value={formData.appliesTo}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, appliesTo: value as CommissionAppliesTo }))
-              }
-            >
-              <SelectTrigger className="w-full max-w-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL_PRODUCTS">
-                  {t("program.form.allProducts")}
-                </SelectItem>
-                <SelectItem value="SPECIFIC_PRODUCTS">
-                  {t("program.form.specificProducts")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-full max-w-xs">
+              <Select
+                value={formData.appliesTo}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, appliesTo: value as CommissionAppliesTo }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL_PRODUCTS">
+                    {t("program.form.allProducts")}
+                  </SelectItem>
+                  <SelectItem value="SPECIFIC_PRODUCTS">
+                    {t("program.form.specificProducts")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Product Selection */}
@@ -311,24 +313,26 @@ export default function AffiliateProgramPage() {
           {/* Status */}
           <div className="space-y-2">
             <Label>{t("program.form.status")}</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, status: value as AffiliateProgramStatus }))
-              }
-            >
-              <SelectTrigger className="w-full max-w-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ACTIVE">
-                  {t("program.form.statusActive")}
-                </SelectItem>
-                <SelectItem value="PAUSED">
-                  {t("program.form.statusPaused")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="w-full max-w-xs">
+              <Select
+                value={formData.status}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, status: value as AffiliateProgramStatus }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">
+                    {t("program.form.statusActive")}
+                  </SelectItem>
+                  <SelectItem value="PAUSED">
+                    {t("program.form.statusPaused")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <p className="text-sm text-text-secondary">
               {t("program.form.statusHelp")}
             </p>

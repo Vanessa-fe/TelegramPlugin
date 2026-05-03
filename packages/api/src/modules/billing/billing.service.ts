@@ -194,12 +194,8 @@ export class BillingService {
 
     const organization = plan.product.organization;
 
-    if (!organization.saasActive) {
-      throw new ForbiddenException('Abonnement SaaS inactif');
-    }
-
     if (!organization.stripeAccountId) {
-      throw new BadRequestException('Compte Stripe non connecté');
+      throw new BadRequestException('Compte Stripe du créateur non connecté');
     }
     const stripeAccount = await this.stripe.accounts.retrieve(
       organization.stripeAccountId,
@@ -208,6 +204,10 @@ export class BillingService {
       throw new ForbiddenException(
         "Compte Stripe incomplet, finalisez l'onboarding",
       );
+    }
+
+    if (!organization.saasActive) {
+      throw new ForbiddenException('Abonnement SaaS inactif');
     }
 
     // Validate coupon code if provided
@@ -387,6 +387,11 @@ export class BillingService {
     );
 
     const quantity = payload.quantity ?? 1;
+    const subtotalCents = finalPriceCents * quantity;
+    const platformFeeCents = this.calculatePlatformFeeAmount(
+      subtotalCents,
+      platformFeePercent,
+    );
     const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
       quantity,
       price_data: {
@@ -397,6 +402,7 @@ export class BillingService {
             plan.description ?? plan.product.description ?? undefined,
           metadata: {
             organizationId: organization.id,
+            productId: plan.productId,
             planId: plan.id,
           },
         },
@@ -416,13 +422,20 @@ export class BillingService {
 
     const metadata: Record<string, string> = {
       organizationId: organization.id,
+      productId: plan.productId,
       subscriptionId: subscription.id,
+      internalSubscriptionId: subscription.id,
       planId: plan.id,
       customerId: storedCustomer.id,
+      quantity: String(quantity),
       originalPriceCents: String(originalPriceCents),
       platformPlanName: platformPlanName ?? 'unknown',
       platformFeePercent: String(platformFeePercent),
     };
+
+    if (platformFeeCents > 0) {
+      metadata.platformFeeCents = String(platformFeeCents);
+    }
 
     if (validatedCoupon) {
       metadata.couponId = validatedCoupon.id;
@@ -456,13 +469,8 @@ export class BillingService {
         {
           metadata,
         };
-      const subtotalCents = finalPriceCents * quantity;
-      const applicationFeeAmount = this.calculatePlatformFeeAmount(
-        subtotalCents,
-        platformFeePercent,
-      );
-      if (applicationFeeAmount > 0) {
-        paymentIntentData.application_fee_amount = applicationFeeAmount;
+      if (platformFeeCents > 0) {
+        paymentIntentData.application_fee_amount = platformFeeCents;
       }
       sessionParams.payment_intent_data = paymentIntentData;
     } else {

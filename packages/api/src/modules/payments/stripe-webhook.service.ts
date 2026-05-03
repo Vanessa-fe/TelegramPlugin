@@ -114,7 +114,8 @@ export class StripeWebhookService {
       return;
     }
 
-    // Route platform subscription events (no event.account = direct Stripe, not Connect)
+    // Direct-charge creator events always include event.account.
+    // Supported no-account billing events are therefore handled as platform SaaS events.
     if (!event.account && this.isPlatformEvent(event)) {
       this.logger.debug(
         `Routing platform event to PlatformSubscriptionService: ${event.type}`,
@@ -186,10 +187,52 @@ export class StripeWebhookService {
       await this.syncSubscriptionFromCheckout(
         event.data.object,
         context.subscriptionId,
+        event.account ?? undefined,
       );
     }
 
-    await this.applyDomainSideEffects(mappedType, context);
+    // Extract charge data for refund events
+    let chargeData:
+      | {
+          chargeId: string;
+          paymentIntentId?: string;
+          invoiceId?: string;
+          stripeSubscriptionId?: string;
+        }
+      | undefined;
+    if (event.type === 'charge.refunded') {
+      const charge = event.data.object;
+      chargeData = {
+        chargeId: charge.id,
+        paymentIntentId:
+          typeof charge.payment_intent === 'string'
+            ? charge.payment_intent
+            : undefined,
+        invoiceId:
+          typeof charge.invoice === 'string' ? charge.invoice : undefined,
+      };
+
+      // If invoice is available, try to get subscription ID from it
+      if (chargeData.invoiceId && event.account) {
+        try {
+          const invoice = await this.stripe.invoices.retrieve(
+            chargeData.invoiceId,
+            undefined,
+            { stripeAccount: event.account },
+          );
+          chargeData.stripeSubscriptionId =
+            typeof invoice.subscription === 'string'
+              ? invoice.subscription
+              : undefined;
+        } catch (error) {
+          this.logger.warn(
+            `Failed to retrieve invoice ${chargeData.invoiceId} for subscription lookup: ${(error as Error).message}`,
+          );
+        }
+      }
+    }
+
+    await this.applyDomainSideEffects(mappedType, context, chargeData);
 
     // Track purchase in GA4 for successful invoice payments
     if (event.type === 'invoice.payment_succeeded') {
@@ -213,6 +256,16 @@ export class StripeWebhookService {
       } catch (error) {
         this.logger.warn(
           `Failed to track VIP sales for org ${context.organizationId}: ${(error as Error).message}`,
+        );
+      }
+
+      // Backfill Stripe IDs on AffiliateReferral if missing
+      // This is needed because checkout.session.completed might fire before payment is confirmed
+      if (context.subscriptionId) {
+        await this.backfillAffiliateStripeIds(
+          context.subscriptionId,
+          invoice,
+          event.account ?? undefined,
         );
       }
     }
@@ -301,40 +354,85 @@ export class StripeWebhookService {
       }
       case 'charge.refunded': {
         const charge = event.data.object;
-        const metadataContext = await this.contextFromMetadata(
+        this.logger.debug(
+          `Processing charge.refunded: charge=${charge.id}, payment_intent=${charge.payment_intent}, invoice=${charge.invoice}`,
+        );
+
+        // 1. Try charge metadata first (usually empty for checkout sessions)
+        const chargeMetadataContext = await this.contextFromMetadata(
           charge.metadata ?? undefined,
         );
-        if (metadataContext) {
-          return metadataContext;
+        if (chargeMetadataContext?.subscriptionId) {
+          this.logger.debug(
+            `Found subscription from charge metadata: ${chargeMetadataContext.subscriptionId}`,
+          );
+          return chargeMetadataContext;
         }
 
+        // 2. Try PaymentIntent metadata (where checkout session stores subscriptionId)
+        const paymentIntentId =
+          typeof charge.payment_intent === 'string'
+            ? charge.payment_intent
+            : undefined;
+        if (paymentIntentId) {
+          try {
+            const paymentIntent = await this.stripe.paymentIntents.retrieve(
+              paymentIntentId,
+              undefined,
+              event.account ? { stripeAccount: event.account } : undefined,
+            );
+            const piMetadataContext = await this.contextFromMetadata(
+              paymentIntent.metadata ?? undefined,
+            );
+            if (piMetadataContext?.subscriptionId) {
+              this.logger.debug(
+                `Found subscription from PaymentIntent metadata: ${piMetadataContext.subscriptionId}`,
+              );
+              return piMetadataContext;
+            }
+          } catch (error) {
+            this.logger.warn(
+              `Failed to retrieve PaymentIntent ${paymentIntentId} for charge ${charge.id}: ${(error as Error).message}`,
+            );
+          }
+        }
+
+        // 3. Try invoice -> subscription path (for recurring subscriptions)
         const invoiceId =
           typeof charge.invoice === 'string' ? charge.invoice : undefined;
-        if (!invoiceId) {
-          return null;
+        if (invoiceId) {
+          try {
+            const invoice = await this.stripe.invoices.retrieve(
+              invoiceId,
+              undefined,
+              event.account ? { stripeAccount: event.account } : undefined,
+            );
+            const stripeSubscriptionId =
+              typeof invoice.subscription === 'string'
+                ? invoice.subscription
+                : undefined;
+            if (stripeSubscriptionId) {
+              const context =
+                await this.contextFromSubscription(stripeSubscriptionId);
+              if (context?.subscriptionId) {
+                this.logger.debug(
+                  `Found subscription from invoice: ${context.subscriptionId}`,
+                );
+                return context;
+              }
+            }
+          } catch (error) {
+            this.logger.warn(
+              `Failed to retrieve invoice ${invoiceId} for charge ${charge.id}: ${(error as Error).message}`,
+            );
+          }
         }
 
-        try {
-          const invoice = await this.stripe.invoices.retrieve(
-            invoiceId,
-            undefined,
-            event.account ? { stripeAccount: event.account } : undefined,
-          );
-          const subscriptionId =
-            typeof invoice.subscription === 'string'
-              ? invoice.subscription
-              : undefined;
-          if (!subscriptionId) {
-            return accountContext;
-          }
-          const context = await this.contextFromSubscription(subscriptionId);
-          return context ?? accountContext;
-        } catch (error) {
-          this.logger.warn(
-            `Failed to retrieve invoice ${invoiceId} for charge ${charge.id}: ${(error as Error).message}`,
-          );
-          return accountContext;
-        }
+        // 4. Fallback to account context only
+        this.logger.warn(
+          `Could not resolve subscription for charge.refunded: charge=${charge.id}`,
+        );
+        return accountContext;
       }
       default:
         return accountContext;
@@ -360,6 +458,8 @@ export class StripeWebhookService {
     }
 
     const subscriptionId =
+      this.getMetadataString(metadata.internalSubscriptionId) ??
+      this.getMetadataString(metadata.internal_subscription_id) ??
       this.getMetadataString(metadata.subscriptionId) ??
       this.getMetadataString(metadata.subscription_id) ??
       this.getMetadataString(metadata.subscription) ??
@@ -428,7 +528,26 @@ export class StripeWebhookService {
   private async syncSubscriptionFromCheckout(
     session: Stripe.Checkout.Session,
     subscriptionId: string,
+    stripeAccount?: string,
   ): Promise<void> {
+    // Extract all available Stripe IDs immediately
+    const stripeCheckoutSessionId = session.id;
+    const stripeInvoiceId =
+      typeof session.invoice === 'string' ? session.invoice : session.invoice?.id;
+    const stripeSubscriptionId =
+      typeof session.subscription === 'string'
+        ? session.subscription
+        : session.subscription?.id;
+
+    this.logger.log(
+      `checkout.session.completed: sessionId=${session.id}, mode=${session.mode}, ` +
+        `invoice=${stripeInvoiceId ?? 'null'}, ` +
+        `subscription=${stripeSubscriptionId ?? 'null'}, ` +
+        `payment_intent=${session.payment_intent ?? 'null'}, ` +
+        `internalSubscriptionId=${session.metadata?.internalSubscriptionId ?? session.metadata?.subscriptionId ?? 'null'}, ` +
+        `stripeAccount=${stripeAccount ?? 'null'}`,
+    );
+
     const update: Prisma.SubscriptionUpdateInput = {};
 
     if (typeof session.subscription === 'string') {
@@ -446,14 +565,291 @@ export class StripeWebhookService {
       });
     }
 
+    // Try to resolve payment IDs (may fail for subscription mode if payment not yet confirmed)
+    const resolvedIds = await this.resolveStripePaymentIds(session, stripeAccount);
+
+    // Combine all Stripe IDs - store what we have immediately
+    const stripeIds = {
+      stripeCheckoutSessionId,
+      stripeInvoiceId,
+      stripeSubscriptionId,
+      stripePaymentIntentId: resolvedIds.stripePaymentIntentId,
+      stripeChargeId: resolvedIds.stripeChargeId,
+      stripeAccount,
+    };
+
+    this.logger.debug(
+      `Stripe IDs for AffiliateReferral: ` +
+        `invoiceId=${stripeInvoiceId ?? 'null'}, ` +
+        `subscriptionId=${stripeSubscriptionId ?? 'null'}, ` +
+        `paymentIntentId=${stripeIds.stripePaymentIntentId ?? 'null'}, ` +
+        `chargeId=${stripeIds.stripeChargeId ?? 'null'}`,
+    );
+
     // Process affiliate referral and coupon usage from metadata
     const metadata = session.metadata ?? {};
-    await this.processAffiliateAndCoupon(subscriptionId, metadata);
+    await this.processAffiliateAndCoupon(subscriptionId, metadata, stripeIds);
+  }
+
+  /**
+   * Resolve Stripe payment IDs from checkout session
+   * Handles both payment mode (direct payment_intent) and subscription mode (via invoice)
+   */
+  private async resolveStripePaymentIds(
+    session: Stripe.Checkout.Session,
+    stripeAccount?: string,
+  ): Promise<{
+    stripePaymentIntentId?: string;
+    stripeChargeId?: string;
+    stripeAccount?: string;
+  }> {
+    const stripeOpts = stripeAccount ? { stripeAccount } : undefined;
+
+    // Mode payment: payment_intent is directly on the session
+    if (session.mode === 'payment' && typeof session.payment_intent === 'string') {
+      try {
+        const paymentIntent = await this.stripe.paymentIntents.retrieve(
+          session.payment_intent,
+          { expand: ['latest_charge'] },
+          stripeOpts,
+        );
+
+        const chargeId = this.extractChargeId(paymentIntent.latest_charge);
+
+        return {
+          stripePaymentIntentId: session.payment_intent,
+          stripeChargeId: chargeId ?? undefined,
+          stripeAccount,
+        };
+      } catch (error) {
+        this.logger.warn(
+          `Failed to retrieve PaymentIntent ${session.payment_intent}: ${(error as Error).message}`,
+        );
+        return {
+          stripePaymentIntentId: session.payment_intent,
+          stripeAccount,
+        };
+      }
+    }
+
+    // Mode subscription: payment_intent is on the invoice, not on the session
+    if (session.mode === 'subscription' && typeof session.subscription === 'string') {
+      try {
+        this.logger.debug(
+          `Retrieving subscription ${session.subscription} for payment IDs`,
+        );
+
+        // Retrieve subscription with expanded latest_invoice.payment_intent
+        const subscription = await this.stripe.subscriptions.retrieve(
+          session.subscription,
+          { expand: ['latest_invoice.payment_intent'] },
+          stripeOpts,
+        );
+
+        this.logger.debug(
+          `Subscription retrieved: latest_invoice=${typeof subscription.latest_invoice === 'object' ? subscription.latest_invoice?.id : subscription.latest_invoice}`,
+        );
+
+        const invoice = subscription.latest_invoice;
+        if (!invoice || typeof invoice === 'string') {
+          this.logger.warn(
+            `Subscription ${session.subscription} has no expanded latest_invoice (got: ${typeof invoice})`,
+          );
+          return { stripeAccount };
+        }
+
+        const paymentIntent = invoice.payment_intent;
+        this.logger.debug(
+          `Invoice ${invoice.id}: payment_intent=${typeof paymentIntent === 'object' ? paymentIntent?.id : paymentIntent}, status=${invoice.status}`,
+        );
+
+        if (!paymentIntent) {
+          this.logger.warn(
+            `Invoice ${invoice.id} has no payment_intent (trial, free, or pending?)`,
+          );
+          return { stripeAccount };
+        }
+
+        const paymentIntentId =
+          typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id;
+
+        // Get charge ID from payment intent - always fetch to ensure we have latest_charge
+        let chargeId: string | undefined;
+        try {
+          const pi = await this.stripe.paymentIntents.retrieve(
+            paymentIntentId,
+            { expand: ['latest_charge'] },
+            stripeOpts,
+          );
+          this.logger.debug(
+            `PaymentIntent ${paymentIntentId}: status=${pi.status}, latest_charge=${typeof pi.latest_charge === 'object' ? pi.latest_charge?.id : pi.latest_charge}`,
+          );
+          chargeId = this.extractChargeId(pi.latest_charge) ?? undefined;
+        } catch (piError) {
+          this.logger.warn(
+            `Failed to retrieve PaymentIntent ${paymentIntentId}: ${(piError as Error).message}`,
+          );
+        }
+
+        return {
+          stripePaymentIntentId: paymentIntentId,
+          stripeChargeId: chargeId,
+          stripeAccount,
+        };
+      } catch (error) {
+        this.logger.warn(
+          `Failed to retrieve subscription ${session.subscription}: ${(error as Error).message}`,
+        );
+        return { stripeAccount };
+      }
+    }
+
+    this.logger.warn(
+      `Could not resolve Stripe payment IDs for session ${session.id} (mode=${session.mode})`,
+    );
+    return { stripeAccount };
+  }
+
+  /**
+   * Extract charge ID from a Stripe charge reference (string or object)
+   */
+  private extractChargeId(
+    charge: string | Stripe.Charge | null | undefined,
+  ): string | null {
+    if (!charge) return null;
+    if (typeof charge === 'string') return charge;
+    return charge.id;
+  }
+
+  /**
+   * Backfill Stripe IDs on AffiliateReferral when invoice.payment_succeeded fires
+   * This is needed because checkout.session.completed might fire before payment is confirmed
+   */
+  private async backfillAffiliateStripeIds(
+    subscriptionId: string,
+    invoice: Stripe.Invoice,
+    stripeAccount?: string,
+  ): Promise<void> {
+    try {
+      // Check if there's an AffiliateReferral missing Stripe IDs
+      const referral = await this.prisma.affiliateReferral.findUnique({
+        where: { subscriptionId },
+        select: {
+          id: true,
+          stripeInvoiceId: true,
+          stripeSubscriptionId: true,
+          stripePaymentIntentId: true,
+          stripeChargeId: true,
+        },
+      });
+
+      if (!referral) {
+        return; // No affiliate referral for this subscription
+      }
+
+      // Extract invoice ID and subscription ID from the event
+      const invoiceId = invoice.id;
+      const stripeSubscriptionId =
+        typeof invoice.subscription === 'string'
+          ? invoice.subscription
+          : invoice.subscription?.id;
+
+      // Skip if all IDs are already set
+      if (
+        referral.stripeInvoiceId &&
+        referral.stripeSubscriptionId &&
+        referral.stripePaymentIntentId &&
+        referral.stripeChargeId
+      ) {
+        this.logger.debug(
+          `AffiliateReferral ${referral.id} already has all Stripe IDs, skipping backfill`,
+        );
+        return;
+      }
+
+      // Get payment_intent from invoice
+      const paymentIntentId =
+        typeof invoice.payment_intent === 'string'
+          ? invoice.payment_intent
+          : invoice.payment_intent?.id;
+
+      // Retrieve PaymentIntent to get latest_charge (if we have payment_intent)
+      const stripeOpts = stripeAccount ? { stripeAccount } : undefined;
+      let chargeId: string | null = null;
+
+      if (paymentIntentId) {
+        try {
+          const pi = await this.stripe.paymentIntents.retrieve(
+            paymentIntentId,
+            { expand: ['latest_charge'] },
+            stripeOpts,
+          );
+          chargeId = this.extractChargeId(pi.latest_charge);
+
+          this.logger.debug(
+            `Backfill: PaymentIntent ${paymentIntentId} has latest_charge=${chargeId}`,
+          );
+        } catch (error) {
+          this.logger.warn(
+            `Failed to retrieve PaymentIntent ${paymentIntentId} for backfill: ${(error as Error).message}`,
+          );
+        }
+      }
+
+      // Update AffiliateReferral with all missing Stripe IDs
+      const updateData: {
+        stripeInvoiceId?: string;
+        stripeSubscriptionId?: string;
+        stripePaymentIntentId?: string;
+        stripeChargeId?: string;
+      } = {};
+
+      if (!referral.stripeInvoiceId && invoiceId) {
+        updateData.stripeInvoiceId = invoiceId;
+      }
+      if (!referral.stripeSubscriptionId && stripeSubscriptionId) {
+        updateData.stripeSubscriptionId = stripeSubscriptionId;
+      }
+      if (!referral.stripePaymentIntentId && paymentIntentId) {
+        updateData.stripePaymentIntentId = paymentIntentId;
+      }
+      if (!referral.stripeChargeId && chargeId) {
+        updateData.stripeChargeId = chargeId;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await this.prisma.affiliateReferral.update({
+          where: { id: referral.id },
+          data: updateData,
+        });
+
+        this.logger.log(
+          `Backfilled AffiliateReferral ${referral.id}: ` +
+            `stripeInvoiceId=${updateData.stripeInvoiceId ?? 'unchanged'}, ` +
+            `stripeSubscriptionId=${updateData.stripeSubscriptionId ?? 'unchanged'}, ` +
+            `stripePaymentIntentId=${updateData.stripePaymentIntentId ?? 'unchanged'}, ` +
+            `stripeChargeId=${updateData.stripeChargeId ?? 'unchanged'}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to backfill Stripe IDs for subscription ${subscriptionId}`,
+        error as Error,
+      );
+    }
   }
 
   private async processAffiliateAndCoupon(
     subscriptionId: string,
     metadata: Record<string, string>,
+    stripeIds?: {
+      stripeCheckoutSessionId?: string;
+      stripeInvoiceId?: string;
+      stripeSubscriptionId?: string;
+      stripePaymentIntentId?: string;
+      stripeChargeId?: string;
+      stripeAccount?: string;
+    },
   ): Promise<void> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id: subscriptionId },
@@ -484,6 +880,9 @@ export class StripeWebhookService {
     const originalPriceCents = metadata.originalPriceCents
       ? parseInt(metadata.originalPriceCents, 10)
       : subscription.plan.priceCents;
+    const quantity = Math.max(1, parseInt(metadata.quantity ?? '1', 10) || 1);
+    const totalOriginalCents = originalPriceCents * quantity;
+    const totalDiscountCents = discountCents * quantity;
 
     if (couponId && discountCents > 0) {
       try {
@@ -499,8 +898,8 @@ export class StripeWebhookService {
                 couponId,
                 subscriptionId,
                 customerId: subscription.customerId,
-                discountCents,
-                originalCents: originalPriceCents,
+                discountCents: totalDiscountCents,
+                originalCents: totalOriginalCents,
               },
             }),
             this.prisma.coupon.update({
@@ -510,7 +909,7 @@ export class StripeWebhookService {
           ]);
 
           this.logger.debug(
-            `Recorded coupon usage for subscription ${subscriptionId}, discount: ${discountCents} cents`,
+            `Recorded coupon usage for subscription ${subscriptionId}, discount: ${totalDiscountCents} cents`,
           );
         }
       } catch (error) {
@@ -538,13 +937,42 @@ export class StripeWebhookService {
           });
 
           if (affiliate) {
-            const finalAmount = originalPriceCents - discountCents;
+            const finalAmount = Math.max(
+              0,
+              totalOriginalCents - totalDiscountCents,
+            );
             const commissionCents = Math.round(
               (finalAmount * affiliate.commissionRate) / 100,
             );
 
             // Get productId from the subscription's plan
             const productId = subscription.plan.productId;
+
+            // Store all available Stripe IDs for refund matching
+            // For subscription mode: invoiceId is the most reliable link
+            const stripeCheckoutSessionId = stripeIds?.stripeCheckoutSessionId ?? null;
+            const stripeInvoiceId = stripeIds?.stripeInvoiceId ?? null;
+            const stripeSubscriptionId = stripeIds?.stripeSubscriptionId ?? null;
+            const stripePaymentIntentId = stripeIds?.stripePaymentIntentId ?? null;
+            const stripeChargeId = stripeIds?.stripeChargeId ?? null;
+
+            // Log what we're storing for debugging
+            this.logger.debug(
+              `Creating AffiliateReferral with Stripe IDs: ` +
+                `checkoutSessionId=${stripeCheckoutSessionId ?? 'null'}, ` +
+                `invoiceId=${stripeInvoiceId ?? 'null'}, ` +
+                `subscriptionId=${stripeSubscriptionId ?? 'null'}, ` +
+                `paymentIntentId=${stripePaymentIntentId ?? 'null'}, ` +
+                `chargeId=${stripeChargeId ?? 'null'}`,
+            );
+
+            // For subscriptions, invoiceId is the key link - payment IDs come later via backfill
+            if (!stripeInvoiceId && !stripePaymentIntentId && !stripeChargeId) {
+              this.logger.warn(
+                `AffiliateReferral created without any Stripe IDs; refunds may not be matched. ` +
+                  `subscriptionId=${subscriptionId}, affiliateId=${affiliateId}`,
+              );
+            }
 
             await this.prisma.$transaction([
               this.prisma.affiliateReferral.create({
@@ -558,6 +986,11 @@ export class StripeWebhookService {
                   commissionCents,
                   currency: subscription.plan.currency.toLowerCase(),
                   status: ConversionStatus.PENDING,
+                  stripeCheckoutSessionId,
+                  stripeInvoiceId,
+                  stripeSubscriptionId,
+                  stripePaymentIntentId,
+                  stripeChargeId,
                 },
               }),
               this.prisma.affiliate.update({
@@ -569,8 +1002,13 @@ export class StripeWebhookService {
               }),
             ]);
 
-            this.logger.debug(
-              `Recorded affiliate referral for subscription ${subscriptionId}, commission: ${commissionCents} cents, status: PENDING`,
+            this.logger.log(
+              `AffiliateReferral created: subscriptionId=${subscriptionId}, ` +
+                `commission=${commissionCents} cents, status=PENDING, ` +
+                `stripeInvoiceId=${stripeInvoiceId ?? 'null'}, ` +
+                `stripeSubscriptionId=${stripeSubscriptionId ?? 'null'}, ` +
+                `stripePaymentIntentId=${stripePaymentIntentId ?? 'null'}, ` +
+                `stripeChargeId=${stripeChargeId ?? 'null'}`,
             );
           }
         }
@@ -637,7 +1075,20 @@ export class StripeWebhookService {
   private async applyDomainSideEffects(
     eventType: PaymentEventType,
     context: EventContext,
+    chargeData?: {
+      chargeId: string;
+      paymentIntentId?: string;
+      invoiceId?: string;
+      stripeSubscriptionId?: string;
+    },
   ): Promise<void> {
+    // For refunds, we can still cancel affiliate referral even without subscriptionId
+    // by using Stripe IDs (chargeId, paymentIntentId)
+    if (eventType === PaymentEventType.REFUND_CREATED) {
+      await this.handleRefundSideEffects(context, chargeData);
+      return;
+    }
+
     if (!context.subscriptionId) {
       this.logger.debug(
         `Skipping domain side-effects for event type ${eventType} due to missing subscription context`,
@@ -672,15 +1123,6 @@ export class StripeWebhookService {
         );
         break;
 
-      case PaymentEventType.REFUND_CREATED:
-        await this.channelAccessService.handlePaymentFailure(
-          context.subscriptionId,
-          'refund',
-        );
-        // Cancel any pending/approved affiliate referral on refund
-        await this.cancelAffiliateReferral(context.subscriptionId);
-        break;
-
       default:
         break;
     }
@@ -690,6 +1132,63 @@ export class StripeWebhookService {
         where: { id: context.subscriptionId },
         data: { status: statusUpdate },
       });
+    }
+  }
+
+  /**
+   * Handle refund side effects - supports both subscription-based and Stripe ID-based lookup
+   */
+  private async handleRefundSideEffects(
+    context: EventContext,
+    chargeData?: {
+      chargeId: string;
+      paymentIntentId?: string;
+      invoiceId?: string;
+      stripeSubscriptionId?: string;
+    },
+  ): Promise<void> {
+    this.logger.debug(
+      `Refund received: subscriptionId=${context.subscriptionId ?? 'null'}, ` +
+        `chargeId=${chargeData?.chargeId ?? 'null'}, ` +
+        `paymentIntentId=${chargeData?.paymentIntentId ?? 'null'}, ` +
+        `invoiceId=${chargeData?.invoiceId ?? 'null'}, ` +
+        `stripeSubscriptionId=${chargeData?.stripeSubscriptionId ?? 'null'}`,
+    );
+
+    // If we have subscriptionId, use the subscription-based flow
+    if (context.subscriptionId) {
+      await this.channelAccessService.handlePaymentFailure(
+        context.subscriptionId,
+        'refund',
+      );
+
+      await this.prisma.subscription.update({
+        where: { id: context.subscriptionId },
+        data: { status: SubscriptionStatus.EXPIRED },
+      });
+
+      // TODO(stripe-connect): refund_application_fee must be handled explicitly
+      // if Sublynk wants platform fees reversed on creator refunds.
+      await this.cancelAffiliateReferral(context.subscriptionId);
+      return;
+    }
+
+    // No subscriptionId - try to find affiliate referral by Stripe IDs
+    if (chargeData?.chargeId) {
+      this.logger.debug(
+        `No subscriptionId for refund, attempting Stripe ID lookup ` +
+          `(chargeId, paymentIntentId, invoiceId, stripeSubscriptionId)`,
+      );
+      await this.cancelAffiliateReferralByStripeIds(
+        chargeData.chargeId,
+        chargeData.paymentIntentId,
+        chargeData.invoiceId,
+        chargeData.stripeSubscriptionId,
+      );
+    } else {
+      this.logger.warn(
+        `Refund received but no subscriptionId or chargeId available for affiliate cancellation`,
+      );
     }
   }
 
@@ -733,46 +1232,23 @@ export class StripeWebhookService {
    * Cancel affiliate referral for a subscription (on refund or subscription cancellation)
    */
   private async cancelAffiliateReferral(subscriptionId: string): Promise<void> {
+    this.logger.debug(
+      `Attempting to cancel affiliate referral for subscription: ${subscriptionId}`,
+    );
+
     try {
       const referral = await this.prisma.affiliateReferral.findUnique({
         where: { subscriptionId },
       });
 
       if (!referral) {
-        return;
-      }
-
-      // Only cancel if not already paid or cancelled
-      if (
-        referral.status === ConversionStatus.PAID ||
-        referral.status === ConversionStatus.CANCELLED
-      ) {
         this.logger.debug(
-          `Affiliate referral ${referral.id} already ${referral.status}, skipping cancellation`,
+          `No affiliate referral found for subscription ${subscriptionId}`,
         );
         return;
       }
 
-      await this.prisma.$transaction([
-        this.prisma.affiliateReferral.update({
-          where: { id: referral.id },
-          data: {
-            status: ConversionStatus.CANCELLED,
-            cancelledAt: new Date(),
-          },
-        }),
-        this.prisma.affiliate.update({
-          where: { id: referral.affiliateId },
-          data: {
-            totalEarnings: { decrement: referral.commissionCents },
-            pendingEarnings: { decrement: referral.commissionCents },
-          },
-        }),
-      ]);
-
-      this.logger.debug(
-        `Cancelled affiliate referral ${referral.id} for subscription ${subscriptionId}`,
-      );
+      await this.executeCancelReferral(referral, `subscription ${subscriptionId}`);
     } catch (error) {
       this.logger.error(
         `Failed to cancel affiliate referral for subscription ${subscriptionId}`,
@@ -782,45 +1258,176 @@ export class StripeWebhookService {
   }
 
   /**
-   * Detect if this is a platform subscription event (direct Stripe, not Connect)
-   * Platform events have metadata.type === 'platform' in the relevant object
+   * Cancel affiliate referral by Stripe IDs (charge.id, payment_intent, invoice, or subscription)
+   * Used for refunds when subscription context is not available (one-time payments)
+   * Lookup order: chargeId -> paymentIntentId -> invoiceId -> stripeSubscriptionId
    */
-  private isPlatformEvent(event: Stripe.Event): boolean {
-    const metadata = this.extractMetadataFromEvent(event);
-    return metadata?.type === 'platform';
+  private async cancelAffiliateReferralByStripeIds(
+    chargeId: string,
+    paymentIntentId?: string,
+    invoiceId?: string,
+    stripeSubscriptionId?: string,
+  ): Promise<void> {
+    this.logger.debug(
+      `Searching AffiliateReferral by Stripe IDs: chargeId=${chargeId}, ` +
+        `paymentIntentId=${paymentIntentId ?? 'null'}, ` +
+        `invoiceId=${invoiceId ?? 'null'}, ` +
+        `stripeSubscriptionId=${stripeSubscriptionId ?? 'null'}`,
+    );
+
+    try {
+      // Try to find by stripeChargeId first
+      let referral = await this.prisma.affiliateReferral.findFirst({
+        where: { stripeChargeId: chargeId },
+      });
+
+      // If not found, try by stripePaymentIntentId
+      if (!referral && paymentIntentId) {
+        referral = await this.prisma.affiliateReferral.findFirst({
+          where: { stripePaymentIntentId: paymentIntentId },
+        });
+      }
+
+      // If not found, try by stripeInvoiceId (most reliable for subscription mode)
+      if (!referral && invoiceId) {
+        referral = await this.prisma.affiliateReferral.findFirst({
+          where: { stripeInvoiceId: invoiceId },
+        });
+      }
+
+      // If not found, try by stripeSubscriptionId
+      if (!referral && stripeSubscriptionId) {
+        referral = await this.prisma.affiliateReferral.findFirst({
+          where: { stripeSubscriptionId: stripeSubscriptionId },
+        });
+      }
+
+      if (!referral) {
+        this.logger.debug(
+          `No AffiliateReferral found for chargeId=${chargeId}, ` +
+            `paymentIntentId=${paymentIntentId ?? 'null'}, ` +
+            `invoiceId=${invoiceId ?? 'null'}, ` +
+            `stripeSubscriptionId=${stripeSubscriptionId ?? 'null'}`,
+        );
+        return;
+      }
+
+      this.logger.debug(
+        `Found AffiliateReferral ${referral.id} by Stripe IDs`,
+      );
+
+      await this.executeCancelReferral(
+        referral,
+        `chargeId=${chargeId}, paymentIntentId=${paymentIntentId ?? 'null'}, invoiceId=${invoiceId ?? 'null'}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to cancel affiliate referral by Stripe IDs: chargeId=${chargeId}, ` +
+          `paymentIntentId=${paymentIntentId ?? 'null'}, invoiceId=${invoiceId ?? 'null'}`,
+        error as Error,
+      );
+    }
   }
 
   /**
-   * Extract metadata from various Stripe event object types
+   * Execute the actual cancellation of an affiliate referral
+   * Decrements totalEarnings and pendingEarnings on the Affiliate record
    */
-  private extractMetadataFromEvent(
-    event: Stripe.Event,
-  ): Stripe.Metadata | null {
+  private async executeCancelReferral(
+    referral: {
+      id: string;
+      affiliateId: string;
+      status: ConversionStatus;
+      commissionCents: number;
+    },
+    lookupContext: string,
+  ): Promise<void> {
+    this.logger.debug(
+      `executeCancelReferral: referralId=${referral.id}, affiliateId=${referral.affiliateId}, ` +
+        `status=${referral.status}, commissionCents=${referral.commissionCents}`,
+    );
+
+    // Already cancelled - idempotent, just skip (don't decrement twice!)
+    if (referral.status === ConversionStatus.CANCELLED) {
+      this.logger.debug(
+        `Affiliate referral ${referral.id} already CANCELLED, skipping decrement`,
+      );
+      return;
+    }
+
+    // Already paid - log warning but don't cancel (manual intervention needed)
+    if (referral.status === ConversionStatus.PAID) {
+      this.logger.warn(
+        `Affiliate referral ${referral.id} is PAID - refund received but commission already paid out. Manual review required.`,
+      );
+      return;
+    }
+
+    // PENDING or APPROVED: decrement both totalEarnings and pendingEarnings
+    const shouldDecrementPending =
+      referral.status === ConversionStatus.PENDING ||
+      referral.status === ConversionStatus.APPROVED;
+
+    const decrementAmount = referral.commissionCents;
+
+    // Use interactive transaction for proper error handling
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Update referral status to CANCELLED
+      await tx.affiliateReferral.update({
+        where: { id: referral.id },
+        data: {
+          status: ConversionStatus.CANCELLED,
+          cancelledAt: new Date(),
+        },
+      });
+
+      this.logger.debug(
+        `Referral ${referral.id} status updated to CANCELLED`,
+      );
+
+      // 2. Decrement affiliate earnings
+      // Use Math.max equivalent via raw SQL or careful update to avoid negative values
+      const affiliateUpdate = await tx.affiliate.update({
+        where: { id: referral.affiliateId },
+        data: {
+          totalEarnings: { decrement: decrementAmount },
+          ...(shouldDecrementPending && {
+            pendingEarnings: { decrement: decrementAmount },
+          }),
+        },
+      });
+
+      this.logger.debug(
+        `Affiliate ${referral.affiliateId} earnings decremented by ${decrementAmount} cents. ` +
+          `New values: totalEarnings=${affiliateUpdate.totalEarnings}, pendingEarnings=${affiliateUpdate.pendingEarnings}`,
+      );
+    });
+
+    this.logger.log(
+      `Cancelled affiliate referral ${referral.id} (${lookupContext}). ` +
+        `Previous status: ${referral.status}, commission decremented: ${decrementAmount} cents`,
+    );
+  }
+
+  /**
+   * Supported platform billing events are sent without event.account.
+   * Creator direct-charge events always carry event.account.
+   */
+  private isPlatformEvent(event: Stripe.Event): boolean {
+    if (event.account) {
+      return false;
+    }
+
     switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object;
-        return session.metadata ?? null;
-      }
+      case 'checkout.session.completed':
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
-        return subscription.metadata ?? null;
-      }
+      case 'customer.subscription.deleted':
       case 'invoice.payment_succeeded':
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object;
-        // Try subscription metadata first, then invoice metadata
-        if (
-          typeof invoice.subscription === 'object' &&
-          invoice.subscription?.metadata
-        ) {
-          return invoice.subscription.metadata;
-        }
-        return invoice.metadata ?? null;
-      }
+      case 'invoice.payment_failed':
+        return true;
       default:
-        return null;
+        return false;
     }
   }
 }

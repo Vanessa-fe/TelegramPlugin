@@ -152,3 +152,93 @@ Execution order: start with P0-13 and P0-14 before any other Phase 1 tasks.
 - Goal: align setup docs with new config
 - AC:
   - `docs/setup.md` and `docs/environment.md` updated
+
+---
+
+## Affiliation — Consolidation
+
+État actuel validé :
+- Lien affilié fonctionnel
+- Tracking clic OK
+- Checkout Stripe OK
+- Webhook Stripe reçu
+- AffiliateReferral créé avec commission correcte
+- Dashboard affiche conversions et earnings
+
+### P0 — Avant mise en prod
+
+#### AFF-P0-01 Gestion remboursement Stripe
+- Goal: AffiliateReferral passe en CANCELLED sur refund
+- AC:
+  - Webhook `charge.refunded` traité
+  - AffiliateReferral.status = CANCELLED
+  - pendingEarnings et totalEarnings décrémentés
+  - Tests couvrent le scénario refund
+
+#### AFF-P0-02 Séparation webhook Stripe dev/prod
+- Goal: secrets webhook distincts par environnement
+- AC:
+  - Endpoint DEV utilise secret DEV
+  - Endpoint PROD utilise secret PROD
+  - Vérification dans dashboard Stripe
+
+#### AFF-P0-03 Validation commissions multi-instance
+- Goal: éviter double validation en multi-instance
+- AC:
+  - Lock Redis sur cron validation OU
+  - Validation déplacée dans worker BullMQ
+  - Une commission ne peut pas être validée deux fois
+  - Tests couvrent concurrence
+
+### P1 — UX Améliorations
+
+#### AFF-P1-01 Copie lien affilié
+- Goal: bouton "Copier le lien affilié" dans la liste
+- AC:
+  - Bouton copie visible sur chaque ligne affilié
+  - Feedback visuel après copie
+
+#### AFF-P1-02 Page détail conversion
+- Goal: vue détaillée d'une conversion/commission
+- AC:
+  - Page `/affiliates/[id]/conversions/[conversionId]`
+  - Affiche montant, date, statut, lien Stripe
+
+#### AFF-P1-03 Actions sur commissions
+- Goal: actions admin sur les commissions
+- AC:
+  - Action "Marquer comme payée"
+  - Action "Annuler"
+  - Action "Voir dans Stripe"
+  - Audit log pour chaque action
+
+#### AFF-P1-04 Empty states
+- Goal: améliorer les empty states affiliation
+- AC:
+  - Message explicite si pas de clics
+  - Message explicite si pas de conversions
+  - CTA pour partager le lien
+
+### P2 — Améliorations futures
+
+#### AFF-P2-01 Séparation BDD dev/prod
+- Goal: branches Neon distinctes pour dev et prod
+- AC:
+  - Branch Neon dev créée
+  - DATABASE_URL dev pointe vers branch dev
+  - Docs mis à jour
+
+#### AFF-P2-02 Analytics PostHog
+- Goal: events PostHog pour affiliation
+- AC:
+  - Event `affiliate_click`
+  - Event `affiliate_conversion`
+  - Event `commission_validated`
+  - Event `commission_paid`
+
+#### AFF-P2-03 Dashboard affilié public
+- Goal: page publique pour l'affilié
+- AC:
+  - Accès via token unique
+  - Affiche stats et historique
+  - Pas de login requis

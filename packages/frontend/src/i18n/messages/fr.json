@@ -3000,6 +3000,56 @@
       "SUSPENDED": "Suspendu",
       "DEACTIVATED": "Désactivé"
     },
+    "conversionStatusLabels": {
+      "PENDING": "En attente",
+      "APPROVED": "Approuvé",
+      "CANCELLED": "Annulé",
+      "PAID": "Payé"
+    },
+    "back": "Retour",
+    "cancel": "Annuler",
+    "saving": "Enregistrement...",
+    "program": {
+      "settings": "Programme",
+      "title": "Programme d'affiliation",
+      "subtitle": "Configure les règles de ton programme d'affiliation pour rémunérer tes partenaires.",
+      "create": "Créer le programme",
+      "save": "Enregistrer le programme",
+      "loadError": "Erreur lors du chargement du programme d'affiliation",
+      "createSuccess": "Programme d'affiliation créé avec succès",
+      "updateSuccess": "Programme d'affiliation mis à jour avec succès",
+      "createError": "Erreur lors de la création du programme d'affiliation",
+      "updateError": "Erreur lors de la mise à jour du programme d'affiliation",
+      "form": {
+        "name": "Nom du programme",
+        "namePlaceholder": "Ex. Programme partenaires Sublynk",
+        "commissionRate": "Taux de commission",
+        "commissionRateHelp": "Pourcentage versé à l'affilié pour chaque vente validée.",
+        "attributionWindow": "Fenêtre d'attribution",
+        "days": "jours",
+        "attributionWindowHelp": "Durée pendant laquelle une vente est attribuée à l'affilié après un clic.",
+        "validationDelay": "Délai de validation",
+        "validationDelayHelp": "Nombre de jours avant qu'une commission soit validée.",
+        "appliesTo": "S'applique à",
+        "allProducts": "Toutes les offres",
+        "specificProducts": "Offres spécifiques",
+        "selectProducts": "Sélectionner les offres",
+        "noProducts": "Aucune offre disponible. Crée d'abord une offre pour limiter le programme à certains produits.",
+        "status": "Statut du programme",
+        "statusActive": "Actif",
+        "statusPaused": "En pause",
+        "statusHelp": "Un programme en pause n'attribue plus de nouvelles commissions."
+      }
+    },
+    "stats": {
+      "clicks": "Clics",
+      "conversions": "Conversions",
+      "conversionRate": "taux de conversion",
+      "pending": "En attente",
+      "total": "Total commissions",
+      "paid": "payé",
+      "conversionsCount": "conversions"
+    },
     "new": {
       "title": "Créer un lien affilié",
       "subtitle": "Crée un lien personnel pour une personne qui va promouvoir ton offre."
@@ -3010,6 +3060,8 @@
       "deactivate": "Désactiver",
       "payouts": "Versements",
       "stats": {
+        "clicks": "Clics",
+        "conversions": "Conversions",
         "referrals": "Total parrainages",
         "commission": "Taux de commission",
         "totalEarnings": "Gains totaux",
