@@ -230,6 +230,16 @@ export class StripeWebhookService {
           `Failed to track VIP sales for org ${context.organizationId}: ${(error as Error).message}`,
         );
       }
+
+      // Backfill Stripe IDs on AffiliateReferral if missing
+      // This is needed because checkout.session.completed might fire before payment is confirmed
+      if (context.subscriptionId) {
+        await this.backfillAffiliateStripeIds(
+          context.subscriptionId,
+          invoice,
+          event.account ?? undefined,
+        );
+      }
     }
 
     try {
@@ -575,6 +585,10 @@ export class StripeWebhookService {
     // Mode subscription: payment_intent is on the invoice, not on the session
     if (session.mode === 'subscription' && typeof session.subscription === 'string') {
       try {
+        this.logger.debug(
+          `Retrieving subscription ${session.subscription} for payment IDs`,
+        );
+
         // Retrieve subscription with expanded latest_invoice.payment_intent
         const subscription = await this.stripe.subscriptions.retrieve(
           session.subscription,
@@ -582,18 +596,26 @@ export class StripeWebhookService {
           stripeOpts,
         );
 
+        this.logger.debug(
+          `Subscription retrieved: latest_invoice=${typeof subscription.latest_invoice === 'object' ? subscription.latest_invoice?.id : subscription.latest_invoice}`,
+        );
+
         const invoice = subscription.latest_invoice;
         if (!invoice || typeof invoice === 'string') {
           this.logger.warn(
-            `Subscription ${session.subscription} has no expanded latest_invoice`,
+            `Subscription ${session.subscription} has no expanded latest_invoice (got: ${typeof invoice})`,
           );
           return { stripeAccount };
         }
 
         const paymentIntent = invoice.payment_intent;
+        this.logger.debug(
+          `Invoice ${invoice.id}: payment_intent=${typeof paymentIntent === 'object' ? paymentIntent?.id : paymentIntent}, status=${invoice.status}`,
+        );
+
         if (!paymentIntent) {
           this.logger.warn(
-            `Invoice ${invoice.id} has no payment_intent (trial or free?)`,
+            `Invoice ${invoice.id} has no payment_intent (trial, free, or pending?)`,
           );
           return { stripeAccount };
         }
@@ -601,24 +623,22 @@ export class StripeWebhookService {
         const paymentIntentId =
           typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id;
 
-        // Get charge ID from payment intent
+        // Get charge ID from payment intent - always fetch to ensure we have latest_charge
         let chargeId: string | undefined;
-        if (typeof paymentIntent === 'object' && paymentIntent.latest_charge) {
-          chargeId = this.extractChargeId(paymentIntent.latest_charge) ?? undefined;
-        } else if (typeof paymentIntent === 'string') {
-          // Need to fetch the payment intent to get the charge
-          try {
-            const pi = await this.stripe.paymentIntents.retrieve(
-              paymentIntent,
-              { expand: ['latest_charge'] },
-              stripeOpts,
-            );
-            chargeId = this.extractChargeId(pi.latest_charge) ?? undefined;
-          } catch (piError) {
-            this.logger.warn(
-              `Failed to retrieve PaymentIntent ${paymentIntent}: ${(piError as Error).message}`,
-            );
-          }
+        try {
+          const pi = await this.stripe.paymentIntents.retrieve(
+            paymentIntentId,
+            { expand: ['latest_charge'] },
+            stripeOpts,
+          );
+          this.logger.debug(
+            `PaymentIntent ${paymentIntentId}: status=${pi.status}, latest_charge=${typeof pi.latest_charge === 'object' ? pi.latest_charge?.id : pi.latest_charge}`,
+          );
+          chargeId = this.extractChargeId(pi.latest_charge) ?? undefined;
+        } catch (piError) {
+          this.logger.warn(
+            `Failed to retrieve PaymentIntent ${paymentIntentId}: ${(piError as Error).message}`,
+          );
         }
 
         return {
@@ -649,6 +669,102 @@ export class StripeWebhookService {
     if (!charge) return null;
     if (typeof charge === 'string') return charge;
     return charge.id;
+  }
+
+  /**
+   * Backfill Stripe IDs on AffiliateReferral when invoice.payment_succeeded fires
+   * This is needed because checkout.session.completed might fire before payment is confirmed
+   */
+  private async backfillAffiliateStripeIds(
+    subscriptionId: string,
+    invoice: Stripe.Invoice,
+    stripeAccount?: string,
+  ): Promise<void> {
+    try {
+      // Check if there's an AffiliateReferral missing Stripe IDs
+      const referral = await this.prisma.affiliateReferral.findUnique({
+        where: { subscriptionId },
+        select: {
+          id: true,
+          stripePaymentIntentId: true,
+          stripeChargeId: true,
+        },
+      });
+
+      if (!referral) {
+        return; // No affiliate referral for this subscription
+      }
+
+      // Skip if IDs are already set
+      if (referral.stripePaymentIntentId && referral.stripeChargeId) {
+        this.logger.debug(
+          `AffiliateReferral ${referral.id} already has Stripe IDs, skipping backfill`,
+        );
+        return;
+      }
+
+      // Get payment_intent from invoice
+      const paymentIntentId =
+        typeof invoice.payment_intent === 'string'
+          ? invoice.payment_intent
+          : invoice.payment_intent?.id;
+
+      if (!paymentIntentId) {
+        this.logger.warn(
+          `Invoice ${invoice.id} has no payment_intent, cannot backfill AffiliateReferral ${referral.id}`,
+        );
+        return;
+      }
+
+      // Retrieve PaymentIntent to get latest_charge
+      const stripeOpts = stripeAccount ? { stripeAccount } : undefined;
+      let chargeId: string | null = null;
+
+      try {
+        const pi = await this.stripe.paymentIntents.retrieve(
+          paymentIntentId,
+          { expand: ['latest_charge'] },
+          stripeOpts,
+        );
+        chargeId = this.extractChargeId(pi.latest_charge);
+
+        this.logger.debug(
+          `Backfill: PaymentIntent ${paymentIntentId} has latest_charge=${chargeId}`,
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Failed to retrieve PaymentIntent ${paymentIntentId} for backfill: ${(error as Error).message}`,
+        );
+      }
+
+      // Update AffiliateReferral with Stripe IDs
+      const updateData: { stripePaymentIntentId?: string; stripeChargeId?: string } = {};
+
+      if (!referral.stripePaymentIntentId && paymentIntentId) {
+        updateData.stripePaymentIntentId = paymentIntentId;
+      }
+      if (!referral.stripeChargeId && chargeId) {
+        updateData.stripeChargeId = chargeId;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await this.prisma.affiliateReferral.update({
+          where: { id: referral.id },
+          data: updateData,
+        });
+
+        this.logger.log(
+          `Backfilled AffiliateReferral ${referral.id}: ` +
+            `stripePaymentIntentId=${updateData.stripePaymentIntentId ?? 'unchanged'}, ` +
+            `stripeChargeId=${updateData.stripeChargeId ?? 'unchanged'}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to backfill Stripe IDs for subscription ${subscriptionId}`,
+        error as Error,
+      );
+    }
   }
 
   private async processAffiliateAndCoupon(

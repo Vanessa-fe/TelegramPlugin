@@ -1192,9 +1192,16 @@ describe('StripeWebhookService', () => {
           id: 'in_test_123',
           payment_intent: {
             id: 'pi_from_invoice',
-            latest_charge: 'ch_from_invoice',
+            // latest_charge might not be expanded in the subscription response
           },
         },
+      } as any);
+
+      // The code always fetches PaymentIntent to get latest_charge
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_from_invoice',
+        status: 'succeeded',
+        latest_charge: 'ch_from_invoice',
       } as any);
 
       const result = await (service as any).resolveStripePaymentIds(
@@ -1205,6 +1212,11 @@ describe('StripeWebhookService', () => {
       expect(mockStripe.subscriptions.retrieve).toHaveBeenCalledWith(
         'sub_test_123',
         { expand: ['latest_invoice.payment_intent'] },
+        { stripeAccount: 'acct_123' },
+      );
+      expect(mockStripe.paymentIntents.retrieve).toHaveBeenCalledWith(
+        'pi_from_invoice',
+        { expand: ['latest_charge'] },
         { stripeAccount: 'acct_123' },
       );
       expect(result).toEqual({
