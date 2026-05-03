@@ -27,7 +27,7 @@ interface TicketMessage {
   content: string;
   isInternal: boolean;
   createdAt: string;
-  author: {
+  author?: {
     id: string;
     email: string;
     name: string | null;
@@ -43,12 +43,12 @@ interface TicketDetail {
   createdAt: string;
   updatedAt: string;
   closedAt: string | null;
-  organization: {
+  organization?: {
     id: string;
     name: string;
-    billingEmail: string;
+    billingEmail: string | null;
   };
-  assignedTo: {
+  assignedTo?: {
     id: string;
     email: string;
     name: string | null;
@@ -181,6 +181,8 @@ export default function AdminTicketDetailPage() {
   const status = statusConfig[ticket.status];
   const priority = priorityConfig[ticket.priority];
   const StatusIcon = status.icon;
+  const organizationName = ticket.organization?.name || 'Organisation inconnue';
+  const organizationEmail = ticket.organization?.billingEmail || 'Non renseigné';
 
   return (
     <div className="space-y-6">
@@ -218,7 +220,7 @@ export default function AdminTicketDetailPage() {
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <Building2 className="h-4 w-4" />
-                    {ticket.organization.name}
+                    {organizationName}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
@@ -239,7 +241,9 @@ export default function AdminTicketDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {ticket.messages.map((message) => {
-                const isAdmin = message.author.role === 'SUPERADMIN' || message.author.role === 'SUPPORT';
+                const authorName = message.author?.name || message.author?.email || 'Utilisateur inconnu';
+                const isAdmin =
+                  message.author?.role === 'SUPERADMIN' || message.author?.role === 'SUPPORT';
 
                 return (
                   <div
@@ -256,7 +260,7 @@ export default function AdminTicketDetailPage() {
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-400" />
                         <span className="text-sm font-medium">
-                          {message.author.name || message.author.email}
+                          {authorName}
                         </span>
                         {isAdmin && (
                           <span className="rounded bg-purple-100 px-1.5 py-0.5 text-xs text-purple-700">
@@ -388,17 +392,18 @@ export default function AdminTicketDetailPage() {
             <CardContent className="space-y-3">
               <div>
                 <p className="text-sm text-gray-500">Nom</p>
-                <p className="font-medium">{ticket.organization.name}</p>
+                <p className="font-medium">{organizationName}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium">{ticket.organization.billingEmail}</p>
+                <p className="font-medium">{organizationEmail}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={() => router.push(`/admin/creators/${ticket.organization.id}`)}
+                onClick={() => ticket.organization?.id && router.push(`/admin/creators/${ticket.organization.id}`)}
+                disabled={!ticket.organization?.id}
               >
                 Voir la fiche créateur
               </Button>

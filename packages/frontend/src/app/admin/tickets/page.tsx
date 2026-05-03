@@ -29,16 +29,16 @@ interface TicketItem {
   createdAt: string;
   updatedAt: string;
   closedAt: string | null;
-  organization: {
+  organization?: {
     id: string;
     name: string;
   };
-  assignedTo: {
+  assignedTo?: {
     id: string;
     email: string;
     name: string | null;
   } | null;
-  _count: {
+  _count?: {
     messages: number;
   };
 }
@@ -266,6 +266,9 @@ export default function AdminTicketsPage() {
             const status = statusConfig[ticket.status];
             const priority = priorityConfig[ticket.priority];
             const StatusIcon = status.icon;
+            const organizationName = ticket.organization?.name || 'Organisation inconnue';
+            const assigneeName = ticket.assignedTo?.name || ticket.assignedTo?.email || 'Non assigné';
+            const messageCount = ticket._count?.messages ?? 0;
 
             return (
               <Link
@@ -293,17 +296,17 @@ export default function AdminTicketsPage() {
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                       <span className="flex items-center gap-1">
                         <Building2 className="h-4 w-4" />
-                        {ticket.organization.name}
+                        {organizationName}
                       </span>
                       {ticket.assignedTo && (
                         <span className="flex items-center gap-1">
                           <User className="h-4 w-4" />
-                          {ticket.assignedTo.name || ticket.assignedTo.email}
+                          {assigneeName}
                         </span>
                       )}
                       <span className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
-                        {ticket._count.messages} message{ticket._count.messages > 1 ? 's' : ''}
+                        {messageCount} message{messageCount > 1 ? 's' : ''}
                       </span>
                     </div>
                   </div>

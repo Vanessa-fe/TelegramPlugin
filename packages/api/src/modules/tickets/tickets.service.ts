@@ -21,16 +21,15 @@ export interface TicketWithMessages extends Ticket {
     author: {
       id: string;
       email: string;
-      firstName: string | null;
-      lastName: string | null;
+      name: string | null;
+      role: string;
     };
   })[];
-  organization: { id: string; name: string };
+  organization: { id: string; name: string; billingEmail: string };
   assignedTo: {
     id: string;
     email: string;
-    firstName: string | null;
-    lastName: string | null;
+    name: string | null;
   } | null;
   _count: { messages: number };
 }
@@ -40,10 +39,9 @@ export interface TicketListItem {
   subject: string;
   status: TicketStatus;
   priority: TicketPriority;
-  organizationId: string;
-  organizationName: string;
-  assignedTo: { id: string; email: string } | null;
-  messagesCount: number;
+  organization: { id: string; name: string };
+  assignedTo: { id: string; email: string; name: string | null } | null;
+  _count: { messages: number };
   createdAt: Date;
   updatedAt: Date;
   closedAt: Date | null;
@@ -52,6 +50,17 @@ export interface TicketListItem {
 @Injectable()
 export class TicketsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private buildDisplayName(user: {
+    firstName?: string | null;
+    lastName?: string | null;
+  }): string | null {
+    const parts = [user.firstName?.trim(), user.lastName?.trim()].filter(
+      (value): value is string => Boolean(value),
+    );
+
+    return parts.length > 0 ? parts.join(' ') : null;
+  }
 
   /**
    * Create a new ticket (called by creator)
@@ -100,7 +109,9 @@ export class TicketsService {
         where,
         include: {
           organization: { select: { id: true, name: true } },
-          assignedTo: { select: { id: true, email: true } },
+          assignedTo: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
           _count: { select: { messages: true } },
         },
         orderBy: [
@@ -120,10 +131,15 @@ export class TicketsService {
         subject: t.subject,
         status: t.status,
         priority: t.priority,
-        organizationId: t.organizationId,
-        organizationName: t.organization.name,
-        assignedTo: t.assignedTo,
-        messagesCount: t._count.messages,
+        organization: t.organization,
+        assignedTo: t.assignedTo
+          ? {
+              id: t.assignedTo.id,
+              email: t.assignedTo.email,
+              name: this.buildDisplayName(t.assignedTo),
+            }
+          : null,
+        _count: { messages: t._count.messages },
         createdAt: t.createdAt,
         updatedAt: t.updatedAt,
         closedAt: t.closedAt,
@@ -146,7 +162,9 @@ export class TicketsService {
         where,
         include: {
           organization: { select: { id: true, name: true } },
-          assignedTo: { select: { id: true, email: true } },
+          assignedTo: {
+            select: { id: true, email: true, firstName: true, lastName: true },
+          },
           _count: { select: { messages: true } },
         },
         orderBy: { updatedAt: 'desc' },
@@ -162,10 +180,15 @@ export class TicketsService {
         subject: t.subject,
         status: t.status,
         priority: t.priority,
-        organizationId: t.organizationId,
-        organizationName: t.organization.name,
-        assignedTo: t.assignedTo,
-        messagesCount: t._count.messages,
+        organization: t.organization,
+        assignedTo: t.assignedTo
+          ? {
+              id: t.assignedTo.id,
+              email: t.assignedTo.email,
+              name: this.buildDisplayName(t.assignedTo),
+            }
+          : null,
+        _count: { messages: t._count.messages },
         createdAt: t.createdAt,
         updatedAt: t.updatedAt,
         closedAt: t.closedAt,
@@ -184,7 +207,9 @@ export class TicketsService {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
       include: {
-        organization: { select: { id: true, name: true } },
+        organization: {
+          select: { id: true, name: true, billingEmail: true },
+        },
         assignedTo: {
           select: { id: true, email: true, firstName: true, lastName: true },
         },
@@ -197,6 +222,7 @@ export class TicketsService {
                 email: true,
                 firstName: true,
                 lastName: true,
+                role: true,
               },
             },
           },
@@ -210,7 +236,25 @@ export class TicketsService {
       throw new NotFoundException('Ticket not found');
     }
 
-    return ticket;
+    return {
+      ...ticket,
+      assignedTo: ticket.assignedTo
+        ? {
+            id: ticket.assignedTo.id,
+            email: ticket.assignedTo.email,
+            name: this.buildDisplayName(ticket.assignedTo),
+          }
+        : null,
+      messages: ticket.messages.map((message) => ({
+        ...message,
+        author: {
+          id: message.author.id,
+          email: message.author.email,
+          name: this.buildDisplayName(message.author),
+          role: message.author.role,
+        },
+      })),
+    };
   }
 
   /**
