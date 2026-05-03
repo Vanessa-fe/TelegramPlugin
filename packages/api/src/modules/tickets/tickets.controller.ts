@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   Controller,
+  ForbiddenException,
   Get,
   Post,
   Patch,
@@ -9,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserRole, TicketStatus, TicketPriority } from '@prisma/client';
+import type { AuthUser } from '../auth/auth.types';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -22,13 +25,6 @@ import {
   type UpdateTicketDto,
   type CreateMessageDto,
 } from './tickets.schema';
-
-interface AuthUser {
-  id: string;
-  email: string;
-  role: UserRole;
-  organizationId: string | null;
-}
 
 @Controller('tickets')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -82,7 +78,7 @@ export class TicketsController {
     @CurrentUser() user: AuthUser,
   ) {
     const dto = createMessageSchema.parse(body);
-    return this.ticketsService.addMessage(id, user.id, dto);
+    return this.ticketsService.addMessage(id, user.userId, dto);
   }
 
   // ========== Creator Endpoints ==========
@@ -110,10 +106,10 @@ export class TicketsController {
     @CurrentUser() user: AuthUser,
   ) {
     if (!user.organizationId) {
-      throw new Error('User must belong to an organization');
+      throw new BadRequestException('User must belong to an organization');
     }
     const dto = createTicketSchema.parse(body);
-    return this.ticketsService.create(user.organizationId, user.id, dto);
+    return this.ticketsService.create(user.organizationId, user.userId, dto);
   }
 
   @Get(':id')
@@ -125,7 +121,7 @@ export class TicketsController {
 
     // Verify the ticket belongs to the user's organization
     if (user.organizationId && ticket.organizationId !== user.organizationId) {
-      throw new Error('You cannot access this ticket');
+      throw new ForbiddenException('You cannot access this ticket');
     }
 
     return ticket;
@@ -139,12 +135,12 @@ export class TicketsController {
     @CurrentUser() user: AuthUser,
   ) {
     if (!user.organizationId) {
-      throw new Error('User must belong to an organization');
+      throw new BadRequestException('User must belong to an organization');
     }
     const dto = createMessageSchema.parse(body);
     // Force isInternal to false for creators
     dto.isInternal = false;
-    return this.ticketsService.addMessage(id, user.id, dto, {
+    return this.ticketsService.addMessage(id, user.userId, dto, {
       checkOrganization: user.organizationId,
     });
   }
