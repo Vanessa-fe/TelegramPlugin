@@ -58,6 +58,9 @@ describe('StripeWebhookService', () => {
     paymentIntents: {
       retrieve: jest.fn(),
     },
+    subscriptions: {
+      retrieve: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -1150,11 +1153,8 @@ describe('StripeWebhookService', () => {
       prisma.$transaction.mockImplementation(async (operations) => {
         return Promise.all(operations);
       });
-      mockStripe.paymentIntents.retrieve.mockResolvedValue({
-        id: 'pi_test_123',
-        latest_charge: 'ch_test_456',
-      } as any);
 
+      // Now stripeChargeId is pre-resolved and passed directly
       await (service as any).processAffiliateAndCoupon(
         subscriptionId,
         {
@@ -1164,20 +1164,83 @@ describe('StripeWebhookService', () => {
         },
         {
           stripePaymentIntentId: 'pi_test_123',
+          stripeChargeId: 'ch_test_456',
           stripeAccount: 'acct_123',
         },
       );
 
-      expect(mockStripe.paymentIntents.retrieve).toHaveBeenCalledWith(
-        'pi_test_123',
-        { expand: ['latest_charge'] },
-        { stripeAccount: 'acct_123' },
-      );
       expect(prisma.affiliateReferral.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           stripePaymentIntentId: 'pi_test_123',
           stripeChargeId: 'ch_test_456',
         }),
+      });
+    });
+
+    it('should resolve payment IDs from subscription mode checkout via invoice', async () => {
+      // Test resolveStripePaymentIds for subscription mode
+      const session = {
+        id: 'cs_test_sub',
+        mode: 'subscription',
+        payment_intent: null,
+        subscription: 'sub_test_123',
+      } as Stripe.Checkout.Session;
+
+      mockStripe.subscriptions.retrieve.mockResolvedValue({
+        id: 'sub_test_123',
+        latest_invoice: {
+          id: 'in_test_123',
+          payment_intent: {
+            id: 'pi_from_invoice',
+            latest_charge: 'ch_from_invoice',
+          },
+        },
+      } as any);
+
+      const result = await (service as any).resolveStripePaymentIds(
+        session,
+        'acct_123',
+      );
+
+      expect(mockStripe.subscriptions.retrieve).toHaveBeenCalledWith(
+        'sub_test_123',
+        { expand: ['latest_invoice.payment_intent'] },
+        { stripeAccount: 'acct_123' },
+      );
+      expect(result).toEqual({
+        stripePaymentIntentId: 'pi_from_invoice',
+        stripeChargeId: 'ch_from_invoice',
+        stripeAccount: 'acct_123',
+      });
+    });
+
+    it('should resolve payment IDs from payment mode checkout directly', async () => {
+      const session = {
+        id: 'cs_test_payment',
+        mode: 'payment',
+        payment_intent: 'pi_direct_123',
+        subscription: null,
+      } as Stripe.Checkout.Session;
+
+      mockStripe.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_direct_123',
+        latest_charge: { id: 'ch_direct_456' },
+      } as any);
+
+      const result = await (service as any).resolveStripePaymentIds(
+        session,
+        'acct_123',
+      );
+
+      expect(mockStripe.paymentIntents.retrieve).toHaveBeenCalledWith(
+        'pi_direct_123',
+        { expand: ['latest_charge'] },
+        { stripeAccount: 'acct_123' },
+      );
+      expect(result).toEqual({
+        stripePaymentIntentId: 'pi_direct_123',
+        stripeChargeId: 'ch_direct_456',
+        stripeAccount: 'acct_123',
       });
     });
   });

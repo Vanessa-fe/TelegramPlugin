@@ -492,6 +492,13 @@ export class StripeWebhookService {
     subscriptionId: string,
     stripeAccount?: string,
   ): Promise<void> {
+    this.logger.debug(
+      `syncSubscriptionFromCheckout: sessionId=${session.id}, mode=${session.mode}, ` +
+        `payment_intent=${session.payment_intent ?? 'null'}, ` +
+        `subscription=${session.subscription ?? 'null'}, ` +
+        `stripeAccount=${stripeAccount ?? 'null'}`,
+    );
+
     const update: Prisma.SubscriptionUpdateInput = {};
 
     if (typeof session.subscription === 'string') {
@@ -510,17 +517,138 @@ export class StripeWebhookService {
     }
 
     // Extract Stripe IDs for refund matching
-    const stripePaymentIntentId =
-      typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : undefined;
+    // For payment mode: session.payment_intent is set directly
+    // For subscription mode: payment_intent is null, need to get from subscription.latest_invoice
+    const stripeIds = await this.resolveStripePaymentIds(session, stripeAccount);
+
+    this.logger.debug(
+      `Resolved Stripe IDs: paymentIntentId=${stripeIds.stripePaymentIntentId ?? 'null'}, ` +
+        `chargeId=${stripeIds.stripeChargeId ?? 'null'}`,
+    );
 
     // Process affiliate referral and coupon usage from metadata
     const metadata = session.metadata ?? {};
-    await this.processAffiliateAndCoupon(subscriptionId, metadata, {
-      stripePaymentIntentId,
-      stripeAccount,
-    });
+    await this.processAffiliateAndCoupon(subscriptionId, metadata, stripeIds);
+  }
+
+  /**
+   * Resolve Stripe payment IDs from checkout session
+   * Handles both payment mode (direct payment_intent) and subscription mode (via invoice)
+   */
+  private async resolveStripePaymentIds(
+    session: Stripe.Checkout.Session,
+    stripeAccount?: string,
+  ): Promise<{
+    stripePaymentIntentId?: string;
+    stripeChargeId?: string;
+    stripeAccount?: string;
+  }> {
+    const stripeOpts = stripeAccount ? { stripeAccount } : undefined;
+
+    // Mode payment: payment_intent is directly on the session
+    if (session.mode === 'payment' && typeof session.payment_intent === 'string') {
+      try {
+        const paymentIntent = await this.stripe.paymentIntents.retrieve(
+          session.payment_intent,
+          { expand: ['latest_charge'] },
+          stripeOpts,
+        );
+
+        const chargeId = this.extractChargeId(paymentIntent.latest_charge);
+
+        return {
+          stripePaymentIntentId: session.payment_intent,
+          stripeChargeId: chargeId ?? undefined,
+          stripeAccount,
+        };
+      } catch (error) {
+        this.logger.warn(
+          `Failed to retrieve PaymentIntent ${session.payment_intent}: ${(error as Error).message}`,
+        );
+        return {
+          stripePaymentIntentId: session.payment_intent,
+          stripeAccount,
+        };
+      }
+    }
+
+    // Mode subscription: payment_intent is on the invoice, not on the session
+    if (session.mode === 'subscription' && typeof session.subscription === 'string') {
+      try {
+        // Retrieve subscription with expanded latest_invoice.payment_intent
+        const subscription = await this.stripe.subscriptions.retrieve(
+          session.subscription,
+          { expand: ['latest_invoice.payment_intent'] },
+          stripeOpts,
+        );
+
+        const invoice = subscription.latest_invoice;
+        if (!invoice || typeof invoice === 'string') {
+          this.logger.warn(
+            `Subscription ${session.subscription} has no expanded latest_invoice`,
+          );
+          return { stripeAccount };
+        }
+
+        const paymentIntent = invoice.payment_intent;
+        if (!paymentIntent) {
+          this.logger.warn(
+            `Invoice ${invoice.id} has no payment_intent (trial or free?)`,
+          );
+          return { stripeAccount };
+        }
+
+        const paymentIntentId =
+          typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id;
+
+        // Get charge ID from payment intent
+        let chargeId: string | undefined;
+        if (typeof paymentIntent === 'object' && paymentIntent.latest_charge) {
+          chargeId = this.extractChargeId(paymentIntent.latest_charge) ?? undefined;
+        } else if (typeof paymentIntent === 'string') {
+          // Need to fetch the payment intent to get the charge
+          try {
+            const pi = await this.stripe.paymentIntents.retrieve(
+              paymentIntent,
+              { expand: ['latest_charge'] },
+              stripeOpts,
+            );
+            chargeId = this.extractChargeId(pi.latest_charge) ?? undefined;
+          } catch (piError) {
+            this.logger.warn(
+              `Failed to retrieve PaymentIntent ${paymentIntent}: ${(piError as Error).message}`,
+            );
+          }
+        }
+
+        return {
+          stripePaymentIntentId: paymentIntentId,
+          stripeChargeId: chargeId,
+          stripeAccount,
+        };
+      } catch (error) {
+        this.logger.warn(
+          `Failed to retrieve subscription ${session.subscription}: ${(error as Error).message}`,
+        );
+        return { stripeAccount };
+      }
+    }
+
+    this.logger.warn(
+      `Could not resolve Stripe payment IDs for session ${session.id} (mode=${session.mode})`,
+    );
+    return { stripeAccount };
+  }
+
+  /**
+   * Extract charge ID from a Stripe charge reference (string or object)
+   */
+  private extractChargeId(
+    charge: string | Stripe.Charge | null | undefined,
+  ): string | null {
+    if (!charge) return null;
+    if (typeof charge === 'string') return charge;
+    return charge.id;
   }
 
   private async processAffiliateAndCoupon(
@@ -528,6 +656,7 @@ export class StripeWebhookService {
     metadata: Record<string, string>,
     stripeIds?: {
       stripePaymentIntentId?: string;
+      stripeChargeId?: string;
       stripeAccount?: string;
     },
   ): Promise<void> {
@@ -628,28 +757,16 @@ export class StripeWebhookService {
             // Get productId from the subscription's plan
             const productId = subscription.plan.productId;
 
-            // Fetch stripeChargeId from PaymentIntent if available
-            let stripeChargeId: string | null = null;
-            if (stripeIds?.stripePaymentIntentId) {
-              try {
-                const paymentIntent = await this.stripe.paymentIntents.retrieve(
-                  stripeIds.stripePaymentIntentId,
-                  { expand: ['latest_charge'] },
-                  stripeIds.stripeAccount
-                    ? { stripeAccount: stripeIds.stripeAccount }
-                    : undefined,
-                );
-                const latestCharge = paymentIntent.latest_charge;
-                if (typeof latestCharge === 'string') {
-                  stripeChargeId = latestCharge;
-                } else if (latestCharge && typeof latestCharge === 'object') {
-                  stripeChargeId = latestCharge.id;
-                }
-              } catch (error) {
-                this.logger.warn(
-                  `Failed to retrieve PaymentIntent ${stripeIds.stripePaymentIntentId} for charge ID: ${(error as Error).message}`,
-                );
-              }
+            // Use pre-resolved Stripe IDs from checkout session
+            const stripePaymentIntentId = stripeIds?.stripePaymentIntentId ?? null;
+            const stripeChargeId = stripeIds?.stripeChargeId ?? null;
+
+            // Warn if IDs couldn't be resolved (will make refund matching harder)
+            if (!stripePaymentIntentId && !stripeChargeId) {
+              this.logger.warn(
+                `AffiliateReferral created without Stripe payment IDs; refunds may not be matched. ` +
+                  `subscriptionId=${subscriptionId}, affiliateId=${affiliateId}`,
+              );
             }
 
             await this.prisma.$transaction([
@@ -664,7 +781,7 @@ export class StripeWebhookService {
                   commissionCents,
                   currency: subscription.plan.currency.toLowerCase(),
                   status: ConversionStatus.PENDING,
-                  stripePaymentIntentId: stripeIds?.stripePaymentIntentId ?? null,
+                  stripePaymentIntentId,
                   stripeChargeId,
                 },
               }),
@@ -677,11 +794,11 @@ export class StripeWebhookService {
               }),
             ]);
 
-            this.logger.debug(
-              `Recorded affiliate referral for subscription ${subscriptionId}, ` +
-                `commission: ${commissionCents} cents, status: PENDING, ` +
-                `stripePaymentIntentId: ${stripeIds?.stripePaymentIntentId ?? 'null'}, ` +
-                `stripeChargeId: ${stripeChargeId ?? 'null'}`,
+            this.logger.log(
+              `AffiliateReferral created: subscriptionId=${subscriptionId}, ` +
+                `commission=${commissionCents} cents, status=PENDING, ` +
+                `stripePaymentIntentId=${stripePaymentIntentId ?? 'null'}, ` +
+                `stripeChargeId=${stripeChargeId ?? 'null'}`,
             );
           }
         }
