@@ -273,6 +273,8 @@
       "emailPlaceholder": "you@example.com",
       "password": "Password",
       "passwordPlaceholder": "••••••••",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "forgotPassword": "Forgot password?",
       "submit": "Sign in",
       "submitting": "Signing in...",
