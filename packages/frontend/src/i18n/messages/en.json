@@ -611,6 +611,18 @@
         "createSuccess": "Plan created successfully",
         "createError": "Failed to create plan"
       }
+    },
+    "editPage": {
+      "loading": "Loading...",
+      "notFound": "Plan not found",
+      "backToPlans": "Back to plans",
+      "title": "Edit plan",
+      "subtitle": "Edit {planName} for {productName}",
+      "toast": {
+        "loadError": "Failed to load plan",
+        "updateSuccess": "Plan updated successfully",
+        "updateError": "Failed to update plan"
+      }
     }
   },
   "intervals": {

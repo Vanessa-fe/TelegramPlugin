@@ -611,6 +611,18 @@
         "createSuccess": "Plan créé avec succès",
         "createError": "Erreur lors de la création du plan"
       }
+    },
+    "editPage": {
+      "loading": "Chargement...",
+      "notFound": "Formule introuvable",
+      "backToPlans": "Retour aux formules",
+      "title": "Modifier la formule",
+      "subtitle": "Modifier {planName} pour {productName}",
+      "toast": {
+        "loadError": "Erreur lors du chargement de la formule",
+        "updateSuccess": "Formule mise à jour avec succès",
+        "updateError": "Erreur lors de la mise à jour de la formule"
+      }
     }
   },
   "intervals": {
