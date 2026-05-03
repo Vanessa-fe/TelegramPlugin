@@ -13,9 +13,12 @@ export declare class AffiliatesController {
         currency: string;
         createdAt: Date;
         status: import("@prisma/client").$Enums.ConversionStatus;
+        stripeSubscriptionId: string | null;
         productId: string | null;
         customerId: string;
         subscriptionId: string;
+        stripePaymentIntentId: string | null;
+        stripeChargeId: string | null;
         affiliateId: string;
         clickId: string | null;
         amountCents: number;
@@ -24,6 +27,8 @@ export declare class AffiliatesController {
         approvedAt: Date | null;
         paidAt: Date | null;
         cancelledAt: Date | null;
+        stripeCheckoutSessionId: string | null;
+        stripeInvoiceId: string | null;
     }[]>;
     getPayouts(user: AuthUser, id: string): Promise<{
         id: string;
@@ -133,9 +138,12 @@ export declare class AffiliatesController {
         currency: string;
         createdAt: Date;
         status: import("@prisma/client").$Enums.ConversionStatus;
+        stripeSubscriptionId: string | null;
         productId: string | null;
         customerId: string;
         subscriptionId: string;
+        stripePaymentIntentId: string | null;
+        stripeChargeId: string | null;
         affiliateId: string;
         clickId: string | null;
         amountCents: number;
@@ -144,15 +152,20 @@ export declare class AffiliatesController {
         approvedAt: Date | null;
         paidAt: Date | null;
         cancelledAt: Date | null;
+        stripeCheckoutSessionId: string | null;
+        stripeInvoiceId: string | null;
     }>;
     cancelReferral(user: AuthUser, referralId: string): Promise<{
         id: string;
         currency: string;
         createdAt: Date;
         status: import("@prisma/client").$Enums.ConversionStatus;
+        stripeSubscriptionId: string | null;
         productId: string | null;
         customerId: string;
         subscriptionId: string;
+        stripePaymentIntentId: string | null;
+        stripeChargeId: string | null;
         affiliateId: string;
         clickId: string | null;
         amountCents: number;
@@ -161,5 +174,7 @@ export declare class AffiliatesController {
         approvedAt: Date | null;
         paidAt: Date | null;
         cancelledAt: Date | null;
+        stripeCheckoutSessionId: string | null;
+        stripeInvoiceId: string | null;
     }>;
 }

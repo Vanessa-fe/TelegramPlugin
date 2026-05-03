@@ -743,9 +743,12 @@ model AffiliateReferral {
   cancelledAt     DateTime?
   createdAt       DateTime         @default(now())
 
-  // Stripe IDs for refund matching (one-time payments don't have invoice/subscription)
-  stripePaymentIntentId String? // pi_... from checkout session
-  stripeChargeId        String? // ch_... from payment intent latest_charge
+  // Stripe IDs for refund matching
+  stripeCheckoutSessionId String? // cs_... stored at checkout
+  stripeInvoiceId         String? // in_... available immediately for subscriptions
+  stripeSubscriptionId    String? // sub_... Stripe subscription ID
+  stripePaymentIntentId   String? // pi_... backfilled from payment_intent.succeeded
+  stripeChargeId          String? // ch_... backfilled from payment_intent.succeeded
 
   affiliate    Affiliate       @relation(fields: [affiliateId], references: [id])
   subscription Subscription    @relation(fields: [subscriptionId], references: [id])
@@ -755,6 +758,9 @@ model AffiliateReferral {
   @@index([affiliateId, status])
   @@index([affiliateId, isPaid])
   @@index([status, createdAt])
+  @@index([stripeCheckoutSessionId])
+  @@index([stripeInvoiceId])
+  @@index([stripeSubscriptionId])
   @@index([stripePaymentIntentId])
   @@index([stripeChargeId])
 }
