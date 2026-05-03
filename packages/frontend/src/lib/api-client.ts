@@ -3,6 +3,7 @@ import axios, { type AxiosRequestConfig } from 'axios';
 // Use /api proxy in production to avoid third-party cookie issues
 // In development, use the direct API URL
 const isServer = typeof window === 'undefined';
+export const AUTH_EXPIRED_EVENT = 'auth:expired';
 const baseURL = isServer
   ? process.env.NEXT_PUBLIC_API_URL // SSR uses direct URL
   : '/api'; // Client uses proxy to avoid CORS/cookie issues
@@ -14,6 +15,27 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+let refreshPromise: Promise<void> | null = null;
+
+async function refreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = apiClient
+      .post('/auth/refresh', {})
+      .then(() => undefined)
+      .catch((error) => {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+        }
+        throw error;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
 
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
@@ -33,14 +55,12 @@ apiClient.interceptors.response.use(
       !refreshBlocked
     ) {
       originalRequest._retry = true;
-      // Try refresh token
+
       try {
-        await apiClient.post('/auth/refresh', {});
-        // Retry original request
+        await refreshSession();
         return apiClient(originalRequest);
       } catch {
-        // Refresh failed - let the error bubble up
-        // ProtectedRoute will handle redirect for protected pages
+        // ProtectedRoute/AdminRoute will redirect once auth state is cleared.
       }
     }
     return Promise.reject(error);

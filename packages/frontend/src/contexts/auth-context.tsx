@@ -1,6 +1,7 @@
 "use client";
 
 import { authApi } from "@/lib/api/auth";
+import { AUTH_EXPIRED_EVENT } from "@/lib/api-client";
 import type {
   LoginCredentials,
   RegisterData,
@@ -47,6 +48,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    function handleAuthExpired() {
+      setUser(null);
+      setIsLoading(false);
+    }
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
+    };
   }, []);
 
   async function loadUser() {

@@ -519,15 +519,15 @@
       "archived": "Archivée"
     },
     "new": {
-      "title": "Nouveau produit",
-      "subtitle": "Crée un nouveau produit d’abonnement."
+      "title": "Nouvelle offre",
+      "subtitle": "Crée une nouvelle offre."
     },
     "edit": {
       "title": "Modifier l'offre",
       "subtitle": "Mets à jour les informations de l'offre {name}."
     },
     "form": {
-      "title": "Créer un produit",
+      "title": "Créer une offre",
       "titleEdit": "Modifier le produit",
       "organization": {
         "label": "Organisation",
