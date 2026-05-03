@@ -41,7 +41,9 @@ const makePlanFormSchema = (t: (key: string) => string) =>
     isActive: z.boolean().optional(),
   });
 
-type PlanFormData = z.infer<ReturnType<typeof makePlanFormSchema>>;
+type PlanFormSchema = ReturnType<typeof makePlanFormSchema>;
+type PlanFormInput = z.input<PlanFormSchema>;
+type PlanFormData = z.output<PlanFormSchema>;
 
 interface PlanFormProps {
   productId: string;
@@ -78,7 +80,7 @@ export function PlanForm({
     formState: { errors, isSubmitting },
     setValue,
     watch,
-  } = useForm<PlanFormData>({
+  } = useForm<PlanFormInput, unknown, PlanFormData>({
     resolver: zodResolver(planFormSchema),
     shouldUnregister: true,
     defaultValues: plan
