@@ -1371,7 +1371,7 @@
       "step1": "Tes clients paient via Stripe Checkout",
       "step2": "Les fonds arrivent directement sur ton compte Stripe",
       "step3": "Facturation selon ton abonnement",
-      "step4": "Les frais Stripe (1,4% + 0,25€ pour cartes EU) s'appliquent séparément"
+      "step4": "Les frais Stripe s'appliquent séparément"
     },
     "loading": "Chargement de la facturation...",
     "error": "Erreur lors du chargement du statut de facturation",

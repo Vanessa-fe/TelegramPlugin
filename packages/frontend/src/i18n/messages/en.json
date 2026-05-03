@@ -1371,7 +1371,7 @@
       "step1": "Customers pay through Stripe checkout",
       "step2": "Funds go directly to your Stripe account",
       "step3": "Billing according to your subscription",
-      "step4": "Stripe fees (1.4% + €0.25 for EU cards) apply separately"
+      "step4": "Stripe fees apply separately"
     },
     "loading": "Loading billing...",
     "error": "Failed to load billing status",
