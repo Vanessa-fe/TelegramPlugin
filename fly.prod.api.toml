@@ -1,0 +1,32 @@
+# fly.toml app configuration file generated for telegram-plugin-api on 2026-01-14T18:11:07+01:00
+
+
+app = 'sublynk-api'
+primary_region = 'fra'
+
+[build]
+  dockerfile = 'packages/api/Dockerfile'
+
+[deploy]
+  release_command = 'pnpm --filter api prisma:deploy'
+
+[env]
+  NODE_ENV = 'production'
+  PORT = '3000'
+  CHANNEL_ACCESS_QUEUE_ENABLED = 'false'
+  CHANNEL_ACCESS_QUEUE_METRICS_ENABLED = 'false'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  memory = '512mb'
+  cpus = 1
+  memory_mb = 512
+
+[services]
+  min_machines_running = 0
