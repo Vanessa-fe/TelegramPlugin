@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { KeyRound, ArrowLeft, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -69,50 +69,61 @@ function extractZodErrors(message: ErrorMessage): string[] {
   return errors;
 }
 
-function extractTokenFromUrl(searchParams: URLSearchParams): string {
+function extractTokenFromLocation(): string {
   if (typeof window === 'undefined') {
-    return searchParams.get('token') ?? '';
+    return '';
   }
 
-  const hash = window.location.hash.startsWith('#')
-    ? window.location.hash.slice(1)
-    : window.location.hash;
+  const url = new URL(window.location.href);
+  const hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
   const hashParams = new URLSearchParams(hash);
-  const token = hashParams.get('token') ?? searchParams.get('token') ?? '';
 
-  if (token) {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('token');
-    if (hashParams.has('token')) {
-      hashParams.delete('token');
-      url.hash = hashParams.toString();
-    }
-    const cleanUrl = `${url.pathname}${url.search}${url.hash ? `#${url.hash}` : ''}`;
-    window.history.replaceState({}, '', cleanUrl);
+  return hashParams.get('token') ?? url.searchParams.get('token') ?? '';
+}
+
+function removeTokenFromUrl(): void {
+  if (typeof window === 'undefined') {
+    return;
   }
 
-  return token;
+  const url = new URL(window.location.href);
+  const hash = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+  const hashParams = new URLSearchParams(hash);
+
+  url.searchParams.delete('token');
+
+  if (hashParams.has('token')) {
+    hashParams.delete('token');
+    url.hash = hashParams.toString();
+  }
+
+  const cleanUrl = `${url.pathname}${url.search}${url.hash ? `#${url.hash}` : ''}`;
+  window.history.replaceState({}, '', cleanUrl);
 }
 
 export default function ResetPasswordPage() {
   const t = useTranslations('auth.resetPassword');
   const tCommon = useTranslations('common');
-  const searchParams = useSearchParams();
   const router = useRouter();
   const { refreshProfile } = useAuth();
-
-  const token = useMemo(() => {
-    return extractTokenFromUrl(searchParams);
-  }, [searchParams]);
-  const tokenMissing = !token;
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [token, setToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const tokenMissing = !token;
+
+  useEffect(() => {
+    const initialToken = extractTokenFromLocation();
+    if (!initialToken) return;
+
+    setToken(initialToken);
+    removeTokenFromUrl();
+  }, []);
 
   const handleSuggestPassword = useCallback(() => {
     const newPassword = generateSecurePassword(16);
