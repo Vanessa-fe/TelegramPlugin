@@ -3006,8 +3006,40 @@
       "CANCELLED": "Cancelled",
       "PAID": "Paid"
     },
+    "back": "Back",
+    "cancel": "Cancel",
+    "saving": "Saving...",
     "program": {
-      "settings": "Program"
+      "settings": "Program",
+      "title": "Affiliate program",
+      "subtitle": "Configure the rules of your affiliate program to reward your partners.",
+      "create": "Create program",
+      "save": "Save program",
+      "loadError": "Failed to load affiliate program",
+      "createSuccess": "Affiliate program created successfully",
+      "updateSuccess": "Affiliate program updated successfully",
+      "createError": "Failed to create affiliate program",
+      "updateError": "Failed to update affiliate program",
+      "form": {
+        "name": "Program name",
+        "namePlaceholder": "e.g. Sublynk Partner Program",
+        "commissionRate": "Commission rate",
+        "commissionRateHelp": "Percentage paid to the affiliate for each validated sale.",
+        "attributionWindow": "Attribution window",
+        "days": "days",
+        "attributionWindowHelp": "How long a sale is attributed to the affiliate after a click.",
+        "validationDelay": "Validation delay",
+        "validationDelayHelp": "Number of days before a commission moves from pending to validated.",
+        "appliesTo": "Applies to",
+        "allProducts": "All offers",
+        "specificProducts": "Specific offers",
+        "selectProducts": "Select offers",
+        "noProducts": "No offers available yet. Create an offer first to restrict the program to specific products.",
+        "status": "Program status",
+        "statusActive": "Active",
+        "statusPaused": "Paused",
+        "statusHelp": "A paused program no longer assigns new commissions."
+      }
     },
     "stats": {
       "clicks": "Clicks",
