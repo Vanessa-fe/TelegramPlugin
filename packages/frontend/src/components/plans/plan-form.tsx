@@ -17,6 +17,18 @@ import {
 } from "@/components/ui/select";
 import { PlanInterval, type CreatePlanDto, type Plan } from "@/types/plan";
 
+const optionalNonNegativeInt = (message: string) =>
+  z.preprocess(
+    (value) => (value === "" || value === null ? undefined : value),
+    z.coerce.number().int().nonnegative(message).optional()
+  );
+
+const optionalPositiveInt = (message: string) =>
+  z.preprocess(
+    (value) => (value === "" || value === null ? undefined : value),
+    z.coerce.number().int().positive(message).optional()
+  );
+
 const makePlanFormSchema = (t: (key: string) => string) =>
   z.object({
     name: z.string().min(1, t("validation.nameRequired")),
@@ -24,8 +36,8 @@ const makePlanFormSchema = (t: (key: string) => string) =>
     interval: z.nativeEnum(PlanInterval),
     price: z.coerce.number().positive(t("validation.pricePositive")),
     currency: z.string().length(3, t("validation.currency3Letters")),
-    trialPeriodDays: z.coerce.number().int().nonnegative().optional(),
-    accessDurationDays: z.coerce.number().int().positive().optional(),
+    trialPeriodDays: optionalNonNegativeInt(t("validation.daysNonNegative")),
+    accessDurationDays: optionalPositiveInt(t("validation.daysPositive")),
     isActive: z.boolean().optional(),
   });
 
@@ -68,6 +80,7 @@ export function PlanForm({
     watch,
   } = useForm<PlanFormData>({
     resolver: zodResolver(planFormSchema),
+    shouldUnregister: true,
     defaultValues: plan
       ? {
           name: plan.name,
@@ -87,6 +100,7 @@ export function PlanForm({
   });
 
   const selectedInterval = watch("interval");
+  const isOneTimePlan = selectedInterval === PlanInterval.ONE_TIME;
 
   useEffect(() => {
     if (organizationCurrency) {
@@ -102,8 +116,14 @@ export function PlanForm({
       interval: data.interval,
       priceCents: Math.round(data.price * 100),
       currency: (organizationCurrency ?? data.currency).toUpperCase(),
-      trialPeriodDays: data.trialPeriodDays || undefined,
-      accessDurationDays: data.accessDurationDays || undefined,
+      trialPeriodDays:
+        data.interval === PlanInterval.ONE_TIME
+          ? undefined
+          : data.trialPeriodDays,
+      accessDurationDays:
+        data.interval === PlanInterval.ONE_TIME
+          ? data.accessDurationDays
+          : undefined,
       isActive: data.isActive ?? true,
     };
 
@@ -231,45 +251,55 @@ export function PlanForm({
           {t("sections.advanced")}
         </h2>
 
-        <div>
-          <Label htmlFor="trialPeriodDays">
-            {t("fields.trialLabel")}
-          </Label>
-          <Input
-            id="trialPeriodDays"
-            type="number"
-            {...register("trialPeriodDays")}
-            placeholder={t("fields.trialPlaceholder")}
-          />
-          {errors.trialPeriodDays && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.trialPeriodDays.message}
-            </p>
-          )}
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("fields.trialHelper")}
-          </p>
-        </div>
+        {!isOneTimePlan ? (
+          <>
+            <div>
+              <Label htmlFor="trialPeriodDays">
+                {t("fields.trialLabel")}
+              </Label>
+              <Input
+                id="trialPeriodDays"
+                type="number"
+                {...register("trialPeriodDays")}
+                placeholder={t("fields.trialPlaceholder")}
+              />
+              {errors.trialPeriodDays && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.trialPeriodDays.message}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("fields.trialHelper")}
+              </p>
+            </div>
 
-        <div>
-          <Label htmlFor="accessDurationDays">
-            {t("fields.accessDurationLabel")}
-          </Label>
-          <Input
-            id="accessDurationDays"
-            type="number"
-            {...register("accessDurationDays")}
-            placeholder={t("fields.accessDurationPlaceholder")}
-          />
-          {errors.accessDurationDays && (
-            <p className="mt-1 text-sm text-red-600">
-              {errors.accessDurationDays.message}
+            <div className="rounded-md border border-purple-100 bg-purple-50 px-4 py-3">
+              <p className="text-sm text-text-primary">
+                {t("fields.recurringAccessHelper")}
+              </p>
+            </div>
+          </>
+        ) : (
+          <div>
+            <Label htmlFor="accessDurationDays">
+              {t("fields.accessDurationLabel")}
+            </Label>
+            <Input
+              id="accessDurationDays"
+              type="number"
+              {...register("accessDurationDays")}
+              placeholder={t("fields.accessDurationPlaceholder")}
+            />
+            {errors.accessDurationDays && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.accessDurationDays.message}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("fields.accessDurationHelper")}
             </p>
-          )}
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("fields.accessDurationHelper")}
-          </p>
-        </div>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <input

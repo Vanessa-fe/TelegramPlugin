@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { PlanInterval, Prisma } from '@prisma/client';
 import type { Plan } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { CreatePlanDto, UpdatePlanDto } from './plans.schema';
@@ -79,8 +79,14 @@ export class PlansService {
       interval: data.interval,
       priceCents: data.priceCents,
       currency: data.currency,
-      trialPeriodDays: data.trialPeriodDays,
-      accessDurationDays: data.accessDurationDays,
+      trialPeriodDays:
+        data.interval === PlanInterval.ONE_TIME
+          ? undefined
+          : data.trialPeriodDays,
+      accessDurationDays:
+        data.interval === PlanInterval.ONE_TIME
+          ? data.accessDurationDays
+          : undefined,
       isActive: data.isActive ?? true,
       metadata: data.metadata,
       product: {
@@ -97,6 +103,7 @@ export class PlansService {
       select: {
         productId: true,
         currency: true,
+        interval: true,
       },
     });
 
@@ -119,6 +126,7 @@ export class PlansService {
       );
     }
 
+    const targetInterval = data.interval ?? existingPlan.interval;
     const payload: Prisma.PlanUpdateInput = {
       ...(data.productId && {
         product: { connect: { id: data.productId } },
@@ -128,15 +136,21 @@ export class PlansService {
       ...(data.interval !== undefined && { interval: data.interval }),
       ...(data.priceCents !== undefined && { priceCents: data.priceCents }),
       ...(data.currency !== undefined && { currency: data.currency }),
-      ...(data.trialPeriodDays !== undefined && {
-        trialPeriodDays: data.trialPeriodDays,
-      }),
-      ...(data.accessDurationDays !== undefined && {
-        accessDurationDays: data.accessDurationDays,
-      }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
       ...(data.metadata !== undefined && { metadata: data.metadata }),
     };
+
+    if (targetInterval === PlanInterval.ONE_TIME) {
+      payload.trialPeriodDays = null;
+      if (data.accessDurationDays !== undefined) {
+        payload.accessDurationDays = data.accessDurationDays;
+      }
+    } else {
+      payload.accessDurationDays = null;
+      if (data.trialPeriodDays !== undefined) {
+        payload.trialPeriodDays = data.trialPeriodDays;
+      }
+    }
 
     return this.prisma.plan.update({
       where: { id },

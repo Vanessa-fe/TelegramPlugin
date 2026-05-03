@@ -1402,6 +1402,7 @@
       "accessDurationLabel": "Access duration (days)",
       "accessDurationPlaceholder": "30",
       "accessDurationHelper": "Leave empty for unlimited access",
+      "recurringAccessHelper": "For subscriptions, access stays active automatically while the subscription remains active.",
       "activeLabel": "Plan is active and visible to customers"
     },
     "intervals": {
@@ -1421,7 +1422,9 @@
     "validation": {
       "nameRequired": "Name is required",
       "pricePositive": "Price must be positive",
-      "currency3Letters": "3-letter currency code (e.g. EUR)"
+      "currency3Letters": "3-letter currency code (e.g. EUR)",
+      "daysNonNegative": "Value must be zero or greater",
+      "daysPositive": "Value must be greater than 0"
     }
   },
   "checkout": {

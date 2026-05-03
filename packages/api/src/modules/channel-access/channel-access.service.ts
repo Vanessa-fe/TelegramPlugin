@@ -5,7 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { $Enums, AuditActorType, EntitlementType } from '@prisma/client';
+import {
+  $Enums,
+  AuditActorType,
+  EntitlementType,
+  PlanInterval,
+} from '@prisma/client';
 import type { ChannelAccess } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessQueue } from './channel-access.queue';
@@ -170,12 +175,14 @@ export class ChannelAccessService {
 
         if (!existingEntitlement) {
           // Calculate expiry based on plan's accessDurationDays
-          const expiresAt = subscription.plan.accessDurationDays
-            ? new Date(
-                Date.now() +
-                  subscription.plan.accessDurationDays * 24 * 60 * 60 * 1000,
-              )
-            : null;
+          const expiresAt =
+            subscription.plan.interval === PlanInterval.ONE_TIME &&
+            subscription.plan.accessDurationDays
+              ? new Date(
+                  Date.now() +
+                    subscription.plan.accessDurationDays * 24 * 60 * 60 * 1000,
+                )
+              : null;
 
           await tx.entitlement.create({
             data: {
