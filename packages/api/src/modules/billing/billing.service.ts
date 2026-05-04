@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -29,6 +30,7 @@ type StripeStatus = {
 
 @Injectable()
 export class BillingService {
+  private readonly logger = new Logger(BillingService.name);
   private readonly stripe: Stripe;
 
   constructor(
@@ -86,29 +88,6 @@ export class BillingService {
       throw new NotFoundException('Organisation introuvable');
     }
 
-    let accountId = organization.stripeAccountId;
-
-    if (!accountId) {
-      const account = await this.stripe.accounts.create({
-        type: 'express',
-        email: organization.billingEmail,
-        metadata: {
-          organizationId: organization.id,
-        },
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-      });
-
-      accountId = account.id;
-
-      await this.prisma.organization.update({
-        where: { id: organization.id },
-        data: { stripeAccountId: accountId },
-      });
-    }
-
     const refreshUrl = this.config.get<string>('STRIPE_CONNECT_REFRESH_URL');
     const returnUrl = this.config.get<string>('STRIPE_CONNECT_RETURN_URL');
 
@@ -116,14 +95,41 @@ export class BillingService {
       throw new BadRequestException('Stripe Connect URLs are not configured');
     }
 
-    const link = await this.stripe.accountLinks.create({
-      account: accountId,
-      refresh_url: refreshUrl,
-      return_url: returnUrl,
-      type: 'account_onboarding',
-    });
+    try {
+      let accountId = organization.stripeAccountId;
 
-    return { url: link.url };
+      if (!accountId) {
+        const account = await this.stripe.accounts.create({
+          type: 'express',
+          email: organization.billingEmail,
+          metadata: {
+            organizationId: organization.id,
+          },
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+        });
+
+        accountId = account.id;
+
+        await this.prisma.organization.update({
+          where: { id: organization.id },
+          data: { stripeAccountId: accountId },
+        });
+      }
+
+      const link = await this.stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: 'account_onboarding',
+      });
+
+      return { url: link.url };
+    } catch (error) {
+      throw this.mapStripeConnectError(error);
+    }
   }
 
   async createStripeLoginLink(
@@ -155,6 +161,63 @@ export class BillingService {
     );
 
     return { url: link.url };
+  }
+
+  private mapStripeConnectError(error: unknown): Error {
+    const stripeError = this.getStripeErrorMetadata(error);
+
+    if (
+      stripeError &&
+      this.isPlatformProfileBlockingConnect(stripeError.message)
+    ) {
+      this.logger.warn(
+        `Stripe Connect blocked by incomplete platform profile (requestId: ${stripeError.requestId ?? 'unknown'})`,
+      );
+
+      return new BadRequestException(
+        "Stripe Connect n'est pas encore activé côté plateforme. Un administrateur doit d'abord finaliser le profil Connect Stripe et la responsabilité des pertes dans le dashboard Stripe.",
+      );
+    }
+
+    return error instanceof Error
+      ? error
+      : new BadRequestException('Erreur lors de la connexion à Stripe');
+  }
+
+  private isPlatformProfileBlockingConnect(message?: string): boolean {
+    if (!message) {
+      return false;
+    }
+
+    const normalized = message.toLowerCase();
+
+    return (
+      normalized.includes('managing losses for connected accounts') ||
+      normalized.includes('platform-profile') ||
+      normalized.includes('completed platform profile')
+    );
+  }
+
+  private getStripeErrorMetadata(error: unknown): {
+    message?: string;
+    requestId?: string;
+    type?: string;
+  } | null {
+    if (!error || typeof error !== 'object') {
+      return null;
+    }
+
+    const stripeError = error as {
+      message?: string;
+      requestId?: string;
+      type?: string;
+    };
+
+    return {
+      message: stripeError.message,
+      requestId: stripeError.requestId,
+      type: stripeError.type,
+    };
   }
 
   async createCheckoutSession(
