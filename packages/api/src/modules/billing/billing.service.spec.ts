@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { BadRequestException } from '@nestjs/common';
 import { PlanInterval, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BillingService } from './billing.service';
@@ -10,6 +11,8 @@ describe('BillingService', () => {
     get: jest.fn((key: string) => {
       const values: Record<string, string> = {
         STRIPE_SECRET_KEY: 'sk_test_123',
+        STRIPE_CONNECT_RETURN_URL: 'https://sublynk.test/dashboard/billing',
+        STRIPE_CONNECT_REFRESH_URL: 'https://sublynk.test/dashboard/billing',
         STRIPE_CHECKOUT_SUCCESS_URL: 'https://sublynk.test/success',
         STRIPE_CHECKOUT_CANCEL_URL: 'https://sublynk.test/cancel',
       };
@@ -18,6 +21,10 @@ describe('BillingService', () => {
   } as ConfigService;
 
   const mockPrisma: any = {
+    organization: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
     plan: {
       findUnique: jest.fn(),
     },
@@ -40,7 +47,11 @@ describe('BillingService', () => {
 
   const mockStripe: any = {
     accounts: {
+      create: jest.fn(),
       retrieve: jest.fn(),
+    },
+    accountLinks: {
+      create: jest.fn(),
     },
     checkout: {
       sessions: {
@@ -53,6 +64,15 @@ describe('BillingService', () => {
     jest.clearAllMocks();
     service = new BillingService(mockConfig, mockPrisma);
     (service as any).stripe = mockStripe;
+    mockPrisma.organization.findUnique.mockResolvedValue({
+      id: 'org_123',
+      billingEmail: 'owner@example.com',
+      stripeAccountId: null,
+      saasActive: false,
+    });
+    mockPrisma.organization.update.mockResolvedValue({
+      stripeAccountId: 'acct_connect_123',
+    });
     mockPrisma.coupon.findUnique.mockResolvedValue(null);
     mockPrisma.customer.findFirst.mockResolvedValue(null);
     mockPrisma.customer.create.mockResolvedValue({
@@ -63,6 +83,12 @@ describe('BillingService', () => {
     } as any);
     mockStripe.accounts.retrieve.mockResolvedValue({
       charges_enabled: true,
+    });
+    mockStripe.accounts.create.mockResolvedValue({
+      id: 'acct_connect_123',
+    });
+    mockStripe.accountLinks.create.mockResolvedValue({
+      url: 'https://connect.stripe.test/onboarding',
     });
     mockStripe.checkout.sessions.create.mockResolvedValue({
       id: 'cs_test_123',
@@ -239,5 +265,50 @@ describe('BillingService', () => {
     ).rejects.toThrow("Compte Stripe incomplet, finalisez l'onboarding");
 
     expect(mockStripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('creates a Stripe Connect onboarding link for a new organization account', async () => {
+    const result = await service.createStripeConnectLink('org_123');
+
+    expect(mockStripe.accounts.create).toHaveBeenCalledWith({
+      type: 'express',
+      email: 'owner@example.com',
+      metadata: {
+        organizationId: 'org_123',
+      },
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    });
+    expect(mockPrisma.organization.update).toHaveBeenCalledWith({
+      where: { id: 'org_123' },
+      data: { stripeAccountId: 'acct_connect_123' },
+    });
+    expect(mockStripe.accountLinks.create).toHaveBeenCalledWith({
+      account: 'acct_connect_123',
+      refresh_url: 'https://sublynk.test/dashboard/billing',
+      return_url: 'https://sublynk.test/dashboard/billing',
+      type: 'account_onboarding',
+    });
+    expect(result).toEqual({
+      url: 'https://connect.stripe.test/onboarding',
+    });
+  });
+
+  it('maps incomplete platform profile errors to a clear Stripe Connect message', async () => {
+    mockStripe.accountLinks.create.mockRejectedValue({
+      type: 'StripeInvalidRequestError',
+      requestId: 'req_platform_profile',
+      message:
+        'Please review the responsibilities of managing losses for connected accounts at https://dashboard.stripe.com/settings/connect/platform-profile.',
+    });
+
+    const promise = service.createStripeConnectLink('org_123');
+
+    await expect(promise).rejects.toThrow(BadRequestException);
+    await expect(promise).rejects.toThrow(
+      "Stripe Connect n'est pas encore activé côté plateforme",
+    );
   });
 });
