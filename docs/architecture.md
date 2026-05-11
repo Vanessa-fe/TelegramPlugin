@@ -1,13 +1,15 @@
 # Architecture fonctionnelle et technique
 
-## Vue d’ensemble
+## Vue d'ensemble
 
-- **Objectif produit** : SaaS qui vend l’accès à des canaux Telegram (et, à terme, autres messageries) via des abonnements ou achats uniques.
+- **Objectif produit** : SaaS qui vend l'accès à des communautés privées (Telegram, Discord, WhatsApp) via des abonnements ou achats uniques.
 - **Modules principaux** :
   - `Frontend` (Next.js) : dashboard administrateur, portail client, pages publiques.
   - `Backend API` (NestJS) : gestion des utilisateurs, offres, abonnements, webhooks de paiement, orchestration des invitations.
-  - `Worker & File d’attente` (BullMQ/Redis) : exécution idempotente des tâches sensibles (envoi/révocation d’invitations, relances).
-  - `Bot Telegram` (grammY) : interface avec l’API Telegram pour générer/annuler des liens et gérer les membres des canaux.
+  - `Worker & File d'attente` (BullMQ/Redis) : exécution idempotente des tâches sensibles (envoi/révocation d'invitations, relances).
+  - `Bot Telegram` (grammY) : interface avec l'API Telegram pour générer/annuler des liens et gérer les membres des canaux.
+  - `Bot Discord` (discord.js) : gestion des rôles et accès aux serveurs Discord.
+  - `Intégration WhatsApp` (API WhatsApp Business) : gestion des invitations aux groupes WhatsApp.
   - `Base de données` (PostgreSQL + Prisma) : stockage persistant, migrations.
   - `Observabilité & Sécurité` : logs structurés (Pino), Sentry, métriques basiques, gestion des secrets.
 
@@ -37,8 +39,8 @@
 ## Domaines fonctionnels
 
 - **Gestion des organisations** : chaque client (entreprise/créateur) possède ses produits, plans tarifaires et canaux.
-- **Monétisation** : types d’accès (one-shot, abonnement, essai gratuit), codes promo, coupons.
-- **Accès Telegram** : génération d’invitations, suivi de leur usage, révocation, suppression utilisateur si paiement échoue.
+- **Monétisation** : types d'accès (one-shot, abonnement, essai gratuit), codes promo, coupons.
+- **Gestion des accès multi-plateforme** : génération d'invitations (Telegram, Discord, WhatsApp), suivi de leur usage, révocation, suppression utilisateur si paiement échoue.
 - **Conformité (GDPR)** : export des données, anonymisation, suppression sur demande.
 - **Administration** : logs, analytics simples (MRR, churn, top clients), suivi des événements bot/paiement.
 
@@ -51,7 +53,7 @@
 - `Plan` : déclinaison tarifaire (mensuel, annuel, one-shot, essai).
 - `Subscription` : relation client/plan, inclut statut, dates de facturation, métadonnées Stripe.
 - `PaymentEvent` : journal des webhooks paiements (idempotence).
-- `Channel` : ressource Telegram (ou futur Discord) liée à un produit.
+- `Channel` : ressource (Telegram, Discord ou WhatsApp) liée à un produit, avec `provider` indiquant la plateforme.
 - `ChannelAccess` : trace de l’accès octroyé (invitation, date expiration, statut).
 - `TelegramInvite` : lien généré, nombre d’utilisations restant, date d’expiration.
 - `AuditLog` : actions critiques (ajout/retrait membre, remboursement, suppression).
@@ -124,10 +126,10 @@ Voir [Runbook DLQ](./runbook-dlq-replay.md) pour les procédures de replay.
 
 ## Flux critiques
 
-1. **Onboarding d’une organisation**
+1. **Onboarding d'une organisation**
    - Admin crée une organisation dans le dashboard.
-   - L’organisation connecte Stripe (OAuth) ou configure les clés API.
-   - L’organisation ajoute un canal Telegram (bot devient admin) et crée un produit/plan.
+   - L'organisation connecte Stripe (OAuth) ou configure les clés API.
+   - L'organisation connecte ses communautés (Telegram, Discord et/ou WhatsApp) et crée un produit/plan.
 
 1. **Achat client final**
    - Client arrive sur la page de vente (`/client/{slug}`), choisit un plan.
@@ -135,7 +137,7 @@ Voir [Runbook DLQ](./runbook-dlq-replay.md) pour les procédures de replay.
    - Webhook Stripe Connect (payment_intent.succeeded / checkout.session.completed, event.account) réceptionné par l’API.
    - Création ou mise à jour du `Customer`, du `Subscription`.
    - Envoi d’un job asynchrone `GrantAccessJob` avec `subscriptionId`.
-   - Worker appelle le Bot API pour générer (ou récupérer) un `TelegramInvite`, puis l’envoie au client (email/Telegram bot) ou retourne via portail.
+   - Worker appelle l'API de la plateforme concernée (Telegram, Discord ou WhatsApp) pour générer une invitation, puis l'envoie au client (email ou messagerie) ou retourne via portail.
 
 1. **Échec paiement avec grace period**
    - Webhook Stripe `invoice.payment_failed` réceptionné.
@@ -149,7 +151,7 @@ Voir [Runbook DLQ](./runbook-dlq-replay.md) pour les procédures de replay.
    - Webhook Stripe `customer.subscription.deleted` ou `charge.refunded`.
    - `Subscription.status` → `CANCELED`.
    - Job `RevokeAccessJob` envoyé immédiatement (pas de grace).
-   - Bot supprime l'utilisateur du canal ou invalide l'invitation.
+   - Le bot/API de la plateforme supprime l'utilisateur de la communauté ou invalide l'invitation.
    - Notification au client: "Votre accès a été révoqué".
 
 1. **Export RGPD**
@@ -174,6 +176,7 @@ Voir [Runbook DLQ](./runbook-dlq-replay.md) pour les procédures de replay.
 packages/
   api/            # NestJS (modules par domaine)
   bot/            # grammY, logique Telegram
+  discord-bot/    # discord.js, logique Discord
   frontend/       # Next.js (app router)
   worker/         # BullMQ processors (peut vivre dans api si simple)
   shared/         # librairies communes (schemas Zod, SDK client)
@@ -260,7 +263,7 @@ Alertes côté logs (Datadog/Grafana Loki):
 
 ## Ouvertures futures
 
-- Support Discord/WhatsApp via interface `ChannelProvider`.
-- Ajout d’autres PSP (PayPal, Paddle) en appliquant le même pattern `PaymentProvider`.
+- Ajout d'autres PSP (PayPal, Paddle) en appliquant le même pattern `PaymentProvider`.
+- Support d'autres plateformes de messagerie via l'interface `ChannelProvider`.
 - Marketplace de templates de landing pages pour les créateurs.
 - Intégration CRM (HubSpot, Notion) et emailing (Customer.io, Mailjet).

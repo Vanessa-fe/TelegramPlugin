@@ -1366,6 +1366,10 @@
       "descriptionIncomplete": "Ton plan {plan} est bien actif. Ton compte Stripe est connecté, mais la configuration doit être finalisée pour activer les paiements clients.",
       "planFallback": "actuel"
     },
+    "platformSetupBlocked": {
+      "title": "Stripe Connect non activé côté plateforme",
+      "description": "La configuration Connect Stripe de la plateforme doit être finalisée dans le dashboard Stripe avant de pouvoir connecter un compte créateur."
+    },
     "stripeConnect": {
       "title": "Stripe Connect",
       "subtitle": "Reçois les paiements directement sur ton compte Stripe",
@@ -1387,6 +1391,7 @@
     },
     "loading": "Chargement de la facturation...",
     "error": "Erreur lors du chargement du statut de facturation",
+    "platformSetupError": "Stripe Connect n'est pas encore activé côté plateforme. Un administrateur doit finaliser le profil Connect Stripe dans le dashboard Stripe.",
     "connectError": "Erreur lors de la connexion à Stripe",
     "dashboardError": "Erreur lors de l'ouverture du tableau de bord Stripe"
   },
@@ -1590,7 +1595,8 @@
           "item4": "Distribuer des malwares ou contenus nuisibles",
           "item5": "Se livrer à des fraudes ou pratiques trompeuses",
           "item6": "Harceler, abuser ou nuire à autrui",
-          "item7": "Contourner les restrictions des plateformes Telegram, Discord ou WhatsApp"
+          "item7": "Contourner les restrictions des plateformes Telegram, Discord ou WhatsApp",
+          "item8": "Proposer des services liés aux jeux d'argent, paris sportifs, conseil financier réglementé, actifs financiers ou cryptomonnaies nécessitant une licence, contenus pour adultes, ou toute activité figurant sur la liste des activités restreintes ou interdites de Stripe (stripe.com/restricted-businesses)"
         }
       },
       "responsibilities": {
@@ -1601,7 +1607,8 @@
           "item2": "Fournir des descriptions précises de vos produits",
           "item3": "Fournir l'accès et le contenu promis à vos clients",
           "item4": "Gérer le support client pour vos produits",
-          "item5": "Respecter les conditions d'utilisation des plateformes connectées"
+          "item5": "Respecter les conditions d'utilisation des plateformes connectées",
+          "item6": "Vous assurer que vos activités sont conformes aux conditions d'utilisation de Stripe Connect et aux réglementations applicables à votre secteur d'activité"
         }
       },
       "intellectualProperty": {
@@ -1624,14 +1631,18 @@
         "title": "11. Modifications des conditions",
         "body": "Nous pouvons modifier ces conditions à tout moment. Nous vous informerons des changements importants par email. L'utilisation continue du Service après les modifications vaut acceptation."
       },
+      "stripeCompliance": {
+        "title": "12. Conformité des paiements",
+        "body": "Sublynk utilise Stripe Connect pour le traitement des paiements. En tant que créateur, vous acceptez les conditions d'utilisation de Stripe (stripe.com/legal) et garantissez que vos activités respectent sa politique d'utilisation acceptable. Sublynk ne pourra être tenu responsable de la suspension ou résiliation d'un compte Stripe liée aux activités du créateur."
+      },
       "governingLaw": {
-        "title": "12. Droit applicable",
-        "body": "Ces conditions sont régies par le droit de l'Union européenne. Tout litige sera résolu devant les tribunaux de [Juridiction]."
+        "title": "13. Droit applicable",
+        "body": "Ces conditions sont régies par le droit français. Tout litige relatif à leur interprétation ou exécution sera soumis à la compétence exclusive des tribunaux français."
       },
       "contact": {
-        "title": "13. Contact",
+        "title": "14. Contact",
         "body": "Pour toute question concernant ces conditions, contactez-nous à",
-        "email": "contatc@sublynk.fr"
+        "email": "contact@sublynk.fr"
       }
     }
   },

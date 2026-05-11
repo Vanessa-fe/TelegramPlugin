@@ -168,14 +168,20 @@ export class BillingService {
 
     if (
       stripeError &&
-      this.isPlatformProfileBlockingConnect(stripeError.message)
+      stripeError.messages.some((message) =>
+        this.isPlatformProfileBlockingConnect(message),
+      )
     ) {
       this.logger.warn(
         `Stripe Connect blocked by incomplete platform profile (requestId: ${stripeError.requestId ?? 'unknown'})`,
       );
 
       return new BadRequestException(
-        "Stripe Connect n'est pas encore activé côté plateforme. Un administrateur doit d'abord finaliser le profil Connect Stripe et la responsabilité des pertes dans le dashboard Stripe.",
+        {
+          code: 'STRIPE_PLATFORM_PROFILE_INCOMPLETE',
+          message:
+            "Stripe Connect n'est pas encore activé côté plateforme. Un administrateur doit d'abord finaliser le profil Connect Stripe et la responsabilité des pertes dans le dashboard Stripe.",
+        },
       );
     }
 
@@ -193,13 +199,15 @@ export class BillingService {
 
     return (
       normalized.includes('managing losses for connected accounts') ||
+      normalized.includes('collecting requirements for connected accounts') ||
       normalized.includes('platform-profile') ||
-      normalized.includes('completed platform profile')
+      normalized.includes('completed platform profile') ||
+      normalized.includes('must complete your platform profile to use connect')
     );
   }
 
   private getStripeErrorMetadata(error: unknown): {
-    message?: string;
+    messages: string[];
     requestId?: string;
     type?: string;
   } | null {
@@ -208,16 +216,53 @@ export class BillingService {
     }
 
     const stripeError = error as {
-      message?: string;
-      requestId?: string;
-      type?: string;
+      message?: unknown;
+      requestId?: unknown;
+      type?: unknown;
+      raw?: {
+        message?: unknown;
+        requestId?: unknown;
+        type?: unknown;
+        headers?: Record<string, unknown>;
+      };
     };
 
+    const messages = [
+      stripeError.message,
+      stripeError.raw?.message,
+    ].filter((message): message is string => {
+      return typeof message === 'string' && message.length > 0;
+    });
+
+    const requestId =
+      typeof stripeError.requestId === 'string'
+        ? stripeError.requestId
+        : typeof stripeError.raw?.requestId === 'string'
+          ? stripeError.raw.requestId
+          : this.getStripeRequestIdFromHeaders(stripeError.raw?.headers);
+
     return {
-      message: stripeError.message,
-      requestId: stripeError.requestId,
-      type: stripeError.type,
+      messages,
+      requestId,
+      type:
+        typeof stripeError.type === 'string'
+          ? stripeError.type
+          : typeof stripeError.raw?.type === 'string'
+            ? stripeError.raw.type
+            : undefined,
     };
+  }
+
+  private getStripeRequestIdFromHeaders(
+    headers?: Record<string, unknown>,
+  ): string | undefined {
+    if (!headers) {
+      return undefined;
+    }
+
+    const requestId = headers['request-id'];
+
+    return typeof requestId === 'string' ? requestId : undefined;
   }
 
   async createCheckoutSession(

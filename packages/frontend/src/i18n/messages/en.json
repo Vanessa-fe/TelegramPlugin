@@ -1366,6 +1366,10 @@
       "descriptionIncomplete": "Your {plan} plan is active. Your Stripe account is connected, but setup must be completed before customer payments can be enabled.",
       "planFallback": "current"
     },
+    "platformSetupBlocked": {
+      "title": "Stripe Connect is not enabled on the platform",
+      "description": "The platform's Stripe Connect configuration must be completed in the Stripe dashboard before a creator account can be connected."
+    },
     "stripeConnect": {
       "title": "Stripe Connect",
       "subtitle": "Receive payments directly to your Stripe account",
@@ -1387,6 +1391,7 @@
     },
     "loading": "Loading billing...",
     "error": "Failed to load billing status",
+    "platformSetupError": "Stripe Connect is not enabled on the platform yet. An administrator must complete the Stripe Connect platform profile in the Stripe dashboard.",
     "connectError": "Failed to start Stripe connection",
     "dashboardError": "Failed to open Stripe dashboard"
   },

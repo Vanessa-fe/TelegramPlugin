@@ -15,6 +15,8 @@
    - `DATABASE_URL` : connexion PostgreSQL locale (correspond à Docker).
    - `REDIS_URL` : connexion Redis pour BullMQ.
    - `TELEGRAM_BOT_TOKEN` : token BotFather **test** ou **production**.
+   - `DISCORD_BOT_TOKEN` : token bot Discord (Developer Portal).
+   - `WHATSAPP_API_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` : credentials WhatsApp Business API.
    - `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` : clés Stripe (test par défaut).
    - `BREVO_API_KEY`, `BREVO_FROM_EMAIL`, `BREVO_FROM_NAME` (voir `docs/email-configuration.md`).
    - `NEXT_PUBLIC_API_URL` : URL publique du backend exposée au frontend.
@@ -64,6 +66,7 @@ Ouvrez un terminal par service (après avoir chargé `.env.local`) :
 - API NestJS : `pnpm dev:api`
 - Worker BullMQ : `pnpm dev:worker`
 - Bot Telegram (long polling) : `pnpm dev:bot`
+- Bot Discord : `pnpm dev:discord-bot`
 - Frontend Next.js : `pnpm dev:frontend`
 
 Adaptez `CORS_ORIGIN` et `NEXT_PUBLIC_API_URL` si le frontend est servi depuis un port différent (`http://localhost:3001` par défaut).
@@ -77,14 +80,38 @@ Adaptez `CORS_ORIGIN` et `NEXT_PUBLIC_API_URL` si le frontend est servi depuis u
 
 Prisma désactive la connexion en `NODE_ENV=test`, ce qui permet d'exécuter les tests API unitaires sans base. Pour tester avec la base, créez une deuxième URL (`DATABASE_URL_TEST`) et exportez-la avant de lancer les tests.
 
-## Tests grandeur nature sur Telegram
+## Tests grandeur nature
+
+### Telegram
 
 1. Créez un bot via [BotFather](https://t.me/BotFather) et récupérez le token.
 2. Créez un canal Telegram privé de test, ajoutez le bot en administrateur avec les droits d'invitation.
 3. Assurez-vous que l'API, le worker et le bot tournent (voir section précédente).
 4. Connectez l'API à Redis/PostgreSQL en local via Docker; publiez un job `GrantAccessJob` (ex. via un script temporaire ou la console Nest).
 5. Vérifiez dans Telegram que le bot peut générer/partager un lien d'invitation, puis révoquer l'accès en poussant un job `RevokeAccessJob`.
-6. Pour des scénarios de paiement réalistes, utilisez les clés **test** Stripe et le CLI `stripe listen --forward-to localhost:3000/webhooks/stripe`.
+
+### Discord
+
+1. Créez une application Discord sur le [Developer Portal](https://discord.com/developers/applications).
+2. Ajoutez un bot à l'application et récupérez le token (`DISCORD_BOT_TOKEN`).
+3. Créez un serveur Discord de test et invitez le bot avec les permissions de gestion des rôles et invitations.
+4. Lancez le bot Discord (`pnpm dev:discord-bot`) et testez la génération d'invitations via un job `GrantAccessJob`.
+5. Vérifiez que le bot peut attribuer/retirer des rôles et générer des liens d'invitation.
+
+### WhatsApp
+
+1. Configurez un compte WhatsApp Business API (via Meta Business Suite).
+2. Récupérez les credentials API (`WHATSAPP_API_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`).
+3. Créez un groupe WhatsApp de test.
+4. Testez la génération de liens d'invitation de groupe via l'API.
+
+### Tests de paiement
+
+Pour des scénarios de paiement réalistes, utilisez les clés **test** Stripe et le CLI :
+
+```bash
+stripe listen --forward-to localhost:3001/webhooks/stripe
+```
 
 Documentez chaque test (capture d'écran, logs) pour faciliter la recette fonctionnelle.
 

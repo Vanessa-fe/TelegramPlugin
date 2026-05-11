@@ -17,6 +17,53 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+const STRIPE_PLATFORM_SETUP_ERROR_CODE =
+  "STRIPE_PLATFORM_PROFILE_INCOMPLETE";
+
+function extractBillingErrorPayload(error: unknown): {
+  code?: string;
+  message?: string;
+} {
+  const axiosError = error as {
+    response?: {
+      data?: {
+        code?: string;
+        message?: string | string[];
+      };
+    };
+  };
+
+  const payload = axiosError.response?.data;
+  const message = payload?.message;
+
+  return {
+    code: payload?.code,
+    message: Array.isArray(message) ? message[0] : message,
+  };
+}
+
+function isStripePlatformSetupError(error: unknown): boolean {
+  const { code, message } = extractBillingErrorPayload(error);
+
+  if (code === STRIPE_PLATFORM_SETUP_ERROR_CODE) {
+    return true;
+  }
+
+  if (!message) {
+    return false;
+  }
+
+  const normalized = message.toLowerCase();
+
+  return (
+    normalized.includes("managing losses for connected accounts") ||
+    normalized.includes("collecting requirements for connected accounts") ||
+    normalized.includes("platform-profile") ||
+    normalized.includes("plateforme") ||
+    normalized.includes("platform profile")
+  );
+}
+
 export default function BillingPage() {
   const t = useTranslations("billing");
   const [status, setStatus] = useState<StripeStatus | null>(null);
@@ -26,6 +73,7 @@ export default function BillingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isOpeningStripe, setIsOpeningStripe] = useState(false);
+  const [isPlatformSetupBlocked, setIsPlatformSetupBlocked] = useState(false);
 
   const loadStatus = useCallback(async () => {
     try {
@@ -36,10 +84,8 @@ export default function BillingPage() {
       setStatus(billingStatus);
       setSubscription(subscriptionStatus);
     } catch (error) {
-      const axiosError = error as {
-        response?: { data?: { message?: string } };
-      };
-      toast.error(axiosError.response?.data?.message || t("error"));
+      const { message } = extractBillingErrorPayload(error);
+      toast.error(message || t("error"));
     } finally {
       setIsLoading(false);
     }
@@ -52,13 +98,17 @@ export default function BillingPage() {
   async function handleConnectStripe() {
     try {
       setIsConnecting(true);
+      setIsPlatformSetupBlocked(false);
       const { url } = await billingApi.createStripeConnectLink();
       window.location.href = url;
     } catch (error) {
-      const axiosError = error as {
-        response?: { data?: { message?: string } };
-      };
-      toast.error(axiosError.response?.data?.message || t("connectError"));
+      const platformSetupBlocked = isStripePlatformSetupError(error);
+      const { message } = extractBillingErrorPayload(error);
+
+      setIsPlatformSetupBlocked(platformSetupBlocked);
+      toast.error(
+        platformSetupBlocked ? t("platformSetupError") : message || t("connectError"),
+      );
     } finally {
       setIsConnecting(false);
     }
@@ -70,10 +120,8 @@ export default function BillingPage() {
       const { url } = await billingApi.createStripeLoginLink();
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) {
-      const axiosError = error as {
-        response?: { data?: { message?: string } };
-      };
-      toast.error(axiosError.response?.data?.message || t("dashboardError"));
+      const { message } = extractBillingErrorPayload(error);
+      toast.error(message || t("dashboardError"));
     } finally {
       setIsOpeningStripe(false);
     }
@@ -150,6 +198,20 @@ export default function BillingPage() {
               {t("saasWarning.choosePlan")}
               <ExternalLink className="w-3 h-3" />
             </Link>
+          </div>
+        </div>
+      )}
+
+      {isPlatformSetupBlocked && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-red-800">
+              {t("platformSetupBlocked.title")}
+            </p>
+            <p className="text-sm text-red-700 mt-1">
+              {t("platformSetupBlocked.description")}
+            </p>
           </div>
         </div>
       )}

@@ -304,11 +304,40 @@ describe('BillingService', () => {
         'Please review the responsibilities of managing losses for connected accounts at https://dashboard.stripe.com/settings/connect/platform-profile.',
     });
 
-    const promise = service.createStripeConnectLink('org_123');
-
-    await expect(promise).rejects.toThrow(BadRequestException);
-    await expect(promise).rejects.toThrow(
-      "Stripe Connect n'est pas encore activé côté plateforme",
-    );
+    await expectPlatformProfileError();
   });
+
+  it('maps nested Stripe raw platform profile errors to a clear Stripe Connect message', async () => {
+    mockStripe.accountLinks.create.mockRejectedValue({
+      raw: {
+        message:
+          'Please review the responsibilities of managing losses for connected accounts at https://dashboard.stripe.com/settings/connect/platform-profile.',
+        requestId: 'req_platform_profile_nested',
+        type: 'invalid_request_error',
+        headers: {
+          'request-id': 'req_platform_profile_nested',
+        },
+      },
+    });
+
+    await expectPlatformProfileError();
+  });
+
+  async function expectPlatformProfileError() {
+    try {
+      await service.createStripeConnectLink('org_123');
+      throw new Error('Expected createStripeConnectLink to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(BadRequestException);
+
+      const response = (error as BadRequestException).getResponse();
+
+      expect(response).toMatchObject({
+        code: 'STRIPE_PLATFORM_PROFILE_INCOMPLETE',
+        message: expect.stringContaining(
+          "Stripe Connect n'est pas encore activé côté plateforme",
+        ),
+      });
+    }
+  }
 });
