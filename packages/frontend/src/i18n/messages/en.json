@@ -2535,6 +2535,8 @@
         "slug": "Slug",
         "billingEmail": "Billing email",
         "currency": "Currency",
+        "plan": "Plan",
+        "noPlan": "No plan",
         "saas": "SaaS",
         "stripe": "Stripe",
         "createdAt": "Created on",

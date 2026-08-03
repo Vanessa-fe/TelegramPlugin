@@ -68,13 +68,30 @@ export class PlatformSubscriptionService {
   async getSubscription(
     organizationId: string,
   ): Promise<PlatformSubscriptionResponse | null> {
-    const subscription = await this.prisma.platformSubscription.findUnique({
+    let subscription = await this.prisma.platformSubscription.findUnique({
       where: { organizationId },
       include: { platformPlan: true },
     });
 
     if (!subscription) {
       return null;
+    }
+
+    if (
+      await this.reconcileIncompleteSubscription(
+        subscription.organizationId,
+        subscription.status,
+        subscription.stripeCustomerId,
+      )
+    ) {
+      subscription = await this.prisma.platformSubscription.findUnique({
+        where: { organizationId },
+        include: { platformPlan: true },
+      });
+
+      if (!subscription) {
+        return null;
+      }
     }
 
     const metadata = subscription.metadata as Record<string, unknown> | null;
@@ -136,6 +153,19 @@ export class PlatformSubscriptionService {
 
     if (!organization) {
       throw new NotFoundException('Organisation introuvable');
+    }
+
+    const reconciledStatus = await this.reconcileIncompleteSubscription(
+      organization.id,
+      organization.platformSubscription?.status,
+      organization.platformSubscription?.stripeCustomerId,
+    );
+
+    if (
+      reconciledStatus === PlatformSubscriptionStatus.ACTIVE ||
+      reconciledStatus === PlatformSubscriptionStatus.TRIALING
+    ) {
+      throw new ForbiddenException('Un abonnement plateforme est déjà actif');
     }
 
     // Find the plan
@@ -808,6 +838,7 @@ export class PlatformSubscriptionService {
     await this.prisma.platformSubscription.update({
       where: { organizationId },
       data: {
+        stripeSubscriptionId: subscription.id,
         status: this.mapStripeStatus(subscription.status),
         currentPeriodStart: new Date(subscription.current_period_start * 1000),
         currentPeriodEnd: new Date(subscription.current_period_end * 1000),
@@ -822,6 +853,67 @@ export class PlatformSubscriptionService {
     });
 
     await this.updateSaasActive(organizationId);
+  }
+
+  /**
+   * Recover from a missed Stripe webhook before exposing an INCOMPLETE state or
+   * creating a duplicate checkout. Stripe remains the source of truth here.
+   */
+  private async reconcileIncompleteSubscription(
+    organizationId: string,
+    status: PlatformSubscriptionStatus | undefined,
+    stripeCustomerId: string | null | undefined,
+  ): Promise<PlatformSubscriptionStatus | null> {
+    if (
+      status !== PlatformSubscriptionStatus.INCOMPLETE ||
+      !stripeCustomerId
+    ) {
+      return null;
+    }
+
+    try {
+      const subscriptions = await this.stripe.subscriptions.list({
+        customer: stripeCustomerId,
+        status: 'all',
+        limit: 10,
+      });
+      const recoverableStatuses = new Set<Stripe.Subscription.Status>([
+        'active',
+        'trialing',
+        'past_due',
+        'unpaid',
+        'paused',
+      ]);
+      const stripeSubscription = subscriptions.data
+        .filter(
+          (candidate) =>
+            candidate.metadata?.type === 'platform' &&
+            candidate.metadata?.organizationId === organizationId &&
+            recoverableStatuses.has(candidate.status),
+        )
+        .sort((left, right) => right.created - left.created)[0];
+
+      if (!stripeSubscription) {
+        return null;
+      }
+
+      await this.updateSubscriptionFromStripe(
+        organizationId,
+        stripeSubscription,
+      );
+      const reconciledStatus = this.mapStripeStatus(stripeSubscription.status);
+
+      this.logger.warn(
+        `Recovered platform subscription ${stripeSubscription.id} for organization ${organizationId} after a missed webhook`,
+      );
+
+      return reconciledStatus;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to reconcile incomplete platform subscription for organization ${organizationId}: ${(error as Error).message}`,
+      );
+      return null;
+    }
   }
 
   /**

@@ -2535,6 +2535,8 @@
         "slug": "Slug",
         "billingEmail": "Email de facturation",
         "currency": "Devise",
+        "plan": "Plan",
+        "noPlan": "Aucun plan",
         "saas": "SaaS",
         "stripe": "Stripe",
         "createdAt": "Créé le",

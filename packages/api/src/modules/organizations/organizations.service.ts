@@ -4,7 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AuditActorType, Prisma, Organization } from '@prisma/client';
+import {
+  AuditActorType,
+  Prisma,
+  Organization,
+  PlatformSubscriptionStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateOrganizationDto,
@@ -13,6 +18,11 @@ import {
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { ChannelAccessQueue } from '../channel-access/channel-access.queue';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
+
+export type OrganizationListItem = Organization & {
+  platformPlan: string | null;
+  platformStatus: PlatformSubscriptionStatus | null;
+};
 
 @Injectable()
 export class OrganizationsService {
@@ -37,10 +47,33 @@ export class OrganizationsService {
     return this.prisma.organization.create({ data: payload });
   }
 
-  findAll(): Promise<Organization[]> {
-    return this.prisma.organization.findMany({
+  async findAll(): Promise<OrganizationListItem[]> {
+    const organizations = await this.prisma.organization.findMany({
+      where: {
+        deletedAt: null,
+        users: { some: {} },
+      },
       orderBy: { createdAt: 'desc' },
+      include: {
+        platformSubscription: {
+          select: {
+            status: true,
+            platformPlan: {
+              select: { displayName: true, name: true },
+            },
+          },
+        },
+      },
     });
+
+    return organizations.map(({ platformSubscription, ...organization }) => ({
+      ...organization,
+      platformPlan:
+        platformSubscription?.platformPlan?.displayName ??
+        platformSubscription?.platformPlan?.name ??
+        null,
+      platformStatus: platformSubscription?.status ?? null,
+    }));
   }
 
   async findOne(id: string): Promise<Organization> {

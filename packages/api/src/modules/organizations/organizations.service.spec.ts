@@ -1,6 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrganizationsService } from './organizations.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { ChannelAccessQueue } from '../channel-access/channel-access.queue';
+import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
+
+jest.mock('@telegram-plugin/shared', () => ({
+  queueNames: {
+    grantAccess: 'grant-access',
+    revokeAccess: 'revoke-access',
+    grantAccessDlq: 'grant-access-dlq',
+    revokeAccessDlq: 'revoke-access-dlq',
+  },
+  GrantAccessPayload: { parse: jest.fn((value) => value) },
+  RevokeAccessPayload: { parse: jest.fn((value) => value) },
+}));
 
 describe('OrganizationsService', () => {
   let service: OrganizationsService;
@@ -20,6 +34,9 @@ describe('OrganizationsService', () => {
       providers: [
         OrganizationsService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: AuditLogService, useValue: {} },
+        { provide: ChannelAccessQueue, useValue: {} },
+        { provide: PlatformSubscriptionService, useValue: {} },
       ],
     }).compile();
 
@@ -118,7 +135,7 @@ describe('OrganizationsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return all organizations sorted by createdAt desc', async () => {
+    it('should return organizations linked to users sorted by createdAt desc', async () => {
       const organizations = [
         {
           id: '2',
@@ -148,10 +165,54 @@ describe('OrganizationsService', () => {
 
       const result = await service.findAll();
 
-      expect(result).toEqual(organizations);
+      expect(result).toEqual(
+        organizations.map((organization) => ({
+          ...organization,
+          platformPlan: null,
+          platformStatus: null,
+        })),
+      );
       expect(mockPrismaService.organization.findMany).toHaveBeenCalledWith({
+        where: {
+          deletedAt: null,
+          users: { some: {} },
+        },
         orderBy: { createdAt: 'desc' },
+        include: {
+          platformSubscription: {
+            select: {
+              status: true,
+              platformPlan: {
+                select: { displayName: true, name: true },
+              },
+            },
+          },
+        },
       });
+    });
+
+    it('should expose the platform plan and subscription status', async () => {
+      mockPrismaService.organization.findMany.mockResolvedValue([
+        {
+          id: '1',
+          name: 'Birdyreplay',
+          platformSubscription: {
+            status: 'ACTIVE',
+            platformPlan: { name: 'growth', displayName: 'Growth' },
+          },
+        },
+      ]);
+
+      const result = await service.findAll();
+
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          name: 'Birdyreplay',
+          platformPlan: 'Growth',
+          platformStatus: 'ACTIVE',
+        }),
+      );
+      expect(result[0]).not.toHaveProperty('platformSubscription');
     });
 
     it('should return empty array if no organizations exist', async () => {
