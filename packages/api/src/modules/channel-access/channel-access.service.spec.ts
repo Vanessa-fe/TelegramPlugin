@@ -8,6 +8,17 @@ import { ChannelAccessService } from './channel-access.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 
+jest.mock('@telegram-plugin/shared', () => ({
+  queueNames: {
+    grantAccess: 'grant-access',
+    revokeAccess: 'revoke-access',
+    grantAccessDlq: 'grant-access-dlq',
+    revokeAccessDlq: 'revoke-access-dlq',
+  },
+  GrantAccessPayload: { parse: jest.fn((value) => value) },
+  RevokeAccessPayload: { parse: jest.fn((value) => value) },
+}));
+
 describe('ChannelAccessService', () => {
   let service: ChannelAccessService;
   let prisma: jest.Mocked<PrismaService>;
@@ -348,6 +359,99 @@ describe('ChannelAccessService', () => {
 
       // Should attempt to enqueue both jobs despite first failure
       expect(queue.enqueueGrantAccess).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('grantVerifiedAccess', () => {
+    it('grants access when a signed Stripe payment event proves payment', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        organizationId: 'org-123',
+        status: 'ACTIVE',
+        paymentEvents: [
+          {
+            provider: 'STRIPE',
+            type: 'CHECKOUT_COMPLETED',
+            payload: {
+              data: { object: { payment_status: 'paid' } },
+            },
+          },
+        ],
+      } as any);
+      const grantSpy = jest
+        .spyOn(service, 'handlePaymentSuccess')
+        .mockResolvedValue();
+
+      await service.grantVerifiedAccess('sub-123', 'org-123');
+
+      expect(grantSpy).toHaveBeenCalledWith('sub-123', 'STRIPE');
+    });
+
+    it('rejects an incomplete subscription even if a checkout exists', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        organizationId: 'org-123',
+        status: 'INCOMPLETE',
+        paymentEvents: [
+          {
+            provider: 'STRIPE',
+            type: 'CHECKOUT_COMPLETED',
+            payload: {
+              data: { object: { payment_status: 'unpaid' } },
+            },
+          },
+        ],
+      } as any);
+
+      await expect(
+        service.grantVerifiedAccess('sub-123', 'org-123'),
+      ).rejects.toThrow(
+        "L'accès ne peut être accordé qu'après validation du paiement",
+      );
+    });
+
+    it('rejects an active subscription without verified payment evidence', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        organizationId: 'org-123',
+        status: 'ACTIVE',
+        paymentEvents: [
+          {
+            provider: 'STRIPE',
+            type: 'CHECKOUT_COMPLETED',
+            payload: {
+              data: { object: { payment_status: 'unpaid' } },
+            },
+          },
+        ],
+      } as any);
+
+      await expect(
+        service.grantVerifiedAccess('sub-123', 'org-123'),
+      ).rejects.toThrow(
+        'Aucune preuve de paiement vérifiée pour cet abonnement',
+      );
+    });
+
+    it('hides subscriptions belonging to another organization', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        organizationId: 'org-other',
+        status: 'ACTIVE',
+        paymentEvents: [],
+      } as any);
+
+      await expect(
+        service.grantVerifiedAccess('sub-123', 'org-123'),
+      ).rejects.toThrow('Subscription not found');
+    });
+
+    it('fails closed when an organization admin has no organization scope', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        organizationId: 'org-123',
+        status: 'ACTIVE',
+        paymentEvents: [],
+      } as any);
+
+      await expect(
+        service.grantVerifiedAccess('sub-123', null),
+      ).rejects.toThrow('Subscription not found');
     });
   });
 

@@ -22,8 +22,9 @@ export class ChannelAccessController {
   ) {}
 
   @Post('grant')
-  @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
+  @Roles(UserRole.SUPERADMIN)
   async grantAccess(
+    @CurrentUser() user: AuthUser,
     @Body()
     body: {
       subscriptionId: string;
@@ -31,11 +32,9 @@ export class ChannelAccessController {
       customerId: string;
     },
   ) {
-    // For manual grant, we use 'STRIPE' as a default provider
-    // This will trigger the grant-access queue job
-    await this.channelAccessService.handlePaymentSuccess(
+    await this.channelAccessService.grantVerifiedAccess(
       body.subscriptionId,
-      'STRIPE',
+      user.role === UserRole.SUPERADMIN ? undefined : user.organizationId,
     );
 
     return {
@@ -46,12 +45,17 @@ export class ChannelAccessController {
   @Post('revoke')
   @Roles(UserRole.SUPERADMIN, UserRole.ORG_ADMIN)
   async revokeAccess(
+    @CurrentUser() user: AuthUser,
     @Body()
     body: {
       subscriptionId: string;
       reason: 'payment_failed' | 'canceled' | 'manual' | 'refund';
     },
   ) {
+    await this.channelAccessService.assertSubscriptionOwnership(
+      body.subscriptionId,
+      user.role === UserRole.SUPERADMIN ? undefined : user.organizationId,
+    );
     const reason = body.reason === 'manual' ? 'canceled' : body.reason;
 
     await this.channelAccessService.handlePaymentFailure(
@@ -123,9 +127,9 @@ export class ChannelAccessController {
     @Headers('x-correlation-id') correlationId?: string,
     @Headers('x-request-id') requestId?: string,
   ) {
-    await this.channelAccessService.handlePaymentSuccess(
+    await this.channelAccessService.grantVerifiedAccess(
       body.subscriptionId,
-      'STRIPE',
+      user.role === UserRole.SUPPORT ? undefined : user.organizationId,
     );
 
     const resolvedCorrelationId = this.resolveCorrelationId(
@@ -250,7 +254,7 @@ export class ChannelAccessController {
   ) {
     const updated = await this.channelAccessService.confirmManualGrant(
       body.accessId,
-      user.organizationId,
+      user.role === UserRole.SUPERADMIN ? undefined : user.organizationId,
     );
 
     await this.auditLogService.create({
@@ -275,7 +279,7 @@ export class ChannelAccessController {
   ) {
     const updated = await this.channelAccessService.confirmManualRevoke(
       body.accessId,
-      user.organizationId,
+      user.role === UserRole.SUPERADMIN ? undefined : user.organizationId,
     );
 
     await this.auditLogService.create({

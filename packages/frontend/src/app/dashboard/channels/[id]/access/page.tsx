@@ -54,7 +54,6 @@ import {
   CheckCircle,
   Clock,
   UserMinus,
-  UserPlus,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -87,12 +86,6 @@ export default function ChannelAccessManagementPage() {
     SubscriptionWithRelations[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const [showGrantDialog, setShowGrantDialog] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
-  const [selectedSubscriptionId, setSelectedSubscriptionId] =
-    useState<string>("");
-  const [isGranting, setIsGranting] = useState(false);
 
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
   const [revokeSubscriptionId, setRevokeSubscriptionId] = useState<string>("");
@@ -137,37 +130,6 @@ export default function ChannelAccessManagementPage() {
       );
     } finally {
       setIsLoading(false);
-    }
-  }
-
-  async function handleGrantAccess() {
-    if (!selectedCustomerId || !selectedSubscriptionId) {
-      toast.error(t("access.errors.missingSelection"));
-      return;
-    }
-
-    setIsGranting(true);
-    try {
-      await channelsApi.grantAccess({
-        customerId: selectedCustomerId,
-        subscriptionId: selectedSubscriptionId,
-        channelId,
-      });
-
-      toast.success(t("access.success.granted"));
-      setShowGrantDialog(false);
-      setSelectedCustomerId("");
-      setSelectedSubscriptionId("");
-      await loadData();
-    } catch (error) {
-      const axiosError = error as {
-        response?: { data?: { message?: string } };
-      };
-      toast.error(
-        axiosError.response?.data?.message || t("access.errors.grant")
-      );
-    } finally {
-      setIsGranting(false);
     }
   }
 
@@ -269,12 +231,6 @@ export default function ChannelAccessManagementPage() {
     setShowRevokeDialog(true);
   }
 
-  const customerSubscriptions = selectedCustomerId
-    ? subscriptions.filter(
-        (s) => s.customerId === selectedCustomerId && s.status === "ACTIVE"
-      )
-    : [];
-
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -335,12 +291,6 @@ export default function ChannelAccessManagementPage() {
           </p>
         </div>
 
-        {!isWhatsApp && (
-          <Button onClick={() => setShowGrantDialog(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            {t("access.actions.grant")}
-          </Button>
-        )}
       </div>
 
       {isWhatsApp ? (
@@ -617,87 +567,6 @@ export default function ChannelAccessManagementPage() {
       </Card>
 
       {/* Grant Access Dialog */}
-      <Dialog open={showGrantDialog} onOpenChange={setShowGrantDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("access.grantDialog.title")}</DialogTitle>
-            <DialogDescription>
-              {t("access.grantDialog.description")}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="customer">
-                {t("access.grantDialog.customerLabel")}
-              </Label>
-              <Select
-                value={selectedCustomerId}
-                onValueChange={setSelectedCustomerId}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={t("access.grantDialog.customerPlaceholder")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.displayName || customer.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedCustomerId && (
-              <div>
-                <Label htmlFor="subscription">
-                  {t("access.grantDialog.subscriptionLabel")}
-                </Label>
-                <Select
-                  value={selectedSubscriptionId}
-                  onValueChange={setSelectedSubscriptionId}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t(
-                        "access.grantDialog.subscriptionPlaceholder"
-                      )}
-                    />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    {customerSubscriptions.length === 0 ? (
-                      <SelectItem value="none" disabled>
-                        {t("access.grantDialog.noActiveSubscription")}
-                      </SelectItem>
-                    ) : (
-                      customerSubscriptions.map((sub) => (
-                        <SelectItem key={sub.id} value={sub.id}>
-                          {sub.id.slice(0, 8)}... - {sub.status}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowGrantDialog(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={handleGrantAccess} disabled={isGranting}>
-              {isGranting
-                ? t("common.processing")
-                : t("access.grantDialog.confirm")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Revoke Access Dialog */}
       <Dialog open={showRevokeDialog} onOpenChange={setShowRevokeDialog}>
         <DialogContent>
