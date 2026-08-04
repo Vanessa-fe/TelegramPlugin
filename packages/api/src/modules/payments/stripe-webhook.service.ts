@@ -232,7 +232,7 @@ export class StripeWebhookService {
       }
     }
 
-    await this.applyDomainSideEffects(mappedType, context, chargeData);
+    await this.applyDomainSideEffects(mappedType, context, chargeData, event);
 
     // Track purchase in GA4 for successful invoice payments
     if (event.type === 'invoice.payment_succeeded') {
@@ -1081,6 +1081,7 @@ export class StripeWebhookService {
       invoiceId?: string;
       stripeSubscriptionId?: string;
     },
+    stripeEvent?: Stripe.Event,
   ): Promise<void> {
     // For refunds, we can still cancel affiliate referral even without subscriptionId
     // by using Stripe IDs (chargeId, paymentIntentId)
@@ -1096,17 +1097,33 @@ export class StripeWebhookService {
       return;
     }
 
-    const statusUpdate = this.subscriptionStatusForEvent(eventType);
+    const statusUpdate = this.subscriptionStatusForEvent(
+      eventType,
+      stripeEvent,
+    );
+
+    if (statusUpdate) {
+      await this.prisma.subscription.update({
+        where: { id: context.subscriptionId },
+        data: { status: statusUpdate },
+      });
+    }
 
     switch (eventType) {
       case PaymentEventType.CHECKOUT_COMPLETED:
       case PaymentEventType.SUBSCRIPTION_CREATED:
       case PaymentEventType.SUBSCRIPTION_UPDATED:
       case PaymentEventType.INVOICE_PAID:
-        await this.channelAccessService.handlePaymentSuccess(
-          context.subscriptionId,
-          PaymentProvider.STRIPE,
-        );
+        if (this.isAccessGrantAuthorized(stripeEvent)) {
+          await this.channelAccessService.handlePaymentSuccess(
+            context.subscriptionId,
+            PaymentProvider.STRIPE,
+          );
+        } else {
+          this.logger.warn(
+            `Stripe event ${stripeEvent?.id ?? 'unknown'} did not prove a paid or trialing state; access grant skipped`,
+          );
+        }
         break;
 
       case PaymentEventType.SUBSCRIPTION_CANCELED:
@@ -1127,12 +1144,6 @@ export class StripeWebhookService {
         break;
     }
 
-    if (statusUpdate) {
-      await this.prisma.subscription.update({
-        where: { id: context.subscriptionId },
-        data: { status: statusUpdate },
-      });
-    }
   }
 
   /**
@@ -1194,11 +1205,43 @@ export class StripeWebhookService {
 
   private subscriptionStatusForEvent(
     eventType: PaymentEventType,
+    stripeEvent?: Stripe.Event,
   ): SubscriptionStatus | null {
     switch (eventType) {
-      case PaymentEventType.CHECKOUT_COMPLETED:
+      case PaymentEventType.CHECKOUT_COMPLETED: {
+        if (stripeEvent?.type !== 'checkout.session.completed') return null;
+        const paymentStatus = stripeEvent.data.object.payment_status;
+        if (paymentStatus === 'paid') return SubscriptionStatus.ACTIVE;
+        if (paymentStatus === 'no_payment_required') {
+          return SubscriptionStatus.TRIALING;
+        }
+        return SubscriptionStatus.INCOMPLETE;
+      }
       case PaymentEventType.SUBSCRIPTION_CREATED:
-      case PaymentEventType.SUBSCRIPTION_UPDATED:
+      case PaymentEventType.SUBSCRIPTION_UPDATED: {
+        if (
+          stripeEvent?.type !== 'customer.subscription.created' &&
+          stripeEvent?.type !== 'customer.subscription.updated'
+        ) {
+          return null;
+        }
+        switch (stripeEvent.data.object.status) {
+          case 'active':
+            return SubscriptionStatus.ACTIVE;
+          case 'trialing':
+            return SubscriptionStatus.TRIALING;
+          case 'past_due':
+          case 'unpaid':
+            return SubscriptionStatus.PAST_DUE;
+          case 'canceled':
+            return SubscriptionStatus.CANCELED;
+          case 'incomplete':
+          case 'incomplete_expired':
+            return SubscriptionStatus.INCOMPLETE;
+          default:
+            return SubscriptionStatus.EXPIRED;
+        }
+      }
       case PaymentEventType.INVOICE_PAID:
         return SubscriptionStatus.ACTIVE;
       case PaymentEventType.SUBSCRIPTION_CANCELED:
@@ -1209,6 +1252,28 @@ export class StripeWebhookService {
         return SubscriptionStatus.EXPIRED;
       default:
         return null;
+    }
+  }
+
+  private isAccessGrantAuthorized(event?: Stripe.Event): boolean {
+    if (!event) return false;
+
+    switch (event.type) {
+      case 'checkout.session.completed':
+        return (
+          event.data.object.payment_status === 'paid' ||
+          event.data.object.payment_status === 'no_payment_required'
+        );
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+        return (
+          event.data.object.status === 'active' ||
+          event.data.object.status === 'trialing'
+        );
+      case 'invoice.payment_succeeded':
+        return event.data.object.status === 'paid';
+      default:
+        return false;
     }
   }
 

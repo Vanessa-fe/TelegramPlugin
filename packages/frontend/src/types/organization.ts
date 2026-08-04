@@ -6,6 +6,15 @@ export interface Organization {
   currency: string;
   stripeAccountId?: string | null;
   saasActive?: boolean;
+  platformPlan?: string | null;
+  platformStatus?:
+    | 'TRIALING'
+    | 'ACTIVE'
+    | 'PAST_DUE'
+    | 'CANCELED'
+    | 'INCOMPLETE'
+    | 'EXPIRED'
+    | null;
   suspendedAt?: string | null;
   suspendReason?: string | null;
   timezone?: string | null;

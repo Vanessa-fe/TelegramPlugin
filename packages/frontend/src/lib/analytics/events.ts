@@ -16,11 +16,6 @@ function withPostHog(callback: (client: typeof posthog) => void): void {
 }
 
 export const Analytics = {
-  userSignedUp: (properties?: { plan?: string }) => {
-    withPostHog((posthog) => {
-      posthog.capture("user_signed_up", properties);
-    });
-  },
   userLoggedIn: () => {
     withPostHog((posthog) => {
       posthog.capture("user_logged_in");

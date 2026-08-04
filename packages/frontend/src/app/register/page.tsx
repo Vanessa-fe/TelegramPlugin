@@ -212,7 +212,6 @@ export default function RegisterPage() {
       });
       setSubmittedEmail(result.email || formData.email.trim().toLowerCase());
       toast.success(t("success"));
-      Analytics.userSignedUp(selectedPlan ? { plan: selectedPlan } : undefined);
 
       // Send registration_success event to GTM
       if (typeof window !== "undefined" && window.dataLayer) {

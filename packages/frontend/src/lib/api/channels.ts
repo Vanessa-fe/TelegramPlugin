@@ -39,11 +39,6 @@ export const channelsApi = {
     return data;
   },
 
-  async grantAccess(payload: { subscriptionId: string; channelId: string; customerId: string }) {
-    const { data } = await apiClient.post('/access/grant', payload);
-    return data;
-  },
-
   async revokeAccess(payload: { subscriptionId: string; reason: string }) {
     const { data } = await apiClient.post('/access/revoke', payload);
     return data;

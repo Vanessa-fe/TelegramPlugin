@@ -26,6 +26,7 @@ import type {
   UpdateProfileDto,
 } from './auth.schema';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PostHogService } from '../posthog/posthog.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 
@@ -40,6 +41,7 @@ export class AuthService {
     private readonly notifications: NotificationsService,
     private readonly platformSubscriptionService: PlatformSubscriptionService,
     private readonly vipInvitationsService: VipInvitationsService,
+    private readonly posthog: PostHogService,
   ) {}
 
   async register(
@@ -142,6 +144,12 @@ export class AuthService {
       },
     });
 
+    this.captureUserSignedUp(
+      user,
+      'email',
+      data.platformPlanName ?? vipInvitation?.platformPlanName,
+    );
+
     await this.sendEmailVerification(user, frontendUrl);
 
     return {
@@ -192,7 +200,16 @@ export class AuthService {
       return verifiedUser;
     });
 
-    await this.applyPendingOrganizationBenefits(updatedUser);
+    const selectedPlan =
+      await this.applyPendingOrganizationBenefits(updatedUser);
+
+    await this.notifications.sendAdminNewUserNotification({
+      email: updatedUser.email,
+      firstName: updatedUser.firstName ?? undefined,
+      lastName: updatedUser.lastName ?? undefined,
+      method: 'email',
+      ...selectedPlan,
+    });
 
     const payload = this.buildPayload(updatedUser);
     const tokens = await this.signTokens(payload);
@@ -201,6 +218,35 @@ export class AuthService {
       ...tokens,
       user: this.sanitizeUser(updatedUser),
     };
+  }
+
+  private captureUserSignedUp(
+    user: User,
+    signupMethod: 'email' | 'google',
+    plan?: string,
+  ): void {
+    try {
+      this.posthog.identify(user.id, {
+        email: user.email,
+        role: user.role,
+      });
+      this.posthog.capture(user.id, this.posthog.events.USER_SIGNED_UP, {
+        signup_method: signupMethod,
+        organization_id: user.organizationId,
+        email_verified: user.emailVerifiedAt !== null,
+        ...(plan ? { plan } : {}),
+      });
+
+      void this.posthog.flush().catch((error) => {
+        this.logger.warn(
+          `Failed to flush user_signed_up: ${(error as Error).message}`,
+        );
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to capture user_signed_up: ${(error as Error).message}`,
+      );
+    }
   }
 
   async resendEmailVerification(
@@ -248,9 +294,12 @@ export class AuthService {
     );
   }
 
-  private async applyPendingOrganizationBenefits(user: User): Promise<void> {
+  private async applyPendingOrganizationBenefits(user: User): Promise<{
+    planName?: string;
+    planStatus?: 'active' | 'trialing' | 'pending';
+  }> {
     if (!user.organizationId) {
-      return;
+      return {};
     }
 
     const organization = await this.prisma.organization.findUnique({
@@ -264,10 +313,17 @@ export class AuthService {
         : null;
 
     if (!metadata) {
-      return;
+      return {};
     }
 
     let metadataChanged = false;
+    let planName =
+      typeof metadata.pendingPlatformPlan === 'string'
+        ? metadata.pendingPlatformPlan
+        : undefined;
+    let planStatus: 'active' | 'trialing' | 'pending' | undefined = planName
+      ? 'pending'
+      : undefined;
 
     const pendingVipInvitationId =
       typeof metadata.pendingVipInvitationId === 'string'
@@ -276,7 +332,11 @@ export class AuthService {
 
     if (pendingVipInvitationId) {
       try {
-        await this.activatePendingVipInvitation(user, pendingVipInvitationId);
+        planName = await this.activatePendingVipInvitation(
+          user,
+          pendingVipInvitationId,
+        );
+        planStatus = planName ? 'trialing' : planStatus;
         delete metadata.pendingVipInvitationId;
         metadataChanged = true;
       } catch (error) {
@@ -298,6 +358,7 @@ export class AuthService {
         );
         delete metadata.pendingPlatformPlan;
         metadataChanged = true;
+        planStatus = 'active';
       } catch (error) {
         this.logger.warn(
           `Failed to activate pending free plan for organization ${user.organizationId}: ${(error as Error).message}`,
@@ -306,7 +367,7 @@ export class AuthService {
     }
 
     if (!metadataChanged) {
-      return;
+      return { planName, planStatus };
     }
 
     await this.prisma.organization.update({
@@ -318,12 +379,14 @@ export class AuthService {
             : Prisma.DbNull,
       },
     });
+
+    return { planName, planStatus };
   }
 
   private async activatePendingVipInvitation(
     user: User,
     invitationId: string,
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const invitation = await this.vipInvitationsService.findOne(invitationId);
 
     if (invitation.email !== user.email.toLowerCase()) {
@@ -333,7 +396,7 @@ export class AuthService {
     }
 
     if (!user.organizationId) {
-      return;
+      return undefined;
     }
 
     if (
@@ -341,13 +404,11 @@ export class AuthService {
         invitation.status === 'CONVERTED') &&
       invitation.organizationId === user.organizationId
     ) {
-      return;
+      return invitation.platformPlanName;
     }
 
     if (invitation.status !== 'PENDING') {
-      throw new ConflictException(
-        "Cette invitation VIP n'est plus disponible",
-      );
+      throw new ConflictException("Cette invitation VIP n'est plus disponible");
     }
 
     const trialEndsAt = await this.platformSubscriptionService.activateVipTrial(
@@ -361,6 +422,8 @@ export class AuthService {
       user.organizationId,
       trialEndsAt,
     );
+
+    return invitation.platformPlanName;
   }
 
   private async issueEmailVerificationToken(userId: string): Promise<string> {
@@ -519,9 +582,7 @@ export class AuthService {
     }
 
     if (invitation.status !== 'PENDING') {
-      throw new ConflictException(
-        "Cette invitation VIP n'est plus disponible",
-      );
+      throw new ConflictException("Cette invitation VIP n'est plus disponible");
     }
 
     const trialEndsAt = await this.platformSubscriptionService.activateVipTrial(

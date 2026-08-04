@@ -29,10 +29,44 @@ interface FailedPayment {
   invoiceUrl: string | null;
 }
 
+interface CommissionSummary {
+  days: number;
+  feeCount: number;
+  totals: Array<{
+    currency: string;
+    grossSalesCents: number;
+    grossCommissionCents: number;
+    refundedCommissionCents: number;
+    netCommissionCents: number;
+  }>;
+  byOrganization: Array<{
+    organizationId: string | null;
+    organizationName: string;
+    stripeAccountId: string;
+    platformPlan: string | null;
+    feeCount: number;
+    currency: string;
+    grossSalesCents: number;
+    grossCommissionCents: number;
+    refundedCommissionCents: number;
+    netCommissionCents: number;
+  }>;
+}
+
+const EMPTY_COMMISSION_SUMMARY: CommissionSummary = {
+  days: 30,
+  feeCount: 0,
+  totals: [],
+  byOrganization: [],
+};
+
 export default function PaymentsPage() {
   const t = useTranslations('admin');
   const locale = useLocale();
   const [payments, setPayments] = useState<FailedPayment[]>([]);
+  const [commissions, setCommissions] = useState<CommissionSummary>(
+    EMPTY_COMMISSION_SUMMARY,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [daysFilter, setDaysFilter] = useState(30);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -40,10 +74,15 @@ export default function PaymentsPage() {
   const loadPayments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get(`/admin/dashboard/unpaid?days=${daysFilter}`);
-      setPayments(response.data);
+      const [unpaidResponse, commissionsResponse] = await Promise.all([
+        apiClient.get(`/admin/dashboard/unpaid?days=${daysFilter}`),
+        apiClient.get(`/admin/dashboard/commissions?days=${daysFilter}`),
+      ]);
+      setPayments(unpaidResponse.data);
+      setCommissions(commissionsResponse.data);
     } catch {
       setPayments([]);
+      setCommissions({ ...EMPTY_COMMISSION_SUMMARY, days: daysFilter });
     } finally {
       setIsLoading(false);
     }
@@ -90,6 +129,14 @@ export default function PaymentsPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const commissionTotal = commissions.totals[0] ?? {
+    currency: 'EUR',
+    grossSalesCents: 0,
+    grossCommissionCents: 0,
+    refundedCommissionCents: 0,
+    netCommissionCents: 0,
   };
 
   if (isLoading) {
@@ -139,6 +186,78 @@ export default function PaymentsPage() {
           </button>
         ))}
       </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-sm text-gray-500">Volume vendu via Sublynk</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900">
+            {formatCurrency(
+              commissionTotal.grossSalesCents,
+              commissionTotal.currency,
+            )}
+          </p>
+        </div>
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-sm text-gray-500">Commissions nettes collectées</p>
+          <p className="mt-2 text-2xl font-bold text-purple-700">
+            {formatCurrency(
+              commissionTotal.netCommissionCents,
+              commissionTotal.currency,
+            )}
+          </p>
+        </div>
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-sm text-gray-500">Ventes commissionnées</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900">
+            {commissions.feeCount}
+          </p>
+        </div>
+      </div>
+
+      {commissions.byOrganization.length > 0 && (
+        <div className="overflow-hidden rounded-xl border bg-white">
+          <div className="border-b px-6 py-4">
+            <h2 className="font-semibold text-gray-900">
+              Commissions par créateur
+            </h2>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-gray-50 text-left text-sm text-gray-500">
+                <th className="px-6 py-3 font-medium">Créateur</th>
+                <th className="px-6 py-3 font-medium">Plan</th>
+                <th className="px-6 py-3 font-medium">Ventes</th>
+                <th className="px-6 py-3 font-medium">Volume</th>
+                <th className="px-6 py-3 text-right font-medium">Commission</th>
+              </tr>
+            </thead>
+            <tbody>
+              {commissions.byOrganization.map((item) => (
+                <tr
+                  key={`${item.stripeAccountId}:${item.currency}`}
+                  className="border-b last:border-0"
+                >
+                  <td className="px-6 py-4 font-medium text-gray-900">
+                    {item.organizationName}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {item.platformPlan ?? '—'}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {item.feeCount}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {formatCurrency(item.grossSalesCents, item.currency)}
+                  </td>
+                  <td className="px-6 py-4 text-right font-semibold text-purple-700">
+                    {formatCurrency(item.netCommissionCents, item.currency)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Table or empty state */}
       {payments.length === 0 ? (

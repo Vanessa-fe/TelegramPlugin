@@ -413,6 +413,8 @@ export class NotificationsService implements OnModuleInit {
     firstName?: string;
     lastName?: string;
     method: 'email' | 'google';
+    planName?: string;
+    planStatus?: 'active' | 'trialing' | 'pending';
   }): Promise<void> {
     if (!this.adminEmail) {
       this.logger.debug(
@@ -421,24 +423,39 @@ export class NotificationsService implements OnModuleInit {
       return;
     }
 
-    const fullName =
+    const fullName = this.escapeHtml(
       [data.firstName, data.lastName].filter(Boolean).join(' ') ||
-      'Non renseigné';
+        'Non renseigné',
+    );
+    const email = this.escapeHtml(data.email);
     const methodLabel =
       data.method === 'google' ? '🔵 Google OAuth' : '📧 Email/Mot de passe';
+    const planName = data.planName
+      ? data.planName.charAt(0).toUpperCase() + data.planName.slice(1)
+      : 'Aucun plan choisi';
+    const planStatusLabels = {
+      active: '✅ Actif',
+      trialing: '🎁 Essai actif',
+      pending: '⏳ Sélectionné, paiement à finaliser',
+    } as const;
+    const planStatus = data.planStatus
+      ? planStatusLabels[data.planStatus]
+      : '—';
 
-    const subject = `👤 Nouvel utilisateur : ${data.email}`;
+    const subject = `👤 Nouvel utilisateur${data.planName ? ` — ${planName}` : ''} : ${data.email}`;
     const body = `
       <h1>👤 Nouvel utilisateur inscrit</h1>
 
       <h2>Détails</h2>
       <ul>
-        <li><strong>Email :</strong> ${data.email}</li>
+        <li><strong>Email :</strong> ${email}</li>
         <li><strong>Nom :</strong> ${fullName}</li>
         <li><strong>Méthode :</strong> ${methodLabel}</li>
+        <li><strong>Plan :</strong> ${planName}</li>
+        <li><strong>Statut du plan :</strong> ${planStatus}</li>
       </ul>
 
-      <p><em>Cet utilisateur n'a pas encore souscrit à un plan.</em></p>
+      <p><em>L'alerte est envoyée après la validation du compte.</em></p>
     `;
 
     await this.sendEmail(this.adminEmail, subject, body);
@@ -514,6 +531,19 @@ export class NotificationsService implements OnModuleInit {
       .replace(/<[^>]*>/g, '')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private escapeHtml(value: string): string {
+    return value.replace(/[&<>"']/g, (character) => {
+      const entities: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;',
+      };
+      return entities[character];
+    });
   }
 
   private async sendTelegram(

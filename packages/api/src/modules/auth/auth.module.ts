@@ -11,6 +11,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { CookieResponseInterceptor } from './interceptors/cookie-response.interceptor';
 import { CookieClearInterceptor } from './interceptors/cookie-clear.interceptor';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { PostHogModule } from '../posthog/posthog.module';
 import { PlatformSubscriptionModule } from '../platform-subscription/platform-subscription.module';
 import { VipInvitationsModule } from '../vip-invitations/vip-invitations.module';
 
@@ -19,6 +20,7 @@ import { VipInvitationsModule } from '../vip-invitations/vip-invitations.module'
     ConfigModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     NotificationsModule,
+    PostHogModule,
     PlatformSubscriptionModule,
     VipInvitationsModule,
     JwtModule.registerAsync({

@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PaymentEventType, AmbassadorTier } from '@prisma/client';
+import Stripe from 'stripe';
 
 export interface DashboardStats {
   newClientsThisWeek: number;
@@ -32,6 +34,30 @@ export interface FailedPaymentItem {
   organizationName: string;
   subscriptionId: string | null;
   invoiceUrl: string | null;
+}
+
+export interface CommissionSummary {
+  days: number;
+  feeCount: number;
+  totals: {
+    currency: string;
+    grossSalesCents: number;
+    grossCommissionCents: number;
+    refundedCommissionCents: number;
+    netCommissionCents: number;
+  }[];
+  byOrganization: {
+    organizationId: string | null;
+    organizationName: string;
+    stripeAccountId: string;
+    platformPlan: string | null;
+    feeCount: number;
+    currency: string;
+    grossSalesCents: number;
+    grossCommissionCents: number;
+    refundedCommissionCents: number;
+    netCommissionCents: number;
+  }[];
 }
 
 export type HealthScoreLevel = 'green' | 'orange' | 'red';
@@ -123,8 +149,17 @@ export interface CreatorDetail extends CreatorListItem {
 @Injectable()
 export class AdminDashboardService {
   private readonly logger = new Logger(AdminDashboardService.name);
+  private readonly stripe: Stripe | null;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    config: ConfigService,
+  ) {
+    const apiKey = config.get<string>('STRIPE_SECRET_KEY');
+    this.stripe = apiKey
+      ? new Stripe(apiKey, { apiVersion: '2024-06-20' })
+      : null;
+  }
 
   async getDashboardStats(): Promise<DashboardStats> {
     const now = new Date();
@@ -252,6 +287,144 @@ export class AdminDashboardService {
         invoiceUrl: payload?.hosted_invoice_url ?? null,
       };
     });
+  }
+
+  async getCommissionSummary(days = 30): Promise<CommissionSummary> {
+    const safeDays = Number.isFinite(days)
+      ? Math.min(365, Math.max(1, Math.trunc(days)))
+      : 30;
+    const emptySummary: CommissionSummary = {
+      days: safeDays,
+      feeCount: 0,
+      totals: [],
+      byOrganization: [],
+    };
+
+    if (!this.stripe) {
+      this.logger.warn('Stripe is not configured; commission summary is empty');
+      return emptySummary;
+    }
+
+    try {
+      const createdAfter = Math.floor(
+        (Date.now() - safeDays * 24 * 60 * 60 * 1000) / 1000,
+      );
+      const fees: Stripe.ApplicationFee[] = [];
+      let startingAfter: string | undefined;
+
+      do {
+        const page = await this.stripe.applicationFees.list({
+          created: { gte: createdAfter },
+          limit: 100,
+          ...(startingAfter ? { starting_after: startingAfter } : {}),
+          expand: ['data.charge'],
+        });
+        fees.push(...page.data);
+        startingAfter = page.has_more ? page.data.at(-1)?.id : undefined;
+      } while (startingAfter);
+
+      if (fees.length === 0) {
+        return emptySummary;
+      }
+
+      const accountIds = [
+        ...new Set(
+          fees
+            .map((fee) =>
+              typeof fee.account === 'string' ? fee.account : fee.account?.id,
+            )
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+      const organizations = await this.prisma.organization.findMany({
+        where: { stripeAccountId: { in: accountIds } },
+        select: {
+          id: true,
+          name: true,
+          stripeAccountId: true,
+          platformSubscription: {
+            select: { platformPlan: { select: { displayName: true, name: true } } },
+          },
+        },
+      });
+      const organizationsByAccount = new Map(
+        organizations
+          .filter((organization) => organization.stripeAccountId)
+          .map((organization) => [organization.stripeAccountId!, organization]),
+      );
+      const totals = new Map<
+        string,
+        CommissionSummary['totals'][number]
+      >();
+      const breakdown = new Map<
+        string,
+        CommissionSummary['byOrganization'][number]
+      >();
+
+      for (const fee of fees) {
+        const currency = fee.currency.toUpperCase();
+        const accountId =
+          typeof fee.account === 'string' ? fee.account : fee.account?.id;
+        if (!accountId) continue;
+
+        const charge =
+          typeof fee.charge === 'object' && fee.charge
+            ? fee.charge
+            : null;
+        const grossSalesCents = charge?.amount ?? 0;
+        const refundedCommissionCents = fee.amount_refunded ?? 0;
+        const netCommissionCents = fee.amount - refundedCommissionCents;
+        const currencyTotal = totals.get(currency) ?? {
+          currency,
+          grossSalesCents: 0,
+          grossCommissionCents: 0,
+          refundedCommissionCents: 0,
+          netCommissionCents: 0,
+        };
+        currencyTotal.grossSalesCents += grossSalesCents;
+        currencyTotal.grossCommissionCents += fee.amount;
+        currencyTotal.refundedCommissionCents += refundedCommissionCents;
+        currencyTotal.netCommissionCents += netCommissionCents;
+        totals.set(currency, currencyTotal);
+
+        const organization = organizationsByAccount.get(accountId);
+        const key = `${accountId}:${currency}`;
+        const item = breakdown.get(key) ?? {
+          organizationId: organization?.id ?? null,
+          organizationName: organization?.name ?? 'Compte Stripe inconnu',
+          stripeAccountId: accountId,
+          platformPlan:
+            organization?.platformSubscription?.platformPlan?.displayName ??
+            organization?.platformSubscription?.platformPlan?.name ??
+            null,
+          feeCount: 0,
+          currency,
+          grossSalesCents: 0,
+          grossCommissionCents: 0,
+          refundedCommissionCents: 0,
+          netCommissionCents: 0,
+        };
+        item.feeCount += 1;
+        item.grossSalesCents += grossSalesCents;
+        item.grossCommissionCents += fee.amount;
+        item.refundedCommissionCents += refundedCommissionCents;
+        item.netCommissionCents += netCommissionCents;
+        breakdown.set(key, item);
+      }
+
+      return {
+        days: safeDays,
+        feeCount: fees.length,
+        totals: [...totals.values()],
+        byOrganization: [...breakdown.values()].sort(
+          (left, right) =>
+            right.netCommissionCents - left.netCommissionCents,
+        ),
+      };
+    } catch (error) {
+      this.logger.error('Failed to load Stripe commission summary', error);
+      return emptySummary;
+    }
   }
 
   /**

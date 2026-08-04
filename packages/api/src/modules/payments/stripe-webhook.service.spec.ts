@@ -536,7 +536,15 @@ describe('StripeWebhookService', () => {
     const setupEventWithSubscription = async (
       eventType: string,
       subscriptionId = 'sub-uuid-123',
+      objectOverrides: Record<string, unknown> = {},
     ) => {
+      const defaultStatus = eventType.startsWith('customer.subscription.')
+        ? eventType === 'customer.subscription.deleted'
+          ? 'canceled'
+          : 'active'
+        : eventType === 'invoice.payment_succeeded'
+          ? 'paid'
+          : undefined;
       const mockEvent: Stripe.Event = {
         id: `evt_${eventType}`,
         type: eventType as any,
@@ -546,6 +554,11 @@ describe('StripeWebhookService', () => {
           object: {
             id: 'obj_123',
             subscription: 'sub_stripe_123',
+            ...(eventType === 'checkout.session.completed'
+              ? { payment_status: 'paid' }
+              : {}),
+            ...(defaultStatus ? { status: defaultStatus } : {}),
+            ...objectOverrides,
           } as any,
         },
       } as Stripe.Event;
@@ -622,6 +635,20 @@ describe('StripeWebhookService', () => {
       expect(prisma.subscription.update).toHaveBeenCalledWith({
         where: { id: 'sub-uuid-123' },
         data: { status: SubscriptionStatus.ACTIVE },
+      });
+    });
+
+    it('should not grant access for an unpaid completed checkout', async () => {
+      await setupEventWithSubscription(
+        'checkout.session.completed',
+        'sub-uuid-123',
+        { payment_status: 'unpaid' },
+      );
+
+      expect(channelAccessService.handlePaymentSuccess).not.toHaveBeenCalled();
+      expect(prisma.subscription.update).toHaveBeenCalledWith({
+        where: { id: 'sub-uuid-123' },
+        data: { status: SubscriptionStatus.INCOMPLETE },
       });
     });
 

@@ -17,7 +17,7 @@
     "dev:stack": "ENV_FILE=.env.development bash scripts/dev-stack.sh",
     "prod:stack": "ENV_FILE=.env.production bash scripts/dev-stack.sh",
     "db:deploy": "bash scripts/db-deploy.sh",
-    "deploy:api:dev": "fly deploy --config fly.toml -a telegram-plugin-api",
+    "deploy:api:dev": "fly deploy --config fly.dev.api.toml -a telegram-plugin-api",
     "deploy:api:prod": "fly deploy --config fly.prod.toml -a sublynk-api"
   },
   "devDependencies": {

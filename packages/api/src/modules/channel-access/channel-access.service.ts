@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -9,7 +10,13 @@ import {
   $Enums,
   AuditActorType,
   EntitlementType,
+<<<<<<< HEAD
   PlanInterval,
+=======
+  PaymentEventType,
+  PaymentProvider,
+  SubscriptionStatus,
+>>>>>>> dev
 } from '@prisma/client';
 import type { ChannelAccess } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -45,6 +52,139 @@ export class ChannelAccessService {
     }
 
     return parsed;
+  }
+
+  async assertSubscriptionOwnership(
+    subscriptionId: string,
+    organizationId?: string | null,
+  ): Promise<void> {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      select: { organizationId: true },
+    });
+
+    if (
+      !subscription ||
+      (organizationId !== undefined &&
+        subscription.organizationId !== organizationId)
+    ) {
+      throw new NotFoundException('Subscription not found');
+    }
+  }
+
+  async grantVerifiedAccess(
+    subscriptionId: string,
+    organizationId?: string | null,
+  ): Promise<void> {
+    const provider = await this.assertVerifiedSubscriptionPayment(
+      subscriptionId,
+      organizationId,
+    );
+
+    await this.handlePaymentSuccess(subscriptionId, provider);
+  }
+
+  async assertVerifiedSubscriptionPayment(
+    subscriptionId: string,
+    organizationId?: string | null,
+  ): Promise<PaymentProvider> {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      select: {
+        organizationId: true,
+        status: true,
+        paymentEvents: {
+          where: {
+            type: {
+              in: [
+                PaymentEventType.CHECKOUT_COMPLETED,
+                PaymentEventType.SUBSCRIPTION_CREATED,
+                PaymentEventType.INVOICE_PAID,
+              ],
+            },
+          },
+          orderBy: { occurredAt: 'desc' },
+          select: { provider: true, type: true, payload: true },
+        },
+      },
+    });
+
+    if (
+      !subscription ||
+      (organizationId !== undefined &&
+        subscription.organizationId !== organizationId)
+    ) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    if (
+      subscription.status !== SubscriptionStatus.ACTIVE &&
+      subscription.status !== SubscriptionStatus.TRIALING
+    ) {
+      throw new ForbiddenException(
+        "L'accès ne peut être accordé qu'après validation du paiement",
+      );
+    }
+
+    const verifiedEvent = subscription.paymentEvents.find((event) =>
+      this.isVerifiedPaymentEvidence(
+        event.provider,
+        event.type,
+        event.payload,
+        subscription.status,
+      ),
+    );
+
+    if (!verifiedEvent) {
+      throw new ForbiddenException(
+        'Aucune preuve de paiement vérifiée pour cet abonnement',
+      );
+    }
+
+    return verifiedEvent.provider;
+  }
+
+  private isVerifiedPaymentEvidence(
+    provider: PaymentProvider,
+    type: PaymentEventType,
+    payload: unknown,
+    subscriptionStatus: SubscriptionStatus,
+  ): boolean {
+    if (
+      provider === PaymentProvider.TELEGRAM_STARS &&
+      type === PaymentEventType.INVOICE_PAID
+    ) {
+      return true;
+    }
+
+    if (provider !== PaymentProvider.STRIPE) {
+      return false;
+    }
+
+    const event = payload as {
+      data?: {
+        object?: {
+          payment_status?: string;
+          status?: string;
+        };
+      };
+    } | null;
+    const object = event?.data?.object;
+
+    switch (type) {
+      case PaymentEventType.CHECKOUT_COMPLETED:
+        return (
+          object?.payment_status === 'paid' ||
+          (object?.payment_status === 'no_payment_required' &&
+            subscriptionStatus === SubscriptionStatus.TRIALING)
+        );
+      case PaymentEventType.SUBSCRIPTION_CREATED:
+        return object?.status === 'active' || object?.status === 'trialing';
+      case PaymentEventType.INVOICE_PAID:
+        return object?.status === 'paid';
+      default:
+        return false;
+    }
   }
 
   async handlePaymentSuccess(
@@ -483,7 +623,10 @@ export class ChannelAccessService {
       throw new NotFoundException('Channel access not found');
     }
 
-    if (organizationId && access.channel.organizationId !== organizationId) {
+    if (
+      organizationId !== undefined &&
+      access.channel.organizationId !== organizationId
+    ) {
       throw new NotFoundException('Channel access not found');
     }
 
@@ -492,6 +635,11 @@ export class ChannelAccessService {
         'Manual confirmation is only available for WhatsApp channels',
       );
     }
+
+    await this.assertVerifiedSubscriptionPayment(
+      access.subscriptionId,
+      organizationId,
+    );
 
     if (access.status === $Enums.AccessStatus.GRANTED) {
       return access;
@@ -525,7 +673,10 @@ export class ChannelAccessService {
       throw new NotFoundException('Channel access not found');
     }
 
-    if (organizationId && access.channel.organizationId !== organizationId) {
+    if (
+      organizationId !== undefined &&
+      access.channel.organizationId !== organizationId
+    ) {
       throw new NotFoundException('Channel access not found');
     }
 

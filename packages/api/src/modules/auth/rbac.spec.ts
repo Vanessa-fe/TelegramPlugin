@@ -6,6 +6,17 @@ import { SubscriptionsController } from '../subscriptions/subscriptions.controll
 import { ChannelAccessController } from '../channel-access/channel-access.controller';
 import { PaymentEventsController } from '../payment-events/payment-events.controller';
 
+jest.mock('@telegram-plugin/shared', () => ({
+  queueNames: {
+    grantAccess: 'grant-access',
+    revokeAccess: 'revoke-access',
+    grantAccessDlq: 'grant-access-dlq',
+    revokeAccessDlq: 'revoke-access-dlq',
+  },
+  GrantAccessPayload: { parse: jest.fn((value) => value) },
+  RevokeAccessPayload: { parse: jest.fn((value) => value) },
+}));
+
 describe('RBAC metadata', () => {
   const getRoles = (
     target: Record<string, unknown>,
@@ -57,6 +68,16 @@ describe('RBAC metadata', () => {
       expect(grantRoles).toEqual([UserRole.SUPPORT]);
       expect(revokeRoles).toEqual([UserRole.SUPPORT]);
       expect(replayRoles).toEqual([UserRole.SUPPORT]);
+    });
+
+    it('should prevent organization admins from manually granting access', () => {
+      const grantRoles = getRoles(
+        ChannelAccessController.prototype,
+        'grantAccess',
+      );
+
+      expect(grantRoles).toEqual([UserRole.SUPERADMIN]);
+      expect(grantRoles).not.toContain(UserRole.ORG_ADMIN);
     });
   });
 

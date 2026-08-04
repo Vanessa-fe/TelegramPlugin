@@ -6,6 +6,17 @@ import { ChannelAccessQueue } from './channel-access.queue';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import type { AuthUser } from '../auth/auth.types';
 
+jest.mock('@telegram-plugin/shared', () => ({
+  queueNames: {
+    grantAccess: 'grant-access',
+    revokeAccess: 'revoke-access',
+    grantAccessDlq: 'grant-access-dlq',
+    revokeAccessDlq: 'revoke-access-dlq',
+  },
+  GrantAccessPayload: { parse: jest.fn((value) => value) },
+  RevokeAccessPayload: { parse: jest.fn((value) => value) },
+}));
+
 describe('ChannelAccessController', () => {
   let controller: ChannelAccessController;
   let queue: jest.Mocked<ChannelAccessQueue>;
@@ -32,7 +43,8 @@ describe('ChannelAccessController', () => {
         {
           provide: ChannelAccessService,
           useValue: {
-            handlePaymentSuccess: jest.fn(),
+            grantVerifiedAccess: jest.fn(),
+            assertSubscriptionOwnership: jest.fn(),
             handlePaymentFailure: jest.fn(),
           },
         },
@@ -143,9 +155,9 @@ describe('ChannelAccessController', () => {
         'req-support-1',
       );
 
-      expect(service.handlePaymentSuccess).toHaveBeenCalledWith(
+      expect(service.grantVerifiedAccess).toHaveBeenCalledWith(
         'sub-123',
-        'STRIPE',
+        undefined,
       );
       expect(auditLog.createForSubscription).toHaveBeenCalledWith(
         expect.objectContaining({
