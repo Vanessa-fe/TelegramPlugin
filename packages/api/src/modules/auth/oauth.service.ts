@@ -2,6 +2,7 @@ import {
   Injectable,
   ForbiddenException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -12,6 +13,8 @@ import { AuthTokens, JwtPayload, AuthProfile, AuthResult } from './auth.types';
 import type { GoogleProfile } from './strategies/google.strategy';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PostHogService } from '../posthog/posthog.service';
 
 export type OAuthProfile = GoogleProfile;
 
@@ -21,12 +24,16 @@ export interface OAuthLoginResult extends AuthResult {
 
 @Injectable()
 export class OAuthService {
+  private readonly logger = new Logger(OAuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly platformSubscriptionService: PlatformSubscriptionService,
     private readonly vipInvitationsService: VipInvitationsService,
+    private readonly notifications: NotificationsService,
+    private readonly posthog: PostHogService,
   ) {}
 
   async handleOAuthLogin(
@@ -142,9 +149,20 @@ export class OAuthService {
       },
     });
 
-    if (vipToken) {
-      await this.applyVipInvitationToken(user, vipToken);
-    }
+    const vipPlanName = vipToken
+      ? await this.applyVipInvitationToken(user, vipToken)
+      : undefined;
+
+    this.captureUserSignedUp(user, vipPlanName);
+
+    await this.notifications.sendAdminNewUserNotification({
+      email: user.email,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
+      method: 'google',
+      planName: vipPlanName,
+      planStatus: vipPlanName ? 'trialing' : undefined,
+    });
 
     const authResult = await this.generateAuthResult(user);
     return { ...authResult, isNewUser: true };
@@ -158,6 +176,31 @@ export class OAuthService {
       ...tokens,
       user: this.sanitizeUser(user),
     };
+  }
+
+  private captureUserSignedUp(user: User, plan?: string): void {
+    try {
+      this.posthog.identify(user.id, {
+        email: user.email,
+        role: user.role,
+      });
+      this.posthog.capture(user.id, this.posthog.events.USER_SIGNED_UP, {
+        signup_method: 'google',
+        organization_id: user.organizationId,
+        email_verified: true,
+        ...(plan ? { plan } : {}),
+      });
+
+      void this.posthog.flush().catch((error) => {
+        this.logger.warn(
+          `Failed to flush user_signed_up: ${(error as Error).message}`,
+        );
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to capture user_signed_up: ${(error as Error).message}`,
+      );
+    }
   }
 
   private sanitizeUser(user: User): AuthProfile {
@@ -301,9 +344,9 @@ export class OAuthService {
   private async applyVipInvitationToken(
     user: User,
     vipToken: string,
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     if (!user.organizationId) {
-      return;
+      return undefined;
     }
 
     const invitation = await this.vipInvitationsService.findRedeemableByToken(
@@ -316,13 +359,11 @@ export class OAuthService {
         invitation.status === 'CONVERTED') &&
       invitation.organizationId === user.organizationId
     ) {
-      return;
+      return invitation.platformPlanName;
     }
 
     if (invitation.status !== 'PENDING') {
-      throw new ConflictException(
-        "Cette invitation VIP n'est plus disponible",
-      );
+      throw new ConflictException("Cette invitation VIP n'est plus disponible");
     }
 
     const trialEndsAt = await this.platformSubscriptionService.activateVipTrial(
@@ -336,5 +377,7 @@ export class OAuthService {
       user.organizationId,
       trialEndsAt,
     );
+
+    return invitation.platformPlanName;
   }
 }

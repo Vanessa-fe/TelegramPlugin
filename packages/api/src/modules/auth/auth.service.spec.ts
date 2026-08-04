@@ -15,6 +15,15 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
+import { PostHogService } from '../posthog/posthog.service';
+
+jest.mock('@telegram-plugin/shared', () => ({
+  initPostHog: jest.fn(() => null),
+  shutdownPostHog: jest.fn(),
+  ServerEvents: {
+    USER_SIGNED_UP: 'user_signed_up',
+  },
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -78,6 +87,7 @@ describe('AuthService', () => {
     sendPasswordResetEmail: jest.fn(),
     sendEmailVerificationEmail: jest.fn(),
     sendAccountAlreadyExistsEmail: jest.fn(),
+    sendAdminNewUserNotification: jest.fn(),
   };
 
   const mockPlatformSubscriptionService = {
@@ -89,6 +99,13 @@ describe('AuthService', () => {
     findRedeemableByToken: jest.fn(),
     findOne: jest.fn(),
     activate: jest.fn(),
+  };
+
+  const mockPostHogService = {
+    events: { USER_SIGNED_UP: 'user_signed_up' },
+    identify: jest.fn(),
+    capture: jest.fn(),
+    flush: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -107,6 +124,7 @@ describe('AuthService', () => {
           provide: VipInvitationsService,
           useValue: mockVipInvitationsService,
         },
+        { provide: PostHogService, useValue: mockPostHogService },
       ],
     }).compile();
 
@@ -180,6 +198,19 @@ describe('AuthService', () => {
         expect.stringContaining('/verify-email#token='),
         registerDto.firstName,
       );
+      expect(mockPostHogService.identify).toHaveBeenCalledWith('1', {
+        email: registerDto.email.toLowerCase(),
+        role: UserRole.ORG_ADMIN,
+      });
+      expect(mockPostHogService.capture).toHaveBeenCalledWith(
+        '1',
+        'user_signed_up',
+        {
+          signup_method: 'email',
+          organization_id: 'org-1',
+          email_verified: false,
+        },
+      );
       expect(result.verificationRequired).toBe(true);
       expect(result.email).toBe(registerDto.email.toLowerCase());
     });
@@ -238,6 +269,7 @@ describe('AuthService', () => {
         expect.stringContaining('/login'),
         expect.stringContaining('/forgot-password'),
       );
+      expect(mockPostHogService.capture).not.toHaveBeenCalled();
     });
 
     it('should always create a new organization for public registration', async () => {
@@ -481,6 +513,16 @@ describe('AuthService', () => {
       expect(mockPrismaService.organization.update).toHaveBeenCalledWith({
         where: { id: 'org-1' },
         data: { metadata: Prisma.DbNull },
+      });
+      expect(
+        mockNotificationsService.sendAdminNewUserNotification,
+      ).toHaveBeenCalledWith({
+        email: 'starter@example.com',
+        firstName: 'Starter',
+        lastName: 'User',
+        method: 'email',
+        planName: 'starter',
+        planStatus: 'active',
       });
       expect(result.accessToken).toBe('token');
     });
@@ -753,10 +795,7 @@ describe('AuthService', () => {
 
       expect(
         mockVipInvitationsService.findRedeemableByToken,
-      ).toHaveBeenCalledWith(
-        '68457d91-0e10-4cd1-bf0e-e893ee720f86',
-        email,
-      );
+      ).toHaveBeenCalledWith('68457d91-0e10-4cd1-bf0e-e893ee720f86', email);
       expect(
         mockPlatformSubscriptionService.activateVipTrial,
       ).toHaveBeenCalledWith('org-1', 'growth', 30);
