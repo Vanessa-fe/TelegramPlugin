@@ -60,7 +60,11 @@ interface CreatorDetail {
   ownerEmail: string | null;
   channelsCount: number;
   customersCount: number;
+  prospectsCount: number;
+  checkoutsStartedCount: number;
+  payingCustomersCount: number;
   activeSubscriptionsCount: number;
+  salesCount: number;
   platformPlan: string | null;
   platformStatus: string | null;
   paymentRisk: {
@@ -344,7 +348,7 @@ export default function CreatorDetailPage() {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -362,12 +366,44 @@ export default function CreatorDetailPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-green-100 p-2">
-                <Users className="h-5 w-5 text-green-600" />
+              <div className="rounded-lg bg-orange-100 p-2">
+                <Users className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{creator.customersCount}</p>
-                <p className="text-sm text-gray-500">Clients</p>
+                <p className="text-2xl font-bold">{creator.prospectsCount}</p>
+                <p className="text-sm text-gray-500">Prospects sans paiement</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-blue-100 p-2">
+                <Clock className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {creator.checkoutsStartedCount}
+                </p>
+                <p className="text-sm text-gray-500">Checkouts commencés</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-green-100 p-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {creator.payingCustomersCount}
+                </p>
+                <p className="text-sm text-gray-500">Clients payants</p>
               </div>
             </div>
           </CardContent>
@@ -384,6 +420,20 @@ export default function CreatorDetailPage() {
                   {creator.activeSubscriptionsCount}
                 </p>
                 <p className="text-sm text-gray-500">Abos actifs</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-emerald-100 p-2">
+                <CreditCard className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{creator.salesCount}</p>
+                <p className="text-sm text-gray-500">Ventes confirmées</p>
               </div>
             </div>
           </CardContent>

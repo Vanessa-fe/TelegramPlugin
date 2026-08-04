@@ -1,7 +1,12 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PaymentEventType, AmbassadorTier } from '@prisma/client';
+import {
+  AmbassadorTier,
+  PaymentEventType,
+  SubscriptionStatus,
+  UserRole,
+} from '@prisma/client';
 import Stripe from 'stripe';
 
 export interface DashboardStats {
@@ -88,7 +93,11 @@ export interface CreatorListItem {
   ownerEmail: string | null;
   channelsCount: number;
   customersCount: number;
+  prospectsCount: number;
+  checkoutsStartedCount: number;
+  payingCustomersCount: number;
   activeSubscriptionsCount: number;
+  salesCount: number;
   platformPlan: string | null;
   platformStatus: string | null;
   // Payment risk indicators
@@ -100,6 +109,13 @@ export interface CreatorListItem {
   } | null;
   // Health score
   healthScore: HealthScore;
+}
+
+interface OrganizationCommerceMetrics {
+  paidCustomerIds: Set<string>;
+  salesCount: number;
+  recentSalesCount: number;
+  previousSalesCount: number;
 }
 
 export interface CreatorDetail extends CreatorListItem {
@@ -439,6 +455,8 @@ export class AdminDashboardService {
     const organizations = await this.prisma.organization.findMany({
       where: {
         deletedAt: null,
+        // Internal administration accounts must not affect creator metrics.
+        users: { none: { role: UserRole.SUPERADMIN } },
       },
       include: {
         users: {
@@ -454,8 +472,7 @@ export class AdminDashboardService {
           select: { id: true },
         },
         subscriptions: {
-          where: { status: 'ACTIVE' },
-          select: { id: true, createdAt: true },
+          select: { id: true, createdAt: true, status: true },
         },
         platformSubscription: {
           select: {
@@ -470,31 +487,22 @@ export class AdminDashboardService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Get recent sales counts per organization (last 30 days vs previous 30 days)
-    const recentSales = await this.prisma.subscription.groupBy({
-      by: ['organizationId'],
-      where: {
-        createdAt: { gte: thirtyDaysAgo },
-      },
-      _count: { id: true },
-    });
-
-    const previousSales = await this.prisma.subscription.groupBy({
-      by: ['organizationId'],
-      where: {
-        createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
-      },
-      _count: { id: true },
-    });
-
-    const recentSalesMap = new Map(
-      recentSales.map((s) => [s.organizationId, s._count.id]),
-    );
-    const previousSalesMap = new Map(
-      previousSales.map((s) => [s.organizationId, s._count.id]),
+    const commerceMetrics = await this.getCommerceMetrics(
+      organizations.map((org) => org.id),
+      thirtyDaysAgo,
+      sixtyDaysAgo,
     );
 
     return organizations.map((org) => {
+      const metrics = commerceMetrics.get(org.id) ??
+        this.emptyCommerceMetrics();
+      const activeSubscriptions = org.subscriptions.filter(
+        (subscription) => subscription.status === SubscriptionStatus.ACTIVE,
+      );
+      const payingCustomersCount = org.customers.filter((customer) =>
+        metrics.paidCustomerIds.has(customer.id),
+      ).length;
+
       // Calculate payment risk
       let paymentRisk: CreatorListItem['paymentRisk'] = null;
 
@@ -526,11 +534,11 @@ export class AdminDashboardService {
 
       // Calculate health score
       const healthScore = this.calculateHealthScore(
-        org,
+        { ...org, subscriptions: activeSubscriptions },
         now,
         DAY_IN_MS,
-        recentSalesMap.get(org.id) ?? 0,
-        previousSalesMap.get(org.id) ?? 0,
+        metrics.recentSalesCount,
+        metrics.previousSalesCount,
       );
 
       return {
@@ -544,13 +552,116 @@ export class AdminDashboardService {
         ownerEmail: org.users[0]?.email ?? null,
         channelsCount: org.channels.length,
         customersCount: org.customers.length,
-        activeSubscriptionsCount: org.subscriptions.length,
+        prospectsCount: Math.max(
+          0,
+          org.customers.length - payingCustomersCount,
+        ),
+        checkoutsStartedCount: org.subscriptions.length,
+        payingCustomersCount,
+        activeSubscriptionsCount: activeSubscriptions.length,
+        salesCount: metrics.salesCount,
         platformPlan: org.platformSubscription?.platformPlan?.name ?? null,
         platformStatus: org.platformSubscription?.status ?? null,
         paymentRisk,
         healthScore,
       };
     });
+  }
+
+  private emptyCommerceMetrics(): OrganizationCommerceMetrics {
+    return {
+      paidCustomerIds: new Set<string>(),
+      salesCount: 0,
+      recentSalesCount: 0,
+      previousSalesCount: 0,
+    };
+  }
+
+  /**
+   * A sale is counted only after payment confirmation. Recurring Stripe sales
+   * are represented by paid invoices. One-time Stripe purchases are represented
+   * by a paid checkout, while Telegram Stars payments use paid invoice events.
+   */
+  private async getCommerceMetrics(
+    organizationIds: string[],
+    thirtyDaysAgo: Date,
+    sixtyDaysAgo: Date,
+  ): Promise<Map<string, OrganizationCommerceMetrics>> {
+    const metricsByOrganization = new Map<
+      string,
+      OrganizationCommerceMetrics
+    >();
+
+    for (const organizationId of organizationIds) {
+      metricsByOrganization.set(organizationId, this.emptyCommerceMetrics());
+    }
+
+    if (organizationIds.length === 0) {
+      return metricsByOrganization;
+    }
+
+    const events = await this.prisma.paymentEvent.findMany({
+      where: {
+        organizationId: { in: organizationIds },
+        type: {
+          in: [
+            PaymentEventType.INVOICE_PAID,
+            PaymentEventType.CHECKOUT_COMPLETED,
+          ],
+        },
+      },
+      select: {
+        organizationId: true,
+        type: true,
+        payload: true,
+        occurredAt: true,
+        subscription: { select: { customerId: true } },
+      },
+    });
+
+    for (const event of events) {
+      if (!this.isSuccessfulSaleEvent(event.type, event.payload)) {
+        continue;
+      }
+
+      const metrics = metricsByOrganization.get(event.organizationId);
+      if (!metrics) continue;
+
+      metrics.salesCount += 1;
+      if (event.subscription?.customerId) {
+        metrics.paidCustomerIds.add(event.subscription.customerId);
+      }
+
+      if (event.occurredAt >= thirtyDaysAgo) {
+        metrics.recentSalesCount += 1;
+      } else if (event.occurredAt >= sixtyDaysAgo) {
+        metrics.previousSalesCount += 1;
+      }
+    }
+
+    return metricsByOrganization;
+  }
+
+  private isSuccessfulSaleEvent(
+    type: PaymentEventType,
+    payload: unknown,
+  ): boolean {
+    if (type === PaymentEventType.INVOICE_PAID) {
+      return true;
+    }
+
+    if (type !== PaymentEventType.CHECKOUT_COMPLETED) {
+      return false;
+    }
+
+    const event = payload as {
+      data?: { object?: { mode?: string; payment_status?: string } };
+    } | null;
+    const checkout = event?.data?.object;
+
+    // Subscription checkouts also emit an invoice event. Counting only
+    // one-time paid checkouts here prevents the initial payment being doubled.
+    return checkout?.mode === 'payment' && checkout.payment_status === 'paid';
   }
 
   /**
@@ -712,8 +823,7 @@ export class AdminDashboardService {
           select: { id: true },
         },
         subscriptions: {
-          where: { status: 'ACTIVE' },
-          select: { id: true, createdAt: true },
+          select: { id: true, createdAt: true, status: true },
         },
         products: {
           select: {
@@ -758,18 +868,20 @@ export class AdminDashboardService {
       throw new NotFoundException('Creator not found');
     }
 
-    // Get revenue stats
-    const [recentSalesCount, previousSalesCount] = await Promise.all([
-      this.prisma.subscription.count({
-        where: { organizationId: id, createdAt: { gte: thirtyDaysAgo } },
-      }),
-      this.prisma.subscription.count({
-        where: {
-          organizationId: id,
-          createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo },
-        },
-      }),
-    ]);
+    const commerceMetrics =
+      (
+        await this.getCommerceMetrics(
+          [id],
+          thirtyDaysAgo,
+          sixtyDaysAgo,
+        )
+      ).get(id) ?? this.emptyCommerceMetrics();
+    const activeSubscriptions = org.subscriptions.filter(
+      (subscription) => subscription.status === SubscriptionStatus.ACTIVE,
+    );
+    const payingCustomersCount = org.customers.filter((customer) =>
+      commerceMetrics.paidCustomerIds.has(customer.id),
+    ).length;
 
     // Calculate revenue from payment events
     const [revenueThisMonth, revenuePreviousMonth] = await Promise.all([
@@ -805,11 +917,11 @@ export class AdminDashboardService {
 
     // Calculate health score
     const healthScore = this.calculateHealthScore(
-      org,
+      { ...org, subscriptions: activeSubscriptions },
       now,
       DAY_IN_MS,
-      recentSalesCount,
-      previousSalesCount,
+      commerceMetrics.recentSalesCount,
+      commerceMetrics.previousSalesCount,
     );
 
     // Map channels with access counts
@@ -880,7 +992,14 @@ export class AdminDashboardService {
       ownerEmail: org.users[0]?.email ?? null,
       channelsCount: org.channels.length,
       customersCount: org.customers.length,
-      activeSubscriptionsCount: org.subscriptions.length,
+      prospectsCount: Math.max(
+        0,
+        org.customers.length - payingCustomersCount,
+      ),
+      checkoutsStartedCount: org.subscriptions.length,
+      payingCustomersCount,
+      activeSubscriptionsCount: activeSubscriptions.length,
+      salesCount: commerceMetrics.salesCount,
       platformPlan: org.platformSubscription?.platformPlan?.name ?? null,
       platformStatus: org.platformSubscription?.status ?? null,
       paymentRisk,

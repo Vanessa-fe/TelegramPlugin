@@ -1,4 +1,9 @@
 import { ConfigService } from '@nestjs/config';
+import {
+  PaymentEventType,
+  SubscriptionStatus,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminDashboardService } from './admin-dashboard.service';
 
@@ -84,5 +89,98 @@ describe('AdminDashboardService commission summary', () => {
       byOrganization: [],
     });
     expect(prisma.organization.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('AdminDashboardService creator commerce metrics', () => {
+  it('separates prospects, paying customers, checkouts and confirmed sales', async () => {
+    const now = new Date();
+    const prisma = {
+      organization: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: 'org_123',
+            name: 'Créateur Test',
+            slug: 'createur-test',
+            billingEmail: 'creator@example.com',
+            saasActive: true,
+            suspendedAt: null,
+            createdAt: now,
+            users: [{ email: 'creator@example.com', lastLoginAt: now }],
+            channels: [{ id: 'channel_1' }],
+            customers: [{ id: 'customer_paid' }, { id: 'customer_prospect' }],
+            subscriptions: [
+              {
+                id: 'subscription_paid',
+                createdAt: now,
+                status: SubscriptionStatus.ACTIVE,
+              },
+              {
+                id: 'subscription_abandoned',
+                createdAt: now,
+                status: SubscriptionStatus.INCOMPLETE,
+              },
+            ],
+            platformSubscription: null,
+          },
+        ]),
+      },
+      paymentEvent: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            organizationId: 'org_123',
+            type: PaymentEventType.INVOICE_PAID,
+            payload: { data: { object: { amount_paid: 1000 } } },
+            occurredAt: now,
+            subscription: { customerId: 'customer_paid' },
+          },
+          {
+            organizationId: 'org_123',
+            type: PaymentEventType.CHECKOUT_COMPLETED,
+            payload: {
+              data: {
+                object: { mode: 'subscription', payment_status: 'paid' },
+              },
+            },
+            occurredAt: now,
+            subscription: { customerId: 'customer_paid' },
+          },
+          {
+            organizationId: 'org_123',
+            type: PaymentEventType.CHECKOUT_COMPLETED,
+            payload: {
+              data: { object: { mode: 'payment', payment_status: 'unpaid' } },
+            },
+            occurredAt: now,
+            subscription: { customerId: 'customer_prospect' },
+          },
+        ]),
+      },
+    } as unknown as PrismaService;
+    const config = {
+      get: jest.fn().mockReturnValue(undefined),
+    } as unknown as ConfigService;
+    const service = new AdminDashboardService(prisma, config);
+
+    const result = await service.getCreatorsList();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(
+      expect.objectContaining({
+        customersCount: 2,
+        prospectsCount: 1,
+        checkoutsStartedCount: 2,
+        payingCustomersCount: 1,
+        activeSubscriptionsCount: 1,
+        salesCount: 1,
+      }),
+    );
+    expect(prisma.organization.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          users: { none: { role: UserRole.SUPERADMIN } },
+        }),
+      }),
+    );
   });
 });

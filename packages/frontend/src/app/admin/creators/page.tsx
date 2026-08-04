@@ -63,7 +63,11 @@ interface Creator {
   ownerEmail: string | null;
   channelsCount: number;
   customersCount: number;
+  prospectsCount: number;
+  checkoutsStartedCount: number;
+  payingCustomersCount: number;
   activeSubscriptionsCount: number;
+  salesCount: number;
   platformPlan: string | null;
   platformStatus: string | null;
   paymentRisk: {
@@ -338,8 +342,8 @@ export default function CreatorsPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-white">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-xl border bg-white">
+          <table className="min-w-[1380px] w-full">
             <thead>
               <tr className="border-b bg-gray-50">
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
@@ -357,13 +361,40 @@ export default function CreatorsPage() {
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
                   <span className="flex items-center gap-1">
                     <UserCheck className="h-4 w-4" />
-                    Clients
+                    Prospects
                   </span>
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
+                <th
+                  className="px-4 py-4 text-left text-sm font-medium text-gray-500"
+                  title="Parcours de paiement commencés, terminés ou non"
+                >
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    Checkouts
+                  </span>
+                </th>
+                <th
+                  className="px-4 py-4 text-left text-sm font-medium text-gray-500"
+                  title="Personnes ayant réalisé au moins un paiement confirmé"
+                >
+                  <span className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    Payants
+                  </span>
+                </th>
+                <th className="px-4 py-4 text-left text-sm font-medium text-gray-500">
                   <span className="flex items-center gap-1">
                     <CreditCard className="h-4 w-4" />
                     Abos actifs
+                  </span>
+                </th>
+                <th
+                  className="px-4 py-4 text-left text-sm font-medium text-gray-500"
+                  title="Nombre total de paiements confirmés"
+                >
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4" />
+                    Ventes
                   </span>
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
@@ -452,18 +483,43 @@ export default function CreatorsPage() {
                         {creator.channelsCount}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td
+                      className="px-6 py-4"
+                      title="Contacts identifiés sans paiement confirmé"
+                    >
                       <span
                         className={`text-sm font-medium ${
-                          creator.customersCount > 0
+                          creator.prospectsCount > 0
+                            ? "text-orange-600"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {creator.prospectsCount}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={`text-sm font-medium ${
+                          creator.checkoutsStartedCount > 0
                             ? "text-gray-900"
                             : "text-gray-400"
                         }`}
                       >
-                        {creator.customersCount}
+                        {creator.checkoutsStartedCount}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
+                      <span
+                        className={`text-sm font-medium ${
+                          creator.payingCustomersCount > 0
+                            ? "text-green-600"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {creator.payingCustomersCount}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
                       <span
                         className={`text-sm font-medium ${
                           creator.activeSubscriptionsCount > 0
@@ -472,6 +528,17 @@ export default function CreatorsPage() {
                         }`}
                       >
                         {creator.activeSubscriptionsCount}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={`text-sm font-medium ${
+                          creator.salesCount > 0
+                            ? "text-green-600"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {creator.salesCount}
                       </span>
                     </td>
                     <td className="px-6 py-4">
