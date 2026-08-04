@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   AmbassadorTier,
   PaymentEventType,
+  PlanInterval,
   SubscriptionStatus,
   UserRole,
 } from '@prisma/client';
@@ -28,6 +29,22 @@ interface InvoicePayload {
   hosted_invoice_url?: string;
 }
 
+interface StoredPaymentObject extends InvoicePayload {
+  mode?: string;
+  payment_status?: string;
+  amount_total?: number;
+  billing_reason?: string;
+  totalAmount?: number;
+  customer_details?: {
+    email?: string | null;
+    name?: string | null;
+  } | null;
+}
+
+interface StoredPaymentPayload extends StoredPaymentObject {
+  data?: { object?: StoredPaymentObject };
+}
+
 export interface FailedPaymentItem {
   id: string;
   occurredAt: Date;
@@ -39,6 +56,21 @@ export interface FailedPaymentItem {
   organizationName: string;
   subscriptionId: string | null;
   invoiceUrl: string | null;
+}
+
+export type AdminPaymentKind = 'ONE_TIME' | 'NEW_SUBSCRIPTION' | 'RENEWAL';
+
+export interface AdminPaymentItem {
+  id: string;
+  occurredAt: Date;
+  amount: number;
+  currency: string;
+  kind: AdminPaymentKind;
+  provider: string;
+  customerEmail: string | null;
+  customerName: string | null;
+  organizationName: string;
+  productName: string | null;
 }
 
 export interface CommissionSummary {
@@ -305,6 +337,112 @@ export class AdminDashboardService {
     });
   }
 
+  /**
+   * Successful customer payments, normalized for the superadmin ledger.
+   * Subscription checkout events are intentionally excluded because Stripe also
+   * emits the corresponding paid invoice; keeping both would double the sale.
+   */
+  async getPaymentsList(days = 30): Promise<AdminPaymentItem[]> {
+    const safeDays = Number.isFinite(days)
+      ? Math.min(365, Math.max(1, Math.trunc(days)))
+      : 30;
+    const since = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000);
+
+    const events = await this.prisma.paymentEvent.findMany({
+      where: {
+        type: {
+          in: [
+            PaymentEventType.INVOICE_PAID,
+            PaymentEventType.CHECKOUT_COMPLETED,
+          ],
+        },
+        occurredAt: { gte: since },
+      },
+      include: {
+        organization: { select: { name: true } },
+        subscription: {
+          include: {
+            customer: { select: { email: true, displayName: true } },
+            plan: {
+              select: {
+                name: true,
+                currency: true,
+                priceCents: true,
+                interval: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { occurredAt: 'desc' },
+    });
+
+    return events.flatMap((event): AdminPaymentItem[] => {
+      const payload = event.payload as StoredPaymentPayload | null;
+      const stripeObject = payload?.data?.object;
+      const customer = event.subscription?.customer;
+      const plan = event.subscription?.plan;
+
+      if (event.type === PaymentEventType.CHECKOUT_COMPLETED) {
+        if (
+          stripeObject?.mode !== 'payment' ||
+          stripeObject?.payment_status !== 'paid'
+        ) {
+          return [];
+        }
+
+        return [
+          {
+            id: event.id,
+            occurredAt: event.occurredAt,
+            amount: stripeObject.amount_total ?? plan?.priceCents ?? 0,
+            currency: stripeObject.currency ?? plan?.currency ?? 'eur',
+            kind: 'ONE_TIME',
+            provider: event.provider,
+            customerEmail:
+              customer?.email ?? stripeObject.customer_details?.email ?? null,
+            customerName:
+              customer?.displayName ??
+              stripeObject.customer_details?.name ??
+              null,
+            organizationName: event.organization.name,
+            productName: plan?.name ?? null,
+          },
+        ];
+      }
+
+      const invoice = stripeObject ?? payload ?? {};
+      const billingReason = invoice.billing_reason;
+      const kind: AdminPaymentKind =
+        plan?.interval === PlanInterval.ONE_TIME
+          ? 'ONE_TIME'
+          : billingReason === 'subscription_cycle' ||
+              billingReason === 'subscription_update'
+            ? 'RENEWAL'
+            : 'NEW_SUBSCRIPTION';
+
+      return [
+        {
+          id: event.id,
+          occurredAt: event.occurredAt,
+          amount:
+            invoice.amount_paid ?? invoice.totalAmount ?? plan?.priceCents ?? 0,
+          currency:
+            invoice.currency ??
+            (event.provider === 'TELEGRAM_STARS'
+              ? 'XTR'
+              : (plan?.currency ?? 'eur')),
+          kind,
+          provider: event.provider,
+          customerEmail: customer?.email ?? invoice.customer_email ?? null,
+          customerName: customer?.displayName ?? invoice.customer_name ?? null,
+          organizationName: event.organization.name,
+          productName: plan?.name ?? null,
+        },
+      ];
+    });
+  }
+
   async getCommissionSummary(days = 30): Promise<CommissionSummary> {
     const safeDays = Number.isFinite(days)
       ? Math.min(365, Math.max(1, Math.trunc(days)))
@@ -359,7 +497,9 @@ export class AdminDashboardService {
           name: true,
           stripeAccountId: true,
           platformSubscription: {
-            select: { platformPlan: { select: { displayName: true, name: true } } },
+            select: {
+              platformPlan: { select: { displayName: true, name: true } },
+            },
           },
         },
       });
@@ -368,10 +508,7 @@ export class AdminDashboardService {
           .filter((organization) => organization.stripeAccountId)
           .map((organization) => [organization.stripeAccountId!, organization]),
       );
-      const totals = new Map<
-        string,
-        CommissionSummary['totals'][number]
-      >();
+      const totals = new Map<string, CommissionSummary['totals'][number]>();
       const breakdown = new Map<
         string,
         CommissionSummary['byOrganization'][number]
@@ -384,9 +521,7 @@ export class AdminDashboardService {
         if (!accountId) continue;
 
         const charge =
-          typeof fee.charge === 'object' && fee.charge
-            ? fee.charge
-            : null;
+          typeof fee.charge === 'object' && fee.charge ? fee.charge : null;
         const grossSalesCents = charge?.amount ?? 0;
         const refundedCommissionCents = fee.amount_refunded ?? 0;
         const netCommissionCents = fee.amount - refundedCommissionCents;
@@ -433,8 +568,7 @@ export class AdminDashboardService {
         feeCount: fees.length,
         totals: [...totals.values()],
         byOrganization: [...breakdown.values()].sort(
-          (left, right) =>
-            right.netCommissionCents - left.netCommissionCents,
+          (left, right) => right.netCommissionCents - left.netCommissionCents,
         ),
       };
     } catch (error) {
@@ -494,8 +628,8 @@ export class AdminDashboardService {
     );
 
     return organizations.map((org) => {
-      const metrics = commerceMetrics.get(org.id) ??
-        this.emptyCommerceMetrics();
+      const metrics =
+        commerceMetrics.get(org.id) ?? this.emptyCommerceMetrics();
       const activeSubscriptions = org.subscriptions.filter(
         (subscription) => subscription.status === SubscriptionStatus.ACTIVE,
       );
@@ -869,13 +1003,9 @@ export class AdminDashboardService {
     }
 
     const commerceMetrics =
-      (
-        await this.getCommerceMetrics(
-          [id],
-          thirtyDaysAgo,
-          sixtyDaysAgo,
-        )
-      ).get(id) ?? this.emptyCommerceMetrics();
+      (await this.getCommerceMetrics([id], thirtyDaysAgo, sixtyDaysAgo)).get(
+        id,
+      ) ?? this.emptyCommerceMetrics();
     const activeSubscriptions = org.subscriptions.filter(
       (subscription) => subscription.status === SubscriptionStatus.ACTIVE,
     );
@@ -992,10 +1122,7 @@ export class AdminDashboardService {
       ownerEmail: org.users[0]?.email ?? null,
       channelsCount: org.channels.length,
       customersCount: org.customers.length,
-      prospectsCount: Math.max(
-        0,
-        org.customers.length - payingCustomersCount,
-      ),
+      prospectsCount: Math.max(0, org.customers.length - payingCustomersCount),
       checkoutsStartedCount: org.subscriptions.length,
       payingCustomersCount,
       activeSubscriptionsCount: activeSubscriptions.length,

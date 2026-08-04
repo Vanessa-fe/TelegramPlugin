@@ -11,6 +11,9 @@ import {
   Mail,
   User,
   Ban,
+  CheckCircle2,
+  Repeat2,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SuspendOrganizationDialog } from "@/components/admin/suspend-organization-dialog";
@@ -28,6 +31,27 @@ interface FailedPayment {
   organizationName: string;
   subscriptionId: string | null;
   invoiceUrl: string | null;
+}
+
+type PaymentKind = "ONE_TIME" | "NEW_SUBSCRIPTION" | "RENEWAL";
+type PaymentTab =
+  | "all"
+  | "one-time"
+  | "subscriptions"
+  | "failed"
+  | "commissions";
+
+interface SuccessfulPayment {
+  id: string;
+  occurredAt: string;
+  amount: number;
+  currency: string;
+  kind: PaymentKind;
+  provider: string;
+  customerEmail: string | null;
+  customerName: string | null;
+  organizationName: string;
+  productName: string | null;
 }
 
 interface CommissionSummary {
@@ -65,11 +89,15 @@ export default function PaymentsPage() {
   const t = useTranslations("admin");
   const locale = useLocale();
   const [payments, setPayments] = useState<FailedPayment[]>([]);
+  const [successfulPayments, setSuccessfulPayments] = useState<
+    SuccessfulPayment[]
+  >([]);
   const [commissions, setCommissions] = useState<CommissionSummary>(
     EMPTY_COMMISSION_SUMMARY,
   );
   const [isLoading, setIsLoading] = useState(true);
   const [daysFilter, setDaysFilter] = useState(30);
+  const [activeTab, setActiveTab] = useState<PaymentTab>("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [paymentToSuspend, setPaymentToSuspend] =
     useState<FailedPayment | null>(null);
@@ -77,14 +105,24 @@ export default function PaymentsPage() {
   const loadPayments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [unpaidResponse, commissionsResponse] = await Promise.all([
-        apiClient.get(`/admin/dashboard/unpaid?days=${daysFilter}`),
-        apiClient.get(`/admin/dashboard/commissions?days=${daysFilter}`),
-      ]);
+      const [unpaidResponse, commissionsResponse, paymentsResponse] =
+        await Promise.all([
+          apiClient.get<FailedPayment[]>(
+            `/admin/dashboard/unpaid?days=${daysFilter}`,
+          ),
+          apiClient.get<CommissionSummary>(
+            `/admin/dashboard/commissions?days=${daysFilter}`,
+          ),
+          apiClient.get<SuccessfulPayment[]>(
+            `/admin/dashboard/payments?days=${daysFilter}`,
+          ),
+        ]);
       setPayments(unpaidResponse.data);
       setCommissions(commissionsResponse.data);
+      setSuccessfulPayments(paymentsResponse.data);
     } catch {
       setPayments([]);
+      setSuccessfulPayments([]);
       setCommissions({ ...EMPTY_COMMISSION_SUMMARY, days: daysFilter });
     } finally {
       setIsLoading(false);
@@ -115,15 +153,22 @@ export default function PaymentsPage() {
   };
 
   useEffect(() => {
-    loadPayments();
+    void loadPayments();
   }, [loadPayments]);
 
   const formatCurrency = (amountInCents: number, currency: string) => {
+    if (currency.toUpperCase() === "XTR") {
+      return `${amountInCents} Stars`;
+    }
     const amountInUnits = amountInCents / 100;
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: currency.toUpperCase(),
-    }).format(amountInUnits);
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: currency.toUpperCase(),
+      }).format(amountInUnits);
+    } catch {
+      return `${amountInUnits.toFixed(2)} ${currency.toUpperCase()}`;
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -142,6 +187,25 @@ export default function PaymentsPage() {
     grossCommissionCents: 0,
     refundedCommissionCents: 0,
     netCommissionCents: 0,
+  };
+
+  const oneTimePayments = successfulPayments.filter(
+    (payment) => payment.kind === "ONE_TIME",
+  );
+  const subscriptionPayments = successfulPayments.filter(
+    (payment) => payment.kind !== "ONE_TIME",
+  );
+  const visiblePayments =
+    activeTab === "one-time"
+      ? oneTimePayments
+      : activeTab === "subscriptions"
+        ? subscriptionPayments
+        : successfulPayments;
+
+  const kindLabel: Record<PaymentKind, string> = {
+    ONE_TIME: "Achat unique",
+    NEW_SUBSCRIPTION: "Nouvel abonnement",
+    RENEWAL: "Renouvellement",
   };
 
   if (isLoading) {
@@ -164,10 +228,14 @@ export default function PaymentsPage() {
             {t("nav.payments")}
           </h1>
           <p className="mt-1 text-gray-500">
-            Paiements en échec nécessitant une action de relance
+            Historique des ventes, abonnements, renouvellements et impayés
           </p>
         </div>
-        <Button variant="outline" onClick={loadPayments} className="gap-2">
+        <Button
+          variant="outline"
+          onClick={() => void loadPayments()}
+          className="gap-2"
+        >
           <RefreshCw className="h-4 w-4" />
           Actualiser
         </Button>
@@ -190,212 +258,337 @@ export default function PaymentsPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">Volume vendu via Sublynk</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {formatCurrency(
-              commissionTotal.grossSalesCents,
-              commissionTotal.currency,
-            )}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">Commissions nettes collectées</p>
-          <p className="mt-2 text-2xl font-bold text-purple-700">
-            {formatCurrency(
-              commissionTotal.netCommissionCents,
-              commissionTotal.currency,
-            )}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-white p-5">
-          <p className="text-sm text-gray-500">Ventes commissionnées</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {commissions.feeCount}
-          </p>
-        </div>
+      <div className="flex gap-2 overflow-x-auto border-b">
+        {[
+          {
+            id: "all",
+            label: `Toutes les ventes (${successfulPayments.length})`,
+          },
+          {
+            id: "one-time",
+            label: `Achats uniques (${oneTimePayments.length})`,
+          },
+          {
+            id: "subscriptions",
+            label: `Abonnements (${subscriptionPayments.length})`,
+          },
+          { id: "failed", label: `Impayés (${payments.length})` },
+          { id: "commissions", label: "Commissions" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as PaymentTab)}
+            className={`whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? "border-purple-600 text-purple-700"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {commissions.byOrganization.length > 0 && (
-        <div className="overflow-hidden rounded-xl border bg-white">
-          <div className="border-b px-6 py-4">
-            <h2 className="font-semibold text-gray-900">
-              Commissions par créateur
-            </h2>
+      {activeTab === "commissions" && (
+        <>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl border bg-white p-5">
+              <p className="text-sm text-gray-500">Volume vendu via Sublynk</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">
+                {formatCurrency(
+                  commissionTotal.grossSalesCents,
+                  commissionTotal.currency,
+                )}
+              </p>
+            </div>
+            <div className="rounded-xl border bg-white p-5">
+              <p className="text-sm text-gray-500">
+                Commissions nettes collectées
+              </p>
+              <p className="mt-2 text-2xl font-bold text-purple-700">
+                {formatCurrency(
+                  commissionTotal.netCommissionCents,
+                  commissionTotal.currency,
+                )}
+              </p>
+            </div>
+            <div className="rounded-xl border bg-white p-5">
+              <p className="text-sm text-gray-500">Ventes commissionnées</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">
+                {commissions.feeCount}
+              </p>
+            </div>
           </div>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-50 text-left text-sm text-gray-500">
-                <th className="px-6 py-3 font-medium">Créateur</th>
-                <th className="px-6 py-3 font-medium">Plan</th>
-                <th className="px-6 py-3 font-medium">Ventes</th>
-                <th className="px-6 py-3 font-medium">Volume</th>
-                <th className="px-6 py-3 text-right font-medium">Commission</th>
-              </tr>
-            </thead>
-            <tbody>
-              {commissions.byOrganization.map((item) => (
-                <tr
-                  key={`${item.stripeAccountId}:${item.currency}`}
-                  className="border-b last:border-0"
-                >
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {item.organizationName}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {item.platformPlan ?? "—"}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {item.feeCount}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {formatCurrency(item.grossSalesCents, item.currency)}
-                  </td>
-                  <td className="px-6 py-4 text-right font-semibold text-purple-700">
-                    {formatCurrency(item.netCommissionCents, item.currency)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
+          {commissions.byOrganization.length > 0 && (
+            <div className="overflow-hidden rounded-xl border bg-white">
+              <div className="border-b px-6 py-4">
+                <h2 className="font-semibold text-gray-900">
+                  Commissions par créateur
+                </h2>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-gray-50 text-left text-sm text-gray-500">
+                    <th className="px-6 py-3 font-medium">Créateur</th>
+                    <th className="px-6 py-3 font-medium">Plan</th>
+                    <th className="px-6 py-3 font-medium">Ventes</th>
+                    <th className="px-6 py-3 font-medium">Volume</th>
+                    <th className="px-6 py-3 text-right font-medium">
+                      Commission
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {commissions.byOrganization.map((item) => (
+                    <tr
+                      key={`${item.stripeAccountId}:${item.currency}`}
+                      className="border-b last:border-0"
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        {item.organizationName}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {item.platformPlan ?? "—"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {item.feeCount}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {formatCurrency(item.grossSalesCents, item.currency)}
+                      </td>
+                      <td className="px-6 py-4 text-right font-semibold text-purple-700">
+                        {formatCurrency(item.netCommissionCents, item.currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Table or empty state */}
-      {payments.length === 0 ? (
-        <div className="rounded-xl border bg-white p-12 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
-            <CreditCard className="h-6 w-6" />
+      {activeTab !== "failed" &&
+        activeTab !== "commissions" &&
+        (visiblePayments.length === 0 ? (
+          <div className="rounded-xl border bg-white p-12 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+              <ShoppingBag className="h-6 w-6" />
+            </div>
+            <h3 className="mb-2 text-lg font-semibold text-gray-900">
+              Aucune vente sur cette période
+            </h3>
+            <p className="text-gray-500">
+              Les paiements confirmés apparaîtront ici avec leur type.
+            </p>
           </div>
-          <h3 className="mb-2 text-lg font-semibold text-gray-900">
-            Aucun impayé
-          </h3>
-          <p className="mx-auto max-w-sm text-gray-500">
-            Aucun paiement en échec sur les {daysFilter} derniers jours. Tout va
-            bien !
-          </p>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border bg-white">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-50">
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
-                  Montant
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
-                  Client
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
-                  Organisation
-                </th>
-                <th className="px-6 py-4 text-right text-sm font-medium text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.map((payment) => (
-                <tr
-                  key={payment.id}
-                  className="border-b transition-colors last:border-0 hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                      <span className="text-sm text-gray-900">
-                        {formatDate(payment.occurredAt)}
+        ) : (
+          <div className="overflow-x-auto rounded-xl border bg-white">
+            <table className="w-full min-w-[900px]">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-sm text-gray-500">
+                  <th className="px-6 py-4 font-medium">Date</th>
+                  <th className="px-6 py-4 font-medium">Type</th>
+                  <th className="px-6 py-4 font-medium">Montant</th>
+                  <th className="px-6 py-4 font-medium">Client</th>
+                  <th className="px-6 py-4 font-medium">Créateur</th>
+                  <th className="px-6 py-4 font-medium">Offre</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visiblePayments.map((payment) => (
+                  <tr
+                    key={payment.id}
+                    className="border-b last:border-0 hover:bg-gray-50"
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {formatDate(payment.occurredAt)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                          payment.kind === "ONE_TIME"
+                            ? "bg-blue-50 text-blue-700"
+                            : payment.kind === "RENEWAL"
+                              ? "bg-purple-50 text-purple-700"
+                              : "bg-green-50 text-green-700"
+                        }`}
+                      >
+                        {payment.kind === "ONE_TIME" ? (
+                          <ShoppingBag className="h-3.5 w-3.5" />
+                        ) : payment.kind === "RENEWAL" ? (
+                          <Repeat2 className="h-3.5 w-3.5" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        )}
+                        {kindLabel[payment.kind]}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-semibold text-red-600">
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">
                       {formatCurrency(payment.amount, payment.currency)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      {payment.customerName && (
-                        <div className="flex items-center gap-2 text-sm text-gray-900">
-                          <User className="h-3.5 w-3.5 text-gray-400" />
-                          {payment.customerName}
-                        </div>
-                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {payment.customerName ?? "—"}
+                      </div>
                       {payment.customerEmail && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <Mail className="h-3.5 w-3.5 text-gray-400" />
+                        <div className="text-sm text-gray-500">
                           {payment.customerEmail}
                         </div>
                       )}
-                      {!payment.customerName && !payment.customerEmail && (
-                        <span className="text-sm text-gray-400">—</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-900">
-                      <Building2 className="h-4 w-4 text-gray-400" />
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
                       {payment.organizationName}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {payment.invoiceUrl && (
-                        <a
-                          href={payment.invoiceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          Facture
-                        </a>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSuspend(payment)}
-                        disabled={actionLoading === payment.id}
-                        className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                      >
-                        {actionLoading === payment.id ? (
-                          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
-                        ) : (
-                          <Ban className="h-3.5 w-3.5" />
-                        )}
-                        <span className="ml-1">Suspendre</span>
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Summary */}
-      {payments.length > 0 && (
-        <div className="flex items-center justify-between rounded-lg border bg-red-50 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <span className="font-medium text-red-800">
-              {payments.length} paiement{payments.length > 1 ? "s" : ""} en
-              échec
-            </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {payment.productName ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <span className="font-semibold text-red-800">
-            Total :{" "}
-            {formatCurrency(
-              payments.reduce((sum, p) => sum + p.amount, 0),
-              "eur",
-            )}
-          </span>
-        </div>
+        ))}
+
+      {/* Table or empty state */}
+      {activeTab === "failed" && (
+        <>
+          {payments.length === 0 ? (
+            <div className="rounded-xl border bg-white p-12 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
+                <CreditCard className="h-6 w-6" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                Aucun impayé
+              </h3>
+              <p className="mx-auto max-w-sm text-gray-500">
+                Aucun paiement en échec sur les {daysFilter} derniers jours.
+                Tout va bien !
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border bg-white">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
+                      Date
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
+                      Montant
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
+                      Client
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
+                      Organisation
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-medium text-gray-500">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((payment) => (
+                    <tr
+                      key={payment.id}
+                      className="border-b transition-colors last:border-0 hover:bg-gray-50"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-red-500" />
+                          <span className="text-sm text-gray-900">
+                            {formatDate(payment.occurredAt)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-semibold text-red-600">
+                          {formatCurrency(payment.amount, payment.currency)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          {payment.customerName && (
+                            <div className="flex items-center gap-2 text-sm text-gray-900">
+                              <User className="h-3.5 w-3.5 text-gray-400" />
+                              {payment.customerName}
+                            </div>
+                          )}
+                          {payment.customerEmail && (
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <Mail className="h-3.5 w-3.5 text-gray-400" />
+                              {payment.customerEmail}
+                            </div>
+                          )}
+                          {!payment.customerName && !payment.customerEmail && (
+                            <span className="text-sm text-gray-400">—</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-900">
+                          <Building2 className="h-4 w-4 text-gray-400" />
+                          {payment.organizationName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {payment.invoiceUrl && (
+                            <a
+                              href={payment.invoiceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              Facture
+                            </a>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSuspend(payment)}
+                            disabled={actionLoading === payment.id}
+                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                          >
+                            {actionLoading === payment.id ? (
+                              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                            ) : (
+                              <Ban className="h-3.5 w-3.5" />
+                            )}
+                            <span className="ml-1">Suspendre</span>
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Summary */}
+          {payments.length > 0 && (
+            <div className="flex items-center justify-between rounded-lg border bg-red-50 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <span className="font-medium text-red-800">
+                  {payments.length} paiement{payments.length > 1 ? "s" : ""} en
+                  échec
+                </span>
+              </div>
+              <span className="font-semibold text-red-800">
+                Total :{" "}
+                {formatCurrency(
+                  payments.reduce((sum, p) => sum + p.amount, 0),
+                  "eur",
+                )}
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       <SuspendOrganizationDialog

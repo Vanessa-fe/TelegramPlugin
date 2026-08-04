@@ -1,9 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import {
-  PaymentEventType,
-  SubscriptionStatus,
-  UserRole,
-} from '@prisma/client';
+import { PaymentEventType, SubscriptionStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminDashboardService } from './admin-dashboard.service';
 
@@ -182,5 +178,105 @@ describe('AdminDashboardService creator commerce metrics', () => {
         }),
       }),
     );
+  });
+});
+
+describe('AdminDashboardService payment history', () => {
+  it('separates one-time sales, new subscriptions and renewals without duplicates', async () => {
+    const occurredAt = new Date('2026-08-01T12:00:00.000Z');
+    const relation = {
+      organization: { name: 'Créateur Test' },
+      subscription: {
+        customer: { email: 'client@example.com', displayName: 'Client' },
+        plan: {
+          name: 'VIP',
+          currency: 'eur',
+          priceCents: 1000,
+          interval: 'MONTH',
+        },
+      },
+    };
+    const prisma = {
+      paymentEvent: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            ...relation,
+            id: 'one-time',
+            type: PaymentEventType.CHECKOUT_COMPLETED,
+            provider: 'STRIPE',
+            occurredAt,
+            payload: {
+              data: {
+                object: {
+                  mode: 'payment',
+                  payment_status: 'paid',
+                  amount_total: 2500,
+                  currency: 'eur',
+                },
+              },
+            },
+          },
+          {
+            ...relation,
+            id: 'subscription-checkout',
+            type: PaymentEventType.CHECKOUT_COMPLETED,
+            provider: 'STRIPE',
+            occurredAt,
+            payload: {
+              data: {
+                object: { mode: 'subscription', payment_status: 'paid' },
+              },
+            },
+          },
+          {
+            ...relation,
+            id: 'first-invoice',
+            type: PaymentEventType.INVOICE_PAID,
+            provider: 'STRIPE',
+            occurredAt,
+            payload: {
+              data: {
+                object: {
+                  billing_reason: 'subscription_create',
+                  amount_paid: 1000,
+                  currency: 'eur',
+                },
+              },
+            },
+          },
+          {
+            ...relation,
+            id: 'renewal',
+            type: PaymentEventType.INVOICE_PAID,
+            provider: 'STRIPE',
+            occurredAt,
+            payload: {
+              data: {
+                object: {
+                  billing_reason: 'subscription_cycle',
+                  amount_paid: 1000,
+                  currency: 'eur',
+                },
+              },
+            },
+          },
+        ]),
+      },
+    } as unknown as PrismaService;
+    const config = {
+      get: jest.fn().mockReturnValue(undefined),
+    } as unknown as ConfigService;
+
+    const result = await new AdminDashboardService(
+      prisma,
+      config,
+    ).getPaymentsList(30);
+
+    expect(result.map((payment) => payment.kind)).toEqual([
+      'ONE_TIME',
+      'NEW_SUBSCRIPTION',
+      'RENEWAL',
+    ]);
+    expect(result).toHaveLength(3);
   });
 });

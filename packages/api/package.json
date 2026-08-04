@@ -20,6 +20,7 @@
     "prisma:generate": "prisma generate",
     "prisma:seed": "prisma db seed",
     "prisma:seed:prod": "ts-node prisma/seed-prod.ts",
+    "seed:payments:dev": "ts-node prisma/seed-payments-dev.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

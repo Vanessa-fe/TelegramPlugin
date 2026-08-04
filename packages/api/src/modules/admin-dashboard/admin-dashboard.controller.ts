@@ -20,6 +20,13 @@ export class AdminDashboardController {
     return this.adminDashboardService.getFailedPaymentsList(daysNum);
   }
 
+  @Get('payments')
+  @Roles(UserRole.SUPERADMIN)
+  async getPayments(@Query('days') days?: string) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.adminDashboardService.getPaymentsList(daysNum);
+  }
+
   @Get('commissions')
   @Roles(UserRole.SUPERADMIN)
   async getCommissions(@Query('days') days?: string) {
