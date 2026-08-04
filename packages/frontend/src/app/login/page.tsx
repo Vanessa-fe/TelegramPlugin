@@ -12,12 +12,10 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
-  const posthog = usePostHog();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -50,10 +48,6 @@ export default function LoginPage() {
         email,
         password,
         vipToken: vipToken || undefined,
-      });
-      posthog.identify(user.id, {
-        email: user.email,
-        role: user.role,
       });
       toast.success(t("success"));
       Analytics.userLoggedIn();

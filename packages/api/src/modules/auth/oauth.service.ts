@@ -72,7 +72,7 @@ export class OAuthService {
       if (vipToken) {
         await this.applyVipInvitationToken(ensuredUser, vipToken);
       }
-      await this.syncBrevoContact(ensuredUser);
+      void this.syncBrevoContact(ensuredUser);
       const authResult = await this.generateAuthResult(ensuredUser);
       return { ...authResult, isNewUser: false };
     }
@@ -112,7 +112,7 @@ export class OAuthService {
         if (vipToken) {
           await this.applyVipInvitationToken(ensuredUser, vipToken);
         }
-        await this.syncBrevoContact(ensuredUser);
+        void this.syncBrevoContact(ensuredUser);
         const authResult = await this.generateAuthResult(ensuredUser);
         return { ...authResult, isNewUser: false };
       }
@@ -156,7 +156,7 @@ export class OAuthService {
       : undefined;
 
     this.captureUserSignedUp(user, vipPlanName);
-    await this.syncBrevoContact(user);
+    void this.syncBrevoContact(user);
 
     await this.notifications.sendAdminNewUserNotification({
       email: user.email,

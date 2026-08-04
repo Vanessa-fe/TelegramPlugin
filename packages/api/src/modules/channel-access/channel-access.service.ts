@@ -10,13 +10,10 @@ import {
   $Enums,
   AuditActorType,
   EntitlementType,
-<<<<<<< HEAD
   PlanInterval,
-=======
   PaymentEventType,
   PaymentProvider,
   SubscriptionStatus,
->>>>>>> dev
 } from '@prisma/client';
 import type { ChannelAccess } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';

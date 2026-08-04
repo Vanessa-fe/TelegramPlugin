@@ -58,6 +58,7 @@ describe('AuthService', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
     },
+    $queryRawUnsafe: jest.fn(),
     $transaction: jest.fn(),
   };
 
@@ -133,6 +134,7 @@ describe('AuthService', () => {
 
     mockPrismaService.organization.findUnique.mockResolvedValue(null);
     mockPrismaService.organization.create.mockResolvedValue({ id: 'org-1' });
+    mockPrismaService.$queryRawUnsafe.mockResolvedValue([{ '?column?': 1 }]);
     mockPrismaService.$transaction.mockImplementation(async (callback: any) =>
       callback(mockPrismaService),
     );
@@ -812,6 +814,35 @@ describe('AuthService', () => {
         trialEndsAt,
       );
       expect(result.accessToken).toBe('token');
+    });
+
+    it('should retry once when the database is waking up', async () => {
+      mockPrismaService.$queryRawUnsafe
+        .mockRejectedValueOnce(new Error('Database is waking up'))
+        .mockResolvedValueOnce([{ '?column?': 1 }]);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: '1',
+        email: 'test@example.com',
+        passwordHash: await bcrypt.hash('Test1234!', 10),
+        role: UserRole.ORG_ADMIN,
+        organizationId: 'org-1',
+        isActive: true,
+        emailVerifiedAt: new Date(),
+        firstName: null,
+        lastName: null,
+        lastLoginAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockPrismaService.user.update.mockResolvedValue({});
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access-token')
+        .mockResolvedValueOnce('refresh-token');
+
+      const result = await service.login('test@example.com', 'Test1234!');
+
+      expect(mockPrismaService.$queryRawUnsafe).toHaveBeenCalledTimes(2);
+      expect(result.accessToken).toBe('access-token');
     });
   });
 

@@ -510,6 +510,7 @@ export class AuthService {
     password: string,
     vipToken?: string,
   ): Promise<AuthResult> {
+    await this.ensureDatabaseReady();
     let user = await this.validateUser(email, password);
 
     // Ensure user has an organization
@@ -519,7 +520,7 @@ export class AuthService {
       await this.applyVipInvitationToken(user, vipToken);
     }
 
-    await this.notifications.syncBrevoContact({
+    void this.notifications.syncBrevoContact({
       userId: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -539,6 +540,32 @@ export class AuthService {
       ...tokens,
       user: this.sanitizeUser(user),
     };
+  }
+
+  private async ensureDatabaseReady(): Promise<void> {
+    const retryDelays = [0, 250, 750, 1500];
+    let lastError: unknown;
+
+    for (const [attempt, delay] of retryDelays.entries()) {
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+
+      try {
+        await this.prisma.$queryRawUnsafe('SELECT 1');
+        return;
+      } catch (error) {
+        lastError = error;
+        const nextDelay = retryDelays[attempt + 1];
+        if (nextDelay !== undefined) {
+          this.logger.warn(
+            `Database readiness check failed; retrying in ${nextDelay}ms: ${(error as Error).message}`,
+          );
+        }
+      }
+    }
+
+    throw lastError;
   }
 
   private async ensureOrganization(user: User): Promise<User> {

@@ -12,7 +12,11 @@ function withPostHog(callback: (client: typeof posthog) => void): void {
     return;
   }
 
-  callback(posthog);
+  try {
+    callback(posthog);
+  } catch {
+    // Analytics must never interrupt a user action such as login or checkout.
+  }
 }
 
 export const Analytics = {
