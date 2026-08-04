@@ -88,6 +88,7 @@ describe('AuthService', () => {
     sendEmailVerificationEmail: jest.fn(),
     sendAccountAlreadyExistsEmail: jest.fn(),
     sendAdminNewUserNotification: jest.fn(),
+    syncBrevoContact: jest.fn(),
   };
 
   const mockPlatformSubscriptionService = {
@@ -523,6 +524,12 @@ describe('AuthService', () => {
         method: 'email',
         planName: 'starter',
         planStatus: 'active',
+      });
+      expect(mockNotificationsService.syncBrevoContact).toHaveBeenCalledWith({
+        userId: '1',
+        email: 'starter@example.com',
+        firstName: 'Starter',
+        lastName: 'User',
       });
       expect(result.accessToken).toBe('token');
     });

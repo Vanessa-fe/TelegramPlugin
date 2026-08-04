@@ -72,6 +72,7 @@ export class OAuthService {
       if (vipToken) {
         await this.applyVipInvitationToken(ensuredUser, vipToken);
       }
+      await this.syncBrevoContact(ensuredUser);
       const authResult = await this.generateAuthResult(ensuredUser);
       return { ...authResult, isNewUser: false };
     }
@@ -111,6 +112,7 @@ export class OAuthService {
         if (vipToken) {
           await this.applyVipInvitationToken(ensuredUser, vipToken);
         }
+        await this.syncBrevoContact(ensuredUser);
         const authResult = await this.generateAuthResult(ensuredUser);
         return { ...authResult, isNewUser: false };
       }
@@ -154,6 +156,7 @@ export class OAuthService {
       : undefined;
 
     this.captureUserSignedUp(user, vipPlanName);
+    await this.syncBrevoContact(user);
 
     await this.notifications.sendAdminNewUserNotification({
       email: user.email,
@@ -201,6 +204,15 @@ export class OAuthService {
         `Failed to capture user_signed_up: ${(error as Error).message}`,
       );
     }
+  }
+
+  private async syncBrevoContact(user: User): Promise<void> {
+    await this.notifications.syncBrevoContact({
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
   }
 
   private sanitizeUser(user: User): AuthProfile {

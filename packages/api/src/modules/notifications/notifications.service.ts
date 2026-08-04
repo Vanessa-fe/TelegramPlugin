@@ -44,8 +44,10 @@ export class NotificationsService implements OnModuleInit {
   private readonly brevoEnabled: boolean;
   private readonly brevoFromEmail: string;
   private readonly brevoFromName: string;
+  private readonly brevoMarketingListId: number | null;
   private readonly adminEmail: string | undefined;
   private brevoApi: Brevo.TransactionalEmailsApi | null = null;
+  private brevoContactsApi: Brevo.ContactsApi | null = null;
 
   constructor(
     private readonly config: ConfigService,
@@ -57,6 +59,13 @@ export class NotificationsService implements OnModuleInit {
       this.config.get<string>('BREVO_FROM_EMAIL') || 'noreply@example.com';
     this.brevoFromName =
       this.config.get<string>('BREVO_FROM_NAME') || 'Telegram Plugin';
+    const marketingListId = Number(
+      this.config.get<string>('BREVO_MARKETING_LIST_ID'),
+    );
+    this.brevoMarketingListId =
+      Number.isInteger(marketingListId) && marketingListId > 0
+        ? marketingListId
+        : null;
 
     // Check if Brevo is configured
     const brevoApiKey = this.config.get<string>('BREVO_API_KEY');
@@ -73,7 +82,17 @@ export class NotificationsService implements OnModuleInit {
         Brevo.TransactionalEmailsApiApiKeys.apiKey,
         this.config.get<string>('BREVO_API_KEY') || '',
       );
+      this.brevoContactsApi = new Brevo.ContactsApi();
+      this.brevoContactsApi.setApiKey(
+        Brevo.ContactsApiApiKeys.apiKey,
+        this.config.get<string>('BREVO_API_KEY') || '',
+      );
       this.logger.log('Brevo email service initialized');
+      if (!this.brevoMarketingListId) {
+        this.logger.warn(
+          'BREVO_MARKETING_LIST_ID is not configured - contact sync disabled',
+        );
+      }
     } else {
       this.logger.warn('Brevo not configured - emails will be logged only');
     }
@@ -266,6 +285,39 @@ export class NotificationsService implements OnModuleInit {
     `;
 
     await this.sendEmail(to, subject, body);
+  }
+
+  async syncBrevoContact(data: {
+    userId: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  }): Promise<void> {
+    if (!this.brevoContactsApi || !this.brevoMarketingListId) {
+      return;
+    }
+
+    try {
+      const contact = new Brevo.CreateContact();
+      contact.email = data.email.trim().toLowerCase();
+      contact.extId = data.userId;
+      contact.attributes = {
+        ...(data.firstName ? { FIRSTNAME: data.firstName } : {}),
+        ...(data.lastName ? { LASTNAME: data.lastName } : {}),
+      };
+      contact.listIds = [this.brevoMarketingListId];
+      contact.updateEnabled = true;
+
+      await this.brevoContactsApi.createContact(contact);
+      this.logger.log(`Brevo contact synchronized for user ${data.userId}`);
+    } catch (error) {
+      const message =
+        (error as { body?: { message?: string } }).body?.message ??
+        (error as Error).message;
+      this.logger.error(
+        `Failed to synchronize Brevo contact for user ${data.userId}: ${message}`,
+      );
+    }
   }
 
   async sendAccountAlreadyExistsEmail(

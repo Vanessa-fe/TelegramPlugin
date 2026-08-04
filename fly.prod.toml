@@ -14,6 +14,7 @@ primary_region = 'fra'
   CHANNEL_ACCESS_QUEUE_ENABLED = 'true'
   CHANNEL_ACCESS_QUEUE_METRICS_ENABLED = 'true'
   CHANNEL_ACCESS_QUEUE_METRICS_INTERVAL_MS = '600000'
+  BREVO_MARKETING_LIST_ID = '2'
 
 [http_service]
   internal_port = 3000

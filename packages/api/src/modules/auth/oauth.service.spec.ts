@@ -46,6 +46,7 @@ describe('OAuthService', () => {
     };
     const notifications = {
       sendAdminNewUserNotification: jest.fn().mockResolvedValue(undefined),
+      syncBrevoContact: jest.fn().mockResolvedValue(undefined),
     };
     const posthog = {
       events: { USER_SIGNED_UP: 'user_signed_up' },
@@ -82,5 +83,11 @@ describe('OAuthService', () => {
       email_verified: true,
     });
     expect(posthog.flush).toHaveBeenCalledTimes(1);
+    expect(notifications.syncBrevoContact).toHaveBeenCalledWith({
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
   });
 });

@@ -15,6 +15,7 @@ primary_region = 'fra'
   PORT = '3000'
   CHANNEL_ACCESS_QUEUE_ENABLED = 'false'
   CHANNEL_ACCESS_QUEUE_METRICS_ENABLED = 'false'
+  BREVO_MARKETING_LIST_ID = '2'
 
 [http_service]
   internal_port = 3000

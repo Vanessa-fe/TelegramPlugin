@@ -203,6 +203,13 @@ export class AuthService {
     const selectedPlan =
       await this.applyPendingOrganizationBenefits(updatedUser);
 
+    await this.notifications.syncBrevoContact({
+      userId: updatedUser.id,
+      email: updatedUser.email,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+    });
+
     await this.notifications.sendAdminNewUserNotification({
       email: updatedUser.email,
       firstName: updatedUser.firstName ?? undefined,
@@ -511,6 +518,13 @@ export class AuthService {
     if (vipToken) {
       await this.applyVipInvitationToken(user, vipToken);
     }
+
+    await this.notifications.syncBrevoContact({
+      userId: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
 
     // Update lastLoginAt
     await this.prisma.user.update({

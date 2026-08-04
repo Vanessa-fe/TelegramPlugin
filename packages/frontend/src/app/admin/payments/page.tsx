@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   AlertCircle,
   CreditCard,
@@ -11,10 +11,11 @@ import {
   Mail,
   User,
   Ban,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import apiClient from '@/lib/api-client';
-import { organizationsApi } from '@/lib/api/organizations';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SuspendOrganizationDialog } from "@/components/admin/suspend-organization-dialog";
+import apiClient from "@/lib/api-client";
+import { organizationsApi } from "@/lib/api/organizations";
 
 interface FailedPayment {
   id: string;
@@ -61,7 +62,7 @@ const EMPTY_COMMISSION_SUMMARY: CommissionSummary = {
 };
 
 export default function PaymentsPage() {
-  const t = useTranslations('admin');
+  const t = useTranslations("admin");
   const locale = useLocale();
   const [payments, setPayments] = useState<FailedPayment[]>([]);
   const [commissions, setCommissions] = useState<CommissionSummary>(
@@ -70,6 +71,8 @@ export default function PaymentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [daysFilter, setDaysFilter] = useState(30);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [paymentToSuspend, setPaymentToSuspend] =
+    useState<FailedPayment | null>(null);
 
   const loadPayments = useCallback(async () => {
     setIsLoading(true);
@@ -88,22 +91,24 @@ export default function PaymentsPage() {
     }
   }, [daysFilter]);
 
-  const handleSuspend = async (payment: FailedPayment) => {
-    const reason = prompt(
-      `Suspendre l'organisation "${payment.organizationName}" ?\n\nRaison (optionnelle) :`
-    );
-    if (reason === null) return; // User cancelled
+  const handleSuspend = (payment: FailedPayment) => {
+    setPaymentToSuspend(payment);
+  };
 
-    setActionLoading(payment.id);
+  const confirmSuspend = async (reason?: string) => {
+    if (!paymentToSuspend) return;
+
+    setActionLoading(paymentToSuspend.id);
     try {
       await organizationsApi.suspend(
-        payment.organizationId,
-        reason || `Impayé du ${new Date(payment.occurredAt).toLocaleDateString()}`
+        paymentToSuspend.organizationId,
+        reason ||
+          `Impayé du ${new Date(paymentToSuspend.occurredAt).toLocaleDateString()}`,
       );
       await loadPayments();
-      alert(`Organisation "${payment.organizationName}" suspendue`);
+      setPaymentToSuspend(null);
     } catch {
-      alert('Erreur lors de la suspension');
+      alert("Erreur lors de la suspension");
     } finally {
       setActionLoading(null);
     }
@@ -116,23 +121,23 @@ export default function PaymentsPage() {
   const formatCurrency = (amountInCents: number, currency: string) => {
     const amountInUnits = amountInCents / 100;
     return new Intl.NumberFormat(locale, {
-      style: 'currency',
+      style: "currency",
       currency: currency.toUpperCase(),
     }).format(amountInUnits);
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const commissionTotal = commissions.totals[0] ?? {
-    currency: 'EUR',
+    currency: "EUR",
     grossSalesCents: 0,
     grossCommissionCents: 0,
     refundedCommissionCents: 0,
@@ -155,16 +160,14 @@ export default function PaymentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold lg:text-3xl">{t('nav.payments')}</h1>
+          <h1 className="text-2xl font-bold lg:text-3xl">
+            {t("nav.payments")}
+          </h1>
           <p className="mt-1 text-gray-500">
             Paiements en échec nécessitant une action de relance
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={loadPayments}
-          className="gap-2"
-        >
+        <Button variant="outline" onClick={loadPayments} className="gap-2">
           <RefreshCw className="h-4 w-4" />
           Actualiser
         </Button>
@@ -178,8 +181,8 @@ export default function PaymentsPage() {
             onClick={() => setDaysFilter(days)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               daysFilter === days
-                ? 'bg-purple-100 text-purple-700'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? "bg-purple-100 text-purple-700"
+                : "text-gray-600 hover:bg-gray-100"
             }`}
           >
             {days} derniers jours
@@ -241,7 +244,7 @@ export default function PaymentsPage() {
                     {item.organizationName}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {item.platformPlan ?? '—'}
+                    {item.platformPlan ?? "—"}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {item.feeCount}
@@ -269,7 +272,8 @@ export default function PaymentsPage() {
             Aucun impayé
           </h3>
           <p className="mx-auto max-w-sm text-gray-500">
-            Aucun paiement en échec sur les {daysFilter} derniers jours. Tout va bien !
+            Aucun paiement en échec sur les {daysFilter} derniers jours. Tout va
+            bien !
           </p>
         </div>
       ) : (
@@ -380,18 +384,34 @@ export default function PaymentsPage() {
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-red-600" />
             <span className="font-medium text-red-800">
-              {payments.length} paiement{payments.length > 1 ? 's' : ''} en échec
+              {payments.length} paiement{payments.length > 1 ? "s" : ""} en
+              échec
             </span>
           </div>
           <span className="font-semibold text-red-800">
-            Total :{' '}
+            Total :{" "}
             {formatCurrency(
               payments.reduce((sum, p) => sum + p.amount, 0),
-              'eur'
+              "eur",
             )}
           </span>
         </div>
       )}
+
+      <SuspendOrganizationDialog
+        open={paymentToSuspend !== null}
+        organizationName={paymentToSuspend?.organizationName ?? ""}
+        defaultReason={
+          paymentToSuspend
+            ? `Impayé du ${new Date(paymentToSuspend.occurredAt).toLocaleDateString()}`
+            : ""
+        }
+        isLoading={actionLoading === paymentToSuspend?.id}
+        onOpenChange={(open) => {
+          if (!open) setPaymentToSuspend(null);
+        }}
+        onConfirm={confirmSuspend}
+      />
     </div>
   );
 }

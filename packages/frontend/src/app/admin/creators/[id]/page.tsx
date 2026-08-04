@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useLocale } from 'next-intl';
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import {
   ArrowLeft,
   Building2,
@@ -24,14 +24,15 @@ import {
   PlayCircle,
   RefreshCw,
   Shield,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import apiClient from '@/lib/api-client';
-import { organizationsApi } from '@/lib/api/organizations';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SuspendOrganizationDialog } from "@/components/admin/suspend-organization-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import apiClient from "@/lib/api-client";
+import { organizationsApi } from "@/lib/api/organizations";
 
-type HealthScoreLevel = 'green' | 'orange' | 'red';
-type AmbassadorTier = 'NONE' | 'BRONZE' | 'SILVER' | 'GOLD';
+type HealthScoreLevel = "green" | "orange" | "red";
+type AmbassadorTier = "NONE" | "BRONZE" | "SILVER" | "GOLD";
 
 interface HealthScore {
   level: HealthScoreLevel;
@@ -106,11 +107,26 @@ interface CreatorDetail {
   }[];
 }
 
-const ambassadorConfig: Record<AmbassadorTier, { label: string; icon: string; className: string }> = {
-  NONE: { label: '', icon: '', className: '' },
-  BRONZE: { label: 'Bronze', icon: '🥉', className: 'bg-orange-100 text-orange-700' },
-  SILVER: { label: 'Silver', icon: '🥈', className: 'bg-gray-100 text-gray-700' },
-  GOLD: { label: 'Gold', icon: '🥇', className: 'bg-yellow-100 text-yellow-700' },
+const ambassadorConfig: Record<
+  AmbassadorTier,
+  { label: string; icon: string; className: string }
+> = {
+  NONE: { label: "", icon: "", className: "" },
+  BRONZE: {
+    label: "Bronze",
+    icon: "🥉",
+    className: "bg-orange-100 text-orange-700",
+  },
+  SILVER: {
+    label: "Silver",
+    icon: "🥈",
+    className: "bg-gray-100 text-gray-700",
+  },
+  GOLD: {
+    label: "Gold",
+    icon: "🥇",
+    className: "bg-yellow-100 text-yellow-700",
+  },
 };
 
 export default function CreatorDetailPage() {
@@ -120,6 +136,7 @@ export default function CreatorDetailPage() {
   const [creator, setCreator] = useState<CreatorDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showSuspendDialog, setShowSuspendDialog] = useState(false);
 
   const id = params.id as string;
 
@@ -139,19 +156,21 @@ export default function CreatorDetailPage() {
     loadCreator();
   }, [loadCreator]);
 
-  const handleSuspend = async () => {
+  const handleSuspend = () => {
     if (!creator) return;
-    const reason = prompt(
-      `Suspendre "${creator.name}" ?\n\nRaison (optionnelle) :`
-    );
-    if (reason === null) return;
+    setShowSuspendDialog(true);
+  };
+
+  const confirmSuspend = async (reason?: string) => {
+    if (!creator) return;
 
     setActionLoading(true);
     try {
-      await organizationsApi.suspend(creator.id, reason || undefined);
+      await organizationsApi.suspend(creator.id, reason);
       await loadCreator();
+      setShowSuspendDialog(false);
     } catch {
-      alert('Erreur lors de la suspension');
+      alert("Erreur lors de la suspension");
     } finally {
       setActionLoading(false);
     }
@@ -166,7 +185,7 @@ export default function CreatorDetailPage() {
       await organizationsApi.unsuspend(creator.id);
       await loadCreator();
     } catch {
-      alert('Erreur lors de la réactivation');
+      alert("Erreur lors de la réactivation");
     } finally {
       setActionLoading(false);
     }
@@ -174,26 +193,26 @@ export default function CreatorDetailPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'EUR',
+      style: "currency",
+      currency: "EUR",
     }).format(cents / 100);
   };
 
@@ -212,7 +231,10 @@ export default function CreatorDetailPage() {
     return (
       <div className="flex h-64 flex-col items-center justify-center">
         <p className="mb-4 text-gray-500">Createur non trouve</p>
-        <Button variant="outline" onClick={() => router.push('/admin/creators')}>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/admin/creators")}
+        >
           Retour a la liste
         </Button>
       </div>
@@ -237,7 +259,7 @@ export default function CreatorDetailPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.push('/admin/creators')}
+          onClick={() => router.push("/admin/creators")}
           className="gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -358,7 +380,9 @@ export default function CreatorDetailPage() {
                 <CreditCard className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{creator.activeSubscriptionsCount}</p>
+                <p className="text-2xl font-bold">
+                  {creator.activeSubscriptionsCount}
+                </p>
                 <p className="text-sm text-gray-500">Abos actifs</p>
               </div>
             </div>
@@ -370,25 +394,27 @@ export default function CreatorDetailPage() {
             <div className="flex items-center gap-3">
               <div
                 className={`rounded-lg p-2 ${
-                  creator.healthScore.level === 'green'
-                    ? 'bg-green-100'
-                    : creator.healthScore.level === 'orange'
-                      ? 'bg-orange-100'
-                      : 'bg-red-100'
+                  creator.healthScore.level === "green"
+                    ? "bg-green-100"
+                    : creator.healthScore.level === "orange"
+                      ? "bg-orange-100"
+                      : "bg-red-100"
                 }`}
               >
                 <Activity
                   className={`h-5 w-5 ${
-                    creator.healthScore.level === 'green'
-                      ? 'text-green-600'
-                      : creator.healthScore.level === 'orange'
-                        ? 'text-orange-600'
-                        : 'text-red-600'
+                    creator.healthScore.level === "green"
+                      ? "text-green-600"
+                      : creator.healthScore.level === "orange"
+                        ? "text-orange-600"
+                        : "text-red-600"
                   }`}
                 />
               </div>
               <div>
-                <p className="text-2xl font-bold">{creator.healthScore.score}%</p>
+                <p className="text-2xl font-bold">
+                  {creator.healthScore.score}%
+                </p>
                 <p className="text-sm text-gray-500">Score sante</p>
               </div>
             </div>
@@ -409,11 +435,13 @@ export default function CreatorDetailPage() {
             <div>
               <p className="text-sm text-gray-500">Ce mois</p>
               <div className="flex items-center gap-2">
-                <p className="text-2xl font-bold">{formatCurrency(creator.revenueThisMonth)}</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(creator.revenueThisMonth)}
+                </p>
                 {revenueChange !== 0 && (
                   <span
                     className={`flex items-center gap-0.5 text-sm ${
-                      revenueChange > 0 ? 'text-green-600' : 'text-red-600'
+                      revenueChange > 0 ? "text-green-600" : "text-red-600"
                     }`}
                   >
                     {revenueChange > 0 ? (
@@ -428,11 +456,15 @@ export default function CreatorDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Mois precedent</p>
-              <p className="text-2xl font-bold">{formatCurrency(creator.revenuePreviousMonth)}</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency(creator.revenuePreviousMonth)}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-500">Total cumule</p>
-              <p className="text-2xl font-bold">{formatCurrency(creator.totalRevenue)}</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency(creator.totalRevenue)}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -453,16 +485,19 @@ export default function CreatorDetailPage() {
               <div className="flex items-center justify-between">
                 <span
                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                    creator.healthScore.factors.loginRecency === 'green'
-                      ? 'bg-green-100 text-green-700'
-                      : creator.healthScore.factors.loginRecency === 'orange'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-red-100 text-red-700'
+                    creator.healthScore.factors.loginRecency === "green"
+                      ? "bg-green-100 text-green-700"
+                      : creator.healthScore.factors.loginRecency === "orange"
+                        ? "bg-orange-100 text-orange-700"
+                        : "bg-red-100 text-red-700"
                   }`}
                 >
-                  {creator.healthScore.factors.loginRecency === 'green' && 'Recent'}
-                  {creator.healthScore.factors.loginRecency === 'orange' && 'Moyen'}
-                  {creator.healthScore.factors.loginRecency === 'red' && 'Ancien'}
+                  {creator.healthScore.factors.loginRecency === "green" &&
+                    "Recent"}
+                  {creator.healthScore.factors.loginRecency === "orange" &&
+                    "Moyen"}
+                  {creator.healthScore.factors.loginRecency === "red" &&
+                    "Ancien"}
                 </span>
                 {creator.healthScore.daysSinceLogin !== null && (
                   <span className="text-xs text-gray-500">
@@ -475,11 +510,11 @@ export default function CreatorDetailPage() {
               <p className="mb-2 text-sm text-gray-500">Activite</p>
               <span
                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                  creator.healthScore.factors.activityLevel === 'green'
-                    ? 'bg-green-100 text-green-700'
-                    : creator.healthScore.factors.activityLevel === 'orange'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-red-100 text-red-700'
+                  creator.healthScore.factors.activityLevel === "green"
+                    ? "bg-green-100 text-green-700"
+                    : creator.healthScore.factors.activityLevel === "orange"
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-red-100 text-red-700"
                 }`}
               >
                 {creator.healthScore.recentSalesCount} ventes/30j
@@ -489,32 +524,34 @@ export default function CreatorDetailPage() {
               <p className="mb-2 text-sm text-gray-500">Paiement</p>
               <span
                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                  creator.healthScore.factors.paymentStatus === 'green'
-                    ? 'bg-green-100 text-green-700'
-                    : creator.healthScore.factors.paymentStatus === 'orange'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-red-100 text-red-700'
+                  creator.healthScore.factors.paymentStatus === "green"
+                    ? "bg-green-100 text-green-700"
+                    : creator.healthScore.factors.paymentStatus === "orange"
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-red-100 text-red-700"
                 }`}
               >
-                {creator.healthScore.factors.paymentStatus === 'green' && 'OK'}
-                {creator.healthScore.factors.paymentStatus === 'orange' && 'A surveiller'}
-                {creator.healthScore.factors.paymentStatus === 'red' && 'Probleme'}
+                {creator.healthScore.factors.paymentStatus === "green" && "OK"}
+                {creator.healthScore.factors.paymentStatus === "orange" &&
+                  "A surveiller"}
+                {creator.healthScore.factors.paymentStatus === "red" &&
+                  "Probleme"}
               </span>
             </div>
             <div className="rounded-lg border p-4">
               <p className="mb-2 text-sm text-gray-500">Tendance revenus</p>
               <span
                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                  creator.healthScore.factors.revenueHealth === 'green'
-                    ? 'bg-green-100 text-green-700'
-                    : creator.healthScore.factors.revenueHealth === 'orange'
-                      ? 'bg-orange-100 text-orange-700'
-                      : 'bg-red-100 text-red-700'
+                  creator.healthScore.factors.revenueHealth === "green"
+                    ? "bg-green-100 text-green-700"
+                    : creator.healthScore.factors.revenueHealth === "orange"
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-red-100 text-red-700"
                 }`}
               >
                 {creator.healthScore.recentRevenueChange !== null
-                  ? `${creator.healthScore.recentRevenueChange > 0 ? '+' : ''}${creator.healthScore.recentRevenueChange}%`
-                  : 'N/A'}
+                  ? `${creator.healthScore.recentRevenueChange > 0 ? "+" : ""}${creator.healthScore.recentRevenueChange}%`
+                  : "N/A"}
               </span>
             </div>
           </div>
@@ -525,9 +562,9 @@ export default function CreatorDetailPage() {
               <div>
                 <p className="font-medium">Risque de blocage</p>
                 <p className="text-sm">
-                  {creator.paymentRisk.failedAttempts} tentatives echouees -{' '}
+                  {creator.paymentRisk.failedAttempts} tentatives echouees -{" "}
                   {creator.paymentRisk.daysUntilBlock === 0
-                    ? 'Blocage imminent'
+                    ? "Blocage imminent"
                     : `Blocage dans ${creator.paymentRisk.daysUntilBlock}j`}
                 </p>
               </div>
@@ -557,7 +594,9 @@ export default function CreatorDetailPage() {
                     className="flex items-center justify-between rounded-lg border p-3"
                   >
                     <div>
-                      <p className="font-medium">{channel.title || 'Sans titre'}</p>
+                      <p className="font-medium">
+                        {channel.title || "Sans titre"}
+                      </p>
                       <p className="text-xs text-gray-500">
                         {channel.provider} - {channel.type}
                       </p>
@@ -609,11 +648,11 @@ export default function CreatorDetailPage() {
                       </span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          product.status === 'ACTIVE'
-                            ? 'bg-green-100 text-green-700'
-                            : product.status === 'DRAFT'
-                              ? 'bg-gray-100 text-gray-700'
-                              : 'bg-red-100 text-red-700'
+                          product.status === "ACTIVE"
+                            ? "bg-green-100 text-green-700"
+                            : product.status === "DRAFT"
+                              ? "bg-gray-100 text-gray-700"
+                              : "bg-red-100 text-red-700"
                         }`}
                       >
                         {product.status}
@@ -647,7 +686,9 @@ export default function CreatorDetailPage() {
                 >
                   <div>
                     <p className="font-medium text-sm">{activity.action}</p>
-                    <p className="text-xs text-gray-500">{activity.resourceType}</p>
+                    <p className="text-xs text-gray-500">
+                      {activity.resourceType}
+                    </p>
                   </div>
                   <span className="text-xs text-gray-500">
                     {formatDateTime(activity.createdAt)}
@@ -678,15 +719,17 @@ export default function CreatorDetailPage() {
                   className="flex items-center justify-between rounded-lg border p-3"
                 >
                   <div className="flex items-center gap-3">
-                    {payment.type === 'INVOICE_PAID' ? (
+                    {payment.type === "INVOICE_PAID" ? (
                       <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : payment.type === 'INVOICE_PAYMENT_FAILED' ? (
+                    ) : payment.type === "INVOICE_PAYMENT_FAILED" ? (
                       <XCircle className="h-5 w-5 text-red-500" />
                     ) : (
                       <Clock className="h-5 w-5 text-gray-400" />
                     )}
                     <div>
-                      <p className="font-medium text-sm">{payment.type.replace(/_/g, ' ')}</p>
+                      <p className="font-medium text-sm">
+                        {payment.type.replace(/_/g, " ")}
+                      </p>
                       <p className="text-xs text-gray-500">
                         {formatDateTime(payment.occurredAt)}
                       </p>
@@ -694,7 +737,9 @@ export default function CreatorDetailPage() {
                   </div>
                   <span
                     className={`font-medium ${
-                      payment.type === 'INVOICE_PAID' ? 'text-green-600' : 'text-gray-900'
+                      payment.type === "INVOICE_PAID"
+                        ? "text-green-600"
+                        : "text-gray-900"
                     }`}
                   >
                     {formatCurrency(payment.amount)}
@@ -705,6 +750,14 @@ export default function CreatorDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <SuspendOrganizationDialog
+        open={showSuspendDialog}
+        organizationName={creator.name}
+        isLoading={actionLoading}
+        onOpenChange={setShowSuspendDialog}
+        onConfirm={confirmSuspend}
+      />
     </div>
   );
 }

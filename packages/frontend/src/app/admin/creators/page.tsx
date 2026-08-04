@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import {
   Users,
   RefreshCw,
@@ -20,19 +20,22 @@ import {
   PlayCircle,
   AlertTriangle,
   Activity,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SuspendOrganizationDialog } from "@/components/admin/suspend-organization-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import apiClient from '@/lib/api-client';
-import { organizationsApi } from '@/lib/api/organizations';
+} from "@/components/ui/dropdown-menu";
+import apiClient from "@/lib/api-client";
+import { organizationsApi } from "@/lib/api/organizations";
 
-type HealthScoreLevel = 'green' | 'orange' | 'red';
+type HealthScoreLevel = "green" | "orange" | "red";
 
 interface HealthScore {
   level: HealthScoreLevel;
@@ -72,49 +75,60 @@ interface Creator {
   healthScore: HealthScore;
 }
 
-const statusConfig: Record<string, { className: string; label: string; icon: typeof CheckCircle }> = {
+const statusConfig: Record<
+  string,
+  { className: string; label: string; icon: typeof CheckCircle }
+> = {
   ACTIVE: {
-    className: 'bg-green-100 text-green-700',
-    label: 'Actif',
+    className: "bg-green-100 text-green-700",
+    label: "Actif",
     icon: CheckCircle,
   },
   TRIALING: {
-    className: 'bg-purple-100 text-purple-700',
-    label: 'Essai',
+    className: "bg-purple-100 text-purple-700",
+    label: "Essai",
     icon: Clock,
   },
   PAST_DUE: {
-    className: 'bg-red-100 text-red-700',
-    label: 'Impayé',
+    className: "bg-red-100 text-red-700",
+    label: "Impayé",
     icon: XCircle,
   },
   CANCELED: {
-    className: 'bg-gray-100 text-gray-500',
-    label: 'Annulé',
+    className: "bg-gray-100 text-gray-500",
+    label: "Annulé",
     icon: XCircle,
   },
 };
 
 export default function CreatorsPage() {
-  const t = useTranslations('admin');
+  const t = useTranslations("admin");
   const locale = useLocale();
   const [creators, setCreators] = useState<Creator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'suspended' | 'at_risk'>('all');
+  const [filter, setFilter] = useState<
+    "all" | "active" | "inactive" | "suspended" | "at_risk"
+  >("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [creatorToSuspend, setCreatorToSuspend] = useState<Creator | null>(
+    null,
+  );
+  const [hideSuspended, setHideSuspended] = useState(true);
 
-  const handleSuspend = async (creator: Creator) => {
-    const reason = prompt(
-      `Suspendre "${creator.name}" ?\n\nRaison (optionnelle) :`
-    );
-    if (reason === null) return; // User cancelled
+  const handleSuspend = (creator: Creator) => {
+    setCreatorToSuspend(creator);
+  };
 
-    setActionLoading(creator.id);
+  const confirmSuspend = async (reason?: string) => {
+    if (!creatorToSuspend) return;
+
+    setActionLoading(creatorToSuspend.id);
     try {
-      await organizationsApi.suspend(creator.id, reason || undefined);
+      await organizationsApi.suspend(creatorToSuspend.id, reason);
       await loadCreators();
+      setCreatorToSuspend(null);
     } catch {
-      alert('Erreur lors de la suspension');
+      alert("Erreur lors de la suspension");
     } finally {
       setActionLoading(null);
     }
@@ -128,7 +142,7 @@ export default function CreatorsPage() {
       await organizationsApi.unsuspend(creator.id);
       await loadCreators();
     } catch {
-      alert('Erreur lors de la réactivation');
+      alert("Erreur lors de la réactivation");
     } finally {
       setActionLoading(null);
     }
@@ -137,7 +151,7 @@ export default function CreatorsPage() {
   async function loadCreators() {
     setIsLoading(true);
     try {
-      const response = await apiClient.get('/admin/dashboard/creators');
+      const response = await apiClient.get("/admin/dashboard/creators");
       setCreators(response.data);
     } catch {
       setCreators([]);
@@ -151,22 +165,34 @@ export default function CreatorsPage() {
   }, []);
 
   const filteredCreators = creators.filter((creator) => {
-    if (filter === 'active') return creator.saasActive && !creator.suspendedAt;
-    if (filter === 'inactive') return !creator.saasActive && !creator.suspendedAt;
-    if (filter === 'suspended') return !!creator.suspendedAt;
-    if (filter === 'at_risk') {
+    if (filter === "active") return creator.saasActive && !creator.suspendedAt;
+    if (filter === "inactive")
+      return !creator.saasActive && !creator.suspendedAt;
+    if (filter === "suspended") return !!creator.suspendedAt;
+    if (filter === "at_risk") {
       // Use health score for churn risk (orange or red) instead of just payment risk
-      return !creator.suspendedAt && creator.saasActive &&
-        (creator.healthScore.level === 'red' || creator.healthScore.level === 'orange');
+      return (
+        !creator.suspendedAt &&
+        creator.saasActive &&
+        (creator.healthScore.level === "red" ||
+          creator.healthScore.level === "orange")
+      );
     }
-    return true;
+    return !hideSuspended || !creator.suspendedAt;
   });
+
+  const suspendedCount = creators.filter(
+    (creator) => creator.suspendedAt,
+  ).length;
+  const visibleAllCount = hideSuspended
+    ? creators.length - suspendedCount
+    : creators.length;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(locale, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
@@ -186,7 +212,9 @@ export default function CreatorsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold lg:text-3xl">{t('nav.creators')}</h1>
+          <h1 className="text-2xl font-bold lg:text-3xl">
+            {t("nav.creators")}
+          </h1>
           <p className="mt-1 text-gray-500">
             Vue d&apos;ensemble des créateurs et de leur activité
           </p>
@@ -243,28 +271,57 @@ export default function CreatorsPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {(['all', 'active', 'inactive', 'at_risk', 'suspended'] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              filter === f
-                ? f === 'suspended'
-                  ? 'bg-red-100 text-red-700'
-                  : f === 'at_risk'
-                    ? 'bg-orange-100 text-orange-700'
-                    : 'bg-purple-100 text-purple-700'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {(["all", "active", "inactive", "at_risk", "suspended"] as const).map(
+            (f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  filter === f
+                    ? f === "suspended"
+                      ? "bg-red-100 text-red-700"
+                      : f === "at_risk"
+                        ? "bg-orange-100 text-orange-700"
+                        : "bg-purple-100 text-purple-700"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {f === "all" && `Tous (${visibleAllCount})`}
+                {f === "active" &&
+                  `Actifs (${creators.filter((c) => c.saasActive && !c.suspendedAt).length})`}
+                {f === "inactive" &&
+                  `Inactifs (${creators.filter((c) => !c.saasActive && !c.suspendedAt).length})`}
+                {f === "at_risk" &&
+                  `⚠️ À risque (${creators.filter((c) => !c.suspendedAt && c.saasActive && (c.healthScore.level === "red" || c.healthScore.level === "orange")).length})`}
+                {f === "suspended" && `Suspendus (${suspendedCount})`}
+              </button>
+            ),
+          )}
+        </div>
+
+        {filter === "all" && suspendedCount > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setHideSuspended((hidden) => !hidden)}
           >
-            {f === 'all' && `Tous (${creators.length})`}
-            {f === 'active' && `Actifs (${creators.filter((c) => c.saasActive && !c.suspendedAt).length})`}
-            {f === 'inactive' && `Inactifs (${creators.filter((c) => !c.saasActive && !c.suspendedAt).length})`}
-            {f === 'at_risk' && `⚠️ À risque (${creators.filter((c) => !c.suspendedAt && c.saasActive && (c.healthScore.level === 'red' || c.healthScore.level === 'orange')).length})`}
-            {f === 'suspended' && `Suspendus (${creators.filter((c) => c.suspendedAt).length})`}
-          </button>
-        ))}
+            {hideSuspended ? (
+              <>
+                <Eye className="h-4 w-4" />
+                Afficher les suspendus ({suspendedCount})
+              </>
+            ) : (
+              <>
+                <EyeOff className="h-4 w-4" />
+                Masquer les suspendus
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -326,7 +383,8 @@ export default function CreatorsPage() {
             <tbody>
               {filteredCreators.map((creator) => {
                 const status = creator.platformStatus
-                  ? statusConfig[creator.platformStatus] || statusConfig.CANCELED
+                  ? statusConfig[creator.platformStatus] ||
+                    statusConfig.CANCELED
                   : null;
                 const StatusIcon = status?.icon;
 
@@ -365,7 +423,7 @@ export default function CreatorsPage() {
                             <span className="flex items-center gap-1 text-xs bg-orange-100 text-orange-700 rounded-full px-2 py-0.5 w-fit">
                               <AlertTriangle className="h-3 w-3" />
                               {creator.paymentRisk.daysUntilBlock === 0
-                                ? 'Blocage imminent'
+                                ? "Blocage imminent"
                                 : `Blocage dans ${creator.paymentRisk.daysUntilBlock}j`}
                             </span>
                           ) : status && StatusIcon ? (
@@ -379,14 +437,16 @@ export default function CreatorsPage() {
                         </div>
                       ) : (
                         <span className="text-sm text-gray-400">
-                          {creator.saasActive ? 'Legacy' : 'Aucun'}
+                          {creator.saasActive ? "Legacy" : "Aucun"}
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <span
                         className={`text-sm font-medium ${
-                          creator.channelsCount > 0 ? 'text-gray-900' : 'text-gray-400'
+                          creator.channelsCount > 0
+                            ? "text-gray-900"
+                            : "text-gray-400"
                         }`}
                       >
                         {creator.channelsCount}
@@ -395,7 +455,9 @@ export default function CreatorsPage() {
                     <td className="px-6 py-4">
                       <span
                         className={`text-sm font-medium ${
-                          creator.customersCount > 0 ? 'text-gray-900' : 'text-gray-400'
+                          creator.customersCount > 0
+                            ? "text-gray-900"
+                            : "text-gray-400"
                         }`}
                       >
                         {creator.customersCount}
@@ -405,8 +467,8 @@ export default function CreatorsPage() {
                       <span
                         className={`text-sm font-medium ${
                           creator.activeSubscriptionsCount > 0
-                            ? 'text-green-600'
-                            : 'text-gray-400'
+                            ? "text-green-600"
+                            : "text-gray-400"
                         }`}
                       >
                         {creator.activeSubscriptionsCount}
@@ -416,24 +478,28 @@ export default function CreatorsPage() {
                       <div className="flex items-center gap-2">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                            creator.healthScore.level === 'green'
-                              ? 'bg-green-100 text-green-700'
-                              : creator.healthScore.level === 'orange'
-                                ? 'bg-orange-100 text-orange-700'
-                                : 'bg-red-100 text-red-700'
+                            creator.healthScore.level === "green"
+                              ? "bg-green-100 text-green-700"
+                              : creator.healthScore.level === "orange"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-red-100 text-red-700"
                           }`}
                           title={`Score: ${creator.healthScore.score}/100\nConnexion: ${creator.healthScore.factors.loginRecency}\nActivité: ${creator.healthScore.factors.activityLevel}\nPaiement: ${creator.healthScore.factors.paymentStatus}\nRevenus: ${creator.healthScore.factors.revenueHealth}`}
                         >
-                          {creator.healthScore.level === 'green' && '🟢'}
-                          {creator.healthScore.level === 'orange' && '🟠'}
-                          {creator.healthScore.level === 'red' && '🔴'}
+                          {creator.healthScore.level === "green" && "🟢"}
+                          {creator.healthScore.level === "orange" && "🟠"}
+                          {creator.healthScore.level === "red" && "🔴"}
                           {creator.healthScore.score}%
                         </span>
-                        {creator.healthScore.daysSinceLogin !== null && creator.healthScore.daysSinceLogin > 14 && (
-                          <span className="text-xs text-gray-400" title="Jours depuis dernière connexion">
-                            {creator.healthScore.daysSinceLogin}j
-                          </span>
-                        )}
+                        {creator.healthScore.daysSinceLogin !== null &&
+                          creator.healthScore.daysSinceLogin > 14 && (
+                            <span
+                              className="text-xs text-gray-400"
+                              title="Jours depuis dernière connexion"
+                            >
+                              {creator.healthScore.daysSinceLogin}j
+                            </span>
+                          )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
@@ -490,6 +556,16 @@ export default function CreatorsPage() {
           </table>
         </div>
       )}
+
+      <SuspendOrganizationDialog
+        open={creatorToSuspend !== null}
+        organizationName={creatorToSuspend?.name ?? ""}
+        isLoading={actionLoading === creatorToSuspend?.id}
+        onOpenChange={(open) => {
+          if (!open) setCreatorToSuspend(null);
+        }}
+        onConfirm={confirmSuspend}
+      />
     </div>
   );
 }
