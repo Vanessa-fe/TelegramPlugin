@@ -12,6 +12,11 @@ export function Footer() {
       { label: t('links.features'), href: '/#features' },
       { label: t('links.faq'), href: '/faq' },
     ],
+    resources: [
+      { label: 'Blog', href: '/blog' },
+      { label: 'Ressources', href: '/ressources' },
+      { label: 'Solutions', href: '/solutions/abonnement-telegram-payant' },
+    ],
     company: [
       { label: t('links.about'), href: '/about' },
       { label: t('links.contact'), href: '/contact' },
@@ -32,7 +37,7 @@ export function Footer() {
     <footer className="bg-text-primary text-white">
       <div className="max-w-6xl mx-auto px-4 lg:px-6 py-12 lg:py-16">
         {/* Links grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="text-xl font-bold">
@@ -68,6 +73,25 @@ export function Footer() {
             </h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-gray-300 hover:text-white transition-colors duration-150"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Resources */}
+          <div>
+            <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-400 mb-4">
+              Ressources
+            </h3>
+            <ul className="space-y-3">
+              {footerLinks.resources.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}

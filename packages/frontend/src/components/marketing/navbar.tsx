@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname, getPathname } from '@/i18n/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { locales, localeNames, type Locale } from '@/i18n/config';
-import { Globe } from 'lucide-react';
+import { Globe, ChevronDown } from 'lucide-react';
 
 export function Navbar() {
   const t = useTranslations('marketing.navbar');
@@ -15,6 +15,9 @@ export function Navbar() {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isResourcesOpen, setIsResourcesOpen] = useState(false);
+  const [isResourcesMobileOpen, setIsResourcesMobileOpen] = useState(false);
+  const [closeTimeout, setCloseTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,6 +26,21 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleMouseEnter = () => {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout);
+      setCloseTimeout(null);
+    }
+    setIsResourcesOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    const timeout = setTimeout(() => {
+      setIsResourcesOpen(false);
+    }, 200);
+    setCloseTimeout(timeout);
+  };
 
   function handleLocaleChange(newLocale: Locale) {
     // Persist locale preference so unprefixed routes keep the selected language
@@ -54,6 +72,47 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
+            {/* Resources Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <button className="flex items-center gap-1 text-text-secondary hover:text-text-primary font-medium transition-colors duration-150">
+                Ressources
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isResourcesOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isResourcesOpen && (
+                <div
+                  className="absolute top-full left-0 mt-2 w-56 bg-white border border-border-custom rounded-lg shadow-lg py-2 z-50"
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <Link
+                    href="/blog"
+                    className="block px-4 py-2.5 text-text-secondary hover:text-text-primary hover:bg-purple-50 transition-colors"
+                  >
+                    <div className="font-medium">Blog</div>
+                    <div className="text-xs text-text-secondary mt-0.5">Guides et conseils</div>
+                  </Link>
+                  <Link
+                    href="/ressources"
+                    className="block px-4 py-2.5 text-text-secondary hover:text-text-primary hover:bg-purple-50 transition-colors"
+                  >
+                    <div className="font-medium">Hub Ressources</div>
+                    <div className="text-xs text-text-secondary mt-0.5">Tutoriels et outils</div>
+                  </Link>
+                  <Link
+                    href="/solutions/abonnement-telegram-payant"
+                    className="block px-4 py-2.5 text-text-secondary hover:text-text-primary hover:bg-purple-50 transition-colors"
+                  >
+                    <div className="font-medium">Solutions</div>
+                    <div className="text-xs text-text-secondary mt-0.5">Abonnements Telegram</div>
+                  </Link>
+                </div>
+              )}
+            </div>
+
             <Link
               href="/pricing"
               className="text-text-secondary hover:text-text-primary font-medium transition-colors duration-150"
@@ -141,6 +200,54 @@ export function Navbar() {
         {isMobileMenuOpen && (
           <div className="reveal-on-load md:hidden py-4 border-t border-border-custom">
             <div className="flex flex-col gap-4">
+              {/* Resources Mobile Accordion */}
+              <div>
+                <button
+                  onClick={() => setIsResourcesMobileOpen(!isResourcesMobileOpen)}
+                  className="flex items-center justify-between w-full text-text-secondary hover:text-text-primary font-medium py-2 transition-colors"
+                >
+                  Ressources
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isResourcesMobileOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isResourcesMobileOpen && (
+                  <div className="pl-4 mt-2 flex flex-col gap-2">
+                    <Link
+                      href="/blog"
+                      className="text-text-secondary hover:text-text-primary py-2 transition-colors"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsResourcesMobileOpen(false);
+                      }}
+                    >
+                      <div className="font-medium">Blog</div>
+                      <div className="text-xs text-text-secondary">Guides et conseils</div>
+                    </Link>
+                    <Link
+                      href="/ressources"
+                      className="text-text-secondary hover:text-text-primary py-2 transition-colors"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsResourcesMobileOpen(false);
+                      }}
+                    >
+                      <div className="font-medium">Hub Ressources</div>
+                      <div className="text-xs text-text-secondary">Tutoriels et outils</div>
+                    </Link>
+                    <Link
+                      href="/solutions/abonnement-telegram-payant"
+                      className="text-text-secondary hover:text-text-primary py-2 transition-colors"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsResourcesMobileOpen(false);
+                      }}
+                    >
+                      <div className="font-medium">Solutions</div>
+                      <div className="text-xs text-text-secondary">Abonnements Telegram</div>
+                    </Link>
+                  </div>
+                )}
+              </div>
+
               <Link
                 href="/pricing"
                 className="text-text-secondary hover:text-text-primary font-medium py-2 transition-colors"
