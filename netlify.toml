@@ -6,5 +6,26 @@ publish = "packages/frontend/.next"
   NODE_VERSION = "20"
   PNPM_VERSION = "8.15.4"
 
+[[redirects]]
+  from = "/slk-r/static/*"
+  to = "https://eu-assets.i.posthog.com/static/:splat"
+  host = "eu-assets.i.posthog.com"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/slk-r/array/*"
+  to = "https://eu-assets.i.posthog.com/array/:splat"
+  host = "eu-assets.i.posthog.com"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/slk-r/*"
+  to = "https://eu.i.posthog.com/:splat"
+  host = "eu.i.posthog.com"
+  status = 200
+  force = true
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
