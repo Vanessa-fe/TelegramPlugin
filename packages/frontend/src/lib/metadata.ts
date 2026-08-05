@@ -20,11 +20,13 @@ export function buildMetadata({
   title,
   description,
   locale,
+  noIndex = false,
 }: {
   canonical: string;
   title: string;
   description?: string;
   locale?: string;
+  noIndex?: boolean;
 }): Metadata {
   const prefixPath = (targetLocale: Locale, path: string) => {
     const suffix = path === '/' ? '' : path;
@@ -50,9 +52,29 @@ export function buildMetadata({
   return {
     title,
     ...(description && { description }),
+    robots: noIndex
+      ? {
+          index: false,
+          follow: false,
+          nocache: true,
+        }
+      : {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+          },
+        },
     alternates: {
       canonical: localizedCanonical,
-      languages: languageAlternates,
+      languages: {
+        ...languageAlternates,
+        'x-default': prefixPath(defaultLocale, canonical),
+      },
     },
     openGraph: {
       ...OG_DEFAULTS,

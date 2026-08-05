@@ -6,30 +6,13 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
+import {
+  generateOrganizationSchema,
+  generateSoftwareApplicationSchema,
+  generateWebSiteSchema,
+  renderJsonLd,
+} from "@/lib/json-ld";
 import "./globals.css";
-
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Sublynk",
-  url: "https://sublynk.fr",
-  logo: "https://sublynk.fr/android-chrome-512x512.png",
-  sameAs: ["https://x.com/Sublynk"],
-};
-
-const softwareJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "Sublynk",
-  applicationCategory: "BusinessApplication",
-  operatingSystem: "Web",
-  url: "https://sublynk.fr",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "EUR",
-  },
-};
 
 const geistSans = localFont({
   src: "../../public/fonts/inter-roman.var.woff2",
@@ -58,6 +41,15 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
     },
     manifest: "/site.webmanifest",
+    themeColor: [
+      { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+      { media: "(prefers-color-scheme: dark)", color: "#7c3aed" },
+    ],
+    viewport: {
+      width: "device-width",
+      initialScale: 1,
+      maximumScale: 5,
+    },
     openGraph: {
       title: t("title"),
       description: t("description"),
@@ -95,11 +87,15 @@ export default async function RootLayout({
       <head>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: renderJsonLd(generateOrganizationSchema()) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: renderJsonLd(generateSoftwareApplicationSchema()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: renderJsonLd(generateWebSiteSchema()) }}
         />
         <ConsentManager />
       </head>

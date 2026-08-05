@@ -4,6 +4,7 @@ import { Navbar, Footer } from '@/components/marketing';
 import { Shield, Heart, Zap } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
+import { generateBreadcrumbSchema, renderJsonLd } from '@/lib/json-ld';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('about');
@@ -18,6 +19,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AboutPage() {
   const t = await getTranslations('about');
+  const breadcrumbItems = [
+    { name: 'Accueil', url: '/' },
+    { name: 'À propos', url: '/about' },
+  ];
   const values = [
     {
       icon: Shield,
@@ -56,6 +61,12 @@ export default async function AboutPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: renderJsonLd(generateBreadcrumbSchema(breadcrumbItems)),
+        }}
+      />
       <Navbar />
 
       {/* Hero */}

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
+import { generateFAQPageSchema, renderJsonLd } from '@/lib/json-ld';
 import {
   UserPlus,
   CreditCard,
@@ -106,24 +107,11 @@ export default async function FaqPage() {
     },
   ];
 
-  const faqJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map((faq) => ({
-      '@type': 'Question',
-      name: faq.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: faq.answer,
-      },
-    })),
-  };
-
   return (
     <div className="min-h-screen bg-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: renderJsonLd(generateFAQPageSchema(faqs)) }}
       />
       <Navbar />
 
