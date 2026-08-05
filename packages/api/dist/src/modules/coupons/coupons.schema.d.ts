@@ -13,8 +13,8 @@ export declare const createCouponSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     planIds: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
 }, "strip", z.ZodTypeAny, {
     organizationId: string;
-    code: string;
     type: "PERCENTAGE" | "FIXED_AMOUNT";
+    code: string;
     discountValue: number;
     planIds: string[];
     currency?: string | undefined;
@@ -22,8 +22,8 @@ export declare const createCouponSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     maxUses?: number | undefined;
 }, {
     organizationId: string;
-    code: string;
     type: "PERCENTAGE" | "FIXED_AMOUNT";
+    code: string;
     discountValue: number;
     currency?: string | undefined;
     expiresAt?: unknown;
@@ -31,8 +31,8 @@ export declare const createCouponSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     planIds?: string[] | undefined;
 }>, {
     organizationId: string;
-    code: string;
     type: "PERCENTAGE" | "FIXED_AMOUNT";
+    code: string;
     discountValue: number;
     planIds: string[];
     currency?: string | undefined;
@@ -40,8 +40,8 @@ export declare const createCouponSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     maxUses?: number | undefined;
 }, {
     organizationId: string;
-    code: string;
     type: "PERCENTAGE" | "FIXED_AMOUNT";
+    code: string;
     discountValue: number;
     currency?: string | undefined;
     expiresAt?: unknown;
@@ -49,8 +49,8 @@ export declare const createCouponSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     planIds?: string[] | undefined;
 }>, {
     organizationId: string;
-    code: string;
     type: "PERCENTAGE" | "FIXED_AMOUNT";
+    code: string;
     discountValue: number;
     planIds: string[];
     currency?: string | undefined;
@@ -58,8 +58,8 @@ export declare const createCouponSchema: z.ZodEffects<z.ZodEffects<z.ZodObject<{
     maxUses?: number | undefined;
 }, {
     organizationId: string;
-    code: string;
     type: "PERCENTAGE" | "FIXED_AMOUNT";
+    code: string;
     discountValue: number;
     currency?: string | undefined;
     expiresAt?: unknown;

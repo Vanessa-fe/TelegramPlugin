@@ -29,10 +29,10 @@ export declare class CouponsController {
         currency: string | null;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.CouponStatus;
         organizationId: string;
-        code: string;
+        status: import("@prisma/client").$Enums.CouponStatus;
         type: import("@prisma/client").$Enums.CouponType;
+        code: string;
         expiresAt: Date | null;
         discountValue: number;
         maxUses: number | null;
@@ -44,10 +44,10 @@ export declare class CouponsController {
         currency: string | null;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.CouponStatus;
         organizationId: string;
-        code: string;
+        status: import("@prisma/client").$Enums.CouponStatus;
         type: import("@prisma/client").$Enums.CouponType;
+        code: string;
         expiresAt: Date | null;
         discountValue: number;
         maxUses: number | null;
@@ -59,10 +59,10 @@ export declare class CouponsController {
         currency: string | null;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.CouponStatus;
         organizationId: string;
-        code: string;
+        status: import("@prisma/client").$Enums.CouponStatus;
         type: import("@prisma/client").$Enums.CouponType;
+        code: string;
         expiresAt: Date | null;
         discountValue: number;
         maxUses: number | null;

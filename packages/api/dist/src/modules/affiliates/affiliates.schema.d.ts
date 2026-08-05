@@ -16,17 +16,17 @@ export declare const createAffiliateSchema: z.ZodObject<{
     organizationId: string;
     commissionRate: number;
     name?: string | undefined;
-    status?: "ACTIVE" | "PENDING" | "SUSPENDED" | "DEACTIVATED" | undefined;
     metadata?: Record<string, any> | undefined;
     email?: string | undefined;
+    status?: "ACTIVE" | "PENDING" | "SUSPENDED" | "DEACTIVATED" | undefined;
     referralCode?: string | undefined;
 }, {
     organizationId: string;
     commissionRate: number;
     name?: string | undefined;
-    status?: "ACTIVE" | "PENDING" | "SUSPENDED" | "DEACTIVATED" | undefined;
     metadata?: Record<string, any> | undefined;
     email?: unknown;
+    status?: "ACTIVE" | "PENDING" | "SUSPENDED" | "DEACTIVATED" | undefined;
     referralCode?: string | undefined;
 }>;
 export type CreateAffiliateDto = z.infer<typeof createAffiliateSchema>;
@@ -44,16 +44,16 @@ export declare const updateAffiliateSchema: z.ZodObject<{
     metadata: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
 }, "strip", z.ZodTypeAny, {
     name?: string | undefined;
-    status?: "ACTIVE" | "PENDING" | "SUSPENDED" | "DEACTIVATED" | undefined;
     metadata?: Record<string, any> | undefined;
     email?: string | undefined;
+    status?: "ACTIVE" | "PENDING" | "SUSPENDED" | "DEACTIVATED" | undefined;
     referralCode?: string | undefined;
     commissionRate?: number | undefined;
 }, {
     name?: string | undefined;
-    status?: "ACTIVE" | "PENDING" | "SUSPENDED" | "DEACTIVATED" | undefined;
     metadata?: Record<string, any> | undefined;
     email?: unknown;
+    status?: "ACTIVE" | "PENDING" | "SUSPENDED" | "DEACTIVATED" | undefined;
     referralCode?: string | undefined;
     commissionRate?: number | undefined;
 }>;

@@ -7,8 +7,8 @@ export declare class LandingPagesController {
     getMyLandingPage(user: AuthUser): Promise<({
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -50,8 +50,8 @@ export declare class LandingPagesController {
     createLandingPage(user: AuthUser, body: CreateLandingPageDto): Promise<{
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -85,8 +85,8 @@ export declare class LandingPagesController {
     updateLandingPage(user: AuthUser, body: UpdateLandingPageDto): Promise<{
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -120,8 +120,8 @@ export declare class LandingPagesController {
     publishLandingPage(user: AuthUser): Promise<{
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -155,8 +155,8 @@ export declare class LandingPagesController {
     unpublishLandingPage(user: AuthUser): Promise<{
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -190,8 +190,8 @@ export declare class LandingPagesController {
     bulkUpdateElements(user: AuthUser, body: BulkUpdateElementsDto): Promise<({
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -252,8 +252,8 @@ export declare class LandingPagesController {
     reorderElements(user: AuthUser, body: ReorderElementsDto): Promise<({
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -287,8 +287,8 @@ export declare class LandingPagesController {
     updateSocialLinks(user: AuthUser, body: UpdateSocialLinksDto): Promise<({
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;

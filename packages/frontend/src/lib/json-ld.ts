@@ -188,6 +188,107 @@ export function generateArticleSchema({
   };
 }
 
+export function generateReviewSchema({
+  author,
+  reviewBody,
+  ratingValue,
+  datePublished,
+  itemName,
+}: {
+  author: { name: string; url?: string };
+  reviewBody: string;
+  ratingValue: number;
+  datePublished: string;
+  itemName: string;
+}): WithContext<Thing> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Review',
+    author: {
+      '@type': 'Person',
+      name: author.name,
+      ...(author.url && { url: author.url }),
+    },
+    reviewBody,
+    reviewRating: {
+      '@type': 'Rating',
+      ratingValue: String(ratingValue),
+      bestRating: '5',
+      worstRating: '1',
+    },
+    datePublished,
+    itemReviewed: {
+      '@type': 'SoftwareApplication',
+      name: itemName,
+    },
+  };
+}
+
+export function generateVideoObjectSchema({
+  name,
+  description,
+  thumbnailUrl,
+  uploadDate,
+  contentUrl,
+  embedUrl,
+  duration,
+}: {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  contentUrl?: string;
+  embedUrl?: string;
+  duration?: string;
+}): WithContext<Thing> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name,
+    description,
+    thumbnailUrl,
+    uploadDate,
+    ...(contentUrl && { contentUrl }),
+    ...(embedUrl && { embedUrl }),
+    ...(duration && { duration }),
+  };
+}
+
+export function generateLocalBusinessSchema({
+  name,
+  address,
+  telephone,
+  email,
+  priceRange,
+}: {
+  name: string;
+  address: {
+    streetAddress: string;
+    addressLocality: string;
+    postalCode: string;
+    addressCountry: string;
+  };
+  telephone?: string;
+  email?: string;
+  priceRange?: string;
+}): WithContext<Thing> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: address.streetAddress,
+      addressLocality: address.addressLocality,
+      postalCode: address.postalCode,
+      addressCountry: address.addressCountry,
+    },
+    ...(telephone && { telephone }),
+    ...(email && { email }),
+    ...(priceRange && { priceRange }),
+  };
+}
+
 export function renderJsonLd(schema: WithContext<Thing>): string {
   return JSON.stringify(schema);
 }

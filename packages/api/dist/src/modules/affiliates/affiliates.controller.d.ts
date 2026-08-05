@@ -13,10 +13,10 @@ export declare class AffiliatesController {
         currency: string;
         createdAt: Date;
         status: import("@prisma/client").$Enums.ConversionStatus;
-        stripeSubscriptionId: string | null;
         productId: string | null;
         customerId: string;
         subscriptionId: string;
+        stripeSubscriptionId: string | null;
         stripePaymentIntentId: string | null;
         stripeChargeId: string | null;
         affiliateId: string;
@@ -44,12 +44,12 @@ export declare class AffiliatesController {
     create(user: AuthUser, body: CreateAffiliateDto): Promise<{
         id: string;
         name: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.AffiliateStatus;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        organizationId: string;
         email: string;
+        organizationId: string;
+        status: import("@prisma/client").$Enums.AffiliateStatus;
         referralCode: string;
         commissionRate: number;
         totalEarnings: number;
@@ -60,12 +60,12 @@ export declare class AffiliatesController {
     update(user: AuthUser, id: string, body: UpdateAffiliateDto): Promise<{
         id: string;
         name: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.AffiliateStatus;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        organizationId: string;
         email: string;
+        organizationId: string;
+        status: import("@prisma/client").$Enums.AffiliateStatus;
         referralCode: string;
         commissionRate: number;
         totalEarnings: number;
@@ -76,12 +76,12 @@ export declare class AffiliatesController {
     deactivate(user: AuthUser, id: string): Promise<{
         id: string;
         name: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.AffiliateStatus;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        organizationId: string;
         email: string;
+        organizationId: string;
+        status: import("@prisma/client").$Enums.AffiliateStatus;
         referralCode: string;
         commissionRate: number;
         totalEarnings: number;
@@ -138,10 +138,10 @@ export declare class AffiliatesController {
         currency: string;
         createdAt: Date;
         status: import("@prisma/client").$Enums.ConversionStatus;
-        stripeSubscriptionId: string | null;
         productId: string | null;
         customerId: string;
         subscriptionId: string;
+        stripeSubscriptionId: string | null;
         stripePaymentIntentId: string | null;
         stripeChargeId: string | null;
         affiliateId: string;
@@ -160,10 +160,10 @@ export declare class AffiliatesController {
         currency: string;
         createdAt: Date;
         status: import("@prisma/client").$Enums.ConversionStatus;
-        stripeSubscriptionId: string | null;
         productId: string | null;
         customerId: string;
         subscriptionId: string;
+        stripeSubscriptionId: string | null;
         stripePaymentIntentId: string | null;
         stripeChargeId: string | null;
         affiliateId: string;

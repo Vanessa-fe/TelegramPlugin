@@ -7,8 +7,8 @@ export declare class LandingPagesService {
     findByOrganization(organizationId: string): Promise<({
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -50,8 +50,8 @@ export declare class LandingPagesService {
     create(organizationId: string, dto: CreateLandingPageDto): Promise<{
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -85,8 +85,8 @@ export declare class LandingPagesService {
     update(organizationId: string, dto: UpdateLandingPageDto): Promise<{
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -120,8 +120,8 @@ export declare class LandingPagesService {
     publish(organizationId: string): Promise<{
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -155,8 +155,8 @@ export declare class LandingPagesService {
     unpublish(organizationId: string): Promise<{
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -217,8 +217,8 @@ export declare class LandingPagesService {
     bulkUpdateElements(organizationId: string, dto: BulkUpdateElementsDto): Promise<({
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -252,8 +252,8 @@ export declare class LandingPagesService {
     reorderElements(organizationId: string, dto: ReorderElementsDto): Promise<({
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -287,8 +287,8 @@ export declare class LandingPagesService {
     updateSocialLinks(organizationId: string, dto: UpdateSocialLinksDto): Promise<({
         organization: {
             id: string;
-            name: string;
             slug: string;
+            name: string;
         };
         elements: {
             id: string;
@@ -362,11 +362,11 @@ export declare class LandingPagesService {
             plans: {
                 id: string;
                 name: string;
-                priceCents: number;
                 currency: string;
-                interval: import("@prisma/client").$Enums.PlanInterval;
-                trialPeriodDays: number | null;
                 description: string | null;
+                interval: import("@prisma/client").$Enums.PlanInterval;
+                priceCents: number;
+                trialPeriodDays: number | null;
                 accessDurationDays: number | null;
             }[];
             channels: {

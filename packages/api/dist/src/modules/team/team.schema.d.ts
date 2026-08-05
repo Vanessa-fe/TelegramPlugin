@@ -11,8 +11,8 @@ export declare const createTeamInviteSchema: z.ZodObject<{
     organizationId?: string | undefined;
 }, {
     email: string;
-    organizationId?: string | undefined;
     role?: "ORG_ADMIN" | "SUPPORT" | "VIEWER" | undefined;
+    organizationId?: string | undefined;
 }>;
 export type CreateTeamInviteDto = z.infer<typeof createTeamInviteSchema>;
 export declare const updateTeamMemberRoleSchema: z.ZodObject<{
