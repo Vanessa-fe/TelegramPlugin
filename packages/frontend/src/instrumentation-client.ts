@@ -4,6 +4,7 @@ const posthogKey =
   process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ||
   process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
+const POSTHOG_PROXY_PATH = "/slk-r";
 const SENSITIVE_URL_PARAMS = new Set([
   "token",
   "code",
@@ -59,8 +60,14 @@ function sanitizeEventProperties(
 
 if (posthogKey && posthogHost) {
   try {
+    const usesDirectPostHogHost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.endsWith(".netlify.app");
+
     posthog.init(posthogKey, {
-      api_host: posthogHost,
+      api_host: usesDirectPostHogHost ? posthogHost : POSTHOG_PROXY_PATH,
+      ui_host: "https://eu.posthog.com",
       defaults: "2026-01-30",
       before_send: (event) => {
         if (!event) {
