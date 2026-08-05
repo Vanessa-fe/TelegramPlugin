@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Navbar, Footer } from '@/components/marketing';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { buildMetadata } from '@/lib/metadata';
+import { generateBreadcrumbSchema, renderJsonLd } from '@/lib/json-ld';
 import { PricingViewTracker } from '@/components/analytics/pricing-view-tracker';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,6 +19,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PricingPage() {
   const t = await getTranslations('pricing');
+  const breadcrumbItems = [
+    { name: 'Accueil', url: '/' },
+    { name: 'Tarifs', url: '/pricing' },
+  ];
   const planNames = ['starter', 'growth', 'pro'] as const;
   const plans = planNames.map((planName) => ({
     key: planName,
@@ -62,8 +67,67 @@ export default async function PricingPage() {
     },
   ];
 
+  const pricingOffers = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'Sublynk',
+    description:
+      'Plateforme SaaS pour monétiser vos canaux Telegram via abonnements',
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Starter',
+        price: '0',
+        priceCurrency: 'EUR',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: '0',
+          priceCurrency: 'EUR',
+          unitText: 'MONTH',
+        },
+        availability: 'https://schema.org/InStock',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Growth',
+        price: '29',
+        priceCurrency: 'EUR',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: '29',
+          priceCurrency: 'EUR',
+          unitText: 'MONTH',
+        },
+        availability: 'https://schema.org/InStock',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Pro',
+        price: '99',
+        priceCurrency: 'EUR',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: '99',
+          priceCurrency: 'EUR',
+          unitText: 'MONTH',
+        },
+        availability: 'https://schema.org/InStock',
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: renderJsonLd(generateBreadcrumbSchema(breadcrumbItems)),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingOffers) }}
+      />
       <PricingViewTracker />
       <Navbar />
 

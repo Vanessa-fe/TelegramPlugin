@@ -77,8 +77,33 @@ export default async function ProductPage({ params }: Props) {
 
   const formatInterval = (interval: string) => intervalLabels[interval] || "";
 
+  // Generate Product schema with Offers
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: data.name,
+    description: data.description || `${data.name} - ${data.organization.name}`,
+    brand: {
+      '@type': 'Organization',
+      name: data.organization.name,
+    },
+    offers: data.plans.map((plan) => ({
+      '@type': 'Offer',
+      name: plan.name,
+      description: plan.description,
+      price: (plan.priceCents / 100).toString(),
+      priceCurrency: plan.currency.toUpperCase(),
+      availability: 'https://schema.org/InStock',
+      url: `https://sublynk.fr/checkout/${data.id}?plan=${plan.id}`,
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
       <div className="max-w-lg mx-auto py-8 px-5">
         {/* Back link */}
         <Link
