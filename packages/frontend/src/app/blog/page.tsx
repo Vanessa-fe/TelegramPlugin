@@ -20,8 +20,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function BlogPage() {
   const t = await getTranslations('blog');
-  const allPosts = getAllPosts();
-  const featuredPosts = getFeaturedPosts();
+  const locale = await getLocale();
+  const allPosts = getAllPosts(locale);
+  const featuredPosts = getFeaturedPosts(locale);
   const categories = getAllCategories();
 
   const breadcrumbItems = [

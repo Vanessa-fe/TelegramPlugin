@@ -2184,68 +2184,68 @@
   },
   "pricing": {
     "hero": {
-      "title": "Tarification simple et transparente",
-      "subtitle": "Trois plans pour s'adapter à votre croissance. Démarrez gratuitement, puis passez à l'offre qui maximise votre marge."
+      "title": "Des tarifs qui grandissent avec vous",
+      "subtitle": "Commencez gratuitement à 0€/mois, puis réduisez vos commissions en passant sur Growth (3,5%) ou Pro (1,5%). Aucun engagement, changement de plan en un clic."
     },
     "plans": {
       "recommended": "Le plus populaire",
       "starter": {
         "name": "Starter",
-        "subtitle": "Lancer et tester votre offre",
+        "subtitle": "Pour tester et valider votre offre",
         "price": "0€",
         "perMonth": "/mois",
         "commission": "+ 6 % par vente",
         "cta": "Démarrer avec Starter →",
         "ctaNote": "Activation immédiate",
         "features": {
-          "item1": "Produits et clients illimités",
-          "item2": "Paiements Stripe directs",
-          "item3": "Support par email"
+          "item1": "Abonnés et canaux illimités",
+          "item2": "Argent reçu directement sur votre Stripe",
+          "item3": "Support email sous 48h"
         }
       },
       "growth": {
         "name": "Growth",
-        "subtitle": "Accélérer à budget maîtrisé",
+        "subtitle": "Pour scaler vos revenus",
         "price": "29€",
         "perMonth": "/mois",
         "commission": "+ 3,5 % par vente",
         "cta": "Choisir Growth →",
         "ctaNote": "Facturation mensuelle",
         "features": {
-          "item1": "Coupons, affiliés, analytics et exports",
-          "item2": "Support prioritaire",
-          "item3": "Tous les canaux sur un seul dashboard"
+          "item1": "Codes promo, affiliés, analytics et exports CSV",
+          "item2": "Support prioritaire (réponse < 24h)",
+          "item3": "Gérez tous vos canaux depuis un dashboard unique"
         }
       },
       "pro": {
         "name": "Pro",
-        "subtitle": "Pour les équipes qui veulent scaler vite",
+        "subtitle": "Pour les équipes qui veulent maximiser leur marge",
         "price": "99€",
         "perMonth": "/mois",
         "commission": "+ 1,5 % par vente",
         "cta": "Choisir Pro →",
         "ctaNote": "Facturation mensuelle",
         "features": {
-          "item1": "Multi-admin et branding avancé",
-          "item2": "API et webhooks avancés",
-          "item3": "Commission minimale pour maximiser la marge"
+          "item1": "Ajoutez votre équipe + personnalisation complète (logo, couleurs)",
+          "item2": "API et webhooks pour automatiser vos workflows",
+          "item3": "Commission à 1,5% - la plus basse du marché"
         }
       }
     },
     "comparison": {
-      "title": "Pourquoi les créateurs passent chez nous",
+      "title": "Sublynk vs Patreon, Gumroad et les autres",
       "cards": {
-        "card1Title": "0€",
-        "card1": "pour démarrer avec Starter",
-        "card2Title": "29€",
-        "card2": "abonnement Growth pour accélérer",
-        "card3Title": "1,5%",
-        "card3": "commission minimale avec Pro"
+        "card1Title": "1,5% à 6%",
+        "card1": "de commission selon votre plan",
+        "card2Title": "0€",
+        "card2": "pour tester avec le plan Starter",
+        "card3Title": "5 min",
+        "card3": "pour configurer votre premier canal payant"
       },
       "example": {
-        "label": "En pratique :",
-        "text": "Commencez avec Starter pour lancer, puis passez sur Growth ou Pro au moment où cela devient rentable pour vous.",
-        "highlight": "Changement de plan en un clic, sans engagement."
+        "label": "Exemple concret :",
+        "text": "Avec 100 abonnés à 20€/mois (2000€ de CA), vous payez 120€ de commission sur Starter (6%), 70€ sur Growth (3,5%), ou 30€ sur Pro (1,5%). Patreon vous prendrait 240€ (12%).",
+        "highlight": "Économisez jusqu'à 210€/mois avec Pro."
       }
     },
     "faqs": {
@@ -2360,51 +2360,51 @@
   },
   "about": {
     "hero": {
-      "title": "Aider les créateurs de contenus à monétiser leurs communautés",
-      "body": "Sublynk est né d'un constat simple : les créateurs méritent de meilleurs outils. Alors que les plateformes dominantes imposent leurs règles, les créateurs font face à des défis concrets — coûts imprévisibles, solutions de paiement bancales et perte de contrôle sur leurs revenus."
+      "title": "Construire l'outil que nous aurions aimé avoir",
+      "body": "En 2024, nous avons lancé un canal Telegram premium pour notre communauté de traders. Les plateformes existantes prenaient 30% de commission, forçaient nos membres à créer un énième compte, et le support était inexistant. Nous perdions 40% de nos conversions à cause de la friction. Sublynk est né de cette frustration : des commissions justes, des paiements directs, et une vraie automatisation."
     },
     "story": {
-      "title": "Notre histoire",
+      "title": "De créateurs frustrés à fondateurs de plateforme",
       "paragraphs": {
-        "p1": "Nous avons commencé comme créateurs nous‑mêmes, en animant des communautés Telegram et en rencontrant les mêmes problèmes que toi : des solutions de paiement bancales, des commissions élevées qui grignotent les revenus, et des outils pas pensés pour les réglementations de protection des données.",
-        "p2": "En 2025, nous avons décidé de construire la plateforme que nous aurions aimé avoir. Une plateforme qui met les créateurs au premier plan, respecte la confidentialité et ne prend pas de part sur tes revenus.",
-        "p3": "Aujourd'hui, Sublynk aide les créateurs à monétiser leurs communautés Telegram, Discord et WhatsApp — sans les galères."
+        "p1": "Tout a commencé avec un canal Telegram de 50 membres. En 6 mois, nous sommes passés à 2 000 abonnés payants générant 40 000€ de revenus mensuels. Mais les outils existants nous prenaient 12 000€ par mois en commissions.",
+        "p2": "Pire encore : impossible d'accepter les paiements natifs Telegram, nos abonnés devaient sortir de l'app pour payer sur une plateforme tierce, et nous perdions des heures chaque semaine à gérer manuellement les accès et les remboursements.",
+        "p3": "En 2025, nous avons lancé Sublynk pour résoudre ces problèmes. Aujourd'hui, des centaines de créateurs génèrent des revenus récurrents avec des commissions de 1,5% à 6%, sans gérer les paiements manuellement."
       }
     },
     "stats": {
       "items": {
         "item1": {
-          "value": "En lancement",
-          "label": "Plateforme"
+          "value": "2025",
+          "label": "Année de création"
         },
         "item2": {
-          "value": "Stripe",
-          "label": "Paiements"
+          "value": "1,5%",
+          "label": "Commission minimale"
         },
         "item3": {
-          "value": "Dès 0€",
-          "label": "Plan Starter"
+          "value": "< 5 min",
+          "label": "Temps de setup"
         },
         "item4": {
-          "value": "France",
-          "label": "Basé en"
+          "value": "100%",
+          "label": "Automatisé"
         }
       }
     },
     "values": {
-      "title": "Ce que nous défendons",
+      "title": "Ce qui nous distingue",
       "items": {
         "item1": {
-          "title": "Confidentialité d'abord",
-          "description": "Tes données restent les tiennes. Hébergement européen, standards de sécurité élevés, et aucune revente de tes informations."
+          "title": "Vous gardez le contrôle",
+          "description": "Votre compte Stripe, vos données, vos clients. Nous ne sommes qu'un intermédiaire technique, vous êtes propriétaire de votre business."
         },
         "item2": {
-          "title": "Pensé pour les créateurs",
-          "description": "Créé par des créateurs, pour des créateurs. Nous comprenons les défis de la monétisation des communautés."
+          "title": "Pensé par des créateurs",
+          "description": "Nous avons vécu les mêmes galères : commissions élevées, outils bancals, support inexistant. Chaque fonctionnalité résout un vrai problème terrain."
         },
         "item3": {
-          "title": "Simple et transparent",
-          "description": "Aucun frais caché, aucune tarification complexe. Starter gratuit, Growth à 29 €/mois, Pro à 99 €/mois."
+          "title": "Tarifs transparents et justes",
+          "description": "Pas de frais cachés, pas de pourcentage sur les frais Stripe, pas de seuil minimum. Ce que vous voyez est ce que vous payez."
         }
       }
     },
@@ -2677,15 +2677,15 @@
     },
     "hero": {
       "title": {
-        "line1": "Paiements et accès automatisés",
-        "line2": "pour ta communauté payante"
+        "line1": "Vendez des abonnements Telegram",
+        "line2": "sans gérer les paiements"
       },
-      "subtitle": "Vous créez, on s'occupe du reste. Vendez l'accès à vos canaux Telegram, Discord et Whatsapp, encaissez via Stripe, gérez vos membres vous-même. C'est parti !",
+      "subtitle": "Créez votre canal payant en 5 minutes. Stripe encaisse, notre bot gère les accès, vous vous concentrez sur votre contenu. Démarrez gratuitement.",
       "cta": {
-        "primary": "Commencer à monétiser →",
+        "primary": "Créer mon canal payant →",
         "secondary": "Voir les tarifs"
       },
-      "trust": "Mise en place en 5 minutes"
+      "trust": "Configuration en 5 minutes • Aucune carte bancaire requise"
     },
     "socialProof": {
       "items": {
@@ -2783,27 +2783,27 @@
       "note": ""
     },
     "whySublynk": {
-      "title": "Pourquoi choisir Sublynk ?",
+      "title": "Pourquoi les créateurs choisissent Sublynk",
       "items": {
         "item1": {
-          "title": "Paiements Telegram Stars",
-          "description": "La seule plateforme qui accepte les paiements natifs Telegram. Vos abonnés paient directement dans l'app — zéro friction."
+          "title": "Paiements 100% automatiques",
+          "description": "Vos abonnés paient par Stripe, reçoivent leur accès instantanément. Renouvellements, annulations, remboursements : tout est géré automatiquement."
         },
         "item2": {
-          "title": "Affiliés inclus dès le départ",
-          "description": "Transformez vos membres en ambassadeurs. Système de parrainage complet avec suivi des commissions, même sur le plan gratuit."
+          "title": "Programme d'affiliation intégré",
+          "description": "Transformez vos membres en ambassadeurs. Système de parrainage avec suivi des commissions et paiements automatiques, inclus dès le plan gratuit."
         },
         "item3": {
           "title": "Multi-plateforme, un seul dashboard",
-          "description": "Telegram, Discord, WhatsApp — gérez tous vos accès payants depuis une interface unique et intuitive."
+          "description": "Gérez Telegram, Discord et WhatsApp depuis une seule interface. Créez vos offres une fois, vendez partout."
         },
         "item4": {
-          "title": "Support en français",
-          "description": "Une équipe réactive qui parle votre langue. Pas de chatbot, de vraies réponses."
+          "title": "Support en français, réponses rapides",
+          "description": "Une vraie équipe francophone qui répond en moins de 24h. Pas de chatbot, pas de réponses automatiques."
         },
         "item5": {
-          "title": "Les frais les plus bas du marché",
-          "description": "De 1,5% à 6% selon votre plan. Vous gardez plus, nous prenons moins."
+          "title": "Les commissions les plus basses",
+          "description": "De 1,5% à 6% selon votre plan. Patreon prend 12%, Gumroad 10%. Avec Sublynk, vous gardez plus."
         }
       }
     },

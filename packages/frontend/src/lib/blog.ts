@@ -40,7 +40,7 @@ export interface BlogPostMetadata {
   featured?: boolean;
 }
 
-export function getAllPosts(): BlogPostMetadata[] {
+export function getAllPosts(locale: string = 'fr'): BlogPostMetadata[] {
   try {
     if (!fs.existsSync(contentDirectory)) {
       return [];
@@ -56,6 +56,12 @@ export function getAllPosts(): BlogPostMetadata[] {
         const fileContent = fs.readFileSync(filePath, 'utf-8');
         const { data, content } = matter(fileContent);
 
+        const stats = readingTime(content);
+        const minutes = Math.ceil(stats.minutes);
+        const formattedReadingTime = locale === 'fr'
+          ? `${minutes} min de lecture`
+          : `${minutes} min read`;
+
         return {
           slug,
           title: data.title || 'Sans titre',
@@ -66,7 +72,7 @@ export function getAllPosts(): BlogPostMetadata[] {
           tags: data.tags || [],
           image: data.image,
           imageAlt: data.imageAlt,
-          readingTime: readingTime(content).text,
+          readingTime: formattedReadingTime,
           featured: data.featured || false,
         } as BlogPostMetadata;
       })
@@ -79,7 +85,7 @@ export function getAllPosts(): BlogPostMetadata[] {
   }
 }
 
-export function getPostBySlug(slug: string): BlogPost | null {
+export function getPostBySlug(slug: string, locale: string = 'fr'): BlogPost | null {
   try {
     if (!fs.existsSync(contentDirectory)) {
       return null;
@@ -94,6 +100,12 @@ export function getPostBySlug(slug: string): BlogPost | null {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const { data, content } = matter(fileContent);
 
+    const stats = readingTime(content);
+    const minutes = Math.ceil(stats.minutes);
+    const formattedReadingTime = locale === 'fr'
+      ? `${minutes} min de lecture`
+      : `${minutes} min read`;
+
     return {
       slug,
       title: data.title || 'Sans titre',
@@ -104,7 +116,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
       tags: data.tags || [],
       image: data.image,
       imageAlt: data.imageAlt,
-      readingTime: readingTime(content).text,
+      readingTime: formattedReadingTime,
       content,
       featured: data.featured || false,
     };
@@ -114,22 +126,22 @@ export function getPostBySlug(slug: string): BlogPost | null {
   }
 }
 
-export function getPostsByCategory(category: string): BlogPostMetadata[] {
-  const allPosts = getAllPosts();
+export function getPostsByCategory(category: string, locale: string = 'fr'): BlogPostMetadata[] {
+  const allPosts = getAllPosts(locale);
   return allPosts.filter(
     (post) => post.category.toLowerCase() === category.toLowerCase(),
   );
 }
 
-export function getPostsByTag(tag: string): BlogPostMetadata[] {
-  const allPosts = getAllPosts();
+export function getPostsByTag(tag: string, locale: string = 'fr'): BlogPostMetadata[] {
+  const allPosts = getAllPosts(locale);
   return allPosts.filter((post) =>
     post.tags.some((t) => t.toLowerCase() === tag.toLowerCase()),
   );
 }
 
-export function getFeaturedPosts(): BlogPostMetadata[] {
-  const allPosts = getAllPosts();
+export function getFeaturedPosts(locale: string = 'fr'): BlogPostMetadata[] {
+  const allPosts = getAllPosts(locale);
   return allPosts.filter((post) => post.featured);
 }
 

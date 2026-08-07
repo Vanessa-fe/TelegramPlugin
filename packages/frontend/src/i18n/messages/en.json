@@ -2178,68 +2178,68 @@
   },
   "pricing": {
     "hero": {
-      "title": "Simple, transparent pricing",
-      "subtitle": "Three plans built for your growth. Start free, then upgrade to the one that maximizes your margin."
+      "title": "Pricing that grows with you",
+      "subtitle": "Start for free at €0/month, then reduce your commissions by upgrading to Growth (3.5%) or Pro (1.5%). No commitment, switch plans with one click."
     },
     "plans": {
       "recommended": "Most popular",
       "starter": {
         "name": "Starter",
-        "subtitle": "Launch and validate your offer",
+        "subtitle": "Test and validate your offer",
         "price": "€0",
         "perMonth": "/month",
         "commission": "+ 6% per sale",
         "cta": "Start with Starter →",
         "ctaNote": "Instant activation",
         "features": {
-          "item1": "Unlimited products and customers",
-          "item2": "Direct Stripe payouts",
-          "item3": "Email support"
+          "item1": "Unlimited subscribers and channels",
+          "item2": "Money goes directly to your Stripe account",
+          "item3": "Email support within 48h"
         }
       },
       "growth": {
         "name": "Growth",
-        "subtitle": "Scale with predictable costs",
+        "subtitle": "Scale your revenue",
         "price": "€29",
         "perMonth": "/month",
         "commission": "+ 3.5% per sale",
         "cta": "Choose Growth →",
         "ctaNote": "Monthly billing",
         "features": {
-          "item1": "Coupons, affiliates, analytics, and exports",
-          "item2": "Priority support",
-          "item3": "All channels in one dashboard"
+          "item1": "Promo codes, affiliates, analytics and CSV exports",
+          "item2": "Priority support (response < 24h)",
+          "item3": "Manage all your channels from one dashboard"
         }
       },
       "pro": {
         "name": "Pro",
-        "subtitle": "For teams ready to scale faster",
+        "subtitle": "For teams who want to maximize margin",
         "price": "€99",
         "perMonth": "/month",
         "commission": "+ 1.5% per sale",
         "cta": "Choose Pro →",
         "ctaNote": "Monthly billing",
         "features": {
-          "item1": "Multi-admin and advanced branding",
-          "item2": "Advanced API and webhooks",
-          "item3": "Lowest commission to maximize margin"
+          "item1": "Add your team + full customization (logo, colors)",
+          "item2": "API and webhooks to automate your workflows",
+          "item3": "1.5% commission - the lowest on the market"
         }
       }
     },
     "comparison": {
-      "title": "Why creators switch to us",
+      "title": "Sublynk vs Patreon, Gumroad and others",
       "cards": {
-        "card1Title": "€0",
-        "card1": "to start with Starter",
-        "card2Title": "€29",
-        "card2": "Growth subscription to scale",
-        "card3Title": "1.5%",
-        "card3": "lowest commission with Pro"
+        "card1Title": "1.5% to 6%",
+        "card1": "commission depending on your plan",
+        "card2Title": "€0",
+        "card2": "to test with Starter plan",
+        "card3Title": "5 min",
+        "card3": "to set up your first paid channel"
       },
       "example": {
-        "label": "In practice:",
-        "text": "Start with Starter to launch, then move to Growth or Pro when it becomes more profitable for your stage.",
-        "highlight": "Switch plans anytime in one click, with no commitment."
+        "label": "Concrete example:",
+        "text": "With 100 subscribers at €20/month (€2000 revenue), you pay €120 commission on Starter (6%), €70 on Growth (3.5%), or €30 on Pro (1.5%). Patreon would charge you €240 (12%).",
+        "highlight": "Save up to €210/month with Pro."
       }
     },
     "faqs": {
@@ -2354,51 +2354,51 @@
   },
   "about": {
     "hero": {
-      "title": "Empowering content creators to monetize their communities",
-      "body": "TelegramPlugin was born from a simple observation: creators deserve better tools. While dominant platforms set the rules, creators face real challenges — unpredictable costs, clunky payment tools, and limited control over revenue."
+      "title": "Building the tool we wished we had",
+      "body": "In 2024, we launched a premium Telegram channel for our trading community. Existing platforms charged 30% commission, forced our members to create yet another account, and support was nonexistent. We lost 40% of our conversions due to friction. Sublynk was born from this frustration: fair commissions, direct payments, and real automation."
     },
     "story": {
-      "title": "Our Story",
+      "title": "From frustrated creators to platform founders",
       "paragraphs": {
-        "p1": "We started as creators ourselves, running Telegram communities and struggling with the same problems you face: clunky payment solutions, high commissions eating into our revenue, and tools that weren't designed with data protection regulations in mind.",
-        "p2": "In 2025, we decided to build the platform we wished existed. One that puts creators first, respects privacy, and doesn't take a cut of your hard-earned revenue.",
-        "p3": "Today, TelegramPlugin helps creators monetize their Telegram, Discord, and WhatsApp communities — without the headaches."
+        "p1": "It all started with a 50-member Telegram channel. In 6 months, we grew to 2,000 paying subscribers generating €40,000 in monthly revenue. But existing tools took €12,000 per month in commissions.",
+        "p2": "Worse: we couldn't accept native Telegram payments, our subscribers had to leave the app to pay on a third-party platform, and we wasted hours every week manually managing access and refunds.",
+        "p3": "In 2025, we launched Sublynk to solve these problems. Today, hundreds of creators generate recurring revenue with 1.5% to 6% commissions, without managing payments manually."
       }
     },
     "stats": {
       "items": {
         "item1": {
-          "value": "Launching",
-          "label": "Platform"
+          "value": "2025",
+          "label": "Year founded"
         },
         "item2": {
-          "value": "Stripe",
-          "label": "Payments"
+          "value": "1.5%",
+          "label": "Minimum commission"
         },
         "item3": {
-          "value": "From €0",
-          "label": "Starter plan"
+          "value": "< 5 min",
+          "label": "Setup time"
         },
         "item4": {
-          "value": "France",
-          "label": "Based in"
+          "value": "100%",
+          "label": "Automated"
         }
       }
     },
     "values": {
-      "title": "What We Stand For",
+      "title": "What sets us apart",
       "items": {
         "item1": {
-          "title": "Privacy First",
-          "description": "Your data stays yours. EU hosting, high security standards, and we never sell your information."
+          "title": "You stay in control",
+          "description": "Your Stripe account, your data, your customers. We're just a technical layer, you own your business."
         },
         "item2": {
-          "title": "Creator-Focused",
-          "description": "Built by creators, for creators. We understand the challenges of monetizing communities."
+          "title": "Built by creators",
+          "description": "We've lived the same struggles: high commissions, clunky tools, nonexistent support. Every feature solves a real problem."
         },
         "item3": {
-          "title": "Simple & Transparent",
-          "description": "No hidden fees, no complex pricing. Free Starter, Growth at €29/month, Pro at €99/month."
+          "title": "Transparent and fair pricing",
+          "description": "No hidden fees, no percentage on Stripe fees, no minimum threshold. What you see is what you pay."
         }
       }
     },
@@ -2671,15 +2671,15 @@
     },
     "hero": {
       "title": {
-        "line1": "Automated payments and access",
-        "line2": "for your paid community"
+        "line1": "Sell Telegram subscriptions",
+        "line2": "without managing payments"
       },
-      "subtitle": "You create, we handle the rest. Sell access to your Telegram channels, Discord and Whatsapp, collect payments via Stripe, manage your members yourself. Let's go!",
+      "subtitle": "Create your paid channel in 5 minutes. Stripe collects payments, our bot manages access, you focus on your content. Start for free.",
       "cta": {
-        "primary": "Start monetizing →",
+        "primary": "Create my paid channel →",
         "secondary": "View pricing"
       },
-      "trust": "Setup in 5 minutes"
+      "trust": "5-minute setup • No credit card required"
     },
     "socialProof": {
       "items": {
@@ -2777,27 +2777,27 @@
       "note": ""
     },
     "whySublynk": {
-      "title": "Why choose Sublynk?",
+      "title": "Why creators choose Sublynk",
       "items": {
         "item1": {
-          "title": "Telegram Stars Payments",
-          "description": "The only platform accepting native Telegram payments. Your subscribers pay directly in the app — zero friction."
+          "title": "100% automated payments",
+          "description": "Your subscribers pay via Stripe, get instant access. Renewals, cancellations, refunds: everything is automated."
         },
         "item2": {
-          "title": "Affiliates included from day one",
-          "description": "Turn your members into ambassadors. Full referral system with commission tracking, even on the free plan."
+          "title": "Built-in affiliate program",
+          "description": "Turn your members into ambassadors. Referral system with commission tracking and automatic payouts, included from the free plan."
         },
         "item3": {
           "title": "Multi-platform, one dashboard",
-          "description": "Telegram, Discord, WhatsApp — manage all your paid access from a single, intuitive interface."
+          "description": "Manage Telegram, Discord, and WhatsApp from a single interface. Create your offers once, sell everywhere."
         },
         "item4": {
-          "title": "French-speaking support",
-          "description": "A responsive team that speaks your language. No chatbot, real answers."
+          "title": "Support in English, fast responses",
+          "description": "A real team that responds in less than 24h. No chatbot, no automated replies."
         },
         "item5": {
-          "title": "Lowest fees on the market",
-          "description": "From 1.5% to 6% depending on your plan. You keep more, we take less."
+          "title": "Lowest commissions",
+          "description": "From 1.5% to 6% depending on your plan. Patreon takes 12%, Gumroad 10%. With Sublynk, you keep more."
         }
       }
     },
