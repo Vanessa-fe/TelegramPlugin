@@ -294,6 +294,15 @@ export function CheckoutPageContent({
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
+          {product.organization.branding?.logoUrl && (
+            <div className="mb-4 flex justify-center">
+              <img
+                src={product.organization.branding.logoUrl}
+                alt={product.organization.name}
+                className="max-h-16 object-contain"
+              />
+            </div>
+          )}
           <p className="text-sm text-gray-500 mb-2">
             {t("offeredBy", { name: product.organization.name })}
           </p>
@@ -680,6 +689,23 @@ export function CheckoutPageContent({
                 </div>
               </Card>
             </div>
+          </div>
+        )}
+
+        {/* Powered by Sublynk footer */}
+        {!product.organization.branding?.hideSublynkBranding && (
+          <div className="mt-12 text-center">
+            <p className="text-sm text-gray-400">
+              Powered by{" "}
+              <a
+                href="https://sublynk.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Sublynk
+              </a>
+            </p>
           </div>
         )}
       </div>

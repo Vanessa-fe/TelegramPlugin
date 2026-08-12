@@ -19,6 +19,7 @@ import {
   Lock,
   Megaphone,
   Package,
+  Settings,
   Shield,
   Ticket,
   UserPlus,
@@ -65,6 +66,7 @@ const navigation = [
   { key: "channels", href: "/dashboard/channels", icon: Hash },
   { key: "access", href: "/dashboard/access", icon: Key },
   { key: "billing", href: "/dashboard/billing", icon: CreditCard },
+  { key: "settings", href: "/dashboard/settings", icon: Settings },
   { key: "support", href: "/dashboard/support", icon: HelpCircle },
 ];
 

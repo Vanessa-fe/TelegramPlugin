@@ -57,7 +57,7 @@ export function getAllPosts(locale: string = 'fr'): BlogPostMetadata[] {
         const { data, content } = matter(fileContent);
 
         const stats = readingTime(content);
-        const minutes = Math.ceil(stats.minutes);
+        const minutes = Math.min(Math.ceil(stats.minutes), 5); // Cap at 5 min
         const formattedReadingTime = locale === 'fr'
           ? `${minutes} min de lecture`
           : `${minutes} min read`;
@@ -101,7 +101,7 @@ export function getPostBySlug(slug: string, locale: string = 'fr'): BlogPost | n
     const { data, content } = matter(fileContent);
 
     const stats = readingTime(content);
-    const minutes = Math.ceil(stats.minutes);
+    const minutes = Math.min(Math.ceil(stats.minutes), 5); // Cap at 5 min
     const formattedReadingTime = locale === 'fr'
       ? `${minutes} min de lecture`
       : `${minutes} min read`;

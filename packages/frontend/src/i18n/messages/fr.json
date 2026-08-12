@@ -52,6 +52,7 @@
     "channels": "Mes canaux",
     "access": "Gestion des accès",
     "billing": "Facturation",
+    "settings": "Paramètres",
     "coupons": "Coupons",
     "affiliates": "Affiliés",
     "team": "Équipe",
@@ -2826,10 +2827,6 @@
           "role": "Communauté Gaming"
         }
       }
-    },
-    "telegramStarsBanner": {
-      "badge": "Exclusivité Sublynk",
-      "text": "La seule plateforme qui accepte les paiements Telegram Stars natifs."
     },
     "footer": {
       "description": "La plateforme de monétisation de communautés pour les créateurs de contenus.",
