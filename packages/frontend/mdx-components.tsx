@@ -1,8 +1,8 @@
-import type { MDXComponents } from 'mdx/types';
 import Link from 'next/link';
 
-export function useMDXComponents(components: MDXComponents): MDXComponents {
-  return {
+type MDXComponents = Record<string, React.ComponentType<any>>;
+
+export const mdxComponents: MDXComponents = {
     a: ({ href, children, ...props }) => {
       if (href?.startsWith('http')) {
         return (
@@ -151,6 +151,11 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         {children}
       </em>
     ),
+};
+
+export function useMDXComponents(components: MDXComponents): MDXComponents {
+  return {
+    ...mdxComponents,
     ...components,
   };
 }

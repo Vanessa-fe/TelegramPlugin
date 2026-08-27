@@ -12,7 +12,7 @@ import {
 import { getAllPosts, getPostBySlug } from '@/lib/blog';
 import { Calendar, Clock, Tag, ArrowLeft, User } from 'lucide-react';
 import { MDXRemote } from 'next-mdx-remote/rsc';
-import { useMDXComponents } from '../../../../mdx-components';
+import { mdxComponents } from '../../../../mdx-components';
 import remarkGfm from 'remark-gfm';
 
 interface Props {
@@ -151,7 +151,7 @@ export default async function BlogPostPage({ params }: Props) {
           <div className="max-w-none">
             <MDXRemote
               source={post.content}
-              components={useMDXComponents({})}
+              components={mdxComponents}
               options={{
                 mdxOptions: {
                   remarkPlugins: [remarkGfm],
