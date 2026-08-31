@@ -689,6 +689,88 @@ export class SchedulerService {
     );
   }
 
+  /**
+   * Send weekly recap of platform subscription activity (new subscribers,
+   * payment failures, cancellations, suspensions) to the admin.
+   * Runs every Friday at 9:00 AM.
+   */
+  @Cron('0 9 * * 5')
+  async sendWeeklyRecap(): Promise<void> {
+    this.logger.log('Building weekly platform subscription recap...');
+
+    const periodEnd = new Date();
+    const periodStart = new Date(periodEnd.getTime() - 7 * DAY_IN_MS);
+
+    const [newSubscriptions, canceledSubscriptions, pastDueSubscriptions, suspendedOrganizations, activeSubscriptions] =
+      await Promise.all([
+        this.prisma.platformSubscription.findMany({
+          where: { createdAt: { gte: periodStart, lte: periodEnd } },
+          include: { organization: true, platformPlan: true },
+        }),
+        this.prisma.platformSubscription.findMany({
+          where: { canceledAt: { gte: periodStart, lte: periodEnd } },
+          include: { organization: true, platformPlan: true },
+        }),
+        this.prisma.platformSubscription.findMany({
+          where: { status: PlatformSubscriptionStatus.PAST_DUE },
+          include: { organization: true, platformPlan: true },
+        }),
+        this.prisma.organization.findMany({
+          where: { suspendedAt: { gte: periodStart, lte: periodEnd } },
+        }),
+        this.prisma.platformSubscription.count({
+          where: {
+            status: {
+              in: [
+                PlatformSubscriptionStatus.ACTIVE,
+                PlatformSubscriptionStatus.TRIALING,
+              ],
+            },
+          },
+        }),
+      ]);
+
+    // Payment failures aren't logged as discrete events, only as a rolling
+    // "lastFailedAt" timestamp in metadata — filter for ones that landed this week.
+    const paymentFailures = pastDueSubscriptions.filter((subscription) => {
+      const metadata =
+        (subscription.metadata as Record<string, unknown> | null) ?? {};
+      const lastFailedAt = metadata.lastFailedAt as string | undefined;
+      if (!lastFailedAt) return false;
+      const failedDate = new Date(lastFailedAt);
+      return failedDate >= periodStart && failedDate <= periodEnd;
+    });
+
+    try {
+      await this.notifications.sendAdminWeeklyRecapEmail({
+        periodStart,
+        periodEnd,
+        newSubscribers: newSubscriptions.map((sub) => ({
+          organizationName: sub.organization.name,
+          planName: sub.platformPlan.displayName,
+        })),
+        paymentFailures: paymentFailures.map((sub) => ({
+          organizationName: sub.organization.name,
+          planName: sub.platformPlan.displayName,
+        })),
+        cancellations: canceledSubscriptions.map((sub) => ({
+          organizationName: sub.organization.name,
+          planName: sub.platformPlan.displayName,
+        })),
+        suspensions: suspendedOrganizations.map((org) => ({
+          organizationName: org.name,
+          reason: org.suspendReason ?? 'Raison non renseignée',
+        })),
+        activeSubscriptions,
+      });
+      this.logger.log('Weekly recap sent successfully');
+    } catch (error) {
+      this.logger.error(
+        `Failed to send weekly recap: ${(error as Error).message}`,
+      );
+    }
+  }
+
   private getRetentionDays(key: string, fallback: number): number {
     const rawValue = this.config.get<string>(key);
     if (!rawValue) {

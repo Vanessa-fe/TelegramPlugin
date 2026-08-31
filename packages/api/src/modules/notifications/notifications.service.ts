@@ -514,6 +514,90 @@ export class NotificationsService implements OnModuleInit {
     this.logger.log(`Admin notification sent for new user: ${data.email}`);
   }
 
+  /**
+   * Send weekly recap of platform subscription activity to admin
+   */
+  async sendAdminWeeklyRecapEmail(data: {
+    periodStart: Date;
+    periodEnd: Date;
+    newSubscribers: Array<{ organizationName: string; planName: string }>;
+    paymentFailures: Array<{ organizationName: string; planName: string }>;
+    cancellations: Array<{ organizationName: string; planName: string }>;
+    suspensions: Array<{ organizationName: string; reason: string }>;
+    activeSubscriptions: number;
+  }): Promise<void> {
+    if (!this.adminEmail) {
+      this.logger.debug(
+        'No ADMIN_NOTIFICATION_EMAIL configured, skipping weekly recap',
+      );
+      return;
+    }
+
+    const dateFormat = new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+    });
+    const periodLabel = `${dateFormat.format(data.periodStart)} → ${dateFormat.format(data.periodEnd)}`;
+
+    const listOrEmpty = (
+      items: string[],
+      emptyLabel: string,
+    ): string =>
+      items.length > 0
+        ? `<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`
+        : `<p><em>${emptyLabel}</em></p>`;
+
+    const subject = `📊 Récap hebdo Sublynk (${periodLabel}) — ${data.newSubscribers.length} nouveaux, ${data.cancellations.length} annulations`;
+
+    const body = `
+      <h1>📊 Récap hebdomadaire — ${periodLabel}</h1>
+
+      <h2>✅ Actifs actuellement</h2>
+      <p>${data.activeSubscriptions} abonnement(s) plateforme actif(s) ou en essai.</p>
+
+      <h2>🎉 Nouveaux abonnés (${data.newSubscribers.length})</h2>
+      ${listOrEmpty(
+        data.newSubscribers.map(
+          (item) =>
+            `${this.escapeHtml(item.organizationName)} — ${this.escapeHtml(item.planName)}`,
+        ),
+        'Aucun nouvel abonné cette semaine.',
+      )}
+
+      <h2>⚠️ Échecs de paiement (${data.paymentFailures.length})</h2>
+      ${listOrEmpty(
+        data.paymentFailures.map(
+          (item) =>
+            `${this.escapeHtml(item.organizationName)} — ${this.escapeHtml(item.planName)}`,
+        ),
+        'Aucun échec de paiement cette semaine.',
+      )}
+
+      <h2>❌ Annulations (${data.cancellations.length})</h2>
+      ${listOrEmpty(
+        data.cancellations.map(
+          (item) =>
+            `${this.escapeHtml(item.organizationName)} — ${this.escapeHtml(item.planName)}`,
+        ),
+        'Aucune annulation cette semaine.',
+      )}
+
+      <h2>🚫 Suspensions (${data.suspensions.length})</h2>
+      ${listOrEmpty(
+        data.suspensions.map(
+          (item) =>
+            `${this.escapeHtml(item.organizationName)} — ${this.escapeHtml(item.reason)}`,
+        ),
+        'Aucune suspension cette semaine.',
+      )}
+    `;
+
+    await this.sendEmail(this.adminEmail, subject, body);
+    this.logger.log(
+      `Admin weekly recap sent for period ${periodLabel}: ${data.newSubscribers.length} new, ${data.paymentFailures.length} failures, ${data.cancellations.length} cancellations`,
+    );
+  }
+
   private async sendEmail(
     to: string,
     subject: string,
