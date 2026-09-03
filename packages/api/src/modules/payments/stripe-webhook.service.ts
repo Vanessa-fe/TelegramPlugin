@@ -118,9 +118,96 @@ export class StripeWebhookService {
     // Supported no-account billing events are therefore handled as platform SaaS events.
     if (!event.account && this.isPlatformEvent(event)) {
       this.logger.debug(
-        `Routing platform event to PlatformSubscriptionService: ${event.type}`,
+        `Processing platform event: ${event.type}`,
       );
+
+      // Map event type for PaymentEvent storage
+      const mappedType = this.mapEventType(event.type);
+      if (!mappedType) {
+        this.logger.debug(
+          `Ignoring unsupported platform event type: ${event.type}`,
+        );
+        await this.platformSubscriptionService.handleWebhookEvent(event);
+        return;
+      }
+
+      // Resolve context for platform events (metadata-based)
+      const context = await this.resolvePlatformContext(event);
+      if (!context) {
+        this.logger.warn(
+          `Unable to resolve context for platform event ${event.id} (type ${event.type}), processing webhook only`,
+        );
+        await this.platformSubscriptionService.handleWebhookEvent(event);
+        return;
+      }
+
+      const occurredAt = new Date(
+        (event.created ?? Math.floor(Date.now() / 1000)) * 1000,
+      );
+      const payload = JSON.parse(JSON.stringify(event)) as Prisma.JsonObject;
+
+      // Save PaymentEvent for platform subscription
+      const savedEvent = await this.prisma.paymentEvent.upsert({
+        where: {
+          provider_externalId: {
+            provider: PaymentProvider.STRIPE,
+            externalId: event.id,
+          },
+        },
+        create: {
+          organizationId: context.organizationId,
+          subscriptionId: context.subscriptionId,
+          provider: PaymentProvider.STRIPE,
+          type: mappedType,
+          externalId: event.id,
+          payload,
+          occurredAt,
+        },
+        update: {
+          payload,
+          occurredAt,
+          subscriptionId: context.subscriptionId ?? undefined,
+          type: mappedType,
+        },
+      });
+
+      // Process platform webhook side effects
       await this.platformSubscriptionService.handleWebhookEvent(event);
+
+      // Mark event as processed
+      await this.prisma.paymentEvent.update({
+        where: { id: savedEvent.id },
+        data: {
+          processedAt: new Date(),
+        },
+      });
+
+      // Audit log
+      try {
+        await this.auditLogService.create({
+          organizationId: context.organizationId,
+          actorType: AuditActorType.SYSTEM,
+          action: 'webhook.stripe.processed',
+          resourceType: 'payment_event',
+          resourceId: savedEvent.id,
+          correlationId: event.id,
+          metadata: {
+            provider: PaymentProvider.STRIPE,
+            eventId: event.id,
+            eventType: event.type,
+            mappedType,
+            subscriptionId: context.subscriptionId ?? null,
+            requestId: event.request?.id ?? null,
+            platform: true,
+          },
+        });
+      } catch (error) {
+        this.logger.error(
+          `Failed to write audit log for platform webhook ${event.id}`,
+          error as Error,
+        );
+      }
+
       return;
     }
 
@@ -523,6 +610,64 @@ export class StripeWebhookService {
     }
 
     return { organizationId: organization.id };
+  }
+
+  /**
+   * Resolve context for platform subscription events (no event.account)
+   * Extracts organizationId from metadata and finds corresponding PlatformSubscription
+   */
+  private async resolvePlatformContext(
+    event: Stripe.Event,
+  ): Promise<EventContext | null> {
+    let organizationId: string | undefined;
+    let stripeSubscriptionId: string | undefined;
+
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        organizationId = session.metadata?.organizationId;
+        stripeSubscriptionId =
+          typeof session.subscription === 'string'
+            ? session.subscription
+            : session.subscription?.id;
+        break;
+      }
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object;
+        organizationId = subscription.metadata?.organizationId;
+        stripeSubscriptionId = subscription.id;
+        break;
+      }
+      case 'invoice.payment_succeeded':
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object;
+        organizationId = invoice.metadata?.organizationId;
+        stripeSubscriptionId =
+          typeof invoice.subscription === 'string'
+            ? invoice.subscription
+            : invoice.subscription?.id;
+        break;
+      }
+      default:
+        return null;
+    }
+
+    if (!organizationId) {
+      this.logger.warn(
+        `Platform event ${event.id} missing organizationId in metadata`,
+      );
+      return null;
+    }
+
+    // For platform events, we don't have a subscriptionId in the Subscription table
+    // (this is a PlatformSubscription, not a customer Subscription)
+    // The stripeSubscriptionId is stored in PlatformSubscription.stripeSubscriptionId
+    return {
+      organizationId,
+      subscriptionId: undefined, // No customer subscription for platform events
+    };
   }
 
   private async syncSubscriptionFromCheckout(

@@ -799,11 +799,6 @@ export class PlatformSubscriptionService {
       return;
     }
 
-    const gracePeriodDays =
-      this.config.get<number>('PLATFORM_GRACE_PERIOD_DAYS') ?? 7;
-    const graceUntil = new Date();
-    graceUntil.setDate(graceUntil.getDate() + gracePeriodDays);
-
     // Track failed payment attempts
     const existingMetadata =
       (platformSub.metadata as Record<string, unknown> | null) ?? {};
@@ -816,7 +811,7 @@ export class PlatformSubscriptionService {
       where: { id: platformSub.id },
       data: {
         status: PlatformSubscriptionStatus.PAST_DUE,
-        graceUntil,
+        graceUntil: null, // No grace period - block immediately
         metadata: {
           ...existingMetadata,
           failedPaymentAttempts: failedAttempts + 1,
@@ -826,8 +821,11 @@ export class PlatformSubscriptionService {
       },
     });
 
+    // Update saasActive to block access immediately
+    await this.updateSaasActive(platformSub.organizationId);
+
     this.logger.warn(
-      `Platform subscription ${platformSub.id} payment failed (attempt ${failedAttempts + 1}), grace until ${graceUntil.toISOString()}`,
+      `Platform subscription ${platformSub.id} payment failed (attempt ${failedAttempts + 1}), access blocked immediately`,
     );
   }
 
