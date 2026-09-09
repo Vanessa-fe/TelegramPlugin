@@ -309,7 +309,7 @@
       "emailPlaceholder": "ton@email.com",
       "password": "Mot de passe",
       "passwordPlaceholder": "••••••••",
-      "passwordHint": "10 caractères minimum avec majuscule, chiffre et caractère spécial",
+      "passwordHint": "10 caractères minimum avec majuscule, minuscule et chiffre",
       "suggestPassword": "Générer un mot de passe sécurisé",
       "passwordGenerated": "Mot de passe généré",
       "showPassword": "Afficher le mot de passe",

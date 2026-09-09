@@ -309,7 +309,7 @@
       "emailPlaceholder": "you@example.com",
       "password": "Password",
       "passwordPlaceholder": "••••••••",
-      "passwordHint": "At least 10 characters with uppercase, number and special character",
+      "passwordHint": "At least 10 characters with uppercase, lowercase and number",
       "suggestPassword": "Generate a secure password",
       "passwordGenerated": "Password generated",
       "showPassword": "Show password",

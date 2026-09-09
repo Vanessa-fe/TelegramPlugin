@@ -9,10 +9,9 @@ const basePasswordSchema = z
   .regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
   .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre');
 
-export const passwordSchema = basePasswordSchema.regex(
-  /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/`~;']/,
-  'Le mot de passe doit contenir au moins un caractère spécial',
-);
+// Password schema without special character requirement to be compatible with browser password generators
+// A 10+ character password with uppercase, lowercase, and digits is already very secure
+export const passwordSchema = basePasswordSchema;
 
 export const loginSchema = z.object({
   email: z.string().email(),
