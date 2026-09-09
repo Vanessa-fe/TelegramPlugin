@@ -16,6 +16,11 @@ import { MetricsService } from '../metrics/metrics.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
+import {
+  upsertBrevoContact,
+  removeBrevoContactFromList,
+  BREVO_LIST_IDS,
+} from '../../common/brevo-sync';
 
 export type StripeRawBodyRequest = {
   rawBody?: Buffer | string;
@@ -1269,6 +1274,29 @@ export class StripeWebhookService {
             `Stripe event ${stripeEvent?.id ?? 'unknown'} did not prove a paid or trialing state; access grant skipped`,
           );
         }
+
+        // Sync to Brevo: remove from unpaid list (INVOICE_PAID only)
+        if (eventType === PaymentEventType.INVOICE_PAID) {
+          try {
+            const subscription = await this.prisma.subscription.findUnique({
+              where: { id: context.subscriptionId },
+              include: {
+                organization: { select: { billingEmail: true } },
+              },
+            });
+            if (subscription?.organization?.billingEmail) {
+              await removeBrevoContactFromList(
+                subscription.organization.billingEmail,
+                BREVO_LIST_IDS.IMPAYE_EN_COURS,
+              );
+            }
+          } catch (error) {
+            this.logger.error(
+              `Failed to sync payment success to Brevo for subscription ${context.subscriptionId}`,
+              error,
+            );
+          }
+        }
         break;
 
       case PaymentEventType.SUBSCRIPTION_CANCELED:
@@ -1283,6 +1311,26 @@ export class StripeWebhookService {
           context.subscriptionId,
           'payment_failed',
         );
+
+        // Sync to Brevo: add to unpaid list
+        try {
+          const subscription = await this.prisma.subscription.findUnique({
+            where: { id: context.subscriptionId },
+            include: {
+              organization: { select: { billingEmail: true } },
+            },
+          });
+          if (subscription?.organization?.billingEmail) {
+            await upsertBrevoContact(subscription.organization.billingEmail, {
+              listIds: [BREVO_LIST_IDS.IMPAYE_EN_COURS],
+            });
+          }
+        } catch (error) {
+          this.logger.error(
+            `Failed to sync payment failure to Brevo for subscription ${context.subscriptionId}`,
+            error,
+          );
+        }
         break;
 
       default:

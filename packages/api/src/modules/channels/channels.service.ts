@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -19,6 +20,7 @@ import type {
   VerifyDiscordChannelDto,
   SetDiscordRoleDto,
 } from './channels.schema';
+import { upsertBrevoContact, BREVO_LIST_IDS } from '../../common/brevo-sync';
 
 const VERIFICATION_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
@@ -34,6 +36,8 @@ function generateCode(): string {
 
 @Injectable()
 export class ChannelsService {
+  private readonly logger = new Logger(ChannelsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(organizationId: string) {
@@ -362,6 +366,25 @@ export class ChannelsService {
       data: { status: VerificationStatus.USED },
     });
 
+    // Sync to Brevo: channel published
+    try {
+      const organization = await this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { billingEmail: true },
+      });
+      if (organization?.billingEmail) {
+        await upsertBrevoContact(organization.billingEmail, {
+          attributes: { GROUP_PUBLISHED: true },
+          listIds: [BREVO_LIST_IDS.GROUP_PUBLISHED],
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to sync channel publication to Brevo for org ${organizationId}`,
+        error,
+      );
+    }
+
     return channel;
   }
 
@@ -424,6 +447,25 @@ export class ChannelsService {
       where: { id: verificationId },
       data: { status: VerificationStatus.USED },
     });
+
+    // Sync to Brevo: channel published
+    try {
+      const organization = await this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { billingEmail: true },
+      });
+      if (organization?.billingEmail) {
+        await upsertBrevoContact(organization.billingEmail, {
+          attributes: { GROUP_PUBLISHED: true },
+          listIds: [BREVO_LIST_IDS.GROUP_PUBLISHED],
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to sync channel publication to Brevo for org ${organizationId}`,
+        error,
+      );
+    }
 
     return channel;
   }
