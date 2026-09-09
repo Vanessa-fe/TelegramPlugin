@@ -667,13 +667,16 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token invalide ou révoqué');
     }
 
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('Utilisateur introuvable ou désactivé');
     }
+
+    // Ensure user has an organization (for users created before this feature)
+    user = await this.ensureOrganization(user);
 
     // Rotate: revoke old token and issue new one
     const tokens = await this.prisma.$transaction(async (tx) => {
