@@ -143,7 +143,7 @@ export default async function AboutPage() {
           <h2 className="text-2xl lg:text-3xl font-bold text-white mb-4">
             {t('cta.title')}
           </h2>
-          <p className="text-purple-200 mb-8 max-w-xl mx-auto">
+          <p className="text-purple-50 mb-8 max-w-xl mx-auto">
             {t('cta.body')}
           </p>
           <Link

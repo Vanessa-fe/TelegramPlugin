@@ -21,7 +21,7 @@ export async function FinalCTA() {
         </Link>
 
         {/* Note */}
-        <p className="reveal-on-load reveal-delay-2 mt-6 text-purple-200 text-sm">{t('note')}</p>
+        <p className="reveal-on-load reveal-delay-2 mt-6 text-purple-50 text-sm">{t('note')}</p>
       </div>
     </section>
   );

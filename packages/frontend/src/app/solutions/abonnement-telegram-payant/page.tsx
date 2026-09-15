@@ -141,7 +141,7 @@ export default function AbonnementTelegramPayantPage() {
                 Abonnement Telegram Payant :<br />
                 Automatisez Tout
               </h1>
-              <p className="text-xl text-purple-100 mb-8 leading-relaxed">
+              <p className="text-xl text-purple-50 mb-8 leading-relaxed">
                 Transformez votre canal Telegram en source de revenus récurrents. Gestion automatique des paiements, accès et facturation.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -153,12 +153,12 @@ export default function AbonnementTelegramPayantPage() {
                 </Link>
                 <Link
                   href="/pricing"
-                  className="inline-block bg-purple-500 hover:bg-purple-400 text-white font-semibold px-8 py-4 rounded-lg transition-colors duration-150 text-center"
+                  className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-4 rounded-lg transition-colors duration-150 text-center"
                 >
                   Voir les tarifs
                 </Link>
               </div>
-              <p className="mt-6 text-sm text-purple-200">
+              <p className="mt-6 text-sm text-purple-50">
                 ✓ Gratuit jusqu&apos;à 10 abonnés &nbsp;&nbsp; ✓ Sans engagement &nbsp;&nbsp; ✓ Configuration en 5 min
               </p>
             </div>
@@ -277,7 +277,7 @@ export default function AbonnementTelegramPayantPage() {
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
             Prêt à lancer vos abonnements Telegram payants ?
           </h2>
-          <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-purple-50 mb-8 max-w-2xl mx-auto">
             Rejoignez des centaines de créateurs qui génèrent des revenus récurrents avec Sublynk
           </p>
           <Link
@@ -286,7 +286,7 @@ export default function AbonnementTelegramPayantPage() {
           >
             Créer mon compte gratuitement
           </Link>
-          <p className="mt-6 text-purple-200">
+          <p className="mt-6 text-purple-50">
             Aucune carte bancaire requise • Configuration en 5 minutes
           </p>
         </div>

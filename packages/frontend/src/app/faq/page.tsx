@@ -253,7 +253,7 @@ export default async function FaqPage() {
           <h2 className="text-2xl lg:text-3xl font-bold text-white mb-4">
             {t('cta.title')}
           </h2>
-          <p className="text-purple-200 mb-8 max-w-xl mx-auto">
+          <p className="text-purple-50 mb-8 max-w-xl mx-auto">
             {t('cta.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -265,7 +265,7 @@ export default async function FaqPage() {
             </Link>
             <Link
               href="/contact"
-              className="inline-block bg-purple-500 hover:bg-purple-400 text-white font-semibold px-8 py-4 rounded-lg transition-colors duration-150"
+              className="inline-block bg-purple-600 hover:bg-purple-500 text-white font-semibold px-8 py-4 rounded-lg transition-colors duration-150"
             >
               {t('cta.contact')}
             </Link>

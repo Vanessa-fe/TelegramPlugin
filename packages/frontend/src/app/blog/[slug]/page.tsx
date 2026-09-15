@@ -186,7 +186,7 @@ export default async function BlogPostPage({ params }: Props) {
           <h2 className="text-2xl lg:text-3xl font-bold text-white mb-4">
             Prêt à monétiser votre canal Telegram ?
           </h2>
-          <p className="text-purple-200 mb-8 max-w-xl mx-auto">
+          <p className="text-purple-50 mb-8 max-w-xl mx-auto">
             Rejoignez des centaines de créateurs qui utilisent Sublynk pour
             gérer leurs abonnements
           </p>

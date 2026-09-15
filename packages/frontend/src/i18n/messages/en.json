@@ -2667,7 +2667,8 @@
         "mobileMenu": "Create your account"
       },
       "aria": {
-        "toggleMenu": "Toggle menu"
+        "toggleMenu": "Toggle menu",
+        "selectLanguage": "Select language"
       }
     },
     "hero": {

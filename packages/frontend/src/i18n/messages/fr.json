@@ -2673,7 +2673,8 @@
         "mobileMenu": "Créer un compte"
       },
       "aria": {
-        "toggleMenu": "Ouvrir le menu"
+        "toggleMenu": "Ouvrir le menu",
+        "selectLanguage": "Choisir la langue"
       }
     },
     "hero": {

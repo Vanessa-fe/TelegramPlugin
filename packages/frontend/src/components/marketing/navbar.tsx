@@ -132,6 +132,7 @@ export function Navbar() {
               <select
                 value={currentLocale}
                 onChange={(e) => handleLocaleChange(e.target.value as Locale)}
+                aria-label={t('aria.selectLanguage')}
                 className="bg-transparent text-sm font-medium cursor-pointer hover:text-text-primary transition-colors focus:outline-none"
               >
                 {locales.map((locale) => (
@@ -269,6 +270,7 @@ export function Navbar() {
                 <select
                   value={currentLocale}
                   onChange={(e) => handleLocaleChange(e.target.value as Locale)}
+                  aria-label={t('aria.selectLanguage')}
                   className="bg-transparent text-sm font-medium cursor-pointer hover:text-text-primary transition-colors focus:outline-none"
                 >
                   {locales.map((locale) => (

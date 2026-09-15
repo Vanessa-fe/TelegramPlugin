@@ -41,9 +41,9 @@ export async function SocialProof() {
               >
                 {item.icon}
               </div>
-              <h3 className="text-xl font-semibold text-text-primary mb-1">
+              <h2 className="text-xl font-semibold text-text-primary mb-1">
                 {item.title}
-              </h3>
+              </h2>
               <p className="text-text-secondary">{item.description}</p>
             </div>
           ))}

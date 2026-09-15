@@ -160,9 +160,9 @@ export default function RessourcesPage() {
                     {resource.badge}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-text-primary mb-2 group-hover:text-purple-600 transition-colors">
+                <h2 className="text-xl font-bold text-text-primary mb-2 group-hover:text-purple-600 transition-colors">
                   {resource.title}
-                </h3>
+                </h2>
                 <p className="text-text-secondary text-sm leading-relaxed">
                   {resource.description}
                 </p>
@@ -200,7 +200,7 @@ export default function RessourcesPage() {
           <h2 className="text-2xl lg:text-3xl font-bold text-white mb-4">
             Besoin d&apos;aide personnalisée ?
           </h2>
-          <p className="text-purple-200 mb-8 max-w-xl mx-auto">
+          <p className="text-purple-50 mb-8 max-w-xl mx-auto">
             Notre équipe support est disponible pour vous accompagner dans
             votre projet
           </p>

@@ -159,7 +159,7 @@ export default async function PricingPage() {
                   }`}
                 >
                   {isRecommended && (
-                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 inline-block bg-purple-100 text-purple-600 text-sm font-semibold px-3 py-1 rounded-full">
+                    <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 inline-block bg-purple-100 text-purple-700 text-sm font-semibold px-3 py-1 rounded-full">
                       {t('plans.recommended')}
                     </span>
                   )}
@@ -301,7 +301,7 @@ export default async function PricingPage() {
           >
             {t('finalCta.button')}
           </Link>
-          <p className="mt-6 text-purple-200 text-sm">
+          <p className="mt-6 text-purple-50 text-sm">
             {t('finalCta.note')}
           </p>
         </div>

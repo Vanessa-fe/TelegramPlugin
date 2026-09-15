@@ -47,7 +47,7 @@ export function Footer() {
               {t('description')}
             </p>
             <div className="mt-6">
-              <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-3">
                 {t('social.title')}
               </p>
               <div className="flex items-center gap-3">
