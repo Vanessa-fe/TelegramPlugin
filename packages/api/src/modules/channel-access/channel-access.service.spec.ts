@@ -37,10 +37,21 @@ describe('ChannelAccessService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
             },
+            customer: {
+              updateMany: jest.fn(),
+            },
+            telegramInvite: {
+              findFirst: jest.fn(),
+              update: jest.fn(),
+            },
+            paymentEvent: {
+              findFirst: jest.fn(),
+            },
             channelAccess: {
               create: jest.fn(),
               update: jest.fn(),
               updateMany: jest.fn(),
+              findMany: jest.fn(),
             },
             entitlement: {
               findFirst: jest.fn(),
@@ -624,6 +635,251 @@ describe('ChannelAccessService', () => {
       ).resolves.not.toThrow();
 
       expect(prisma.channelAccess.updateMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('retryStalePendingGrants', () => {
+    it('should re-enqueue stuck grants and recover the checkout email', async () => {
+      prisma.channelAccess.findMany.mockResolvedValue([
+        {
+          subscriptionId: 'sub-1',
+          channelId: 'ch-1',
+          customerId: 'cust-1',
+          customer: { email: null },
+          subscription: {
+            paymentEvents: [{ provider: PaymentProvider.STRIPE }],
+          },
+        },
+      ] as any);
+      prisma.paymentEvent.findFirst.mockResolvedValue({
+        payload: {
+          data: { object: { customer_details: { email: 'Buyer@Example.com' } } },
+        },
+      } as any);
+
+      const enqueued = await service.retryStalePendingGrants();
+
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith({
+        where: { id: 'cust-1', email: null },
+        data: { email: 'buyer@example.com' },
+      });
+      expect(queue.enqueueGrantAccess).toHaveBeenCalledWith({
+        subscriptionId: 'sub-1',
+        channelId: 'ch-1',
+        customerId: 'cust-1',
+        provider: 'stripe',
+      });
+      expect(enqueued).toBe(1);
+    });
+
+    it('should stop the batch when the queue is unreachable', async () => {
+      prisma.channelAccess.findMany.mockResolvedValue([
+        {
+          subscriptionId: 'sub-1',
+          channelId: 'ch-1',
+          customerId: 'cust-1',
+          customer: { email: 'a@example.com' },
+          subscription: { paymentEvents: [] },
+        },
+        {
+          subscriptionId: 'sub-2',
+          channelId: 'ch-1',
+          customerId: 'cust-2',
+          customer: { email: 'b@example.com' },
+          subscription: { paymentEvents: [] },
+        },
+      ] as any);
+      queue.enqueueGrantAccess.mockRejectedValue(new Error('ENOTFOUND'));
+
+      const enqueued = await service.retryStalePendingGrants();
+
+      expect(queue.enqueueGrantAccess).toHaveBeenCalledTimes(1);
+      expect(enqueued).toBe(0);
+    });
+  });
+
+  describe('recordInviteJoin', () => {
+    const joinEvent = {
+      chatId: '-100123',
+      inviteLink: 'https://t.me/+abc',
+      telegramUserId: '555',
+      telegramUsername: 'Buyer',
+    };
+
+    it('should store the Telegram ID of a buyer who joined from the emailed link', async () => {
+      prisma.telegramInvite.findFirst.mockResolvedValue({
+        id: 'inv-1',
+        channelAccesses: [
+          {
+            id: 'access-1',
+            metadata: null,
+            customer: { id: 'cust-1', telegramUserId: null },
+          },
+        ],
+      } as any);
+
+      const result = await service.recordInviteJoin(joinEvent);
+
+      expect(prisma.telegramInvite.update).toHaveBeenCalledWith({
+        where: { id: 'inv-1' },
+        data: { usesCount: { increment: 1 } },
+      });
+      expect(prisma.channelAccess.update).toHaveBeenCalledWith({
+        where: { id: 'access-1' },
+        data: { metadata: { joinedTelegramUserIds: ['555'] } },
+      });
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith({
+        where: { id: 'cust-1', telegramUserId: null },
+        data: { telegramUserId: '555', telegramUsername: 'buyer' },
+      });
+      expect(result).toEqual({ matched: true });
+    });
+
+    it('should remember another account using the link without relinking the customer', async () => {
+      prisma.telegramInvite.findFirst.mockResolvedValue({
+        id: 'inv-1',
+        channelAccesses: [
+          {
+            id: 'access-1',
+            metadata: { joinedTelegramUserIds: ['111'], note: 'kept' },
+            customer: { id: 'cust-1', telegramUserId: '111' },
+          },
+        ],
+      } as any);
+
+      await service.recordInviteJoin(joinEvent);
+
+      expect(prisma.channelAccess.update).toHaveBeenCalledWith({
+        where: { id: 'access-1' },
+        data: {
+          metadata: { joinedTelegramUserIds: ['111', '555'], note: 'kept' },
+        },
+      });
+      expect(prisma.customer.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should ignore links that are not tied to a purchase', async () => {
+      prisma.telegramInvite.findFirst.mockResolvedValue(null);
+
+      const result = await service.recordInviteJoin(joinEvent);
+
+      expect(prisma.telegramInvite.update).not.toHaveBeenCalled();
+      expect(result).toEqual({ matched: false });
+    });
+  });
+
+  describe('linkTelegramAccount', () => {
+    it('should attach the Telegram ID by username and requeue paid accesses', async () => {
+      prisma.customer.updateMany.mockResolvedValue({ count: 1 } as any);
+      prisma.channelAccess.findMany.mockResolvedValue([
+        {
+          subscriptionId: 'sub-1',
+          channelId: 'ch-1',
+          customerId: 'cust-1',
+          subscription: {
+            paymentEvents: [{ provider: PaymentProvider.STRIPE }],
+          },
+        },
+      ] as any);
+
+      const result = await service.linkTelegramAccount('123456', '@Buyer');
+
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith({
+        where: {
+          telegramUsername: 'buyer',
+          telegramUserId: null,
+          deletedAt: null,
+        },
+        data: { telegramUserId: '123456' },
+      });
+      expect(queue.enqueueGrantAccess).toHaveBeenCalledWith({
+        subscriptionId: 'sub-1',
+        channelId: 'ch-1',
+        customerId: 'cust-1',
+        provider: 'stripe',
+      });
+      expect(result).toEqual({ linkedCustomers: 1, invitesQueued: 1 });
+    });
+
+    it('should link the exact purchase from the deep link token', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        id: 'sub-1',
+        customer: { id: 'cust-1', telegramUserId: null },
+      } as any);
+      prisma.customer.updateMany.mockResolvedValue({ count: 1 } as any);
+      prisma.channelAccess.findMany.mockResolvedValue([]);
+
+      const result = await service.linkTelegramAccount(
+        '123456',
+        'RealName',
+        'tok_abcdefghijklmnop',
+      );
+
+      expect(prisma.subscription.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { telegramLinkToken: 'tok_abcdefghijklmnop' },
+        }),
+      );
+      expect(prisma.customer.updateMany).toHaveBeenCalledTimes(1);
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'cust-1',
+          OR: [{ telegramUserId: null }, { telegramUserId: '123456' }],
+        },
+        data: { telegramUserId: '123456', telegramUsername: 'realname' },
+      });
+      // Payment not confirmed yet: nothing to queue, the worker will DM later
+      expect(result).toEqual({
+        linkedCustomers: 1,
+        invitesQueued: 0,
+        tokenStatus: 'linked',
+      });
+    });
+
+    it('should refuse a purchase link already claimed by another Telegram account', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        id: 'sub-1',
+        customer: { id: 'cust-1', telegramUserId: '999' },
+      } as any);
+
+      const result = await service.linkTelegramAccount(
+        '123456',
+        'intruder',
+        'tok_abcdefghijklmnop',
+      );
+
+      expect(prisma.customer.updateMany).not.toHaveBeenCalled();
+      expect(queue.enqueueGrantAccess).not.toHaveBeenCalled();
+      expect(result.tokenStatus).toBe('conflict');
+    });
+
+    it('should fall back to username matching when the token is unknown', async () => {
+      prisma.subscription.findUnique.mockResolvedValue(null);
+      prisma.customer.updateMany.mockResolvedValue({ count: 1 } as any);
+      prisma.channelAccess.findMany.mockResolvedValue([]);
+
+      const result = await service.linkTelegramAccount(
+        '123456',
+        'buyer',
+        'tok_unknown_token_xx',
+      );
+
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ telegramUsername: 'buyer' }),
+        }),
+      );
+      expect(result.tokenStatus).toBe('invalid');
+    });
+
+    it('should not link anything when the Telegram user has no username', async () => {
+      prisma.channelAccess.findMany.mockResolvedValue([]);
+
+      const result = await service.linkTelegramAccount('123456');
+
+      expect(prisma.customer.updateMany).not.toHaveBeenCalled();
+      expect(queue.enqueueGrantAccess).not.toHaveBeenCalled();
+      expect(result).toEqual({ linkedCustomers: 0, invitesQueued: 0 });
     });
   });
 });

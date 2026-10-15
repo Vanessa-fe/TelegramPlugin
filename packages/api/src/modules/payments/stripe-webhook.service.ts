@@ -715,6 +715,25 @@ export class StripeWebhookService {
       });
     }
 
+    // The storefront form makes email optional but Stripe Checkout always
+    // collects one: keep it so the worker can email the invite link.
+    const checkoutEmail = session.customer_details?.email?.trim().toLowerCase();
+    if (checkoutEmail) {
+      try {
+        await this.prisma.customer.updateMany({
+          where: {
+            email: null,
+            subscriptions: { some: { id: subscriptionId } },
+          },
+          data: { email: checkoutEmail },
+        });
+      } catch (error) {
+        this.logger.warn(
+          `Failed to store checkout email for subscription ${subscriptionId}: ${(error as Error).message}`,
+        );
+      }
+    }
+
     // Try to resolve payment IDs (may fail for subscription mode if payment not yet confirmed)
     const resolvedIds = await this.resolveStripePaymentIds(session, stripeAccount);
 

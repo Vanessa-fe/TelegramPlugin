@@ -6,11 +6,10 @@ import {
   Headers,
   Post,
   Query,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserRole } from '@prisma/client';
-import { ZodValidationPipe } from '../../common';
+import { assertTelegramBotSecret, ZodValidationPipe } from '../../common';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -104,26 +103,6 @@ export class TelegramStarsController {
   }
 
   private ensureSecret(secret: string | undefined) {
-    const expectedSecret = this.config.get<string>(
-      'TELEGRAM_STARS_WEBHOOK_SECRET',
-    );
-    const isProduction = this.config.get<string>('NODE_ENV') === 'production';
-
-    // In production, secret is required
-    if (isProduction && !expectedSecret) {
-      throw new UnauthorizedException(
-        'TELEGRAM_STARS_WEBHOOK_SECRET must be configured in production',
-      );
-    }
-
-    // If secret is configured, it must match
-    if (expectedSecret && secret !== expectedSecret) {
-      throw new UnauthorizedException('Invalid Telegram Stars secret');
-    }
-
-    // In development without secret configured, allow requests (with warning logged)
-    if (!expectedSecret && !isProduction) {
-      // Allow in dev mode without secret - but this is logged at startup
-    }
+    assertTelegramBotSecret(this.config, secret);
   }
 }

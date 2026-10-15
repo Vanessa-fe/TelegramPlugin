@@ -1,7 +1,8 @@
 import { config } from "dotenv";
 import { existsSync } from "node:fs";
 import { resolve, isAbsolute } from "node:path";
-import { Bot, GrammyError, HttpError } from "grammy";
+import { API_CONSTANTS, Bot, GrammyError, HttpError } from "grammy";
+import type { ChatMember } from "grammy/types";
 import { fileURLToPath } from "node:url";
 import { argv, env as processEnv } from "node:process";
 import { z } from "zod";
@@ -85,6 +86,23 @@ type ChannelVerificationResponse = {
   message?: string;
 };
 
+type TelegramLinkResponse = {
+  linkedCustomers: number;
+  invitesQueued: number;
+  tokenStatus?: "linked" | "invalid" | "conflict";
+};
+
+const LINK_TOKEN_PATTERN = /^[A-Za-z0-9_-]{16,64}$/;
+
+function isChatMember(member: ChatMember): boolean {
+  return (
+    member.status === "member" ||
+    member.status === "administrator" ||
+    member.status === "creator" ||
+    (member.status === "restricted" && member.is_member)
+  );
+}
+
 // Pattern pour détecter les codes de vérification (ex: TGPLUGIN-a1b2c3d4)
 const VERIFICATION_CODE_PATTERN = /^TGPLUGIN-[a-z0-9]{8}$/i;
 
@@ -143,11 +161,66 @@ export function createBot(config: BotConfig) {
     return response.json() as Promise<T>;
   }
 
-  bot.command("start", (ctx) =>
-    ctx.reply(
-      "👋 Bienvenue ! Votre accès sera géré automatiquement par la plateforme."
-    )
-  );
+  bot.command("start", async (ctx) => {
+    // Only private chats identify a buyer; ignore /start in groups.
+    if (ctx.chat.type !== "private" || !ctx.from) {
+      return;
+    }
+
+    // Per-purchase deep link from the checkout success page: t.me/<bot>?start=<token>
+    const payload = ctx.match?.trim();
+    const linkToken =
+      payload && LINK_TOKEN_PATTERN.test(payload) ? payload : undefined;
+
+    try {
+      const result = await postApi<TelegramLinkResponse>(
+        "/access/telegram/link",
+        {
+          telegramUserId: String(ctx.from.id),
+          telegramUsername: ctx.from.username,
+          linkToken,
+        }
+      );
+
+      if (result.tokenStatus === "conflict") {
+        await ctx.reply(
+          "⚠️ Cet achat est déjà associé à un autre compte Telegram.\n\n" +
+          "Ouvrez le lien avec le compte utilisé la première fois, " +
+          "ou contactez le vendeur."
+        );
+        return;
+      }
+
+      if (result.invitesQueued > 0) {
+        await ctx.reply(
+          "✅ Compte Telegram reconnu !\n\n" +
+          "Votre lien d'invitation arrive dans quelques instants."
+        );
+        return;
+      }
+
+      if (result.tokenStatus === "linked") {
+        // Payment webhook not processed yet: the worker will DM the link
+        await ctx.reply(
+          "✅ Achat reconnu !\n\n" +
+          "Votre lien d'invitation vous sera envoyé ici dès que le paiement " +
+          "sera confirmé (en général moins d'une minute)."
+        );
+        return;
+      }
+    } catch (error) {
+      log('error', 'Error linking Telegram account', {
+        userId: ctx.from.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    await ctx.reply(
+      "👋 Bienvenue ! Votre accès sera géré automatiquement par la plateforme.\n\n" +
+      "Si vous avez payé un abonnement, vérifiez que le nom d'utilisateur Telegram " +
+      "saisi lors de l'achat correspond bien à celui de ce compte."
+    );
+  });
 
   // Handle /buy command for Telegram Stars payments
   bot.command("buy", async (ctx) => {
@@ -294,6 +367,38 @@ export function createBot(config: BotConfig) {
         false,
         "Erreur de validation. Veuillez réessayer."
       );
+    }
+  });
+
+  // Someone joined a channel: if it was through an invite link we generated for
+  // a purchase, report it so the API learns the buyer's Telegram ID.
+  bot.on("chat_member", async (ctx) => {
+    const update = ctx.chatMember;
+    const inviteLink = update.invite_link;
+
+    if (!inviteLink || inviteLink.creator.id !== ctx.me.id) return;
+    if (isChatMember(update.old_chat_member)) return;
+    if (!isChatMember(update.new_chat_member)) return;
+
+    const user = update.new_chat_member.user;
+
+    try {
+      await postApi("/access/telegram/joined", {
+        chatId: String(ctx.chat.id),
+        inviteLink: inviteLink.invite_link,
+        telegramUserId: String(user.id),
+        telegramUsername: user.username,
+      });
+      log('info', 'Member joined through purchase invite link', {
+        chatId: ctx.chat.id,
+        userId: user.id,
+      });
+    } catch (error) {
+      log('error', 'Error recording invite link join', {
+        chatId: ctx.chat.id,
+        userId: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   });
 
@@ -448,6 +553,8 @@ export async function startBot() {
 
   await bot.start({
     drop_pending_updates: true,
+    // chat_member updates are opt-in on Telegram's side
+    allowed_updates: [...API_CONSTANTS.DEFAULT_UPDATE_TYPES, "chat_member"],
   });
 
   log('info', 'Telegram bot started (long polling)', {

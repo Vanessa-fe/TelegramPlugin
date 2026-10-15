@@ -1512,7 +1512,10 @@
   "checkoutSuccess": {
     "title": "Paiement réussi !",
     "description": "Merci pour ton achat. Ton abonnement a été activé avec succès.",
-    "emailNotice": "Tu vas recevoir ton lien d'invitation sur Telegram pour rejoindre le(s) canal(aux) privé(s). Si tu as fourni ton email, tu recevras également une confirmation par email.",
+    "telegramNoticeLinked": "Dernière étape : clique sur le bouton ci-dessous, puis sur « Démarrer » dans {bot}. Ton lien d'invitation t'est envoyé directement sur Telegram.",
+    "telegramNotice": "Pour recevoir ton lien d'invitation sur Telegram, ouvre {bot} et appuie sur « Démarrer » avec le compte Telegram indiqué lors de l'achat.",
+    "openBot": "Recevoir mon lien sur Telegram",
+    "emailNotice": "Ton lien d'invitation t'est aussi envoyé à l'adresse email utilisée pour le paiement.",
     "sessionId": "ID de session :",
     "backHome": "Retour à l'accueil",
     "safeToClose": "Tu peux fermer cette page en toute sécurité",

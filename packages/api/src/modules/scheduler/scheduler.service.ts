@@ -110,6 +110,25 @@ export class SchedulerService {
   }
 
   /**
+   * Retry Telegram access grants whose job never reached the queue
+   * Runs every 15 minutes
+   */
+  @Cron('*/15 * * * *')
+  async retryPendingGrants(): Promise<void> {
+    try {
+      const enqueued =
+        await this.channelAccessService.retryStalePendingGrants();
+      if (enqueued > 0) {
+        this.logger.log(`Re-enqueued ${enqueued} pending access grant(s)`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to retry pending access grants: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
    * Revoke access after grace period expiration
    * Runs every 15 minutes
    */

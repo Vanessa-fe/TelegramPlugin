@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomBytes } from 'node:crypto';
 import {
   AffiliateStatus,
   CouponStatus,
@@ -465,6 +466,9 @@ export class BillingService {
       }
     }
 
+    // 24 URL-safe chars: fits Telegram's 64-char [A-Za-z0-9_-] start payload
+    const telegramLinkToken = randomBytes(18).toString('base64url');
+
     const subscription = await this.prisma.subscription.create({
       data: {
         organizationId: organization.id,
@@ -473,6 +477,7 @@ export class BillingService {
         status: SubscriptionStatus.INCOMPLETE,
         couponCode: validatedCoupon?.code ?? null,
         affiliateCode: validatedAffiliate?.code ?? null,
+        telegramLinkToken,
         metadata: {
           checkoutMode:
             plan.interval === PlanInterval.ONE_TIME
@@ -564,7 +569,7 @@ export class BillingService {
       mode:
         plan.interval === PlanInterval.ONE_TIME ? 'payment' : 'subscription',
       line_items: [lineItem],
-      success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}&access=${telegramLinkToken}`,
       cancel_url: cancelUrl,
       client_reference_id: subscription.id,
       metadata,

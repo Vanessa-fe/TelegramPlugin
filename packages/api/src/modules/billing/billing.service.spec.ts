@@ -157,9 +157,14 @@ describe('BillingService', () => {
       },
     });
 
+    const { telegramLinkToken } =
+      mockPrisma.subscription.create.mock.calls[0][0].data;
+    expect(telegramLinkToken).toMatch(/^[A-Za-z0-9_-]{24}$/);
+
     expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: 'payment',
+        success_url: `https://sublynk.test/success?session_id={CHECKOUT_SESSION_ID}&access=${telegramLinkToken}`,
         metadata: expect.objectContaining({
           organizationId: 'org_123',
           productId: 'prod_123',

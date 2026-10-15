@@ -42,6 +42,9 @@ const BaseEnvSchema = z.object({
   ACCESS_LATENCY_ALERT_MS: z.string().optional(),
   POSTHOG_API_KEY: z.string().optional(),
   POSTHOG_HOST: z.string().optional(),
+  BREVO_API_KEY: z.string().optional(),
+  BREVO_FROM_EMAIL: z.string().optional(),
+  BREVO_FROM_NAME: z.string().optional(),
 });
 
 type BaseEnv = z.infer<typeof BaseEnvSchema>;
@@ -159,7 +162,7 @@ const env: WorkerEnv = {
     }) ?? DEFAULT_ACCESS_LATENCY_ALERT_MS,
 };
 
-let connection: Redis;
+let connection: Redis | undefined;
 const prisma = new PrismaClient();
 const bot = new Bot(env.TELEGRAM_BOT_TOKEN);
 
@@ -388,20 +391,22 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
     });
 
     // Send notification with invite link to customer
+    const channelTitle = channelAccess.channel.title || "le channel";
+    let deliveredViaTelegram = false;
+
     if (channelAccess.customer.telegramUserId) {
-      const channelTitle = channelAccess.channel.title || "le channel";
       const message =
         `🎉 <b>Accès accordé !</b>\n\n` +
-        `Votre accès à "${channelTitle}" a été activé.\n\n` +
+        `Votre accès à "${escapeHtml(channelTitle)}" a été activé.\n\n` +
         `👉 <a href="${invite.invite_link}">Rejoindre le channel</a>\n\n` +
         `<i>Ce lien est personnel et à usage unique.</i>`;
 
-      const sent = await sendTelegramNotification(
+      deliveredViaTelegram = await sendTelegramNotification(
         channelAccess.customer.telegramUserId,
         message
       );
 
-      if (sent) {
+      if (deliveredViaTelegram) {
         logger.info(
           {
             jobId: job.id,
@@ -409,6 +414,35 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
             telegramUserId: channelAccess.customer.telegramUserId,
           },
           "Invite link notification sent to customer"
+        );
+      }
+    }
+
+    // A bot cannot message a user who never started it (web checkout only
+    // collects the @username), so fall back to email.
+    if (!deliveredViaTelegram) {
+      const deliveredViaEmail = channelAccess.customer.email
+        ? await sendInviteEmail(
+            channelAccess.customer.email,
+            channelTitle,
+            invite.invite_link
+          )
+        : false;
+
+      if (deliveredViaEmail) {
+        logger.info(
+          { jobId: job.id, customerId: channelAccess.customerId },
+          "Invite link sent to customer by email"
+        );
+      } else {
+        logger.warn(
+          {
+            jobId: job.id,
+            customerId: channelAccess.customerId,
+            hasTelegramUserId: Boolean(channelAccess.customer.telegramUserId),
+            hasEmail: Boolean(channelAccess.customer.email),
+          },
+          "Invite link generated but could not be delivered to customer"
         );
       }
     }
@@ -472,6 +506,17 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
   }
 }
 
+function readJoinedTelegramUserIds(metadata: unknown): string[] {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return [];
+  }
+  const ids = (metadata as { joinedTelegramUserIds?: unknown })
+    .joinedTelegramUserIds;
+  return Array.isArray(ids)
+    ? ids.filter((id): id is string => typeof id === "string")
+    : [];
+}
+
 async function kickMemberFromChannel(
   chatId: string,
   telegramUserId: string
@@ -521,6 +566,71 @@ async function sendTelegramNotification(
       return false;
     }
     throw error;
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function sendInviteEmail(
+  to: string,
+  channelTitle: string,
+  inviteLink: string
+): Promise<boolean> {
+  if (!env.BREVO_API_KEY || !env.BREVO_FROM_EMAIL) {
+    logger.warn("Brevo not configured, cannot email invite link");
+    return false;
+  }
+
+  const title = escapeHtml(channelTitle);
+  const htmlContent =
+    `<h1>Votre accès est prêt 🎉</h1>` +
+    `<p>Votre paiement a bien été reçu. Voici votre lien pour rejoindre "${title}" sur Telegram :</p>` +
+    `<p><a href="${inviteLink}">${inviteLink}</a></p>` +
+    `<p><em>Ce lien est personnel : ne le partagez pas.</em></p>`;
+
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": env.BREVO_API_KEY,
+        "Content-Type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          email: env.BREVO_FROM_EMAIL,
+          name: env.BREVO_FROM_NAME || "Sublynk",
+        },
+        to: [{ email: to }],
+        subject: `Votre lien d'accès à ${channelTitle}`,
+        htmlContent,
+        textContent: `Votre lien pour rejoindre "${channelTitle}" sur Telegram : ${inviteLink}`,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      logger.error(
+        { status: response.status, body },
+        "Brevo rejected invite email"
+      );
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    logger.error(
+      { error: error instanceof Error ? error.message : String(error) },
+      "Failed to send invite email"
+    );
+    return false;
   }
 }
 
@@ -960,23 +1070,30 @@ async function processRevokeAccess(
       }
     }
 
-    // Kick member from channel if they have a Telegram user ID
+    // Kick the customer and every account that joined with their paid link
+    // (recorded by the bot from chat_member updates)
+    const memberIds = new Set<string>(
+      readJoinedTelegramUserIds(access.metadata)
+    );
     if (access.customer.telegramUserId) {
-      const kicked = await kickMemberFromChannel(
-        chatId,
-        access.customer.telegramUserId
-      );
+      memberIds.add(access.customer.telegramUserId);
+    }
+
+    for (const telegramUserId of memberIds) {
+      const kicked = await kickMemberFromChannel(chatId, telegramUserId);
       if (kicked) {
         logger.info(
           {
             jobId: job.id,
             channelId: access.channelId,
-            telegramUserId: access.customer.telegramUserId,
+            telegramUserId,
           },
           "Member kicked from channel"
         );
       }
+    }
 
+    if (access.customer.telegramUserId) {
       // Send notification about access revocation
       const reasonMessages: Record<string, string> = {
         payment_failed: "Échec du paiement",
@@ -1081,7 +1198,8 @@ async function shutdown(signal?: NodeJS.Signals): Promise<void> {
     logger.error({ error: error as Error }, "Failed to disconnect Prisma client");
   });
 
-  await connection.quit().catch((error: unknown) => {
+  // undefined when Redis was unreachable at bootstrap
+  await connection?.quit().catch((error: unknown) => {
     logger.error({ error: error as Error }, "Failed to close Redis connection");
   });
 

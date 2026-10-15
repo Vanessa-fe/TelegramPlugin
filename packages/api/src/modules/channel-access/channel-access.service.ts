@@ -15,7 +15,7 @@ import {
   PaymentProvider,
   SubscriptionStatus,
 } from '@prisma/client';
-import type { ChannelAccess } from '@prisma/client';
+import type { ChannelAccess, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessQueue } from './channel-access.queue';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -24,6 +24,12 @@ import { AuditLogService } from '../audit-log/audit-log.service';
 
 const DEFAULT_GRACE_PERIOD_DAYS = 5;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function readTelegramIds(value: Prisma.JsonValue | undefined): string[] {
+  return Array.isArray(value)
+    ? value.filter((id): id is string => typeof id === 'string')
+    : [];
+}
 
 @Injectable()
 export class ChannelAccessService {
@@ -381,6 +387,343 @@ export class ChannelAccessService {
         error as Error,
       );
     }
+  }
+
+  /**
+   * Called when a user starts the Telegram bot. A bot cannot message a user by
+   * @username, so we attach the numeric Telegram ID here and (re)send invite
+   * links for their paid accesses. With a linkToken (per-purchase deep link
+   * from the checkout success page) the purchase is identified exactly;
+   * otherwise we fall back to matching the @username typed at checkout.
+   */
+  async linkTelegramAccount(
+    telegramUserId: string,
+    telegramUsername?: string,
+    linkToken?: string,
+  ): Promise<{
+    linkedCustomers: number;
+    invitesQueued: number;
+    tokenStatus?: 'linked' | 'invalid' | 'conflict';
+  }> {
+    const username = telegramUsername?.trim().toLowerCase().replace(/^@/, '');
+    let linkedCustomers = 0;
+    let tokenStatus: 'linked' | 'invalid' | 'conflict' | undefined;
+
+    if (linkToken) {
+      tokenStatus = await this.claimSubscriptionLink(
+        linkToken,
+        telegramUserId,
+        username,
+      );
+      if (tokenStatus === 'linked') {
+        linkedCustomers = 1;
+      } else if (tokenStatus === 'conflict') {
+        return { linkedCustomers: 0, invitesQueued: 0, tokenStatus };
+      }
+    }
+
+    if (username && tokenStatus !== 'linked') {
+      const result = await this.prisma.customer.updateMany({
+        where: {
+          telegramUsername: username,
+          telegramUserId: null,
+          deletedAt: null,
+        },
+        data: { telegramUserId },
+      });
+      linkedCustomers = result.count;
+    }
+
+    const accesses = await this.prisma.channelAccess.findMany({
+      where: {
+        customer: { telegramUserId, deletedAt: null },
+        status: {
+          in: [$Enums.AccessStatus.PENDING, $Enums.AccessStatus.GRANTED],
+        },
+        channel: { provider: $Enums.ChannelProvider.TELEGRAM },
+        subscription: {
+          status: {
+            in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING],
+          },
+        },
+      },
+      select: {
+        subscriptionId: true,
+        channelId: true,
+        customerId: true,
+        subscription: {
+          select: {
+            paymentEvents: {
+              orderBy: { occurredAt: 'desc' },
+              take: 1,
+              select: { provider: true },
+            },
+          },
+        },
+      },
+    });
+
+    let invitesQueued = 0;
+    for (const access of accesses) {
+      const provider =
+        access.subscription.paymentEvents[0]?.provider ??
+        PaymentProvider.STRIPE;
+      try {
+        await this.queue.enqueueGrantAccess({
+          subscriptionId: access.subscriptionId,
+          channelId: access.channelId,
+          customerId: access.customerId,
+          provider: provider.toLowerCase() as GrantAccessPayload['provider'],
+        });
+        invitesQueued += 1;
+      } catch (error) {
+        this.logger.error(
+          `Failed to enqueue invite resend for subscription ${access.subscriptionId} and channel ${access.channelId}`,
+          error as Error,
+        );
+      }
+    }
+
+    if (linkedCustomers > 0 || invitesQueued > 0) {
+      this.logger.log(
+        `Telegram account ${telegramUserId} linked to ${linkedCustomers} customer(s), ${invitesQueued} invite(s) queued`,
+      );
+    }
+
+    return { linkedCustomers, invitesQueued, tokenStatus };
+  }
+
+  /**
+   * Re-enqueue Telegram grants stuck in PENDING, e.g. because Redis was
+   * unreachable when the payment webhook tried to enqueue them. Jobs are
+   * deduplicated by id, so an access whose job is still queued or retrying is
+   * left alone. Also recovers the buyer's email from the Stripe checkout so
+   * the worker can email the link to web buyers.
+   */
+  async retryStalePendingGrants(options?: {
+    staleAfterMs?: number;
+    limit?: number;
+  }): Promise<number> {
+    const staleBefore = new Date(
+      Date.now() - (options?.staleAfterMs ?? 10 * 60 * 1000),
+    );
+
+    const accesses = await this.prisma.channelAccess.findMany({
+      where: {
+        status: $Enums.AccessStatus.PENDING,
+        updatedAt: { lte: staleBefore },
+        channel: { provider: $Enums.ChannelProvider.TELEGRAM },
+        subscription: {
+          status: {
+            in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING],
+          },
+        },
+      },
+      orderBy: { updatedAt: 'asc' },
+      take: options?.limit ?? 100,
+      select: {
+        subscriptionId: true,
+        channelId: true,
+        customerId: true,
+        customer: { select: { email: true } },
+        subscription: {
+          select: {
+            paymentEvents: {
+              orderBy: { occurredAt: 'desc' },
+              take: 1,
+              select: { provider: true },
+            },
+          },
+        },
+      },
+    });
+
+    let enqueued = 0;
+    for (const access of accesses) {
+      if (!access.customer.email) {
+        await this.backfillEmailFromCheckout(
+          access.subscriptionId,
+          access.customerId,
+        );
+      }
+
+      const provider =
+        access.subscription.paymentEvents[0]?.provider ??
+        PaymentProvider.STRIPE;
+      try {
+        await this.queue.enqueueGrantAccess({
+          subscriptionId: access.subscriptionId,
+          channelId: access.channelId,
+          customerId: access.customerId,
+          provider: provider.toLowerCase() as GrantAccessPayload['provider'],
+        });
+        enqueued += 1;
+      } catch (error) {
+        // Queue unavailable: no point trying the rest of the batch now
+        this.logger.error(
+          `Failed to re-enqueue pending grant for subscription ${access.subscriptionId}`,
+          error as Error,
+        );
+        break;
+      }
+    }
+
+    return enqueued;
+  }
+
+  private async backfillEmailFromCheckout(
+    subscriptionId: string,
+    customerId: string,
+  ): Promise<void> {
+    const checkout = await this.prisma.paymentEvent.findFirst({
+      where: { subscriptionId, type: PaymentEventType.CHECKOUT_COMPLETED },
+      orderBy: { occurredAt: 'desc' },
+      select: { payload: true },
+    });
+    const payload = checkout?.payload as {
+      data?: { object?: { customer_details?: { email?: string | null } } };
+    } | null;
+    const email = payload?.data?.object?.customer_details?.email
+      ?.trim()
+      .toLowerCase();
+
+    if (email) {
+      await this.prisma.customer.updateMany({
+        where: { id: customerId, email: null },
+        data: { email },
+      });
+    }
+  }
+
+  /**
+   * Called by the bot when someone joins a channel through an invite link the
+   * bot generated. Buyers who join from the emailed link never start the bot,
+   * so this is often the only moment we learn their Telegram ID — needed to
+   * kick them on cancellation. Every account that joins with a paid link is
+   * remembered on the access, so a shared link can't outlive the subscription.
+   */
+  async recordInviteJoin(data: {
+    chatId: string;
+    inviteLink: string;
+    telegramUserId: string;
+    telegramUsername?: string;
+  }): Promise<{ matched: boolean }> {
+    const invite = await this.prisma.telegramInvite.findFirst({
+      where: {
+        inviteLink: data.inviteLink,
+        channel: {
+          externalId: data.chatId,
+          provider: $Enums.ChannelProvider.TELEGRAM,
+        },
+      },
+      select: {
+        id: true,
+        channelAccesses: {
+          select: {
+            id: true,
+            metadata: true,
+            customer: { select: { id: true, telegramUserId: true } },
+          },
+        },
+      },
+    });
+
+    if (!invite || invite.channelAccesses.length === 0) {
+      return { matched: false };
+    }
+
+    const username = data.telegramUsername
+      ?.trim()
+      .toLowerCase()
+      .replace(/^@/, '');
+
+    await this.prisma.telegramInvite.update({
+      where: { id: invite.id },
+      data: { usesCount: { increment: 1 } },
+    });
+
+    for (const access of invite.channelAccesses) {
+      const metadata =
+        access.metadata &&
+        typeof access.metadata === 'object' &&
+        !Array.isArray(access.metadata)
+          ? access.metadata
+          : {};
+      const joinedIds = readTelegramIds(metadata.joinedTelegramUserIds);
+
+      if (!joinedIds.includes(data.telegramUserId)) {
+        await this.prisma.channelAccess.update({
+          where: { id: access.id },
+          data: {
+            metadata: {
+              ...metadata,
+              joinedTelegramUserIds: [...joinedIds, data.telegramUserId],
+            },
+          },
+        });
+      }
+
+      const knownId = access.customer.telegramUserId;
+      if (!knownId) {
+        await this.prisma.customer.updateMany({
+          where: { id: access.customer.id, telegramUserId: null },
+          data: {
+            telegramUserId: data.telegramUserId,
+            ...(username ? { telegramUsername: username } : {}),
+          },
+        });
+      } else if (knownId !== data.telegramUserId) {
+        this.logger.warn(
+          `Access ${access.id} invite used by Telegram account ${data.telegramUserId}, customer is linked to ${knownId}`,
+        );
+      }
+    }
+
+    return { matched: true };
+  }
+
+  /**
+   * First Telegram account to open the purchase deep link owns it; a different
+   * account reusing the same link is refused so a shared URL can't be claimed.
+   */
+  private async claimSubscriptionLink(
+    linkToken: string,
+    telegramUserId: string,
+    username?: string,
+  ): Promise<'linked' | 'invalid' | 'conflict'> {
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { telegramLinkToken: linkToken },
+      select: {
+        id: true,
+        customer: { select: { id: true, telegramUserId: true } },
+      },
+    });
+
+    if (!subscription) {
+      return 'invalid';
+    }
+
+    const currentId = subscription.customer.telegramUserId;
+    if (currentId && currentId !== telegramUserId) {
+      this.logger.warn(
+        `Purchase link for subscription ${subscription.id} opened by another Telegram account, refused`,
+      );
+      return 'conflict';
+    }
+
+    // Conditional update so two accounts racing on the same link can't both win
+    const result = await this.prisma.customer.updateMany({
+      where: {
+        id: subscription.customer.id,
+        OR: [{ telegramUserId: null }, { telegramUserId }],
+      },
+      data: {
+        telegramUserId,
+        ...(username ? { telegramUsername: username } : {}),
+      },
+    });
+
+    return result.count > 0 ? 'linked' : 'conflict';
   }
 
   async handlePaymentFailure(

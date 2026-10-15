@@ -97,6 +97,9 @@ describe('StripeWebhookService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
             },
+            customer: {
+              updateMany: jest.fn(),
+            },
             organization: {
               findFirst: jest.fn(),
             },
@@ -584,6 +587,22 @@ describe('StripeWebhookService', () => {
         rawBody: Buffer.from(JSON.stringify(mockEvent)),
       });
     };
+
+    it('should store the Stripe checkout email on a customer without email', async () => {
+      await setupEventWithSubscription(
+        'checkout.session.completed',
+        'sub-uuid-123',
+        { customer_details: { email: ' Buyer@Example.com ' } },
+      );
+
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith({
+        where: {
+          email: null,
+          subscriptions: { some: { id: 'sub-uuid-123' } },
+        },
+        data: { email: 'buyer@example.com' },
+      });
+    });
 
     it('should grant access on checkout.session.completed', async () => {
       await setupEventWithSubscription('checkout.session.completed');
