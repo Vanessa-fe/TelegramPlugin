@@ -53,6 +53,7 @@ describe('ChannelAccessService', () => {
               update: jest.fn(),
               updateMany: jest.fn(),
               findMany: jest.fn(),
+              findFirst: jest.fn().mockResolvedValue(null),
             },
             entitlement: {
               findFirst: jest.fn(),
@@ -636,6 +637,70 @@ describe('ChannelAccessService', () => {
       ).resolves.not.toThrow();
 
       expect(prisma.channelAccess.updateMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('revocation notice when another subscription keeps the channel', () => {
+    const canceledSubscription = {
+      id: 'sub-old',
+      customerId: 'cust-1',
+      organizationId: 'org-1',
+      customer: { id: 'cust-1', telegramUserId: '555' },
+      plan: { name: 'VIP' },
+      channelAccesses: [
+        {
+          id: 'access-old',
+          channelId: 'ch-1',
+          status: $Enums.AccessStatus.GRANTED,
+          channel: {
+            title: 'Canal VIP',
+            provider: $Enums.ChannelProvider.TELEGRAM,
+          },
+        },
+      ],
+    };
+
+    it('should not tell a re-subscribed member their access was revoked', async () => {
+      prisma.subscription.findUnique.mockResolvedValue(
+        canceledSubscription as any,
+      );
+      prisma.channelAccess.findFirst.mockResolvedValue({
+        id: 'access-new',
+      } as any);
+
+      await service.handlePaymentFailure('sub-old', 'canceled');
+
+      expect(prisma.channelAccess.findFirst).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          channelId: 'ch-1',
+          subscriptionId: { not: 'sub-old' },
+          OR: [
+            { customerId: 'cust-1' },
+            { customer: { telegramUserId: '555' } },
+          ],
+        }),
+        select: { id: true },
+      });
+      expect(notifications.sendAccessRevoked).not.toHaveBeenCalled();
+      // The old subscription itself is still revoked
+      expect(queue.enqueueRevokeAccess).toHaveBeenCalledWith({
+        subscriptionId: 'sub-old',
+        reason: 'canceled',
+      });
+    });
+
+    it('should notify a member who has no other subscription', async () => {
+      prisma.subscription.findUnique.mockResolvedValue(
+        canceledSubscription as any,
+      );
+
+      await service.handlePaymentFailure('sub-old', 'canceled');
+
+      expect(notifications.sendAccessRevoked).toHaveBeenCalledWith(
+        'cust-1',
+        'Canal VIP',
+        'Abonnement annulé',
+      );
     });
   });
 

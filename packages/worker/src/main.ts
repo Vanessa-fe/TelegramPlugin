@@ -24,6 +24,7 @@ import type {
 import { env as processEnv, argv } from "node:process";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { hasOtherActiveAccess } from "./membership.js";
 
 const logger = pino({
   name: "worker",
@@ -914,8 +915,21 @@ async function processDiscordRevoke(
 
   const now = new Date();
 
-  // Revoke the role
-  await revokeDiscordRole(discordGuild.guildId, roleId, discordUserId);
+  const keepsAccess = await hasOtherActiveAccess(prisma, {
+    channelId: access.channelId,
+    subscriptionId: access.subscriptionId,
+    discordUserId,
+  });
+
+  // Revoke the role, unless another subscription still grants it
+  if (keepsAccess) {
+    logger.info(
+      { jobId: job.id, channelId: access.channelId, discordUserId },
+      "Member keeps access through another subscription, role kept"
+    );
+  } else {
+    await revokeDiscordRole(discordGuild.guildId, roleId, discordUserId);
+  }
 
   // Update access status
   await prisma.channelAccess.update({
@@ -926,6 +940,10 @@ async function processDiscordRevoke(
       revokeReason: reason,
     },
   });
+
+  if (keepsAccess) {
+    return;
+  }
 
   // Send Discord notification
   const reasonMessages: Record<string, string> = {
@@ -1079,7 +1097,23 @@ async function processRevokeAccess(
       memberIds.add(access.customer.telegramUserId);
     }
 
+    const keptIds = new Set<string>();
     for (const telegramUserId of memberIds) {
+      if (
+        await hasOtherActiveAccess(prisma, {
+          channelId: access.channelId,
+          subscriptionId: data.subscriptionId,
+          telegramUserId,
+        })
+      ) {
+        keptIds.add(telegramUserId);
+        logger.info(
+          { jobId: job.id, channelId: access.channelId, telegramUserId },
+          "Member keeps access through another subscription, not kicked"
+        );
+        continue;
+      }
+
       const kicked = await kickMemberFromChannel(chatId, telegramUserId);
       if (kicked) {
         logger.info(
@@ -1093,7 +1127,10 @@ async function processRevokeAccess(
       }
     }
 
-    if (access.customer.telegramUserId) {
+    if (
+      access.customer.telegramUserId &&
+      !keptIds.has(access.customer.telegramUserId)
+    ) {
       // Send notification about access revocation
       const reasonMessages: Record<string, string> = {
         payment_failed: "Échec du paiement",

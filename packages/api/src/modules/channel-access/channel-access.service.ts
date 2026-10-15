@@ -992,8 +992,19 @@ export class ChannelAccessService {
         );
       }
 
-      // Notify about each channel access revoked
+      // Notify about each channel access revoked, except channels the
+      // customer still has through another subscription
       for (const access of activeAccesses) {
+        if (
+          await this.keepsChannelAccess(
+            access.channelId,
+            subscription.id,
+            subscription.customerId,
+            subscription.customer?.telegramUserId,
+          )
+        ) {
+          continue;
+        }
         if (access.channel && access.channel.title) {
           await this.notifications.sendAccessRevoked(
             subscription.customerId,
@@ -1008,6 +1019,46 @@ export class ChannelAccessService {
         error as Error,
       );
     }
+  }
+
+  /**
+   * Whether the customer still holds the channel through another live
+   * subscription (mirrors the worker's check before kicking a member).
+   */
+  private async keepsChannelAccess(
+    channelId: string,
+    subscriptionId: string,
+    customerId: string,
+    telegramUserId?: string | null,
+  ): Promise<boolean> {
+    const other = await this.prisma.channelAccess.findFirst({
+      where: {
+        channelId,
+        subscriptionId: { not: subscriptionId },
+        status: {
+          in: [
+            $Enums.AccessStatus.PENDING,
+            $Enums.AccessStatus.GRANTED,
+            $Enums.AccessStatus.REVOKE_PENDING,
+          ],
+        },
+        subscription: {
+          status: {
+            in: [
+              SubscriptionStatus.ACTIVE,
+              SubscriptionStatus.TRIALING,
+              SubscriptionStatus.PAST_DUE,
+            ],
+          },
+        },
+        OR: [
+          { customerId },
+          ...(telegramUserId ? [{ customer: { telegramUserId } }] : []),
+        ],
+      },
+      select: { id: true },
+    });
+    return other !== null;
   }
 
   async confirmManualGrant(accessId: string, organizationId?: string | null) {
