@@ -319,6 +319,14 @@ export class BillingService {
       throw new ForbiddenException('Abonnement SaaS inactif');
     }
 
+    // Never take a payment for an offer that grants access to nothing
+    const linkedChannels = await this.prisma.productChannel.count({
+      where: { productId: plan.productId, channel: { isActive: true } },
+    });
+    if (linkedChannels === 0) {
+      throw new ForbiddenException("Cette offre n'est reliée à aucun canal");
+    }
+
     // Validate coupon code if provided
     let validatedCoupon: {
       id: string;

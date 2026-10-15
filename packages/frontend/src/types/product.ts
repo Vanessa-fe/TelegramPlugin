@@ -11,6 +11,7 @@ export interface Product {
   description?: string | null;
   status: ProductStatus;
   metadata?: Record<string, unknown> | null;
+  channelIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -21,6 +22,7 @@ export interface CreateProductDto {
   description?: string;
   status?: ProductStatus;
   metadata?: Record<string, unknown>;
+  channelIds?: string[];
 }
 
 export interface UpdateProductDto {
@@ -29,4 +31,5 @@ export interface UpdateProductDto {
   description?: string;
   status?: ProductStatus;
   metadata?: Record<string, unknown>;
+  channelIds?: string[];
 }

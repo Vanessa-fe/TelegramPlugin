@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { channelsApi } from "@/lib/api/channels";
 import { cn } from "@/lib/utils";
+import type { Channel } from "@/types/channel";
 import type { Organization } from "@/types/organization";
 import { ProductStatus, type CreateProductDto, type Product } from "@/types/product";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -18,7 +21,21 @@ type FormData = {
   name: string;
   description?: string;
   status?: ProductStatus;
+  channelIds: string[];
 };
+
+const providerLabels: Record<Channel["provider"], string> = {
+  TELEGRAM: "Telegram",
+  DISCORD: "Discord",
+  WHATSAPP: "WhatsApp",
+};
+
+function channelLabel(channel: Channel): string {
+  return (
+    channel.title ||
+    (channel.username ? `@${channel.username}` : channel.externalId)
+  );
+}
 
 interface ProductFormProps {
   onSubmit: (data: CreateProductDto) => Promise<void>;
@@ -53,6 +70,7 @@ export function ProductForm({
           .optional()
           .or(z.literal("")),
         status: z.nativeEnum(ProductStatus).optional(),
+        channelIds: z.array(z.string().uuid()),
       }),
     [t]
   );
@@ -67,6 +85,8 @@ export function ProductForm({
     register,
     handleSubmit,
     setValue,
+    getValues,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(productSchema),
@@ -75,6 +95,7 @@ export function ProductForm({
       name: initialData?.name ?? "",
       description: initialData?.description ?? "",
       status: initialData?.status ?? ProductStatus.DRAFT,
+      channelIds: initialData?.channelIds ?? [],
     },
   });
 
@@ -84,6 +105,61 @@ export function ProductForm({
       setValue("organizationId", nextOrganizationId);
     }
   }, [organizationId, organizations, setValue]);
+
+  const selectedOrganizationId = watch("organizationId");
+  const selectedChannelIds = watch("channelIds");
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [channelsLoading, setChannelsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedOrganizationId) return;
+    let cancelled = false;
+    setChannelsLoading(true);
+
+    channelsApi
+      .findAll(selectedOrganizationId)
+      .then((data) => {
+        if (cancelled) return;
+        setChannels(data);
+        // Drop channels of another organization, then preselect the only
+        // channel for a new offer
+        const kept = getValues("channelIds").filter((id) =>
+          data.some((channel) => channel.id === id)
+        );
+        const activeChannels = data.filter((channel) => channel.isActive);
+        setValue(
+          "channelIds",
+          !isEdit && kept.length === 0 && activeChannels.length === 1
+            ? [activeChannels[0].id]
+            : kept
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setChannels([]);
+      })
+      .finally(() => {
+        if (!cancelled) setChannelsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedOrganizationId, isEdit, getValues, setValue]);
+
+  const selectableChannels = channels.filter(
+    (channel) => channel.isActive || selectedChannelIds.includes(channel.id)
+  );
+
+  function toggleChannel(channelId: string, checked: boolean) {
+    const current = getValues("channelIds");
+    setValue(
+      "channelIds",
+      checked
+        ? [...current, channelId]
+        : current.filter((id) => id !== channelId),
+      { shouldDirty: true }
+    );
+  }
 
   const showOrganizationSelect = !lockOrganization && !!organizations?.length;
 
@@ -165,6 +241,61 @@ export function ProductForm({
               </p>
             )}
           </div>
+
+          {/* Channels buyers get access to */}
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium leading-none">
+              {t("form.channels.label")}
+            </legend>
+            <p className="text-xs text-muted-foreground">
+              {t("form.channels.help")}
+            </p>
+            {channelsLoading ? (
+              <p className="text-sm text-muted-foreground">
+                {t("form.channels.loading")}
+              </p>
+            ) : selectableChannels.length === 0 ? (
+              <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {t("form.channels.empty")}{" "}
+                <Link
+                  href="/dashboard/channels/new"
+                  className="font-medium underline"
+                >
+                  {t("form.channels.emptyLink")}
+                </Link>
+              </p>
+            ) : (
+              <div className="space-y-2 rounded-md border border-input p-3">
+                {selectableChannels.map((channel) => (
+                  <label
+                    key={channel.id}
+                    className="flex cursor-pointer items-center gap-3 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedChannelIds.includes(channel.id)}
+                      onChange={(event) =>
+                        toggleChannel(channel.id, event.target.checked)
+                      }
+                      disabled={isSubmitting}
+                      className="h-4 w-4 rounded border-gray-300 accent-purple-600"
+                    />
+                    <span className="font-medium">{channelLabel(channel)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {providerLabels[channel.provider]}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {!channelsLoading &&
+              selectableChannels.length > 0 &&
+              selectedChannelIds.length === 0 && (
+                <p className="text-sm text-amber-700">
+                  {t("form.channels.noneSelected")}
+                </p>
+              )}
+          </fieldset>
 
           {/* Status */}
           <div className="space-y-2">

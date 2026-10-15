@@ -61,6 +61,7 @@ export default function EditProductPage() {
         name: data.name,
         description: data.description?.trim() || undefined,
         status: data.status,
+        channelIds: data.channelIds,
       };
 
       await productsApi.update(product.id, payload);

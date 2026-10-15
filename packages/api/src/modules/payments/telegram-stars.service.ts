@@ -280,6 +280,14 @@ export class TelegramStarsService {
       );
     }
 
+    // Never take a payment for an offer that grants access to nothing
+    const linkedChannels = await this.prisma.productChannel.count({
+      where: { productId: plan.productId, channel: { isActive: true } },
+    });
+    if (linkedChannels === 0) {
+      throw new BadRequestException("Cette offre n'est reliée à aucun canal");
+    }
+
     const telegramUserId = customer.telegramUserId.trim();
 
     const existingCustomer = await this.prisma.customer.findFirst({

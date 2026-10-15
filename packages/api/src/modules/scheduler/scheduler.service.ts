@@ -110,12 +110,21 @@ export class SchedulerService {
   }
 
   /**
-   * Retry Telegram access grants whose job never reached the queue
+   * Make sure paying subscribers get their channel accesses: create accesses
+   * missing because a channel was attached to the offer after the purchase,
+   * then retry Telegram grants whose job never reached the queue.
    * Runs every 15 minutes
    */
   @Cron('*/15 * * * *')
-  async retryPendingGrants(): Promise<void> {
+  async reconcileAccessGrants(): Promise<void> {
     try {
+      const granted = await this.channelAccessService.grantMissingAccesses();
+      if (granted > 0) {
+        this.logger.log(
+          `Granted missing accesses for ${granted} paying subscription(s)`,
+        );
+      }
+
       const enqueued =
         await this.channelAccessService.retryStalePendingGrants();
       if (enqueued > 0) {
@@ -123,7 +132,7 @@ export class SchedulerService {
       }
     } catch (error) {
       this.logger.error(
-        `Failed to retry pending access grants: ${(error as Error).message}`,
+        `Failed to reconcile access grants: ${(error as Error).message}`,
       );
     }
   }

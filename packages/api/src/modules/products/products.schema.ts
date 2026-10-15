@@ -9,6 +9,8 @@ export const createProductSchema = z.object({
   description: z.string().max(2048).optional(),
   status: z.nativeEnum(ProductStatus).optional(),
   metadata: metadataSchema,
+  // Channels buyers of this offer get access to; replaces the whole set
+  channelIds: z.array(z.string().uuid()).max(50).optional(),
 });
 
 export type CreateProductDto = z.infer<typeof createProductSchema>;

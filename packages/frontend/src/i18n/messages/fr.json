@@ -543,6 +543,14 @@
         "label": "Description",
         "placeholder": "Décris ce que les abonnés auront (contenu, accès, fréquence…)."
       },
+      "channels": {
+        "label": "Canaux inclus",
+        "help": "Les acheteurs de cette offre recevront l'accès à ces canaux.",
+        "loading": "Chargement des canaux…",
+        "empty": "Aucun canal connecté : les acheteurs ne pourront pas payer cette offre tant qu'elle n'est reliée à aucun canal.",
+        "emptyLink": "Connecter un canal",
+        "noneSelected": "Sélectionne au moins un canal : sans canal, les acheteurs ne peuvent pas payer cette offre."
+      },
       "status": {
         "label": "Statut"
       },

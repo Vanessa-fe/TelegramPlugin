@@ -43,6 +43,9 @@ describe('BillingService', () => {
       create: jest.fn(),
       delete: jest.fn(),
     },
+    productChannel: {
+      count: jest.fn(),
+    },
   } as PrismaService;
 
   const mockStripe: any = {
@@ -74,6 +77,7 @@ describe('BillingService', () => {
       stripeAccountId: 'acct_connect_123',
     });
     mockPrisma.coupon.findUnique.mockResolvedValue(null);
+    mockPrisma.productChannel.count.mockResolvedValue(1);
     mockPrisma.customer.findFirst.mockResolvedValue(null);
     mockPrisma.customer.create.mockResolvedValue({
       id: 'cust_local_123',
@@ -252,6 +256,22 @@ describe('BillingService', () => {
       }),
       { stripeAccount: 'acct_creator_123' },
     );
+  });
+
+  it('refuses to take a payment for an offer linked to no channel', async () => {
+    mockPrisma.plan.findUnique.mockResolvedValue(buildPlan());
+    mockPrisma.productChannel.count.mockResolvedValue(0);
+
+    await expect(
+      service.createCheckoutSession({
+        planId: 'plan_123',
+        customer: {
+          telegramUsername: 'buyer',
+        },
+      }),
+    ).rejects.toThrow("Cette offre n'est reliée à aucun canal");
+    expect(mockPrisma.subscription.create).not.toHaveBeenCalled();
+    expect(mockStripe.checkout.sessions.create).not.toHaveBeenCalled();
   });
 
   it('blocks checkout when the connected Stripe account is not charge-enabled', async () => {

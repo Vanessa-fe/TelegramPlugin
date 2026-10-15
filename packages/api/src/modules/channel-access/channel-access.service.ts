@@ -13,9 +13,10 @@ import {
   PlanInterval,
   PaymentEventType,
   PaymentProvider,
+  Prisma,
   SubscriptionStatus,
 } from '@prisma/client';
-import type { ChannelAccess, Prisma } from '@prisma/client';
+import type { ChannelAccess } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessQueue } from './channel-access.queue';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -193,6 +194,7 @@ export class ChannelAccessService {
   async handlePaymentSuccess(
     subscriptionId: string,
     provider: $Enums.PaymentProvider,
+    options: { notifyPayment?: boolean } = {},
   ): Promise<void> {
     const subscription = await this.prisma.subscription.findUnique({
       where: { id: subscriptionId },
@@ -372,6 +374,10 @@ export class ChannelAccessService {
       );
     }
 
+    if (options.notifyPayment === false) {
+      return;
+    }
+
     // Send payment confirmation notification
     try {
       await this.notifications.sendPaymentConfirmation(
@@ -491,6 +497,59 @@ export class ChannelAccessService {
     }
 
     return { linkedCustomers, invitesQueued, tokenStatus };
+  }
+
+  /**
+   * Create the missing channel accesses of paying subscriptions, e.g. when a
+   * channel was attached to the offer after the purchase. Payment was already
+   * confirmed, so no new "payment confirmed" notification is sent.
+   */
+  async grantMissingAccesses(options?: {
+    productId?: string;
+    limit?: number;
+  }): Promise<number> {
+    const productFilter = options?.productId
+      ? Prisma.sql`AND pl."productId" = ${options.productId}`
+      : Prisma.empty;
+
+    const rows = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT DISTINCT s.id
+      FROM "Subscription" s
+      JOIN "Plan" pl ON pl.id = s."planId"
+      JOIN "ProductChannel" pc ON pc."productId" = pl."productId"
+      JOIN "Channel" c ON c.id = pc."channelId" AND c."isActive" = true
+      WHERE s.status IN ('ACTIVE', 'TRIALING')
+        ${productFilter}
+        AND NOT EXISTS (
+          SELECT 1 FROM "ChannelAccess" ca
+          WHERE ca."subscriptionId" = s.id AND ca."channelId" = pc."channelId"
+        )
+      LIMIT ${options?.limit ?? 50}
+    `;
+
+    let granted = 0;
+    for (const { id } of rows) {
+      try {
+        const lastEvent = await this.prisma.paymentEvent.findFirst({
+          where: { subscriptionId: id },
+          orderBy: { occurredAt: 'desc' },
+          select: { provider: true },
+        });
+        await this.handlePaymentSuccess(
+          id,
+          lastEvent?.provider ?? PaymentProvider.STRIPE,
+          { notifyPayment: false },
+        );
+        granted += 1;
+      } catch (error) {
+        this.logger.error(
+          `Failed to grant missing accesses for subscription ${id}`,
+          error as Error,
+        );
+      }
+    }
+
+    return granted;
   }
 
   /**

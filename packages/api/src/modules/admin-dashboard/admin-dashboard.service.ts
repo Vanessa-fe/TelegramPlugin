@@ -319,7 +319,9 @@ export class AdminDashboardService {
     });
 
     return failedPayments.map((event) => {
-      const payload = event.payload as InvoicePayload | null;
+      // Stripe events are stored whole: the invoice is under data.object
+      const stored = event.payload as StoredPaymentPayload | null;
+      const payload: InvoicePayload | null = stored?.data?.object ?? stored;
       const customer = event.subscription?.customer;
 
       return {

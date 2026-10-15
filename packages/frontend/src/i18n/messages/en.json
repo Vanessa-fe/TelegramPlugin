@@ -543,6 +543,14 @@
         "label": "Description",
         "placeholder": "Describe what subscribers get (content, access, frequency…)."
       },
+      "channels": {
+        "label": "Included channels",
+        "help": "Buyers of this offer get access to these channels.",
+        "loading": "Loading channels…",
+        "empty": "No channel connected: buyers can't pay for this offer until it is linked to a channel.",
+        "emptyLink": "Connect a channel",
+        "noneSelected": "Select at least one channel: without one, buyers can't pay for this offer."
+      },
       "status": {
         "label": "Status"
       },

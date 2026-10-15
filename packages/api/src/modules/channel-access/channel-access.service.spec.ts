@@ -47,6 +47,7 @@ describe('ChannelAccessService', () => {
             paymentEvent: {
               findFirst: jest.fn(),
             },
+            $queryRaw: jest.fn(),
             channelAccess: {
               create: jest.fn(),
               update: jest.fn(),
@@ -635,6 +636,57 @@ describe('ChannelAccessService', () => {
       ).resolves.not.toThrow();
 
       expect(prisma.channelAccess.updateMany).toHaveBeenCalled();
+    });
+  });
+
+  describe('grantMissingAccesses', () => {
+    it('should grant paying subscriptions without re-sending the payment confirmation', async () => {
+      prisma.$queryRaw.mockResolvedValue([{ id: 'sub-1' }] as any);
+      prisma.paymentEvent.findFirst.mockResolvedValue({
+        provider: PaymentProvider.STRIPE,
+      } as any);
+      const grant = jest
+        .spyOn(service, 'handlePaymentSuccess')
+        .mockResolvedValue(undefined);
+
+      const granted = await service.grantMissingAccesses({
+        productId: 'prod-1',
+      });
+
+      expect(grant).toHaveBeenCalledWith('sub-1', PaymentProvider.STRIPE, {
+        notifyPayment: false,
+      });
+      expect(granted).toBe(1);
+    });
+
+    it('should skip the payment confirmation when asked to', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        id: 'sub-1',
+        customerId: 'cust-1',
+        organizationId: 'org-1',
+        planId: 'plan-1',
+        customer: { id: 'cust-1' },
+        plan: {
+          id: 'plan-1',
+          product: {
+            id: 'prod-1',
+            channels: [
+              {
+                channelId: 'ch-1',
+                channel: { provider: $Enums.ChannelProvider.TELEGRAM },
+              },
+            ],
+          },
+        },
+        channelAccesses: [],
+      } as any);
+
+      await service.handlePaymentSuccess('sub-1', PaymentProvider.STRIPE, {
+        notifyPayment: false,
+      });
+
+      expect(queue.enqueueGrantAccess).toHaveBeenCalled();
+      expect(notifications.sendPaymentConfirmation).not.toHaveBeenCalled();
     });
   });
 
