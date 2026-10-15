@@ -31,6 +31,8 @@ interface FailedPayment {
   organizationName: string;
   subscriptionId: string | null;
   invoiceUrl: string | null;
+  // PLATFORM: the creator's own Sublynk plan; BUYER: a creator's buyer
+  source: "PLATFORM" | "BUYER";
 }
 
 type PaymentKind = "ONE_TIME" | "NEW_SUBSCRIPTION" | "RENEWAL";
@@ -479,6 +481,9 @@ export default function PaymentsPage() {
                       Montant
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
+                      Origine
+                    </th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
                       Client
                     </th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
@@ -507,6 +512,17 @@ export default function PaymentsPage() {
                         <span className="text-sm font-semibold text-red-600">
                           {formatCurrency(payment.amount, payment.currency)}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {payment.source === "PLATFORM" ? (
+                          <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                            Abonnement Sublynk
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
+                            Paiement d&apos;un acheteur
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
@@ -546,20 +562,23 @@ export default function PaymentsPage() {
                               Facture
                             </a>
                           )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSuspend(payment)}
-                            disabled={actionLoading === payment.id}
-                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                          >
-                            {actionLoading === payment.id ? (
-                              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
-                            ) : (
-                              <Ban className="h-3.5 w-3.5" />
-                            )}
-                            <span className="ml-1">Suspendre</span>
-                          </Button>
+                          {/* A buyer's failed payment is not the creator's fault */}
+                          {payment.source === "PLATFORM" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSuspend(payment)}
+                              disabled={actionLoading === payment.id}
+                              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                            >
+                              {actionLoading === payment.id ? (
+                                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-red-600 border-t-transparent" />
+                              ) : (
+                                <Ban className="h-3.5 w-3.5" />
+                              )}
+                              <span className="ml-1">Suspendre</span>
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

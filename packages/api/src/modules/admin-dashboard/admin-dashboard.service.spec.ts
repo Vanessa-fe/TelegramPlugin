@@ -280,3 +280,94 @@ describe('AdminDashboardService payment history', () => {
     expect(result).toHaveLength(3);
   });
 });
+
+describe('AdminDashboardService unpaid list', () => {
+  const failedEvent = (
+    id: string,
+    invoice: Record<string, unknown>,
+    account?: string,
+  ) => ({
+    id,
+    type: PaymentEventType.INVOICE_PAYMENT_FAILED,
+    occurredAt: new Date('2026-10-08T20:33:47.000Z'),
+    organizationId: 'org-1',
+    organization: { name: 'cote andcash' },
+    subscriptionId: null,
+    subscription: null,
+    payload: { account, data: { object: invoice } },
+  });
+
+  const buildService = (events: unknown[], paidInvoiceIds: string[]) => {
+    const prisma = {
+      paymentEvent: { findMany: jest.fn().mockResolvedValue(events) },
+      $queryRaw: jest
+        .fn()
+        .mockResolvedValue(
+          paidInvoiceIds.map((invoiceId) => ({ invoice_id: invoiceId })),
+        ),
+    } as unknown as PrismaService;
+    const config = {
+      get: jest.fn().mockReturnValue(undefined),
+    } as unknown as ConfigService;
+    return new AdminDashboardService(prisma, config);
+  };
+
+  it('hides card declines at checkout and invoices paid afterwards', async () => {
+    const service = buildService(
+      [
+        failedEvent(
+          'checkout-decline',
+          { id: 'in_1', billing_reason: 'subscription_create', amount_due: 5000 },
+          'acct_creator',
+        ),
+        failedEvent(
+          'paid-later',
+          { id: 'in_2', billing_reason: 'subscription_cycle', amount_due: 5000 },
+          'acct_creator',
+        ),
+        failedEvent(
+          'still-unpaid',
+          {
+            id: 'in_3',
+            billing_reason: 'subscription_cycle',
+            amount_due: 5000,
+            currency: 'eur',
+            customer_email: 'buyer@example.com',
+          },
+          'acct_creator',
+        ),
+      ],
+      ['in_2'],
+    );
+
+    const result = await service.getFailedPaymentsList(30);
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        id: 'still-unpaid',
+        amount: 5000,
+        customerEmail: 'buyer@example.com',
+        source: 'BUYER',
+      }),
+    ]);
+  });
+
+  it("flags the creator's own Sublynk plan as a platform unpaid", async () => {
+    const service = buildService(
+      [
+        failedEvent('platform', {
+          id: 'in_9',
+          billing_reason: 'subscription_cycle',
+          amount_due: 2900,
+        }),
+      ],
+      [],
+    );
+
+    const [item] = await service.getFailedPaymentsList(30);
+
+    expect(item).toEqual(
+      expect.objectContaining({ source: 'PLATFORM', amount: 2900 }),
+    );
+  });
+});

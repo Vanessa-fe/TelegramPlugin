@@ -30,6 +30,7 @@ interface InvoicePayload {
 }
 
 interface StoredPaymentObject extends InvoicePayload {
+  id?: string;
   mode?: string;
   payment_status?: string;
   amount_total?: number;
@@ -42,8 +43,16 @@ interface StoredPaymentObject extends InvoicePayload {
 }
 
 interface StoredPaymentPayload extends StoredPaymentObject {
+  // Set on events of creators' connected accounts (their buyers' payments)
+  account?: string | null;
   data?: { object?: StoredPaymentObject };
 }
+
+/**
+ * PLATFORM: the creator's own Sublynk plan is unpaid.
+ * BUYER: one of the creator's buyers failed to pay the creator.
+ */
+export type FailedPaymentSource = 'PLATFORM' | 'BUYER';
 
 export interface FailedPaymentItem {
   id: string;
@@ -56,6 +65,7 @@ export interface FailedPaymentItem {
   organizationName: string;
   subscriptionId: string | null;
   invoiceUrl: string | null;
+  source: FailedPaymentSource;
 }
 
 export type AdminPaymentKind = 'ONE_TIME' | 'NEW_SUBSCRIPTION' | 'RENEWAL';
@@ -223,13 +233,8 @@ export class AdminDashboardService {
     // Revenue this week - calculate from INVOICE_PAID events
     const revenueThisWeek = await this.calculateRevenueThisWeek(oneWeekAgo);
 
-    // Failed payments - count payment events with failed invoice type
-    const failedPayments = await this.prisma.paymentEvent.count({
-      where: {
-        type: 'INVOICE_PAYMENT_FAILED',
-        createdAt: { gte: oneWeekAgo },
-      },
-    });
+    // Failed payments - same definition as the unpaid list (still unpaid)
+    const failedPayments = (await this.getFailedPaymentsList(7)).length;
 
     // VIP invitations expiring soon (within 5 days)
     const fiveDaysFromNow = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
@@ -296,8 +301,10 @@ export class AdminDashboardService {
   }
 
   /**
-   * Get list of failed payment events with customer and organization details.
-   * Returns recent failed payments (last 30 days by default).
+   * Unpaid invoices with customer and organization details (last 30 days by
+   * default). Leaves out failures that are not actual unpaid invoices: a card
+   * declined on the checkout page (the buyer retries right there) and any
+   * invoice that was paid afterwards.
    */
   async getFailedPaymentsList(days = 30): Promise<FailedPaymentItem[]> {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -318,25 +325,57 @@ export class AdminDashboardService {
       orderBy: { occurredAt: 'desc' },
     });
 
-    return failedPayments.map((event) => {
-      // Stripe events are stored whole: the invoice is under data.object
-      const stored = event.payload as StoredPaymentPayload | null;
-      const payload: InvoicePayload | null = stored?.data?.object ?? stored;
-      const customer = event.subscription?.customer;
+    // Stripe events are stored whole: the invoice is under data.object
+    const unpaid = failedPayments
+      .map((event) => {
+        const stored = event.payload as StoredPaymentPayload | null;
+        const invoice: StoredPaymentObject | null =
+          stored?.data?.object ?? stored;
+        return { event, stored, invoice };
+      })
+      .filter(({ invoice }) => invoice?.billing_reason !== 'subscription_create');
 
-      return {
-        id: event.id,
-        occurredAt: event.occurredAt,
-        amount: payload?.amount_due ?? 0,
-        currency: payload?.currency ?? 'eur',
-        customerEmail: customer?.email ?? payload?.customer_email ?? null,
-        customerName: customer?.displayName ?? payload?.customer_name ?? null,
-        organizationId: event.organizationId,
-        organizationName: event.organization.name,
-        subscriptionId: event.subscriptionId,
-        invoiceUrl: payload?.hosted_invoice_url ?? null,
-      };
-    });
+    const paidInvoiceIds = await this.findPaidInvoiceIds(
+      unpaid
+        .map(({ invoice }) => invoice?.id)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    return unpaid
+      .filter(({ invoice }) => !invoice?.id || !paidInvoiceIds.has(invoice.id))
+      .map(({ event, stored, invoice }) => {
+        const customer = event.subscription?.customer;
+
+        return {
+          id: event.id,
+          occurredAt: event.occurredAt,
+          amount: invoice?.amount_due ?? 0,
+          currency: invoice?.currency ?? 'eur',
+          customerEmail: customer?.email ?? invoice?.customer_email ?? null,
+          customerName:
+            customer?.displayName ?? invoice?.customer_name ?? null,
+          organizationId: event.organizationId,
+          organizationName: event.organization.name,
+          subscriptionId: event.subscriptionId,
+          invoiceUrl: invoice?.hosted_invoice_url ?? null,
+          source: stored?.account ? 'BUYER' : 'PLATFORM',
+        };
+      });
+  }
+
+  /** Stripe invoice ids, among the given ones, that have a paid event */
+  private async findPaidInvoiceIds(invoiceIds: string[]): Promise<Set<string>> {
+    if (invoiceIds.length === 0) {
+      return new Set();
+    }
+
+    const rows = await this.prisma.$queryRaw<{ invoice_id: string }[]>`
+      SELECT DISTINCT payload->'data'->'object'->>'id' AS invoice_id
+      FROM "PaymentEvent"
+      WHERE type = 'INVOICE_PAID'
+        AND payload->'data'->'object'->>'id' = ANY(${invoiceIds})
+    `;
+    return new Set(rows.map((row) => row.invoice_id));
   }
 
   /**
