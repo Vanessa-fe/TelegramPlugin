@@ -16,11 +16,7 @@ import { MetricsService } from '../metrics/metrics.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
-import {
-  upsertBrevoContact,
-  removeBrevoContactFromList,
-  BREVO_LIST_IDS,
-} from '../../common/brevo-sync';
+import { invoiceSubscription } from '../../common/stripe-invoice';
 
 export type StripeRawBodyRequest = {
   rawBody?: Buffer | string;
@@ -300,8 +296,7 @@ export class StripeWebhookService {
           typeof charge.payment_intent === 'string'
             ? charge.payment_intent
             : undefined,
-        invoiceId:
-          typeof charge.invoice === 'string' ? charge.invoice : undefined,
+        invoiceId: await this.chargeInvoiceId(charge, event.account),
       };
 
       // If invoice is available, try to get subscription ID from it
@@ -322,6 +317,15 @@ export class StripeWebhookService {
           );
         }
       }
+    }
+
+    // The invoice usually arrives before checkout.session.completed: keep the
+    // buyer's email first so the worker can email the invite link
+    if (event.type === 'invoice.payment_succeeded' && context.subscriptionId) {
+      await this.storeCustomerEmail(
+        context.subscriptionId,
+        event.data.object.customer_email,
+      );
     }
 
     await this.applyDomainSideEffects(mappedType, context, chargeData, event);
@@ -431,18 +435,27 @@ export class StripeWebhookService {
       case 'invoice.payment_succeeded':
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
-        const subscriptionId =
-          typeof invoice.subscription === 'string'
-            ? invoice.subscription
-            : undefined;
-        if (!subscriptionId) {
+        const { stripeSubscriptionId, metadata } = invoiceSubscription(invoice);
+        if (!stripeSubscriptionId) {
           const metadataContext = await this.contextFromMetadata(
             invoice.metadata ?? undefined,
           );
           return metadataContext ?? accountContext;
         }
-        const context = await this.contextFromSubscription(subscriptionId);
-        return context ?? accountContext;
+        const context =
+          await this.contextFromSubscription(stripeSubscriptionId);
+        if (context) {
+          return context;
+        }
+        // The first invoice usually arrives before checkout.session.completed
+        // has stored the Stripe subscription id: use the metadata copied from
+        // the checkout onto the subscription.
+        const linkedContext = await this.linkSubscriptionFromMetadata(
+          metadata,
+          stripeSubscriptionId,
+          accountContext,
+        );
+        return linkedContext ?? accountContext;
       }
       case 'charge.refunded': {
         const charge = event.data.object;
@@ -490,8 +503,7 @@ export class StripeWebhookService {
         }
 
         // 3. Try invoice -> subscription path (for recurring subscriptions)
-        const invoiceId =
-          typeof charge.invoice === 'string' ? charge.invoice : undefined;
+        const invoiceId = await this.chargeInvoiceId(charge, event.account);
         if (invoiceId) {
           try {
             const invoice = await this.stripe.invoices.retrieve(
@@ -528,6 +540,115 @@ export class StripeWebhookService {
       }
       default:
         return accountContext;
+    }
+  }
+
+  /**
+   * Link a Stripe subscription to our subscription through the checkout
+   * metadata. The connected account can edit that metadata, so only a
+   * subscription of the organization owning the account is trusted.
+   */
+  private async linkSubscriptionFromMetadata(
+    metadata: Stripe.Metadata | undefined,
+    stripeSubscriptionId: string,
+    accountContext: EventContext | null,
+  ): Promise<EventContext | null> {
+    const metadataContext = await this.contextFromMetadata(metadata);
+    if (!metadataContext?.subscriptionId || !accountContext) {
+      return null;
+    }
+
+    const subscription = await this.prisma.subscription.findFirst({
+      where: {
+        id: metadataContext.subscriptionId,
+        organizationId: accountContext.organizationId,
+      },
+      select: { id: true, externalId: true },
+    });
+    if (!subscription) {
+      this.logger.warn(
+        `Metadata of Stripe subscription ${stripeSubscriptionId} points to a subscription outside organization ${accountContext.organizationId}, ignoring`,
+      );
+      return null;
+    }
+
+    if (
+      subscription.externalId &&
+      subscription.externalId !== stripeSubscriptionId
+    ) {
+      this.logger.warn(
+        `Subscription ${subscription.id} is already linked to ${subscription.externalId}, not to ${stripeSubscriptionId}`,
+      );
+      return null;
+    }
+
+    if (!subscription.externalId) {
+      await this.prisma.subscription.update({
+        where: { id: subscription.id },
+        data: { externalId: stripeSubscriptionId },
+      });
+    }
+
+    return {
+      organizationId: accountContext.organizationId,
+      subscriptionId: subscription.id,
+    };
+  }
+
+  /**
+   * charge.invoice was removed from webhook payloads in Stripe API
+   * 2025-03-31; the SDK (pinned to 2024-06-20) still exposes it on the
+   * PaymentIntent.
+   */
+  private async chargeInvoiceId(
+    charge: Stripe.Charge,
+    stripeAccount?: string | null,
+  ): Promise<string | undefined> {
+    if (typeof charge.invoice === 'string') {
+      return charge.invoice;
+    }
+    if (typeof charge.payment_intent !== 'string') {
+      return undefined;
+    }
+
+    try {
+      const paymentIntent = await this.stripe.paymentIntents.retrieve(
+        charge.payment_intent,
+        undefined,
+        stripeAccount ? { stripeAccount } : undefined,
+      );
+      return typeof paymentIntent.invoice === 'string'
+        ? paymentIntent.invoice
+        : (paymentIntent.invoice?.id ?? undefined);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to retrieve PaymentIntent ${charge.payment_intent} for invoice lookup: ${(error as Error).message}`,
+      );
+      return undefined;
+    }
+  }
+
+  private async storeCustomerEmail(
+    subscriptionId: string,
+    email: string | null | undefined,
+  ): Promise<void> {
+    const normalized = email?.trim().toLowerCase();
+    if (!normalized) {
+      return;
+    }
+
+    try {
+      await this.prisma.customer.updateMany({
+        where: {
+          email: null,
+          subscriptions: { some: { id: subscriptionId } },
+        },
+        data: { email: normalized },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Failed to store payment email for subscription ${subscriptionId}: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -648,11 +769,11 @@ export class StripeWebhookService {
       case 'invoice.payment_succeeded':
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
-        organizationId = invoice.metadata?.organizationId;
-        stripeSubscriptionId =
-          typeof invoice.subscription === 'string'
-            ? invoice.subscription
-            : invoice.subscription?.id;
+        const details = invoiceSubscription(invoice);
+        // Subscription invoices carry the subscription's metadata, not their own
+        organizationId =
+          invoice.metadata?.organizationId ?? details.metadata?.organizationId;
+        stripeSubscriptionId = details.stripeSubscriptionId;
         break;
       }
       default:
@@ -717,22 +838,10 @@ export class StripeWebhookService {
 
     // The storefront form makes email optional but Stripe Checkout always
     // collects one: keep it so the worker can email the invite link.
-    const checkoutEmail = session.customer_details?.email?.trim().toLowerCase();
-    if (checkoutEmail) {
-      try {
-        await this.prisma.customer.updateMany({
-          where: {
-            email: null,
-            subscriptions: { some: { id: subscriptionId } },
-          },
-          data: { email: checkoutEmail },
-        });
-      } catch (error) {
-        this.logger.warn(
-          `Failed to store checkout email for subscription ${subscriptionId}: ${(error as Error).message}`,
-        );
-      }
-    }
+    await this.storeCustomerEmail(
+      subscriptionId,
+      session.customer_details?.email,
+    );
 
     // Try to resolve payment IDs (may fail for subscription mode if payment not yet confirmed)
     const resolvedIds = await this.resolveStripePaymentIds(session, stripeAccount);
@@ -918,10 +1027,7 @@ export class StripeWebhookService {
 
       // Extract invoice ID and subscription ID from the event
       const invoiceId = invoice.id;
-      const stripeSubscriptionId =
-        typeof invoice.subscription === 'string'
-          ? invoice.subscription
-          : invoice.subscription?.id;
+      const { stripeSubscriptionId } = invoiceSubscription(invoice);
 
       // Skip if all IDs are already set
       if (
@@ -936,15 +1042,33 @@ export class StripeWebhookService {
         return;
       }
 
-      // Get payment_intent from invoice
-      const paymentIntentId =
-        typeof invoice.payment_intent === 'string'
-          ? invoice.payment_intent
-          : invoice.payment_intent?.id;
-
       // Retrieve PaymentIntent to get latest_charge (if we have payment_intent)
       const stripeOpts = stripeAccount ? { stripeAccount } : undefined;
       let chargeId: string | null = null;
+
+      // Get payment_intent from invoice. Webhook payloads since Stripe API
+      // 2025-03-31 no longer carry it; the SDK's pinned version still does.
+      let paymentIntentId =
+        typeof invoice.payment_intent === 'string'
+          ? invoice.payment_intent
+          : invoice.payment_intent?.id;
+      if (!paymentIntentId) {
+        try {
+          const fullInvoice = await this.stripe.invoices.retrieve(
+            invoice.id,
+            undefined,
+            stripeOpts,
+          );
+          paymentIntentId =
+            typeof fullInvoice.payment_intent === 'string'
+              ? fullInvoice.payment_intent
+              : fullInvoice.payment_intent?.id;
+        } catch (error) {
+          this.logger.warn(
+            `Failed to retrieve invoice ${invoice.id} for backfill: ${(error as Error).message}`,
+          );
+        }
+      }
 
       if (paymentIntentId) {
         try {
@@ -1266,6 +1390,18 @@ export class StripeWebhookService {
       return;
     }
 
+    // A card declined on the checkout page is retried right there by the
+    // buyer: no past-due state or "payment failed" email for it
+    if (
+      stripeEvent?.type === 'invoice.payment_failed' &&
+      stripeEvent.data.object.billing_reason === 'subscription_create'
+    ) {
+      this.logger.debug(
+        `Ignoring checkout payment attempt failure for subscription ${context.subscriptionId}`,
+      );
+      return;
+    }
+
     const statusUpdate = this.subscriptionStatusForEvent(
       eventType,
       stripeEvent,
@@ -1274,7 +1410,15 @@ export class StripeWebhookService {
     if (statusUpdate) {
       await this.prisma.subscription.update({
         where: { id: context.subscriptionId },
-        data: { status: statusUpdate },
+        data: {
+          status: statusUpdate,
+          // A paid invoice ends any grace period, so the next failure starts
+          // a fresh one (and notifies the buyer again)
+          ...(eventType === PaymentEventType.INVOICE_PAID && {
+            graceUntil: null,
+            lastPaymentFailedAt: null,
+          }),
+        },
       });
     }
 
@@ -1287,34 +1431,12 @@ export class StripeWebhookService {
           await this.channelAccessService.handlePaymentSuccess(
             context.subscriptionId,
             PaymentProvider.STRIPE,
+            { notifyPayment: this.confirmsPayment(stripeEvent) },
           );
         } else {
           this.logger.warn(
             `Stripe event ${stripeEvent?.id ?? 'unknown'} did not prove a paid or trialing state; access grant skipped`,
           );
-        }
-
-        // Sync to Brevo: remove from unpaid list (INVOICE_PAID only)
-        if (eventType === PaymentEventType.INVOICE_PAID) {
-          try {
-            const subscription = await this.prisma.subscription.findUnique({
-              where: { id: context.subscriptionId },
-              include: {
-                organization: { select: { billingEmail: true } },
-              },
-            });
-            if (subscription?.organization?.billingEmail) {
-              await removeBrevoContactFromList(
-                subscription.organization.billingEmail,
-                BREVO_LIST_IDS.IMPAYE_EN_COURS,
-              );
-            }
-          } catch (error) {
-            this.logger.error(
-              `Failed to sync payment success to Brevo for subscription ${context.subscriptionId}`,
-              error,
-            );
-          }
         }
         break;
 
@@ -1330,26 +1452,6 @@ export class StripeWebhookService {
           context.subscriptionId,
           'payment_failed',
         );
-
-        // Sync to Brevo: add to unpaid list
-        try {
-          const subscription = await this.prisma.subscription.findUnique({
-            where: { id: context.subscriptionId },
-            include: {
-              organization: { select: { billingEmail: true } },
-            },
-          });
-          if (subscription?.organization?.billingEmail) {
-            await upsertBrevoContact(subscription.organization.billingEmail, {
-              listIds: [BREVO_LIST_IDS.IMPAYE_EN_COURS],
-            });
-          }
-        } catch (error) {
-          this.logger.error(
-            `Failed to sync payment failure to Brevo for subscription ${context.subscriptionId}`,
-            error,
-          );
-        }
         break;
 
       default:
@@ -1464,6 +1566,26 @@ export class StripeWebhookService {
         return SubscriptionStatus.EXPIRED;
       default:
         return null;
+    }
+  }
+
+  /**
+   * One "payment confirmed" message per actual payment: the invoice confirms
+   * subscription payments (first one and renewals), the checkout session
+   * confirms one-time purchases. Subscription status events and trials
+   * (nothing charged) don't.
+   */
+  private confirmsPayment(event?: Stripe.Event): boolean {
+    switch (event?.type) {
+      case 'invoice.payment_succeeded':
+        return (event.data.object.amount_paid ?? 0) > 0;
+      case 'checkout.session.completed':
+        return (
+          event.data.object.mode === 'payment' &&
+          event.data.object.payment_status === 'paid'
+        );
+      default:
+        return false;
     }
   }
 

@@ -95,6 +95,7 @@ describe('StripeWebhookService', () => {
             },
             subscription: {
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
               update: jest.fn(),
             },
             customer: {
@@ -607,9 +608,11 @@ describe('StripeWebhookService', () => {
     it('should grant access on checkout.session.completed', async () => {
       await setupEventWithSubscription('checkout.session.completed');
 
+      // Subscription checkout: the paid invoice sends the confirmation
       expect(channelAccessService.handlePaymentSuccess).toHaveBeenCalledWith(
         'sub-uuid-123',
         PaymentProvider.STRIPE,
+        { notifyPayment: false },
       );
       expect(prisma.subscription.update).toHaveBeenCalledWith({
         where: { id: 'sub-uuid-123' },
@@ -637,6 +640,7 @@ describe('StripeWebhookService', () => {
       expect(channelAccessService.handlePaymentSuccess).toHaveBeenCalledWith(
         'sub-uuid-123',
         PaymentProvider.STRIPE,
+        { notifyPayment: false },
       );
       expect(prisma.subscription.update).toHaveBeenCalledWith({
         where: { id: 'sub-uuid-123' },
@@ -645,16 +649,50 @@ describe('StripeWebhookService', () => {
     });
 
     it('should grant access on invoice.payment_succeeded', async () => {
-      await setupEventWithSubscription('invoice.payment_succeeded');
+      await setupEventWithSubscription(
+        'invoice.payment_succeeded',
+        'sub-uuid-123',
+        { amount_paid: 5000 },
+      );
 
       expect(channelAccessService.handlePaymentSuccess).toHaveBeenCalledWith(
         'sub-uuid-123',
         PaymentProvider.STRIPE,
+        { notifyPayment: true },
       );
+      // A paid invoice ends any grace period
       expect(prisma.subscription.update).toHaveBeenCalledWith({
         where: { id: 'sub-uuid-123' },
-        data: { status: SubscriptionStatus.ACTIVE },
+        data: {
+          status: SubscriptionStatus.ACTIVE,
+          graceUntil: null,
+          lastPaymentFailedAt: null,
+        },
       });
+    });
+
+    it('should ignore a card declined during the checkout itself', async () => {
+      await setupEventWithSubscription(
+        'invoice.payment_failed',
+        'sub-uuid-123',
+        { billing_reason: 'subscription_create' },
+      );
+
+      expect(channelAccessService.handlePaymentFailure).not.toHaveBeenCalled();
+      expect(prisma.subscription.update).not.toHaveBeenCalled();
+    });
+
+    it('should start the grace period when a renewal payment fails', async () => {
+      await setupEventWithSubscription(
+        'invoice.payment_failed',
+        'sub-uuid-123',
+        { billing_reason: 'subscription_cycle' },
+      );
+
+      expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledWith(
+        'sub-uuid-123',
+        'payment_failed',
+      );
     });
 
     it('should not grant access for an unpaid completed checkout', async () => {
@@ -771,6 +809,125 @@ describe('StripeWebhookService', () => {
 
       expect(channelAccessService.handlePaymentSuccess).not.toHaveBeenCalled();
       expect(prisma.subscription.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Invoices in webhook API 2025-09-30.clover', () => {
+    const internalSubscriptionId = '11111111-1111-4111-8111-111111111111';
+
+    // Clover payloads: no invoice.subscription, the link is under parent
+    const cloverInvoiceEvent = (
+      metadata: Record<string, string>,
+    ): Stripe.Event =>
+      ({
+        id: 'evt_clover_invoice',
+        type: 'invoice.payment_succeeded',
+        api_version: '2025-09-30.clover',
+        account: 'acct_123',
+        created: 1234567890,
+        data: {
+          object: {
+            id: 'in_clover',
+            status: 'paid',
+            amount_paid: 5000,
+            billing_reason: 'subscription_create',
+            customer_email: 'Buyer@Example.com',
+            parent: {
+              type: 'subscription_details',
+              subscription_details: {
+                subscription: 'sub_stripe_new',
+                metadata,
+              },
+            },
+          },
+        },
+      }) as unknown as Stripe.Event;
+
+    beforeEach(() => {
+      prisma.organization.findFirst.mockResolvedValue({ id: 'org-123' } as any);
+      // checkout.session.completed not processed yet: Stripe id unknown
+      prisma.subscription.findUnique.mockResolvedValue(null);
+      prisma.paymentEvent.upsert.mockResolvedValue({
+        id: 'pe-clover',
+        processedAt: null,
+      } as any);
+      prisma.paymentEvent.update.mockResolvedValue({} as any);
+      prisma.subscription.update.mockResolvedValue({} as any);
+    });
+
+    it('should link the first invoice through the subscription metadata', async () => {
+      prisma.subscription.findFirst.mockResolvedValue({
+        id: internalSubscriptionId,
+        externalId: null,
+      } as any);
+      mockStripe.webhooks.constructEvent.mockReturnValue(
+        cloverInvoiceEvent({
+          organizationId: 'org-123',
+          internalSubscriptionId,
+        }),
+      );
+
+      await service.handleWebhook('sig_clover', { rawBody: Buffer.from('{}') });
+
+      expect(prisma.subscription.findFirst).toHaveBeenCalledWith({
+        where: { id: internalSubscriptionId, organizationId: 'org-123' },
+        select: { id: true, externalId: true },
+      });
+      expect(prisma.subscription.update).toHaveBeenCalledWith({
+        where: { id: internalSubscriptionId },
+        data: { externalId: 'sub_stripe_new' },
+      });
+      expect(prisma.customer.updateMany).toHaveBeenCalledWith({
+        where: {
+          email: null,
+          subscriptions: { some: { id: internalSubscriptionId } },
+        },
+        data: { email: 'buyer@example.com' },
+      });
+      expect(channelAccessService.handlePaymentSuccess).toHaveBeenCalledWith(
+        internalSubscriptionId,
+        PaymentProvider.STRIPE,
+        { notifyPayment: true },
+      );
+    });
+
+    it('should not trust metadata pointing to another organization', async () => {
+      prisma.subscription.findFirst.mockResolvedValue(null);
+      mockStripe.webhooks.constructEvent.mockReturnValue(
+        cloverInvoiceEvent({
+          organizationId: 'org-other',
+          internalSubscriptionId,
+        }),
+      );
+
+      await service.handleWebhook('sig_clover', { rawBody: Buffer.from('{}') });
+
+      expect(channelAccessService.handlePaymentSuccess).not.toHaveBeenCalled();
+      expect(prisma.subscription.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({ data: { externalId: 'sub_stripe_new' } }),
+      );
+    });
+
+    it('should resolve renewals from the parent subscription id', async () => {
+      prisma.subscription.findUnique.mockResolvedValue({
+        id: internalSubscriptionId,
+        organizationId: 'org-123',
+      } as any);
+      mockStripe.webhooks.constructEvent.mockReturnValue(
+        cloverInvoiceEvent({}),
+      );
+
+      await service.handleWebhook('sig_clover', { rawBody: Buffer.from('{}') });
+
+      expect(prisma.subscription.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { externalId: 'sub_stripe_new' } }),
+      );
+      expect(prisma.subscription.findFirst).not.toHaveBeenCalled();
+      expect(channelAccessService.handlePaymentSuccess).toHaveBeenCalledWith(
+        internalSubscriptionId,
+        PaymentProvider.STRIPE,
+        { notifyPayment: true },
+      );
     });
   });
 

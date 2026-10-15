@@ -9,6 +9,12 @@ import { ConfigService } from '@nestjs/config';
 import { PlatformSubscriptionStatus } from '@prisma/client';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
+import { invoiceSubscription } from '../../common/stripe-invoice';
+import {
+  upsertBrevoContact,
+  removeBrevoContactFromList,
+  BREVO_LIST_IDS,
+} from '../../common/brevo-sync';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PostHogService } from '../posthog/posthog.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
@@ -748,10 +754,7 @@ export class PlatformSubscriptionService {
   private async handleInvoicePaymentSucceeded(
     invoice: Stripe.Invoice,
   ): Promise<void> {
-    const subscriptionId =
-      typeof invoice.subscription === 'string'
-        ? invoice.subscription
-        : invoice.subscription?.id;
+    const subscriptionId = invoiceSubscription(invoice).stripeSubscriptionId;
 
     if (!subscriptionId) {
       return;
@@ -777,15 +780,45 @@ export class PlatformSubscriptionService {
 
       await this.updateSaasActive(platformSub.organizationId);
     }
+
+    await this.syncUnpaidBrevoList(platformSub.organizationId, false);
+  }
+
+  /** Brevo "unpaid" list tracks creators behind on their Sublynk plan */
+  private async syncUnpaidBrevoList(
+    organizationId: string,
+    unpaid: boolean,
+  ): Promise<void> {
+    try {
+      const organization = await this.prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { billingEmail: true },
+      });
+      if (!organization?.billingEmail) {
+        return;
+      }
+      if (unpaid) {
+        await upsertBrevoContact(organization.billingEmail, {
+          listIds: [BREVO_LIST_IDS.IMPAYE_EN_COURS],
+        });
+      } else {
+        await removeBrevoContactFromList(
+          organization.billingEmail,
+          BREVO_LIST_IDS.IMPAYE_EN_COURS,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to sync unpaid status to Brevo for organization ${organizationId}`,
+        error as Error,
+      );
+    }
   }
 
   private async handleInvoicePaymentFailed(
     invoice: Stripe.Invoice,
   ): Promise<void> {
-    const subscriptionId =
-      typeof invoice.subscription === 'string'
-        ? invoice.subscription
-        : invoice.subscription?.id;
+    const subscriptionId = invoiceSubscription(invoice).stripeSubscriptionId;
 
     if (!subscriptionId) {
       return;
@@ -823,6 +856,8 @@ export class PlatformSubscriptionService {
 
     // Update saasActive to block access immediately
     await this.updateSaasActive(platformSub.organizationId);
+
+    await this.syncUnpaidBrevoList(platformSub.organizationId, true);
 
     this.logger.warn(
       `Platform subscription ${platformSub.id} payment failed (attempt ${failedAttempts + 1}), access blocked immediately`,

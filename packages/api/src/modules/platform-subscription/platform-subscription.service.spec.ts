@@ -5,6 +5,16 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PostHogService } from '../posthog/posthog.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 import { PlatformSubscriptionService } from './platform-subscription.service';
+import {
+  removeBrevoContactFromList,
+  upsertBrevoContact,
+} from '../../common/brevo-sync';
+
+jest.mock('../../common/brevo-sync', () => ({
+  upsertBrevoContact: jest.fn(),
+  removeBrevoContactFromList: jest.fn(),
+  BREVO_LIST_IDS: { IMPAYE_EN_COURS: 7, GROUP_PUBLISHED: 8 },
+}));
 
 jest.mock('@telegram-plugin/shared', () => ({
   initPostHog: jest.fn(() => null),
@@ -255,5 +265,73 @@ describe('PlatformSubscriptionService', () => {
       service.createCheckoutSession('org_123', 'growth'),
     ).rejects.toThrow('Un abonnement plateforme est déjà actif');
     expect(mockStripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  describe('invoice webhooks (API 2025-09-30.clover payload)', () => {
+    // Clover payloads: no invoice.subscription, the link is under parent
+    const cloverInvoice = (type: string) =>
+      ({
+        type,
+        data: {
+          object: {
+            id: 'in_platform',
+            parent: {
+              subscription_details: {
+                subscription: 'sub_platform_1',
+                metadata: { organizationId: 'org_123' },
+              },
+            },
+          },
+        },
+      }) as any;
+
+    beforeEach(() => {
+      jest.spyOn(service, 'updateSaasActive').mockResolvedValue(undefined);
+    });
+
+    it('marks the creator past due and flags them in Brevo', async () => {
+      mockPrisma.platformSubscription.findUnique.mockResolvedValue({
+        id: 'ps_1',
+        organizationId: 'org_123',
+        status: 'ACTIVE',
+        metadata: null,
+      });
+
+      await service.handleWebhookEvent(cloverInvoice('invoice.payment_failed'));
+
+      expect(mockPrisma.platformSubscription.findUnique).toHaveBeenCalledWith({
+        where: { stripeSubscriptionId: 'sub_platform_1' },
+      });
+      expect(mockPrisma.platformSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'PAST_DUE' }),
+        }),
+      );
+      expect(upsertBrevoContact).toHaveBeenCalledWith('billing@sublynk.test', {
+        listIds: [7],
+      });
+    });
+
+    it('reactivates the creator once the invoice is paid', async () => {
+      mockPrisma.platformSubscription.findUnique.mockResolvedValue({
+        id: 'ps_1',
+        organizationId: 'org_123',
+        status: 'PAST_DUE',
+        metadata: null,
+      });
+
+      await service.handleWebhookEvent(
+        cloverInvoice('invoice.payment_succeeded'),
+      );
+
+      expect(mockPrisma.platformSubscription.update).toHaveBeenCalledWith({
+        where: { id: 'ps_1' },
+        data: { status: 'ACTIVE', graceUntil: null },
+      });
+      expect(removeBrevoContactFromList).toHaveBeenCalledWith(
+        'billing@sublynk.test',
+        7,
+      );
+    });
   });
 });
