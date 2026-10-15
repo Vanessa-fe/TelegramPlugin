@@ -3,6 +3,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { ProductsService } from './products.service';
+import { upsertBrevoContact } from '../../common/brevo-sync';
+
+jest.mock('../../common/brevo-sync', () => ({
+  upsertBrevoContact: jest.fn(),
+}));
 
 jest.mock('@telegram-plugin/shared', () => ({
   queueNames: {},
@@ -20,20 +25,29 @@ describe('ProductsService channel links', () => {
   let channelAccess: { grantMissingAccesses: jest.Mock };
 
   beforeEach(() => {
+    jest.clearAllMocks();
     prisma = {
       channel: { count: jest.fn().mockResolvedValue(1) },
+      organization: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ billingEmail: 'creator@example.com' }),
+      },
       product: {
         create: jest.fn().mockResolvedValue({
           id: productId,
+          organizationId: orgId,
           channels: [{ channelId }],
         }),
         update: jest.fn().mockResolvedValue({
           id: productId,
+          organizationId: orgId,
           channels: [{ channelId }],
         }),
         findUniqueOrThrow: jest
           .fn()
           .mockResolvedValue({ organizationId: orgId }),
+        count: jest.fn().mockResolvedValue(1),
       },
       productChannel: {
         deleteMany: jest.fn(),
@@ -101,6 +115,39 @@ describe('ProductsService channel links', () => {
     expect(channelAccess.grantMissingAccesses).toHaveBeenCalledWith({
       productId,
     });
+  });
+
+  it('should flag the creator as ready to sell in Brevo', async () => {
+    await service.update(productId, { channelIds: [channelId] });
+
+    expect(prisma.product.count).toHaveBeenCalledWith({
+      where: {
+        organizationId: orgId,
+        status: 'ACTIVE',
+        channels: { some: { channel: { isActive: true } } },
+      },
+    });
+    expect(upsertBrevoContact).toHaveBeenCalledWith('creator@example.com', {
+      attributes: { OFFRE_PRETE: true },
+    });
+  });
+
+  it('should flag the creator as not ready when no active offer has a channel', async () => {
+    prisma.product.count.mockResolvedValue(0);
+
+    await service.create({ organizationId: orgId, name: 'Brouillon' });
+
+    expect(upsertBrevoContact).toHaveBeenCalledWith('creator@example.com', {
+      attributes: { OFFRE_PRETE: false },
+    });
+  });
+
+  it('should still save the offer when Brevo is unreachable', async () => {
+    (upsertBrevoContact as jest.Mock).mockRejectedValue(new Error('down'));
+
+    await expect(
+      service.update(productId, { name: 'Nouveau nom' }),
+    ).resolves.toEqual(expect.objectContaining({ id: productId }));
   });
 
   it('should leave channel links untouched when channelIds is omitted', async () => {
