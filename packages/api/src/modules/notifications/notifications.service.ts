@@ -515,6 +515,84 @@ export class NotificationsService implements OnModuleInit {
   }
 
   /**
+   * Notify admin when a creator opens a support ticket or replies to one
+   */
+  async sendAdminTicketNotification(data: {
+    ticketId: string;
+    subject: string;
+    priority: string;
+    organizationName: string;
+    authorEmail: string;
+    message: string;
+    isNewTicket: boolean;
+  }): Promise<void> {
+    if (!this.adminEmail) {
+      this.logger.warn(
+        'No ADMIN_NOTIFICATION_EMAIL configured, skipping ticket notification',
+      );
+      return;
+    }
+
+    const ticketUrl = this.buildFrontendUrl(`/admin/tickets/${data.ticketId}`);
+    const shortId = data.ticketId.slice(0, 8);
+    const urgentPrefix = data.priority === 'URGENT' ? '🚨 ' : '';
+    const subject = data.isNewTicket
+      ? `${urgentPrefix}🎫 Nouveau ticket #${shortId} — ${data.organizationName} : ${data.subject}`
+      : `${urgentPrefix}💬 Nouvelle réponse sur le ticket #${shortId} — ${data.organizationName}`;
+
+    const body = `
+      <h1>${data.isNewTicket ? '🎫 Nouveau ticket support' : '💬 Nouvelle réponse du créateur'}</h1>
+
+      <ul>
+        <li><strong>Sujet :</strong> ${this.escapeHtml(data.subject)}</li>
+        <li><strong>Organisation :</strong> ${this.escapeHtml(data.organizationName)}</li>
+        <li><strong>Auteur :</strong> ${this.escapeHtml(data.authorEmail)}</li>
+        <li><strong>Priorité :</strong> ${this.escapeHtml(data.priority)}</li>
+      </ul>
+
+      <blockquote style="border-left: 4px solid #e5e7eb; margin: 20px 0; padding: 8px 16px; white-space: pre-wrap;">${this.escapeHtml(data.message)}</blockquote>
+
+      ${ticketUrl ? `<p><a href="${ticketUrl}">Ouvrir le ticket</a></p>` : ''}
+    `;
+
+    await this.sendEmail(this.adminEmail, subject, body);
+  }
+
+  /**
+   * Notify the creator when support replies to their ticket
+   */
+  async sendTicketReplyNotification(data: {
+    to: string;
+    ticketId: string;
+    subject: string;
+    message: string;
+  }): Promise<void> {
+    const supportUrl = this.buildFrontendUrl('/dashboard/support');
+    const subject = `Réponse du support : ${data.subject}`;
+    const body = `
+      <h1>💬 Le support vous a répondu</h1>
+      <p>Une réponse a été ajoutée à votre ticket « ${this.escapeHtml(data.subject)} » :</p>
+
+      <blockquote style="border-left: 4px solid #e5e7eb; margin: 20px 0; padding: 8px 16px; white-space: pre-wrap;">${this.escapeHtml(data.message)}</blockquote>
+
+      ${supportUrl ? `<p><a href="${supportUrl}">Voir le ticket</a></p>` : ''}
+      <p>L'équipe Sublynk</p>
+    `;
+
+    await this.sendEmail(data.to, subject, body);
+  }
+
+  private buildFrontendUrl(path: string): string | null {
+    const baseUrl =
+      this.config.get<string>('FRONTEND_URL') ||
+      this.config.get<string>('NEXT_PUBLIC_SITE_URL');
+    if (!baseUrl) {
+      return null;
+    }
+    return `${baseUrl.split(',')[0].trim().replace(/\/+$/, '')}${path}`;
+  }
+
+  /**
    * Send weekly recap of platform subscription activity to admin
    */
   async sendAdminWeeklyRecapEmail(data: {

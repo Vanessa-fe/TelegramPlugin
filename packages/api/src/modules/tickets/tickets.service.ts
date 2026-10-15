@@ -1,9 +1,11 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import type {
   Ticket,
   TicketMessage,
@@ -49,7 +51,12 @@ export interface TicketListItem {
 
 @Injectable()
 export class TicketsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(TicketsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   private buildDisplayName(user: {
     firstName?: string | null;
@@ -85,7 +92,71 @@ export class TicketsService {
       },
     });
 
+    await this.notifyAdmin(ticket, authorId, dto.message, true);
+
     return ticket;
+  }
+
+  private async notifyAdmin(
+    ticket: Ticket,
+    authorId: string,
+    message: string,
+    isNewTicket: boolean,
+  ): Promise<void> {
+    try {
+      const [organization, author] = await Promise.all([
+        this.prisma.organization.findUnique({
+          where: { id: ticket.organizationId },
+          select: { name: true },
+        }),
+        this.prisma.user.findUnique({
+          where: { id: authorId },
+          select: { email: true },
+        }),
+      ]);
+
+      await this.notifications.sendAdminTicketNotification({
+        ticketId: ticket.id,
+        subject: ticket.subject,
+        priority: ticket.priority,
+        organizationName: organization?.name ?? ticket.organizationId,
+        authorEmail: author?.email ?? 'inconnu',
+        message,
+        isNewTicket,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to notify admin about ticket ${ticket.id}`,
+        error as Error,
+      );
+    }
+  }
+
+  private async notifyCreator(ticket: Ticket, message: string): Promise<void> {
+    try {
+      // The creator is the author of the ticket's first message
+      const firstMessage = await this.prisma.ticketMessage.findFirst({
+        where: { ticketId: ticket.id },
+        orderBy: { createdAt: 'asc' },
+        select: { author: { select: { email: true } } },
+      });
+      const to = firstMessage?.author.email;
+      if (!to) {
+        return;
+      }
+
+      await this.notifications.sendTicketReplyNotification({
+        to,
+        ticketId: ticket.id,
+        subject: ticket.subject,
+        message,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to notify creator about reply on ticket ${ticket.id}`,
+        error as Error,
+      );
+    }
   }
 
   /**
@@ -334,6 +405,13 @@ export class TicketsService {
         where: { id: ticketId },
         data: { status: 'OPEN', closedAt: null },
       });
+    }
+
+    // checkOrganization is only set on the creator endpoint
+    if (options?.checkOrganization) {
+      await this.notifyAdmin(ticket, authorId, dto.content, false);
+    } else if (!message.isInternal) {
+      await this.notifyCreator(ticket, dto.content);
     }
 
     return message;
