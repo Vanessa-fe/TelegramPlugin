@@ -5,6 +5,9 @@ import { SchedulerService } from './scheduler.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { DataExportsService } from '../data-exports/data-exports.service';
+import { OrganizationsService } from '../organizations/organizations.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { AdminDashboardService } from '../admin-dashboard/admin-dashboard.service';
 
 describe('SchedulerService', () => {
   let service: SchedulerService;
@@ -54,6 +57,9 @@ describe('SchedulerService', () => {
             get: jest.fn(),
           },
         },
+        { provide: OrganizationsService, useValue: {} },
+        { provide: NotificationsService, useValue: {} },
+        { provide: AdminDashboardService, useValue: {} },
       ],
     }).compile();
 
