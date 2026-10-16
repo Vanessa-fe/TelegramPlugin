@@ -4,6 +4,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { ChannelAccessQueue } from '../channel-access/channel-access.queue';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
+
+jest.mock('../../common/offer-readiness', () => ({
+  syncOfferReadyToBrevo: jest.fn(),
+}));
 
 jest.mock('@telegram-plugin/shared', () => ({
   queueNames: {
@@ -280,6 +285,22 @@ describe('OrganizationsService', () => {
           name: 'Updated Name',
         }),
       });
+      expect(syncOfferReadyToBrevo).not.toHaveBeenCalled();
+    });
+
+    it('should resync OFFRE_PRETE when saasActive is changed by hand', async () => {
+      mockPrismaService.organization.update.mockResolvedValue({
+        id: '1',
+        saasActive: false,
+      });
+
+      await service.update('1', { saasActive: false });
+
+      expect(syncOfferReadyToBrevo).toHaveBeenCalledWith(
+        mockPrismaService,
+        '1',
+        expect.anything(),
+      );
     });
 
     it('should update multiple fields', async () => {

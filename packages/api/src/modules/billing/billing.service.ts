@@ -18,6 +18,7 @@ import {
 } from '@prisma/client';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
 import type { CreateCheckoutDto } from './billing.schema';
 
 type StripeStatus = {
@@ -118,6 +119,9 @@ export class BillingService {
           where: { id: organization.id },
           data: { stripeAccountId: accountId },
         });
+
+        // Buyers can only pay once a Stripe account is linked
+        await syncOfferReadyToBrevo(this.prisma, organization.id, this.logger);
       }
 
       const link = await this.stripe.accountLinks.create({

@@ -9,6 +9,7 @@ import {
   SubscriptionStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { DataExportsService } from '../data-exports/data-exports.service';
 import { OrganizationsService } from '../organizations/organizations.service';
@@ -239,6 +240,10 @@ export class SchedulerService {
           saasActive: false,
         },
       });
+
+      for (const org of organizationsToDisable) {
+        await syncOfferReadyToBrevo(this.prisma, org.id, this.logger);
+      }
     }
 
     const subscriptionsToRevoke = await this.prisma.subscription.findMany({

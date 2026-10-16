@@ -21,6 +21,7 @@ import type {
   SetDiscordRoleDto,
 } from './channels.schema';
 import { upsertBrevoContact, BREVO_LIST_IDS } from '../../common/brevo-sync';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
 
 const VERIFICATION_CODE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
@@ -66,10 +67,19 @@ export class ChannelsService {
   }
 
   async update(id: string, dto: UpdateChannelDto) {
-    return this.prisma.channel.update({
+    const channel = await this.prisma.channel.update({
       where: { id },
       data: dto,
     });
+
+    // Deactivating a channel can leave its offers with nothing to sell
+    await syncOfferReadyToBrevo(
+      this.prisma,
+      channel.organizationId,
+      this.logger,
+    );
+
+    return channel;
   }
 
   async getAccesses(channelId: string) {
@@ -366,6 +376,10 @@ export class ChannelsService {
       data: { status: VerificationStatus.USED },
     });
 
+    // Set OFFRE_PRETE before joining the GROUP_PUBLISHED list, whose
+    // Brevo workflow reminds creators until their offer is ready
+    await syncOfferReadyToBrevo(this.prisma, organizationId, this.logger);
+
     // Sync to Brevo: channel published
     try {
       const organization = await this.prisma.organization.findUnique({
@@ -447,6 +461,10 @@ export class ChannelsService {
       where: { id: verificationId },
       data: { status: VerificationStatus.USED },
     });
+
+    // Set OFFRE_PRETE before joining the GROUP_PUBLISHED list, whose
+    // Brevo workflow reminds creators until their offer is ready
+    await syncOfferReadyToBrevo(this.prisma, organizationId, this.logger);
 
     // Sync to Brevo: channel published
     try {

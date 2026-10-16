@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -11,6 +12,7 @@ import {
   PlatformSubscriptionStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
 import {
   CreateOrganizationDto,
   UpdateOrganizationDto,
@@ -26,6 +28,8 @@ export type OrganizationListItem = Organization & {
 
 @Injectable()
 export class OrganizationsService {
+  private readonly logger = new Logger(OrganizationsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
@@ -100,10 +104,14 @@ export class OrganizationsService {
     };
 
     try {
-      return await this.prisma.organization.update({
+      const organization = await this.prisma.organization.update({
         where: { id },
         data: update,
       });
+      if (data.saasActive !== undefined) {
+        await syncOfferReadyToBrevo(this.prisma, id, this.logger);
+      }
+      return organization;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -144,6 +152,7 @@ export class OrganizationsService {
         suspendReason: reason ?? 'manual',
       },
     });
+    await syncOfferReadyToBrevo(this.prisma, id, this.logger);
 
     // 3. Revoke all active accesses
     const subscriptions = await this.prisma.subscription.findMany({

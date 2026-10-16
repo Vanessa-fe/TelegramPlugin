@@ -3,6 +3,11 @@ import { BadRequestException } from '@nestjs/common';
 import { PlanInterval, ProductStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BillingService } from './billing.service';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
+
+jest.mock('../../common/offer-readiness', () => ({
+  syncOfferReadyToBrevo: jest.fn(),
+}));
 
 describe('BillingService', () => {
   let service: BillingService;
@@ -310,6 +315,11 @@ describe('BillingService', () => {
       where: { id: 'org_123' },
       data: { stripeAccountId: 'acct_connect_123' },
     });
+    expect(syncOfferReadyToBrevo).toHaveBeenCalledWith(
+      mockPrisma,
+      'org_123',
+      expect.anything(),
+    );
     expect(mockStripe.accountLinks.create).toHaveBeenCalledWith({
       account: 'acct_connect_123',
       refresh_url: 'https://sublynk.test/dashboard/billing',

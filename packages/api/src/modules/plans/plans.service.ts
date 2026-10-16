@@ -1,11 +1,13 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PlanInterval, Prisma } from '@prisma/client';
 import type { Plan } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
 import type { CreatePlanDto, UpdatePlanDto } from './plans.schema';
 
 type PlanWithRelations = Prisma.PlanGetPayload<{
@@ -17,6 +19,8 @@ type PlanWithRelations = Prisma.PlanGetPayload<{
 
 @Injectable()
 export class PlansService {
+  private readonly logger = new Logger(PlansService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   findAll(params: {
@@ -59,17 +63,17 @@ export class PlansService {
   }
 
   async create(data: CreatePlanDto): Promise<Plan> {
-    const organizationCurrency = await this.getProductOrganizationCurrency(
+    const organization = await this.getProductOrganizationSettings(
       data.productId,
     );
 
-    if (!organizationCurrency) {
+    if (!organization) {
       throw new BadRequestException('Organisation introuvable pour ce produit');
     }
 
-    if (data.currency !== organizationCurrency) {
+    if (data.currency !== organization.currency) {
       throw new BadRequestException(
-        `La devise doit correspondre à celle de l'organisation (${organizationCurrency})`,
+        `La devise doit correspondre à celle de l'organisation (${organization.currency})`,
       );
     }
 
@@ -94,7 +98,12 @@ export class PlansService {
       },
     };
 
-    return this.prisma.plan.create({ data: payload });
+    const plan = await this.prisma.plan.create({ data: payload });
+
+    // A first formule (price) can make the offer payable
+    await syncOfferReadyToBrevo(this.prisma, organization.id, this.logger);
+
+    return plan;
   }
 
   async update(id: string, data: UpdatePlanDto): Promise<Plan> {
@@ -104,6 +113,7 @@ export class PlansService {
         productId: true,
         currency: true,
         interval: true,
+        product: { select: { organizationId: true } },
       },
     });
 
@@ -113,16 +123,16 @@ export class PlansService {
 
     const targetProductId = data.productId ?? existingPlan.productId;
     const targetCurrency = data.currency ?? existingPlan.currency;
-    const organizationCurrency =
-      await this.getProductOrganizationCurrency(targetProductId);
+    const organization =
+      await this.getProductOrganizationSettings(targetProductId);
 
-    if (!organizationCurrency) {
+    if (!organization) {
       throw new BadRequestException('Organisation introuvable pour ce produit');
     }
 
-    if (targetCurrency !== organizationCurrency) {
+    if (targetCurrency !== organization.currency) {
       throw new BadRequestException(
-        `La devise doit correspondre à celle de l'organisation (${organizationCurrency})`,
+        `La devise doit correspondre à celle de l'organisation (${organization.currency})`,
       );
     }
 
@@ -152,10 +162,22 @@ export class PlansService {
       }
     }
 
-    return this.prisma.plan.update({
+    const plan = await this.prisma.plan.update({
       where: { id },
       data: payload,
     });
+
+    // Deactivating or moving a formule can leave an offer without a price
+    await syncOfferReadyToBrevo(this.prisma, organization.id, this.logger);
+    if (existingPlan.product.organizationId !== organization.id) {
+      await syncOfferReadyToBrevo(
+        this.prisma,
+        existingPlan.product.organizationId,
+        this.logger,
+      );
+    }
+
+    return plan;
   }
 
   async getProductOrganization(productId: string): Promise<string | null> {
@@ -167,18 +189,18 @@ export class PlansService {
     return product?.organizationId ?? null;
   }
 
-  private async getProductOrganizationCurrency(
+  private async getProductOrganizationSettings(
     productId: string,
-  ): Promise<string | null> {
+  ): Promise<{ id: string; currency: string } | null> {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
       select: {
         organization: {
-          select: { currency: true },
+          select: { id: true, currency: true },
         },
       },
     });
 
-    return product?.organization.currency ?? null;
+    return product?.organization ?? null;
   }
 }

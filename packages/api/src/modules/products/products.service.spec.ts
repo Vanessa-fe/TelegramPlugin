@@ -124,7 +124,9 @@ describe('ProductsService channel links', () => {
       where: {
         organizationId: orgId,
         status: 'ACTIVE',
+        plans: { some: { isActive: true } },
         channels: { some: { channel: { isActive: true } } },
+        organization: { saasActive: true, stripeAccountId: { not: null } },
       },
     });
     expect(upsertBrevoContact).toHaveBeenCalledWith('creator@example.com', {
@@ -132,7 +134,7 @@ describe('ProductsService channel links', () => {
     });
   });
 
-  it('should flag the creator as not ready when no active offer has a channel', async () => {
+  it('should flag the creator as not ready when no offer is payable', async () => {
     prisma.product.count.mockResolvedValue(0);
 
     await service.create({ organizationId: orgId, name: 'Brouillon' });

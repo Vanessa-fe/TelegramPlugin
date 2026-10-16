@@ -8,6 +8,11 @@ import { DataExportsService } from '../data-exports/data-exports.service';
 import { OrganizationsService } from '../organizations/organizations.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AdminDashboardService } from '../admin-dashboard/admin-dashboard.service';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
+
+jest.mock('../../common/offer-readiness', () => ({
+  syncOfferReadyToBrevo: jest.fn(),
+}));
 
 describe('SchedulerService', () => {
   let service: SchedulerService;
@@ -126,6 +131,11 @@ describe('SchedulerService', () => {
         where: { id: { in: ['org-1'] } },
         data: { saasActive: false },
       });
+      expect(syncOfferReadyToBrevo).toHaveBeenCalledWith(
+        prisma,
+        'org-1',
+        expect.anything(),
+      );
       expect(channelAccessService.handlePaymentFailure).toHaveBeenCalledTimes(
         2,
       );
@@ -157,6 +167,7 @@ describe('SchedulerService', () => {
       await service.handleInactivePlatformSubscriptions();
 
       expect(prisma.organization.updateMany).not.toHaveBeenCalled();
+      expect(syncOfferReadyToBrevo).not.toHaveBeenCalled();
       expect(channelAccessService.handlePaymentFailure).not.toHaveBeenCalled();
       expect(prisma.subscription.update).not.toHaveBeenCalled();
     });

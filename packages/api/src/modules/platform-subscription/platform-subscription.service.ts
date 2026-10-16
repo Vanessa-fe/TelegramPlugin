@@ -15,6 +15,7 @@ import {
   removeBrevoContactFromList,
   BREVO_LIST_IDS,
 } from '../../common/brevo-sync';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PostHogService } from '../posthog/posthog.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
@@ -1010,6 +1011,9 @@ export class PlatformSubscriptionService {
         `Organization ${organizationId} saasActive updated to ${newSaasActive} ` +
           `(platformActive: ${isPlatformActive}, connectReady: ${isConnectReady}, grandfathered: ${isGrandfathered})`,
       );
+
+      // Buyers can only pay while saasActive is true
+      await syncOfferReadyToBrevo(this.prisma, organizationId, this.logger);
     }
   }
 

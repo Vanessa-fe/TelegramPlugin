@@ -4,7 +4,7 @@ import type { Product } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
-import { upsertBrevoContact } from '../../common/brevo-sync';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
 import type { CreateProductDto, UpdateProductDto } from './products.schema';
 
 export type ProductWithChannels = Product & { channelIds: string[] };
@@ -73,7 +73,7 @@ export class ProductsService {
       );
     }
 
-    await this.syncOfferReadyToBrevo(data.organizationId);
+    await syncOfferReadyToBrevo(this.prisma, data.organizationId, this.logger);
 
     return toProductWithChannels(product);
   }
@@ -115,7 +115,11 @@ export class ProductsService {
         data: payload,
         include: withChannelIds,
       });
-      await this.syncOfferReadyToBrevo(product.organizationId);
+      await syncOfferReadyToBrevo(
+        this.prisma,
+        product.organizationId,
+        this.logger,
+      );
       return toProductWithChannels(product);
     }
 
@@ -157,44 +161,13 @@ export class ProductsService {
       }
     }
 
-    await this.syncOfferReadyToBrevo(product.organizationId);
+    await syncOfferReadyToBrevo(
+      this.prisma,
+      product.organizationId,
+      this.logger,
+    );
 
     return toProductWithChannels(product);
-  }
-
-  /**
-   * Brevo attribute OFFRE_PRETE: the creator has at least one active offer
-   * linked to an active channel, i.e. something buyers can actually pay for.
-   * Lets Brevo automations nudge creators stuck before their first sale.
-   */
-  private async syncOfferReadyToBrevo(organizationId: string): Promise<void> {
-    try {
-      const [organization, readyOffers] = await Promise.all([
-        this.prisma.organization.findUnique({
-          where: { id: organizationId },
-          select: { billingEmail: true },
-        }),
-        this.prisma.product.count({
-          where: {
-            organizationId,
-            status: ProductStatus.ACTIVE,
-            channels: { some: { channel: { isActive: true } } },
-          },
-        }),
-      ]);
-      if (!organization?.billingEmail) {
-        return;
-      }
-
-      await upsertBrevoContact(organization.billingEmail, {
-        attributes: { OFFRE_PRETE: readyOffers > 0 },
-      });
-    } catch (error) {
-      this.logger.error(
-        `Failed to sync OFFRE_PRETE to Brevo for org ${organizationId}`,
-        error as Error,
-      );
-    }
   }
 
   private async validateChannelIds(

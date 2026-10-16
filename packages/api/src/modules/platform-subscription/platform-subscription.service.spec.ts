@@ -9,6 +9,11 @@ import {
   removeBrevoContactFromList,
   upsertBrevoContact,
 } from '../../common/brevo-sync';
+import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
+
+jest.mock('../../common/offer-readiness', () => ({
+  syncOfferReadyToBrevo: jest.fn(),
+}));
 
 jest.mock('../../common/brevo-sync', () => ({
   upsertBrevoContact: jest.fn(),
@@ -44,6 +49,7 @@ describe('PlatformSubscriptionService', () => {
   const mockPrisma: any = {
     organization: {
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     platformPlan: {
       findUnique: jest.fn(),
@@ -87,6 +93,9 @@ describe('PlatformSubscriptionService', () => {
     },
     subscriptions: {
       list: jest.fn(),
+    },
+    accounts: {
+      retrieve: jest.fn(),
     },
   };
 
@@ -265,6 +274,64 @@ describe('PlatformSubscriptionService', () => {
       service.createCheckoutSession('org_123', 'growth'),
     ).rejects.toThrow('Un abonnement plateforme est déjà actif');
     expect(mockStripe.checkout.sessions.create).not.toHaveBeenCalled();
+  });
+
+  describe('updateSaasActive', () => {
+    const organization = (saasActive: boolean) => ({
+      id: 'org_123',
+      billingEmail: 'billing@sublynk.test',
+      saasActive,
+      stripeAccountId: 'acct_connect_123',
+      platformSubscription: { status: 'ACTIVE', metadata: null },
+    });
+
+    beforeEach(() => {
+      mockStripe.accounts.retrieve.mockResolvedValue({
+        charges_enabled: true,
+        details_submitted: true,
+      });
+    });
+
+    it('resyncs OFFRE_PRETE once the Stripe account can take payments', async () => {
+      mockPrisma.organization.findUnique.mockResolvedValue(organization(false));
+
+      await service.updateSaasActive('org_123');
+
+      expect(mockPrisma.organization.update).toHaveBeenCalledWith({
+        where: { id: 'org_123' },
+        data: { saasActive: true },
+      });
+      expect(syncOfferReadyToBrevo).toHaveBeenCalledWith(
+        mockPrisma,
+        'org_123',
+        expect.anything(),
+      );
+    });
+
+    it('resyncs OFFRE_PRETE when the creator loses saasActive', async () => {
+      mockPrisma.organization.findUnique.mockResolvedValue(organization(true));
+      mockStripe.accounts.retrieve.mockResolvedValue({
+        charges_enabled: false,
+        details_submitted: true,
+      });
+
+      await service.updateSaasActive('org_123');
+
+      expect(mockPrisma.organization.update).toHaveBeenCalledWith({
+        where: { id: 'org_123' },
+        data: { saasActive: false },
+      });
+      expect(syncOfferReadyToBrevo).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves Brevo alone when saasActive does not change', async () => {
+      mockPrisma.organization.findUnique.mockResolvedValue(organization(true));
+
+      await service.updateSaasActive('org_123');
+
+      expect(mockPrisma.organization.update).not.toHaveBeenCalled();
+      expect(syncOfferReadyToBrevo).not.toHaveBeenCalled();
+    });
   });
 
   describe('invoice webhooks (API 2025-09-30.clover payload)', () => {
