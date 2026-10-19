@@ -4,6 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   AmbassadorTier,
   PaymentEventType,
+  PaymentProvider,
   PlanInterval,
   SubscriptionStatus,
   UserRole,
@@ -34,6 +35,7 @@ interface StoredPaymentObject extends InvoicePayload {
   mode?: string;
   payment_status?: string;
   amount_total?: number;
+  amount_refunded?: number;
   billing_reason?: string;
   totalAmount?: number;
   customer_details?: {
@@ -46,6 +48,12 @@ interface StoredPaymentPayload extends StoredPaymentObject {
   // Set on events of creators' connected accounts (their buyers' payments)
   account?: string | null;
   data?: { object?: StoredPaymentObject };
+}
+
+/** Stripe events are stored whole: the invoice or checkout is under data.object */
+function storedPaymentObject(payload: unknown): StoredPaymentObject {
+  const stored = payload as StoredPaymentPayload | null;
+  return stored?.data?.object ?? stored ?? {};
 }
 
 /**
@@ -158,6 +166,10 @@ interface OrganizationCommerceMetrics {
   salesCount: number;
   recentSalesCount: number;
   previousSalesCount: number;
+  // Cents, from Stripe sales only: Telegram Stars amounts are in Stars
+  totalRevenue: number;
+  recentRevenue: number;
+  previousRevenue: number;
 }
 
 export interface CreatorDetail extends CreatorListItem {
@@ -182,7 +194,8 @@ export interface CreatorDetail extends CreatorListItem {
     id: string;
     type: string;
     occurredAt: Date;
-    amount: number;
+    // null for events that move no money (subscription created, updated...)
+    amount: number | null;
     currency: string;
   }[];
   // Channels info
@@ -267,29 +280,33 @@ export class AdminDashboardService {
   }
 
   /**
-   * Calculate total revenue from successful payments in the given period.
-   * Sums up amount_paid from INVOICE_PAID events.
+   * Calculate total revenue from successful Stripe payments in the given
+   * period: paid invoices and paid one-time checkouts.
    * Returns amount in cents (integer).
    */
   private async calculateRevenueThisWeek(since: Date): Promise<number> {
     try {
-      // Get all successful invoice payments since the given date
-      const paidInvoices = await this.prisma.paymentEvent.findMany({
+      const events = await this.prisma.paymentEvent.findMany({
         where: {
-          type: PaymentEventType.INVOICE_PAID,
+          provider: PaymentProvider.STRIPE,
+          type: {
+            in: [
+              PaymentEventType.INVOICE_PAID,
+              PaymentEventType.CHECKOUT_COMPLETED,
+            ],
+          },
           occurredAt: { gte: since },
         },
         select: {
+          type: true,
           payload: true,
         },
       });
 
-      // Sum up the amounts from the payloads
       let totalRevenue = 0;
-      for (const event of paidInvoices) {
-        const payload = event.payload as InvoicePayload | null;
-        if (payload?.amount_paid && typeof payload.amount_paid === 'number') {
-          totalRevenue += payload.amount_paid;
+      for (const event of events) {
+        if (this.isSuccessfulSaleEvent(event.type, event.payload)) {
+          totalRevenue += this.stripeSaleAmount(event.type, event.payload);
         }
       }
 
@@ -749,6 +766,9 @@ export class AdminDashboardService {
       salesCount: 0,
       recentSalesCount: 0,
       previousSalesCount: 0,
+      totalRevenue: 0,
+      recentRevenue: 0,
+      previousRevenue: 0,
     };
   }
 
@@ -756,6 +776,7 @@ export class AdminDashboardService {
    * A sale is counted only after payment confirmation. Recurring Stripe sales
    * are represented by paid invoices. One-time Stripe purchases are represented
    * by a paid checkout, while Telegram Stars payments use paid invoice events.
+   * The creator's own Sublynk plan payments are not their sales.
    */
   private async getCommerceMetrics(
     organizationIds: string[],
@@ -787,6 +808,7 @@ export class AdminDashboardService {
       },
       select: {
         organizationId: true,
+        provider: true,
         type: true,
         payload: true,
         occurredAt: true,
@@ -795,26 +817,49 @@ export class AdminDashboardService {
     });
 
     for (const event of events) {
-      if (!this.isSuccessfulSaleEvent(event.type, event.payload)) {
+      if (
+        !this.isBuyerPayment(event.provider, event.payload) ||
+        !this.isSuccessfulSaleEvent(event.type, event.payload)
+      ) {
         continue;
       }
 
       const metrics = metricsByOrganization.get(event.organizationId);
       if (!metrics) continue;
 
+      const revenue =
+        event.provider === PaymentProvider.STRIPE
+          ? this.stripeSaleAmount(event.type, event.payload)
+          : 0;
+
       metrics.salesCount += 1;
+      metrics.totalRevenue += revenue;
       if (event.subscription?.customerId) {
         metrics.paidCustomerIds.add(event.subscription.customerId);
       }
 
       if (event.occurredAt >= thirtyDaysAgo) {
         metrics.recentSalesCount += 1;
+        metrics.recentRevenue += revenue;
       } else if (event.occurredAt >= sixtyDaysAgo) {
         metrics.previousSalesCount += 1;
+        metrics.previousRevenue += revenue;
       }
     }
 
     return metricsByOrganization;
+  }
+
+  /**
+   * Creators' buyers pay on the creator's connected Stripe account, so their
+   * events carry `account`. Stripe events without it are the creator paying
+   * their own Sublynk plan.
+   */
+  private isBuyerPayment(provider: PaymentProvider, payload: unknown): boolean {
+    if (provider !== PaymentProvider.STRIPE) {
+      return true;
+    }
+    return Boolean((payload as StoredPaymentPayload | null)?.account);
   }
 
   private isSuccessfulSaleEvent(
@@ -837,6 +882,46 @@ export class AdminDashboardService {
     // Subscription checkouts also emit an invoice event. Counting only
     // one-time paid checkouts here prevents the initial payment being doubled.
     return checkout?.mode === 'payment' && checkout.payment_status === 'paid';
+  }
+
+  /** Amount in cents of a confirmed Stripe sale (see isSuccessfulSaleEvent) */
+  private stripeSaleAmount(type: PaymentEventType, payload: unknown): number {
+    const object = storedPaymentObject(payload);
+    const amount =
+      type === PaymentEventType.INVOICE_PAID
+        ? object.amount_paid
+        : object.amount_total;
+    return typeof amount === 'number' ? amount : 0;
+  }
+
+  /** Amount shown in a creator's payment history, null when no money moves */
+  private paymentHistoryAmount(
+    provider: PaymentProvider,
+    type: PaymentEventType,
+    payload: unknown,
+  ): { amount: number | null; currency: string } {
+    if (provider === PaymentProvider.TELEGRAM_STARS) {
+      const stars = (payload as { totalAmount?: number } | null)?.totalAmount;
+      return {
+        amount: typeof stars === 'number' ? stars : null,
+        currency: 'XTR',
+      };
+    }
+
+    const object = storedPaymentObject(payload);
+    const amountByType: Partial<Record<PaymentEventType, number | undefined>> =
+      {
+        [PaymentEventType.CHECKOUT_COMPLETED]: object.amount_total,
+        [PaymentEventType.INVOICE_PAID]: object.amount_paid,
+        [PaymentEventType.INVOICE_PAYMENT_FAILED]: object.amount_due,
+        [PaymentEventType.REFUND_CREATED]: object.amount_refunded,
+      };
+    const amount = amountByType[type];
+
+    return {
+      amount: typeof amount === 'number' ? amount : null,
+      currency: object.currency ?? 'eur',
+    };
   }
 
   /**
@@ -1031,6 +1116,7 @@ export class AdminDashboardService {
           take: 10,
           select: {
             id: true,
+            provider: true,
             type: true,
             occurredAt: true,
             payload: true,
@@ -1053,15 +1139,6 @@ export class AdminDashboardService {
     const payingCustomersCount = org.customers.filter((customer) =>
       commerceMetrics.paidCustomerIds.has(customer.id),
     ).length;
-
-    // Calculate revenue from payment events
-    const [revenueThisMonth, revenuePreviousMonth] = await Promise.all([
-      this.calculateRevenue(id, thirtyDaysAgo, now),
-      this.calculateRevenue(id, sixtyDaysAgo, thirtyDaysAgo),
-    ]);
-
-    // Total revenue all time
-    const totalRevenue = await this.calculateRevenue(id);
 
     // Calculate payment risk
     let paymentRisk: CreatorListItem['paymentRisk'] = null;
@@ -1141,16 +1218,12 @@ export class AdminDashboardService {
     }));
 
     // Map payment events
-    const recentPayments = org.paymentEvents.map((pe) => {
-      const payload = pe.payload as { amount_paid?: number; currency?: string };
-      return {
-        id: pe.id,
-        type: pe.type,
-        occurredAt: pe.occurredAt,
-        amount: payload.amount_paid ?? 0,
-        currency: payload.currency ?? 'eur',
-      };
-    });
+    const recentPayments = org.paymentEvents.map((pe) => ({
+      id: pe.id,
+      type: pe.type,
+      occurredAt: pe.occurredAt,
+      ...this.paymentHistoryAmount(pe.provider, pe.type, pe.payload),
+    }));
 
     return {
       id: org.id,
@@ -1176,47 +1249,14 @@ export class AdminDashboardService {
       ambassadorTier: org.ambassadorTier,
       ambassadorSince: org.ambassadorSince,
       lastLoyaltyRewardAt: org.lastLoyaltyRewardAt,
-      totalRevenue,
-      revenueThisMonth,
-      revenuePreviousMonth,
+      totalRevenue: commerceMetrics.totalRevenue,
+      revenueThisMonth: commerceMetrics.recentRevenue,
+      revenuePreviousMonth: commerceMetrics.previousRevenue,
       recentActivity: org.auditLogs,
       recentPayments,
       channels,
       products,
     };
-  }
-
-  /**
-   * Calculate revenue for an organization in a given period
-   */
-  private async calculateRevenue(
-    organizationId: string,
-    since?: Date,
-    until?: Date,
-  ): Promise<number> {
-    try {
-      const paidInvoices = await this.prisma.paymentEvent.findMany({
-        where: {
-          organizationId,
-          type: PaymentEventType.INVOICE_PAID,
-          ...(since && {
-            occurredAt: { gte: since, ...(until && { lt: until }) },
-          }),
-        },
-        select: { payload: true },
-      });
-
-      let total = 0;
-      for (const event of paidInvoices) {
-        const payload = event.payload as { amount_paid?: number } | null;
-        if (payload?.amount_paid && typeof payload.amount_paid === 'number') {
-          total += payload.amount_paid;
-        }
-      }
-      return total;
-    } catch {
-      return 0;
-    }
   }
 
   /**

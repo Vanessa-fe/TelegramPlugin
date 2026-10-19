@@ -91,7 +91,8 @@ interface CreatorDetail {
     id: string;
     type: string;
     occurredAt: string;
-    amount: number;
+    // null for events that move no money (subscription created, updated...)
+    amount: number | null;
     currency: string;
   }[];
   channels: {
@@ -213,11 +214,18 @@ export default function CreatorDetailPage() {
     });
   };
 
-  const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: "EUR",
-    }).format(cents / 100);
+  const formatCurrency = (cents: number, currency = "EUR") => {
+    if (currency.toUpperCase() === "XTR") {
+      return `${cents} Stars`;
+    }
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: currency.toUpperCase(),
+      }).format(cents / 100);
+    } catch {
+      return `${(cents / 100).toFixed(2)} ${currency.toUpperCase()}`;
+    }
   };
 
   if (isLoading) {
@@ -785,15 +793,17 @@ export default function CreatorDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <span
-                    className={`font-medium ${
-                      payment.type === "INVOICE_PAID"
-                        ? "text-green-600"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {formatCurrency(payment.amount)}
-                  </span>
+                  {payment.amount !== null && (
+                    <span
+                      className={`font-medium ${
+                        payment.type === "INVOICE_PAID"
+                          ? "text-green-600"
+                          : "text-gray-900"
+                      }`}
+                    >
+                      {formatCurrency(payment.amount, payment.currency)}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

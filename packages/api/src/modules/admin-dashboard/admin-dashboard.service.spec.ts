@@ -1,5 +1,10 @@
 import { ConfigService } from '@nestjs/config';
-import { PaymentEventType, SubscriptionStatus, UserRole } from '@prisma/client';
+import {
+  PaymentEventType,
+  PaymentProvider,
+  SubscriptionStatus,
+  UserRole,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminDashboardService } from './admin-dashboard.service';
 
@@ -125,15 +130,21 @@ describe('AdminDashboardService creator commerce metrics', () => {
         findMany: jest.fn().mockResolvedValue([
           {
             organizationId: 'org_123',
+            provider: PaymentProvider.STRIPE,
             type: PaymentEventType.INVOICE_PAID,
-            payload: { data: { object: { amount_paid: 1000 } } },
+            payload: {
+              account: 'acct_creator',
+              data: { object: { amount_paid: 1000 } },
+            },
             occurredAt: now,
             subscription: { customerId: 'customer_paid' },
           },
           {
             organizationId: 'org_123',
+            provider: PaymentProvider.STRIPE,
             type: PaymentEventType.CHECKOUT_COMPLETED,
             payload: {
+              account: 'acct_creator',
               data: {
                 object: { mode: 'subscription', payment_status: 'paid' },
               },
@@ -143,12 +154,23 @@ describe('AdminDashboardService creator commerce metrics', () => {
           },
           {
             organizationId: 'org_123',
+            provider: PaymentProvider.STRIPE,
             type: PaymentEventType.CHECKOUT_COMPLETED,
             payload: {
+              account: 'acct_creator',
               data: { object: { mode: 'payment', payment_status: 'unpaid' } },
             },
             occurredAt: now,
             subscription: { customerId: 'customer_prospect' },
+          },
+          {
+            // The creator paying their own Sublynk plan is not a sale
+            organizationId: 'org_123',
+            provider: PaymentProvider.STRIPE,
+            type: PaymentEventType.INVOICE_PAID,
+            payload: { data: { object: { amount_paid: 2900 } } },
+            occurredAt: now,
+            subscription: null,
           },
         ]),
       },
@@ -178,6 +200,151 @@ describe('AdminDashboardService creator commerce metrics', () => {
         }),
       }),
     );
+  });
+});
+
+describe('AdminDashboardService creator detail', () => {
+  it("sums the creator's sales from stored Stripe events", async () => {
+    const DAY_IN_MS = 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const fortyDaysAgo = new Date(now.getTime() - 40 * DAY_IN_MS);
+    const buyerEvent = (
+      type: PaymentEventType,
+      object: Record<string, unknown>,
+      occurredAt = now,
+    ) => ({
+      organizationId: 'org_123',
+      provider: PaymentProvider.STRIPE,
+      type,
+      payload: { account: 'acct_creator', data: { object } },
+      occurredAt,
+      subscription: { customerId: 'customer_paid' },
+    });
+    const prisma = {
+      organization: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'org_123',
+          name: 'Créateur Test',
+          slug: 'createur-test',
+          billingEmail: 'creator@example.com',
+          saasActive: true,
+          suspendedAt: null,
+          createdAt: now,
+          ambassadorTier: 'NONE',
+          ambassadorSince: null,
+          lastLoyaltyRewardAt: null,
+          users: [{ email: 'creator@example.com', lastLoginAt: now }],
+          channels: [],
+          customers: [{ id: 'customer_paid' }],
+          subscriptions: [],
+          products: [],
+          platformSubscription: null,
+          auditLogs: [],
+          paymentEvents: [
+            {
+              id: 'paid',
+              provider: PaymentProvider.STRIPE,
+              type: PaymentEventType.INVOICE_PAID,
+              occurredAt: now,
+              payload: {
+                account: 'acct_creator',
+                data: { object: { amount_paid: 5000, currency: 'eur' } },
+              },
+            },
+            {
+              id: 'failed',
+              provider: PaymentProvider.STRIPE,
+              type: PaymentEventType.INVOICE_PAYMENT_FAILED,
+              occurredAt: now,
+              payload: {
+                account: 'acct_creator',
+                data: { object: { amount_due: 5000, currency: 'eur' } },
+              },
+            },
+            {
+              id: 'subscription-created',
+              provider: PaymentProvider.STRIPE,
+              type: PaymentEventType.SUBSCRIPTION_CREATED,
+              occurredAt: now,
+              payload: {
+                account: 'acct_creator',
+                data: { object: { status: 'active' } },
+              },
+            },
+            {
+              id: 'stars',
+              provider: PaymentProvider.TELEGRAM_STARS,
+              type: PaymentEventType.INVOICE_PAID,
+              occurredAt: now,
+              payload: { totalAmount: 250 },
+            },
+          ],
+        }),
+      },
+      paymentEvent: {
+        findMany: jest.fn().mockResolvedValue([
+          buyerEvent(PaymentEventType.INVOICE_PAID, { amount_paid: 5000 }),
+          // Already counted through its invoice
+          buyerEvent(PaymentEventType.CHECKOUT_COMPLETED, {
+            mode: 'subscription',
+            payment_status: 'paid',
+            amount_total: 5000,
+          }),
+          buyerEvent(
+            PaymentEventType.CHECKOUT_COMPLETED,
+            { mode: 'payment', payment_status: 'paid', amount_total: 2500 },
+            fortyDaysAgo,
+          ),
+          {
+            organizationId: 'org_123',
+            provider: PaymentProvider.STRIPE,
+            type: PaymentEventType.INVOICE_PAID,
+            payload: { data: { object: { amount_paid: 2900 } } },
+            occurredAt: now,
+            subscription: null,
+          },
+          {
+            organizationId: 'org_123',
+            provider: PaymentProvider.TELEGRAM_STARS,
+            type: PaymentEventType.INVOICE_PAID,
+            payload: { totalAmount: 250 },
+            occurredAt: now,
+            subscription: { customerId: 'customer_paid' },
+          },
+        ]),
+      },
+      subscription: { groupBy: jest.fn().mockResolvedValue([]) },
+      plan: { findMany: jest.fn().mockResolvedValue([]) },
+    } as unknown as PrismaService;
+    const config = {
+      get: jest.fn().mockReturnValue(undefined),
+    } as unknown as ConfigService;
+
+    const result = await new AdminDashboardService(
+      prisma,
+      config,
+    ).getCreatorDetail('org_123');
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        salesCount: 3,
+        revenueThisMonth: 5000,
+        revenuePreviousMonth: 2500,
+        totalRevenue: 7500,
+      }),
+    );
+    expect(
+      result.recentPayments.map(({ id, amount, currency }) => ({
+        id,
+        amount,
+        currency,
+      })),
+    ).toEqual([
+      { id: 'paid', amount: 5000, currency: 'eur' },
+      { id: 'failed', amount: 5000, currency: 'eur' },
+      { id: 'subscription-created', amount: null, currency: 'eur' },
+      { id: 'stars', amount: 250, currency: 'XTR' },
+    ]);
   });
 });
 
