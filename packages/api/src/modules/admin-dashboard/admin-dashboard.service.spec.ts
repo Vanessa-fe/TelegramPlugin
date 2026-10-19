@@ -203,6 +203,81 @@ describe('AdminDashboardService creator commerce metrics', () => {
   });
 });
 
+describe('AdminDashboardService creator readiness', () => {
+  const creator = (
+    id: string,
+    overrides: {
+      saasActive?: boolean;
+      stripeAccountId?: string | null;
+      platformStatus?: string | null;
+    },
+  ) => ({
+    id,
+    name: id,
+    slug: id,
+    billingEmail: `${id}@example.com`,
+    saasActive: overrides.saasActive ?? false,
+    suspendedAt: null,
+    stripeAccountId: overrides.stripeAccountId ?? null,
+    createdAt: new Date(),
+    users: [{ email: `${id}@example.com`, lastLoginAt: new Date() }],
+    channels: [],
+    customers: [],
+    subscriptions: [],
+    platformSubscription: overrides.platformStatus
+      ? {
+          status: overrides.platformStatus,
+          metadata: null,
+          platformPlan: { name: 'starter' },
+        }
+      : null,
+  });
+
+  it('says why a creator cannot sell and flags ready creators without sales', async () => {
+    const prisma = {
+      organization: {
+        findMany: jest.fn().mockResolvedValue([
+          creator('ready', {
+            saasActive: true,
+            stripeAccountId: 'acct_ready',
+            platformStatus: 'ACTIVE',
+          }),
+          creator('no-stripe', { platformStatus: 'ACTIVE' }),
+          creator('stripe-pending', {
+            stripeAccountId: 'acct_pending',
+            platformStatus: 'ACTIVE',
+          }),
+          creator('nothing', {}),
+        ]),
+      },
+      paymentEvent: { findMany: jest.fn().mockResolvedValue([]) },
+    } as unknown as PrismaService;
+    const config = {
+      get: jest.fn().mockReturnValue(undefined),
+    } as unknown as ConfigService;
+
+    const result = await new AdminDashboardService(
+      prisma,
+      config,
+    ).getCreatorsList();
+    const byId = new Map(result.map((item) => [item.id, item]));
+
+    expect(byId.get('ready')?.sellingBlockers).toEqual([]);
+    expect(byId.get('no-stripe')?.sellingBlockers).toEqual([
+      'STRIPE_NOT_CONNECTED',
+    ]);
+    expect(byId.get('stripe-pending')?.sellingBlockers).toEqual([
+      'STRIPE_INCOMPLETE',
+    ]);
+    expect(byId.get('nothing')?.sellingBlockers).toEqual([
+      'PLATFORM_PLAN',
+      'STRIPE_NOT_CONNECTED',
+    ]);
+    // Ready to sell but never sold anything: worth a look
+    expect(byId.get('ready')?.healthScore.level).toBe('orange');
+  });
+});
+
 describe('AdminDashboardService creator detail', () => {
   it("sums the creator's sales from stored Stripe events", async () => {
     const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -229,6 +304,7 @@ describe('AdminDashboardService creator detail', () => {
           billingEmail: 'creator@example.com',
           saasActive: true,
           suspendedAt: null,
+          stripeAccountId: 'acct_creator',
           createdAt: now,
           ambassadorTier: 'NONE',
           ambassadorSince: null,
@@ -320,10 +396,27 @@ describe('AdminDashboardService creator detail', () => {
       get: jest.fn().mockReturnValue(undefined),
     } as unknown as ConfigService;
 
-    const result = await new AdminDashboardService(
-      prisma,
-      config,
-    ).getCreatorDetail('org_123');
+    const seconds = (date: Date) => Math.floor(date.getTime() / 1000);
+    const charges = [
+      {
+        status: 'succeeded',
+        application_fee_amount: 500,
+        created: seconds(now),
+      },
+      {
+        status: 'succeeded',
+        application_fee_amount: 250,
+        created: seconds(fortyDaysAgo),
+      },
+      // Declined card: no money, no commission
+      { status: 'failed', application_fee_amount: 500, created: seconds(now) },
+    ];
+    // for await also walks a plain array, like Stripe's auto-pagination
+    const chargesList = jest.fn().mockReturnValue(charges);
+    const service = new AdminDashboardService(prisma, config);
+    Object.assign(service, { stripe: { charges: { list: chargesList } } });
+
+    const result = await service.getCreatorDetail('org_123');
 
     expect(result).toEqual(
       expect.objectContaining({
@@ -331,7 +424,17 @@ describe('AdminDashboardService creator detail', () => {
         revenueThisMonth: 5000,
         revenuePreviousMonth: 2500,
         totalRevenue: 7500,
+        commission: {
+          thisMonth: 500,
+          previousMonth: 250,
+          total: 750,
+          chargesCount: 2,
+        },
       }),
+    );
+    expect(chargesList).toHaveBeenCalledWith(
+      { limit: 100 },
+      { stripeAccount: 'acct_creator' },
     );
     expect(
       result.recentPayments.map(({ id, amount, currency }) => ({
@@ -484,12 +587,20 @@ describe('AdminDashboardService unpaid list', () => {
       [
         failedEvent(
           'checkout-decline',
-          { id: 'in_1', billing_reason: 'subscription_create', amount_due: 5000 },
+          {
+            id: 'in_1',
+            billing_reason: 'subscription_create',
+            amount_due: 5000,
+          },
           'acct_creator',
         ),
         failedEvent(
           'paid-later',
-          { id: 'in_2', billing_reason: 'subscription_cycle', amount_due: 5000 },
+          {
+            id: 'in_2',
+            billing_reason: 'subscription_cycle',
+            amount_due: 5000,
+          },
           'acct_creator',
         ),
         failedEvent(

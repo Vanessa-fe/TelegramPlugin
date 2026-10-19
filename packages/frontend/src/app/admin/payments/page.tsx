@@ -158,6 +158,13 @@ export default function PaymentsPage() {
     void loadPayments();
   }, [loadPayments]);
 
+  useEffect(() => {
+    // The dashboard commission block links here with ?tab=commissions
+    if (new URLSearchParams(window.location.search).get("tab") === "commissions") {
+      setActiveTab("commissions");
+    }
+  }, []);
+
   const formatCurrency = (amountInCents: number, currency: string) => {
     if (currency.toUpperCase() === "XTR") {
       return `${amountInCents} Stars`;

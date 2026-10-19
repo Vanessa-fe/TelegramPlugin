@@ -43,8 +43,10 @@ export function AdminSidebar() {
       </Link>
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
+          // Every admin page starts with /admin/: the home only matches itself
           const isActive =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
+            pathname === item.href ||
+            (item.href !== '/admin' && pathname.startsWith(`${item.href}/`));
           return (
             <Link
               key={item.key}

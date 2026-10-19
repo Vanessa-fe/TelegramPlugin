@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Building2,
   CheckCircle,
+  Coins,
   CreditCard,
   Gift,
   Star,
@@ -25,6 +26,106 @@ interface DashboardStats {
   failedPayments: number;
   churnRisk: number;
   vipExpiringSoon: number;
+}
+
+interface CommissionSummary {
+  feeCount: number;
+  totals: {
+    currency: string;
+    grossSalesCents: number;
+    netCommissionCents: number;
+  }[];
+  byOrganization: {
+    organizationId: string | null;
+    organizationName: string;
+    currency: string;
+    netCommissionCents: number;
+  }[];
+}
+
+function CommissionCard({
+  summary,
+  loading,
+  formatCurrency,
+}: {
+  summary: CommissionSummary | null;
+  loading: boolean;
+  formatCurrency: (amountInCents: number) => string;
+}) {
+  const t = useTranslations('admin.home.commission');
+  // Commissions are taken in the creators' currency, EUR in practice
+  const total = summary?.totals[0];
+  const topCreators = (summary?.byOrganization ?? []).slice(0, 3);
+
+  return (
+    <section className="rounded-lg border border-purple-200 bg-gradient-to-br from-purple-50 to-white p-6 shadow-sm">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-purple-100 p-2">
+              <Coins className="h-5 w-5 text-purple-600" />
+            </div>
+            <h2 className="text-lg font-semibold text-purple-900">
+              {t('title')}
+            </h2>
+          </div>
+          <p className="mt-1 text-sm text-purple-700">{t('subtitle')}</p>
+          <p className="mt-4 text-4xl font-bold text-purple-900">
+            {loading ? '...' : formatCurrency(total?.netCommissionCents ?? 0)}
+          </p>
+          {!loading && total && (
+            <p className="mt-1 text-sm text-gray-600">
+              {t('sales', { amount: formatCurrency(total.grossSalesCents) })}
+              {' • '}
+              {t('count', { count: summary?.feeCount ?? 0 })}
+            </p>
+          )}
+          {!loading && !total && (
+            <p className="mt-1 text-sm text-gray-500">{t('empty')}</p>
+          )}
+        </div>
+
+        {topCreators.length > 0 && (
+          <div className="md:min-w-72">
+            <p className="mb-2 text-sm font-medium text-gray-700">
+              {t('topCreators')}
+            </p>
+            <ul className="space-y-2">
+              {topCreators.map((item) => (
+                <li
+                  key={`${item.organizationId}-${item.currency}`}
+                  className="flex items-center justify-between gap-4 rounded-md bg-white px-3 py-2 text-sm shadow-sm"
+                >
+                  {item.organizationId ? (
+                    <Link
+                      href={`/admin/creators/${item.organizationId}`}
+                      className="truncate text-gray-900 hover:text-purple-600"
+                    >
+                      {item.organizationName}
+                    </Link>
+                  ) : (
+                    <span className="truncate text-gray-900">
+                      {item.organizationName}
+                    </span>
+                  )}
+                  <span className="font-semibold text-purple-700">
+                    {formatCurrency(item.netCommissionCents)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      <Link
+        href="/admin/payments?tab=commissions"
+        className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-purple-700 hover:text-purple-900"
+      >
+        {t('details')}
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </section>
+  );
 }
 
 function AlertBadge({
@@ -241,6 +342,10 @@ export default function AdminPage() {
   const t = useTranslations('admin.home');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [commissions, setCommissions] = useState<CommissionSummary | null>(
+    null,
+  );
+  const [commissionsLoading, setCommissionsLoading] = useState(true);
 
   useEffect(() => {
     async function loadStats() {
@@ -261,7 +366,21 @@ export default function AdminPage() {
         setLoading(false);
       }
     }
+    // Stripe is slower than the stats: loaded on its own
+    async function loadCommissions() {
+      try {
+        const response = await apiClient.get<CommissionSummary>(
+          '/admin/dashboard/commissions?days=30',
+        );
+        setCommissions(response.data);
+      } catch {
+        setCommissions(null);
+      } finally {
+        setCommissionsLoading(false);
+      }
+    }
     loadStats();
+    loadCommissions();
   }, []);
 
   const formatCurrency = (amountInCents: number) => {
@@ -284,6 +403,12 @@ export default function AdminPage() {
 
       {/* Global Status Banner */}
       {!loading && <GlobalStatusBanner stats={stats} />}
+
+      <CommissionCard
+        summary={commissions}
+        loading={commissionsLoading}
+        formatCurrency={formatCurrency}
+      />
 
       {/* KPIs Section */}
       <section>

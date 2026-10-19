@@ -22,6 +22,7 @@ import {
   Activity,
   Eye,
   EyeOff,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SuspendOrganizationDialog } from "@/components/admin/suspend-organization-dialog";
@@ -36,6 +37,11 @@ import apiClient from "@/lib/api-client";
 import { organizationsApi } from "@/lib/api/organizations";
 
 type HealthScoreLevel = "green" | "orange" | "red";
+type SellingBlocker =
+  | "PLATFORM_PLAN"
+  | "STRIPE_NOT_CONNECTED"
+  | "STRIPE_INCOMPLETE";
+type CreatorFilter = "all" | "active" | "inactive" | "suspended" | "at_risk";
 
 interface HealthScore {
   level: HealthScoreLevel;
@@ -70,6 +76,7 @@ interface Creator {
   salesCount: number;
   platformPlan: string | null;
   platformStatus: string | null;
+  sellingBlockers: SellingBlocker[];
   paymentRisk: {
     isAtRisk: boolean;
     daysOverdue: number | null;
@@ -78,6 +85,66 @@ interface Creator {
   } | null;
   healthScore: HealthScore;
 }
+
+interface CommissionSummary {
+  totals: { currency: string; netCommissionCents: number }[];
+  byOrganization: {
+    organizationId: string | null;
+    netCommissionCents: number;
+  }[];
+}
+
+const blockerLabels: Record<SellingBlocker, string> = {
+  PLATFORM_PLAN: "Pas d'abonnement Sublynk actif",
+  STRIPE_NOT_CONNECTED: "Stripe non connecté",
+  STRIPE_INCOMPLETE: "Stripe à finaliser",
+};
+
+const filterHelp: Record<CreatorFilter, string | null> = {
+  all: null,
+  active:
+    "Abonnement Sublynk actif et compte Stripe qui accepte les paiements : leurs acheteurs peuvent payer.",
+  inactive:
+    "Il leur manque un abonnement Sublynk actif ou un compte Stripe prêt : leurs acheteurs ne peuvent pas payer. La raison est indiquée sous le plan.",
+  at_risk:
+    "Créateurs prêts à vendre dont le score santé est orange ou rouge : pas de connexion depuis plus de 14 jours, aucune vente sur 30 jours, ventes en baisse ou abonnement Sublynk impayé. La raison est indiquée sous le score.",
+  suspended: "Comptes suspendus manuellement depuis le menu Actions.",
+};
+
+/** Plain-language reasons behind an orange or red health score */
+function healthReasons(health: HealthScore): string[] {
+  const { factors, daysSinceLogin, recentRevenueChange } = health;
+  const reasons: string[] = [];
+
+  if (factors.loginRecency !== "green") {
+    reasons.push(
+      daysSinceLogin === null
+        ? "Jamais connecté"
+        : `Pas connecté depuis ${daysSinceLogin} j`,
+    );
+  }
+  if (factors.activityLevel === "red") {
+    reasons.push("Aucune vente ni abonné actif");
+  } else if (factors.activityLevel === "orange") {
+    reasons.push("Aucune vente sur 30 j");
+  }
+  if (factors.paymentStatus === "red") {
+    reasons.push("Abonnement Sublynk impayé ou compte suspendu");
+  } else if (factors.paymentStatus === "orange") {
+    reasons.push("Ne peut pas vendre");
+  }
+  // Without a previous period, a weak trend is the "no sale" reason above
+  if (factors.revenueHealth !== "green" && recentRevenueChange !== null) {
+    reasons.push(`Ventes en baisse de ${Math.abs(recentRevenueChange)} %`);
+  }
+  return reasons;
+}
+
+const isAtRisk = (creator: Creator) =>
+  !creator.suspendedAt &&
+  creator.saasActive &&
+  (creator.healthScore.level === "red" ||
+    creator.healthScore.level === "orange");
 
 const statusConfig: Record<
   string,
@@ -110,9 +177,13 @@ export default function CreatorsPage() {
   const locale = useLocale();
   const [creators, setCreators] = useState<Creator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<
-    "all" | "active" | "inactive" | "suspended" | "at_risk"
-  >("all");
+  const [filter, setFilter] = useState<CreatorFilter>("all");
+  // Net commission of the last 30 days by organization id; null if unknown
+  const [commissionByCreator, setCommissionByCreator] = useState<Map<
+    string,
+    number
+  > | null>(null);
+  const [totalCommission, setTotalCommission] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [creatorToSuspend, setCreatorToSuspend] = useState<Creator | null>(
     null,
@@ -154,17 +225,42 @@ export default function CreatorsPage() {
 
   async function loadCreators() {
     setIsLoading(true);
-    try {
-      const response = await apiClient.get("/admin/dashboard/creators");
-      setCreators(response.data);
-    } catch {
-      setCreators([]);
-    } finally {
-      setIsLoading(false);
+    const [creatorsResult, commissionsResult] = await Promise.allSettled([
+      apiClient.get<Creator[]>("/admin/dashboard/creators"),
+      apiClient.get<CommissionSummary>("/admin/dashboard/commissions?days=30"),
+    ]);
+
+    setCreators(
+      creatorsResult.status === "fulfilled" ? creatorsResult.value.data : [],
+    );
+    if (commissionsResult.status === "fulfilled") {
+      const byCreator = new Map<string, number>();
+      for (const item of commissionsResult.value.data.byOrganization) {
+        if (!item.organizationId) continue;
+        byCreator.set(
+          item.organizationId,
+          (byCreator.get(item.organizationId) ?? 0) + item.netCommissionCents,
+        );
+      }
+      setCommissionByCreator(byCreator);
+      setTotalCommission(
+        commissionsResult.value.data.totals.reduce(
+          (sum, total) => sum + total.netCommissionCents,
+          0,
+        ),
+      );
+    } else {
+      setCommissionByCreator(null);
+      setTotalCommission(null);
     }
+    setIsLoading(false);
   }
 
   useEffect(() => {
+    // The dashboard links here with ?filter=at-risk
+    if (new URLSearchParams(window.location.search).get("filter") === "at-risk") {
+      setFilter("at_risk");
+    }
     loadCreators();
   }, []);
 
@@ -173,21 +269,26 @@ export default function CreatorsPage() {
     if (filter === "inactive")
       return !creator.saasActive && !creator.suspendedAt;
     if (filter === "suspended") return !!creator.suspendedAt;
-    if (filter === "at_risk") {
-      // Use health score for churn risk (orange or red) instead of just payment risk
-      return (
-        !creator.suspendedAt &&
-        creator.saasActive &&
-        (creator.healthScore.level === "red" ||
-          creator.healthScore.level === "orange")
-      );
-    }
+    if (filter === "at_risk") return isAtRisk(creator);
     return !hideSuspended || !creator.suspendedAt;
   });
 
   const suspendedCount = creators.filter(
     (creator) => creator.suspendedAt,
   ).length;
+  const readyCount = creators.filter(
+    (creator) => creator.saasActive && !creator.suspendedAt,
+  ).length;
+  const notReadyCount = creators.filter(
+    (creator) => !creator.saasActive && !creator.suspendedAt,
+  ).length;
+  const atRiskCount = creators.filter(isAtRisk).length;
+
+  const formatCents = (cents: number) =>
+    new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "EUR",
+    }).format(cents / 100);
   const visibleAllCount = hideSuspended
     ? creators.length - suspendedCount
     : creators.length;
@@ -234,7 +335,7 @@ export default function CreatorsPage() {
       </div>
 
       {/* Stats summary */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border bg-white p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-purple-100 p-2">
@@ -242,7 +343,10 @@ export default function CreatorsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{creators.length}</p>
-              <p className="text-sm text-gray-500">Total créateurs</p>
+              <p className="text-sm text-gray-500">
+                Total créateurs
+                {suspendedCount > 0 && ` (dont ${suspendedCount} suspendus)`}
+              </p>
             </div>
           </div>
         </div>
@@ -252,10 +356,8 @@ export default function CreatorsPage() {
               <CheckCircle className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">
-                {creators.filter((c) => c.saasActive).length}
-              </p>
-              <p className="text-sm text-gray-500">Actifs</p>
+              <p className="text-2xl font-bold">{readyCount}</p>
+              <p className="text-sm text-gray-500">Prêts à vendre</p>
             </div>
           </div>
         </div>
@@ -265,10 +367,21 @@ export default function CreatorsPage() {
               <XCircle className="h-5 w-5 text-gray-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">
-                {creators.filter((c) => !c.saasActive).length}
+              <p className="text-2xl font-bold">{notReadyCount}</p>
+              <p className="text-sm text-gray-500">Pas prêts à vendre</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-purple-100 p-2">
+              <Coins className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-purple-900">
+                {totalCommission === null ? "—" : formatCents(totalCommission)}
               </p>
-              <p className="text-sm text-gray-500">Inactifs</p>
+              <p className="text-sm text-purple-700">Ma commission (30 j)</p>
             </div>
           </div>
         </div>
@@ -293,12 +406,9 @@ export default function CreatorsPage() {
                 }`}
               >
                 {f === "all" && `Tous (${visibleAllCount})`}
-                {f === "active" &&
-                  `Actifs (${creators.filter((c) => c.saasActive && !c.suspendedAt).length})`}
-                {f === "inactive" &&
-                  `Inactifs (${creators.filter((c) => !c.saasActive && !c.suspendedAt).length})`}
-                {f === "at_risk" &&
-                  `⚠️ À risque (${creators.filter((c) => !c.suspendedAt && c.saasActive && (c.healthScore.level === "red" || c.healthScore.level === "orange")).length})`}
+                {f === "active" && `Prêts à vendre (${readyCount})`}
+                {f === "inactive" && `Pas prêts à vendre (${notReadyCount})`}
+                {f === "at_risk" && `⚠️ À risque (${atRiskCount})`}
                 {f === "suspended" && `Suspendus (${suspendedCount})`}
               </button>
             ),
@@ -328,6 +438,12 @@ export default function CreatorsPage() {
         )}
       </div>
 
+      {filterHelp[filter] && (
+        <p className="rounded-lg border bg-white px-4 py-3 text-sm text-gray-600">
+          {filterHelp[filter]}
+        </p>
+      )}
+
       {/* Table */}
       {filteredCreators.length === 0 ? (
         <div className="rounded-xl border bg-white p-12 text-center">
@@ -343,14 +459,17 @@ export default function CreatorsPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-white">
-          <table className="min-w-[1380px] w-full">
+          <table className="min-w-[1500px] w-full">
             <thead>
               <tr className="border-b bg-gray-50">
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
                   Créateur
                 </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
-                  Plan
+                <th
+                  className="px-6 py-4 text-left text-sm font-medium text-gray-500"
+                  title="Abonnement du créateur à Sublynk"
+                >
+                  Plan Sublynk
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
                   <span className="flex items-center gap-1">
@@ -395,6 +514,15 @@ export default function CreatorsPage() {
                   <span className="flex items-center gap-1">
                     <CheckCircle className="h-4 w-4" />
                     Ventes
+                  </span>
+                </th>
+                <th
+                  className="px-4 py-4 text-left text-sm font-medium text-purple-700"
+                  title="Commission Sublynk nette sur les 30 derniers jours"
+                >
+                  <span className="flex items-center gap-1">
+                    <Coins className="h-4 w-4" />
+                    Commission 30 j
                   </span>
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-500">
@@ -471,6 +599,15 @@ export default function CreatorsPage() {
                           {creator.saasActive ? "Legacy" : "Aucun"}
                         </span>
                       )}
+                      {creator.sellingBlockers.map((blocker) => (
+                        <span
+                          key={blocker}
+                          className="mt-1 flex w-fit items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600"
+                        >
+                          <XCircle className="h-3 w-3" />
+                          {blockerLabels[blocker]}
+                        </span>
+                      ))}
                     </td>
                     <td className="px-6 py-4">
                       <span
@@ -541,6 +678,22 @@ export default function CreatorsPage() {
                         {creator.salesCount}
                       </span>
                     </td>
+                    <td className="px-4 py-4">
+                      {(() => {
+                        const commission = commissionByCreator?.get(creator.id);
+                        return (
+                          <span
+                            className={`text-sm font-semibold ${
+                              commission ? "text-purple-700" : "text-gray-400"
+                            }`}
+                          >
+                            {commissionByCreator === null
+                              ? "—"
+                              : formatCents(commission ?? 0)}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <span
@@ -551,23 +704,22 @@ export default function CreatorsPage() {
                                 ? "bg-orange-100 text-orange-700"
                                 : "bg-red-100 text-red-700"
                           }`}
-                          title={`Score: ${creator.healthScore.score}/100\nConnexion: ${creator.healthScore.factors.loginRecency}\nActivité: ${creator.healthScore.factors.activityLevel}\nPaiement: ${creator.healthScore.factors.paymentStatus}\nRevenus: ${creator.healthScore.factors.revenueHealth}`}
+                          title={
+                            healthReasons(creator.healthScore).join("\n") ||
+                            "Tout va bien"
+                          }
                         >
                           {creator.healthScore.level === "green" && "🟢"}
                           {creator.healthScore.level === "orange" && "🟠"}
                           {creator.healthScore.level === "red" && "🔴"}
                           {creator.healthScore.score}%
                         </span>
-                        {creator.healthScore.daysSinceLogin !== null &&
-                          creator.healthScore.daysSinceLogin > 14 && (
-                            <span
-                              className="text-xs text-gray-400"
-                              title="Jours depuis dernière connexion"
-                            >
-                              {creator.healthScore.daysSinceLogin}j
-                            </span>
-                          )}
                       </div>
+                      {healthReasons(creator.healthScore)[0] && (
+                        <p className="mt-1 max-w-[180px] text-xs text-gray-500">
+                          {healthReasons(creator.healthScore)[0]}
+                        </p>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">
                       {formatDate(creator.createdAt)}

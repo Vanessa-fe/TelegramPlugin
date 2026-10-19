@@ -24,6 +24,8 @@ import {
   PlayCircle,
   RefreshCw,
   Shield,
+  ChevronDown,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SuspendOrganizationDialog } from "@/components/admin/suspend-organization-dialog";
@@ -80,6 +82,13 @@ interface CreatorDetail {
   totalRevenue: number;
   revenueThisMonth: number;
   revenuePreviousMonth: number;
+  // Sublynk's commission in cents; null when Stripe could not be read
+  commission: {
+    thisMonth: number;
+    previousMonth: number;
+    total: number;
+    chargesCount: number;
+  } | null;
   recentActivity: {
     id: string;
     action: string;
@@ -133,6 +142,48 @@ const ambassadorConfig: Record<
     className: "bg-yellow-100 text-yellow-700",
   },
 };
+
+/** Card whose content stays hidden until the header arrow is clicked */
+function CollapsibleCard({
+  icon: Icon,
+  title,
+  count,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader className="p-0">
+        <button
+          type="button"
+          onClick={() => setIsOpen((open) => !open)}
+          aria-expanded={isOpen}
+          className="flex w-full items-center justify-between gap-2 rounded-lg p-6 text-left hover:bg-gray-50"
+        >
+          <CardTitle className="flex items-center gap-2">
+            <Icon className="h-5 w-5" />
+            {title}
+            <span className="text-base font-normal text-gray-500">
+              ({count})
+            </span>
+          </CardTitle>
+          <ChevronDown
+            className={`h-5 w-5 shrink-0 text-gray-500 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </CardHeader>
+      {isOpen && <CardContent>{children}</CardContent>}
+    </Card>
+  );
+}
 
 export default function CreatorDetailPage() {
   const params = useParams();
@@ -528,6 +579,49 @@ export default function CreatorDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Sublynk commission */}
+      <Card className="border-purple-200 bg-purple-50/60">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-purple-900">
+            <Coins className="h-5 w-5 text-purple-600" />
+            Ma commission
+          </CardTitle>
+          <p className="text-sm text-purple-700">
+            Ce que Sublynk prélève sur les ventes de ce créateur
+            {creator.commission &&
+              ` (${creator.commission.chargesCount} vente${creator.commission.chargesCount > 1 ? "s" : ""} commissionnée${creator.commission.chargesCount > 1 ? "s" : ""})`}
+          </p>
+        </CardHeader>
+        <CardContent>
+          {creator.commission ? (
+            <div className="grid gap-6 md:grid-cols-3">
+              <div>
+                <p className="text-sm text-purple-700">30 derniers jours</p>
+                <p className="text-2xl font-bold text-purple-900">
+                  {formatCurrency(creator.commission.thisMonth)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-purple-700">30 jours précédents</p>
+                <p className="text-2xl font-bold text-purple-900">
+                  {formatCurrency(creator.commission.previousMonth)}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-purple-700">Total cumulé</p>
+                <p className="text-2xl font-bold text-purple-900">
+                  {formatCurrency(creator.commission.total)}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-purple-700">
+              Commission indisponible : Stripe n&apos;a pas répondu.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Health Score Details */}
       <Card>
         <CardHeader>
@@ -725,91 +819,83 @@ export default function CreatorDetailPage() {
       </div>
 
       {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            Activite recente
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {creator.recentActivity.length === 0 ? (
-            <p className="text-center text-sm text-gray-500">Aucune activite</p>
-          ) : (
-            <div className="space-y-3">
-              {creator.recentActivity.slice(0, 10).map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div>
-                    <p className="font-medium text-sm">{activity.action}</p>
-                    <p className="text-xs text-gray-500">
-                      {activity.resourceType}
-                    </p>
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    {formatDateTime(activity.createdAt)}
-                  </span>
+      <CollapsibleCard
+        icon={History}
+        title="Activité récente"
+        count={Math.min(creator.recentActivity.length, 10)}
+      >
+        {creator.recentActivity.length === 0 ? (
+          <p className="text-center text-sm text-gray-500">Aucune activite</p>
+        ) : (
+          <div className="space-y-3">
+            {creator.recentActivity.slice(0, 10).map((activity) => (
+              <div
+                key={activity.id}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <div>
+                  <p className="font-medium text-sm">{activity.action}</p>
+                  <p className="text-xs text-gray-500">
+                    {activity.resourceType}
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <span className="text-xs text-gray-500">
+                  {formatDateTime(activity.createdAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CollapsibleCard>
 
       {/* Recent Payments */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Historique paiements
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {creator.recentPayments.length === 0 ? (
-            <p className="text-center text-sm text-gray-500">Aucun paiement</p>
-          ) : (
-            <div className="space-y-3">
-              {creator.recentPayments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    {payment.type === "INVOICE_PAID" ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : payment.type === "INVOICE_PAYMENT_FAILED" ? (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    ) : (
-                      <Clock className="h-5 w-5 text-gray-400" />
-                    )}
-                    <div>
-                      <p className="font-medium text-sm">
-                        {payment.type.replace(/_/g, " ")}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatDateTime(payment.occurredAt)}
-                      </p>
-                    </div>
-                  </div>
-                  {payment.amount !== null && (
-                    <span
-                      className={`font-medium ${
-                        payment.type === "INVOICE_PAID"
-                          ? "text-green-600"
-                          : "text-gray-900"
-                      }`}
-                    >
-                      {formatCurrency(payment.amount, payment.currency)}
-                    </span>
+      <CollapsibleCard
+        icon={CreditCard}
+        title="Historique paiements"
+        count={creator.recentPayments.length}
+      >
+        {creator.recentPayments.length === 0 ? (
+          <p className="text-center text-sm text-gray-500">Aucun paiement</p>
+        ) : (
+          <div className="space-y-3">
+            {creator.recentPayments.map((payment) => (
+              <div
+                key={payment.id}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <div className="flex items-center gap-3">
+                  {payment.type === "INVOICE_PAID" ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : payment.type === "INVOICE_PAYMENT_FAILED" ? (
+                    <XCircle className="h-5 w-5 text-red-500" />
+                  ) : (
+                    <Clock className="h-5 w-5 text-gray-400" />
                   )}
+                  <div>
+                    <p className="font-medium text-sm">
+                      {payment.type.replace(/_/g, " ")}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatDateTime(payment.occurredAt)}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                {payment.amount !== null && (
+                  <span
+                    className={`font-medium ${
+                      payment.type === "INVOICE_PAID"
+                        ? "text-green-600"
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {formatCurrency(payment.amount, payment.currency)}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CollapsibleCard>
 
       <SuspendOrganizationDialog
         open={showSuspendDialog}

@@ -2484,6 +2484,15 @@
         "expiringSoon": "Expiring soon",
         "requiresAction": "Action required"
       },
+      "commission": {
+        "title": "My commission",
+        "subtitle": "What Sublynk took from creators' sales over the last 30 days",
+        "sales": "on {amount} of sales",
+        "count": "{count, plural, one {# commissioned sale} other {# commissioned sales}}",
+        "topCreators": "Top creators",
+        "empty": "No commission over the last 30 days.",
+        "details": "See details"
+      },
       "alerts": {
         "title": "Alerts to handle",
         "tickets": {

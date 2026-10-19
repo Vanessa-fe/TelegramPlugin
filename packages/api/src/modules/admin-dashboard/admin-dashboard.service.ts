@@ -132,6 +132,15 @@ export interface HealthScore {
   recentRevenueChange: number | null; // percentage change
 }
 
+/**
+ * Why a creator cannot sell. Buyers can pay only while the creator has an
+ * active Sublynk plan and a Stripe account that accepts payments.
+ */
+export type SellingBlocker =
+  | 'PLATFORM_PLAN'
+  | 'STRIPE_NOT_CONNECTED'
+  | 'STRIPE_INCOMPLETE';
+
 export interface CreatorListItem {
   id: string;
   name: string;
@@ -150,6 +159,8 @@ export interface CreatorListItem {
   salesCount: number;
   platformPlan: string | null;
   platformStatus: string | null;
+  // Empty when the creator can sell (saasActive) or is suspended
+  sellingBlockers: SellingBlocker[];
   // Payment risk indicators
   paymentRisk: {
     isAtRisk: boolean;
@@ -172,6 +183,14 @@ interface OrganizationCommerceMetrics {
   previousRevenue: number;
 }
 
+/** Cents, same windows as the revenue: last 30 days, the 30 before, all time */
+export interface CreatorCommission {
+  thisMonth: number;
+  previousMonth: number;
+  total: number;
+  chargesCount: number;
+}
+
 export interface CreatorDetail extends CreatorListItem {
   // Extended details
   ambassadorTier: AmbassadorTier;
@@ -181,6 +200,8 @@ export interface CreatorDetail extends CreatorListItem {
   totalRevenue: number;
   revenueThisMonth: number;
   revenuePreviousMonth: number;
+  // Sublynk's commission on the creator's sales; null when Stripe is unreachable
+  commission: CreatorCommission | null;
   // Activity
   recentActivity: {
     id: string;
@@ -350,7 +371,9 @@ export class AdminDashboardService {
           stored?.data?.object ?? stored;
         return { event, stored, invoice };
       })
-      .filter(({ invoice }) => invoice?.billing_reason !== 'subscription_create');
+      .filter(
+        ({ invoice }) => invoice?.billing_reason !== 'subscription_create',
+      );
 
     const paidInvoiceIds = await this.findPaidInvoiceIds(
       unpaid
@@ -369,8 +392,7 @@ export class AdminDashboardService {
           amount: invoice?.amount_due ?? 0,
           currency: invoice?.currency ?? 'eur',
           customerEmail: customer?.email ?? invoice?.customer_email ?? null,
-          customerName:
-            customer?.displayName ?? invoice?.customer_name ?? null,
+          customerName: customer?.displayName ?? invoice?.customer_name ?? null,
           organizationId: event.organizationId,
           organizationName: event.organization.name,
           subscriptionId: event.subscriptionId,
@@ -754,10 +776,37 @@ export class AdminDashboardService {
         salesCount: metrics.salesCount,
         platformPlan: org.platformSubscription?.platformPlan?.name ?? null,
         platformStatus: org.platformSubscription?.status ?? null,
+        sellingBlockers: this.sellingBlockers(org),
         paymentRisk,
         healthScore,
       };
     });
+  }
+
+  private sellingBlockers(org: {
+    saasActive: boolean;
+    suspendedAt: Date | null;
+    stripeAccountId: string | null;
+    platformSubscription: { status: string } | null;
+  }): SellingBlocker[] {
+    if (org.saasActive || org.suspendedAt) {
+      return [];
+    }
+
+    // A past-due plan still in its grace period keeps saasActive true
+    const status = org.platformSubscription?.status;
+    const planActive = status === 'ACTIVE' || status === 'TRIALING';
+    const blockers: SellingBlocker[] = [];
+    if (!planActive) {
+      blockers.push('PLATFORM_PLAN');
+    }
+    if (!org.stripeAccountId) {
+      blockers.push('STRIPE_NOT_CONNECTED');
+    } else if (planActive) {
+      // Plan fine, so the account itself cannot take payments yet
+      blockers.push('STRIPE_INCOMPLETE');
+    }
+    return blockers;
   }
 
   private emptyCommerceMetrics(): OrganizationCommerceMetrics {
@@ -1012,11 +1061,11 @@ export class AdminDashboardService {
     ) {
       level = 'red';
     } else if (
-      loginRecency === 'orange' ||
-      activityLevel === 'orange' ||
-      paymentStatus === 'orange' ||
-      revenueHealth === 'orange'
+      [loginRecency, activityLevel, paymentStatus, revenueHealth].some(
+        (factor) => factor !== 'green',
+      )
     ) {
+      // e.g. a creator ready to sell who never sold anything
       level = 'orange';
     }
 
@@ -1129,10 +1178,16 @@ export class AdminDashboardService {
       throw new NotFoundException('Creator not found');
     }
 
+    const [commerceMetricsById, commission] = await Promise.all([
+      this.getCommerceMetrics([id], thirtyDaysAgo, sixtyDaysAgo),
+      this.getCreatorCommission(
+        org.stripeAccountId,
+        thirtyDaysAgo,
+        sixtyDaysAgo,
+      ),
+    ]);
     const commerceMetrics =
-      (await this.getCommerceMetrics([id], thirtyDaysAgo, sixtyDaysAgo)).get(
-        id,
-      ) ?? this.emptyCommerceMetrics();
+      commerceMetricsById.get(id) ?? this.emptyCommerceMetrics();
     const activeSubscriptions = org.subscriptions.filter(
       (subscription) => subscription.status === SubscriptionStatus.ACTIVE,
     );
@@ -1243,6 +1298,7 @@ export class AdminDashboardService {
       salesCount: commerceMetrics.salesCount,
       platformPlan: org.platformSubscription?.platformPlan?.name ?? null,
       platformStatus: org.platformSubscription?.status ?? null,
+      sellingBlockers: this.sellingBlockers(org),
       paymentRisk,
       healthScore,
       // Extended details
@@ -1252,11 +1308,62 @@ export class AdminDashboardService {
       totalRevenue: commerceMetrics.totalRevenue,
       revenueThisMonth: commerceMetrics.recentRevenue,
       revenuePreviousMonth: commerceMetrics.previousRevenue,
+      commission,
       recentActivity: org.auditLogs,
       recentPayments,
       channels,
       products,
     };
+  }
+
+  /**
+   * Sublynk's commission on a creator's sales: the application fee taken on
+   * each successful charge of their connected Stripe account (direct charges).
+   */
+  private async getCreatorCommission(
+    stripeAccountId: string | null,
+    thirtyDaysAgo: Date,
+    sixtyDaysAgo: Date,
+  ): Promise<CreatorCommission | null> {
+    const commission: CreatorCommission = {
+      thisMonth: 0,
+      previousMonth: 0,
+      total: 0,
+      chargesCount: 0,
+    };
+
+    if (!stripeAccountId) {
+      return commission;
+    }
+    if (!this.stripe) {
+      return null;
+    }
+
+    try {
+      for await (const charge of this.stripe.charges.list(
+        { limit: 100 },
+        { stripeAccount: stripeAccountId },
+      )) {
+        const fee = charge.application_fee_amount;
+        if (charge.status !== 'succeeded' || !fee) continue;
+
+        const createdAt = new Date(charge.created * 1000);
+        commission.total += fee;
+        commission.chargesCount += 1;
+        if (createdAt >= thirtyDaysAgo) {
+          commission.thisMonth += fee;
+        } else if (createdAt >= sixtyDaysAgo) {
+          commission.previousMonth += fee;
+        }
+      }
+      return commission;
+    } catch (error) {
+      this.logger.error(
+        `Failed to load Stripe commission for account ${stripeAccountId}`,
+        error,
+      );
+      return null;
+    }
   }
 
   /**
