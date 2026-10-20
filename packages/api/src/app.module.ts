@@ -6,6 +6,11 @@ import { LoggerModule } from 'nestjs-pino';
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { AppController } from './app.controller';
+import {
+  HTTP_LOG_REDACT_CENSOR,
+  HTTP_LOG_REDACT_PATHS,
+  serializeLoggedRequest,
+} from './common/http-log-redaction';
 import { AppService } from './app.service';
 import { PaymentEventsModule } from './modules/payment-events/payment-events.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -114,6 +119,13 @@ function resolveEnvFiles(): string[] {
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? 'info',
+        redact: {
+          paths: HTTP_LOG_REDACT_PATHS,
+          censor: HTTP_LOG_REDACT_CENSOR,
+        },
+        serializers: {
+          req: serializeLoggedRequest,
+        },
         transport:
           process.env.NODE_ENV !== 'production'
             ? {
