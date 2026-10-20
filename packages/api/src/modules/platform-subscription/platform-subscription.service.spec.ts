@@ -93,6 +93,7 @@ describe('PlatformSubscriptionService', () => {
     },
     subscriptions: {
       list: jest.fn(),
+      retrieve: jest.fn(),
     },
     accounts: {
       retrieve: jest.fn(),
@@ -332,6 +333,113 @@ describe('PlatformSubscriptionService', () => {
       expect(mockPrisma.organization.update).not.toHaveBeenCalled();
       expect(syncOfferReadyToBrevo).not.toHaveBeenCalled();
     });
+
+    it('keeps a suspended creator unable to sell even with a paid plan', async () => {
+      mockPrisma.organization.findUnique.mockResolvedValue({
+        ...organization(true),
+        suspendedAt: new Date('2026-10-01T09:00:00.000Z'),
+      });
+
+      await service.updateSaasActive('org_123');
+
+      expect(mockPrisma.organization.update).toHaveBeenCalledWith({
+        where: { id: 'org_123' },
+        data: { saasActive: false },
+      });
+    });
+  });
+
+  describe('subscription webhooks (API 2025-09-30.clover payload)', () => {
+    beforeEach(() => {
+      jest.spyOn(service, 'updateSaasActive').mockResolvedValue(undefined);
+    });
+
+    it('saves the status and period Stripe has now, not the payload', async () => {
+      // Clover payload: no current_period_* on the subscription
+      const payload = {
+        id: 'sub_platform_1',
+        status: 'active',
+        metadata: { organizationId: 'org_123', type: 'platform' },
+      };
+      mockStripe.subscriptions.retrieve.mockResolvedValue({
+        ...payload,
+        status: 'past_due',
+        current_period_start: 1788387433,
+        current_period_end: 1790979433,
+        trial_end: null,
+        cancel_at_period_end: false,
+        canceled_at: null,
+      });
+
+      await service.handleWebhookEvent({
+        type: 'customer.subscription.updated',
+        data: { object: payload },
+      } as any);
+
+      expect(mockStripe.subscriptions.retrieve).toHaveBeenCalledWith(
+        'sub_platform_1',
+      );
+      expect(mockPrisma.platformSubscription.update).toHaveBeenCalledWith({
+        where: { organizationId: 'org_123' },
+        data: expect.objectContaining({
+          status: 'PAST_DUE',
+          currentPeriodStart: new Date(1788387433 * 1000),
+          currentPeriodEnd: new Date(1790979433 * 1000),
+        }),
+      });
+      expect(service.updateSaasActive).toHaveBeenCalledWith('org_123');
+    });
+
+    const deletedEvent = (reason: string) =>
+      ({
+        type: 'customer.subscription.deleted',
+        data: {
+          object: {
+            id: 'sub_platform_1',
+            status: 'canceled',
+            cancellation_details: { reason },
+          },
+        },
+      }) as any;
+
+    it('gives no grace period to a plan Stripe ended unpaid', async () => {
+      mockPrisma.platformSubscription.findUnique.mockResolvedValue({
+        id: 'ps_1',
+        organizationId: 'org_123',
+        status: 'PAST_DUE',
+        metadata: null,
+      });
+
+      await service.handleWebhookEvent(deletedEvent('payment_failed'));
+
+      expect(mockPrisma.platformSubscription.update).toHaveBeenCalledWith({
+        where: { id: 'ps_1' },
+        data: expect.objectContaining({
+          status: 'CANCELED',
+          graceUntil: null,
+        }),
+      });
+      expect(service.updateSaasActive).toHaveBeenCalledWith('org_123');
+    });
+
+    it('keeps the grace period when the creator cancels a paid plan', async () => {
+      mockPrisma.platformSubscription.findUnique.mockResolvedValue({
+        id: 'ps_1',
+        organizationId: 'org_123',
+        status: 'ACTIVE',
+        metadata: null,
+      });
+
+      await service.handleWebhookEvent(deletedEvent('cancellation_requested'));
+
+      expect(mockPrisma.platformSubscription.update).toHaveBeenCalledWith({
+        where: { id: 'ps_1' },
+        data: expect.objectContaining({
+          status: 'CANCELED',
+          graceUntil: expect.any(Date),
+        }),
+      });
+    });
   });
 
   describe('invoice webhooks (API 2025-09-30.clover payload)', () => {
@@ -399,6 +507,82 @@ describe('PlatformSubscriptionService', () => {
         'billing@sublynk.test',
         7,
       );
+      expect(service.updateSaasActive).toHaveBeenCalledWith('org_123');
+    });
+
+    const unpaidMetadata = {
+      checkoutSessionId: 'cs_platform_1',
+      failedPaymentAttempts: 3,
+      firstFailedAt: '2026-09-02T22:17:47.000Z',
+      lastFailedAt: '2026-09-09T22:17:47.000Z',
+      paymentWarningSentAt: '2026-09-07T09:00:00.000Z',
+      suspendedAt: '2026-09-09T09:00:00.000Z',
+      suspendedReason: 'Échec de paiement répété (3 tentatives)',
+    };
+
+    it('lifts the unpaid-plan suspension and resets the failure count once paid', async () => {
+      mockPrisma.platformSubscription.findUnique.mockResolvedValue({
+        id: 'ps_1',
+        organizationId: 'org_123',
+        status: 'PAST_DUE',
+        metadata: unpaidMetadata,
+      });
+      mockPrisma.organization.findUnique.mockResolvedValue({
+        billingEmail: 'billing@sublynk.test',
+        suspendedAt: new Date('2026-09-09T09:00:00.000Z'),
+        suspendReason: 'Échec de paiement répété (3 tentatives)',
+      });
+
+      await service.handleWebhookEvent(
+        cloverInvoice('invoice.payment_succeeded'),
+      );
+
+      expect(mockPrisma.platformSubscription.update).toHaveBeenCalledWith({
+        where: { id: 'ps_1' },
+        data: { metadata: { checkoutSessionId: 'cs_platform_1' } },
+      });
+      expect(mockPrisma.organization.update).toHaveBeenCalledWith({
+        where: { id: 'org_123' },
+        data: { suspendedAt: null, suspendReason: null },
+      });
+      expect(service.updateSaasActive).toHaveBeenCalledWith('org_123');
+    });
+
+    it('keeps a suspension an admin applied for another reason', async () => {
+      mockPrisma.platformSubscription.findUnique.mockResolvedValue({
+        id: 'ps_1',
+        organizationId: 'org_123',
+        status: 'PAST_DUE',
+        metadata: unpaidMetadata,
+      });
+      mockPrisma.organization.findUnique.mockResolvedValue({
+        billingEmail: 'billing@sublynk.test',
+        suspendedAt: new Date('2026-10-01T09:00:00.000Z'),
+        suspendReason: 'Fraude',
+      });
+
+      await service.handleWebhookEvent(
+        cloverInvoice('invoice.payment_succeeded'),
+      );
+
+      expect(mockPrisma.organization.update).not.toHaveBeenCalled();
+    });
+
+    it('does not revive a plan Stripe already ended', async () => {
+      mockPrisma.platformSubscription.findUnique.mockResolvedValue({
+        id: 'ps_1',
+        organizationId: 'org_123',
+        status: 'CANCELED',
+        metadata: unpaidMetadata,
+      });
+
+      await service.handleWebhookEvent(
+        cloverInvoice('invoice.payment_succeeded'),
+      );
+
+      expect(mockPrisma.platformSubscription.update).not.toHaveBeenCalled();
+      expect(mockPrisma.organization.update).not.toHaveBeenCalled();
+      expect(service.updateSaasActive).not.toHaveBeenCalled();
     });
   });
 });

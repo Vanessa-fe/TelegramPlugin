@@ -74,6 +74,7 @@ describe('StripeWebhookService', () => {
               const config: Record<string, string> = {
                 STRIPE_SECRET_KEY: 'sk_test_123',
                 STRIPE_WEBHOOK_SECRET: 'whsec_123',
+                STRIPE_PLATFORM_WEBHOOK_SECRET: 'whsec_platform',
               };
               return config[key];
             }),
@@ -81,6 +82,7 @@ describe('StripeWebhookService', () => {
               const config: Record<string, string> = {
                 STRIPE_SECRET_KEY: 'sk_test_123',
                 STRIPE_WEBHOOK_SECRET: 'whsec_123',
+                STRIPE_PLATFORM_WEBHOOK_SECRET: 'whsec_platform',
               };
               return config[key];
             }),
@@ -211,6 +213,34 @@ describe('StripeWebhookService', () => {
       await expect(
         service.handleWebhook('invalid_sig', { rawBody: Buffer.from('{}') }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it("accepts events signed by the Sublynk account's own endpoint", async () => {
+      const mockEvent = {
+        id: 'evt_platform',
+        type: 'customer.subscription.deleted',
+        created: 1234567890,
+        data: { object: { id: 'sub_platform_1', metadata: {} } },
+      } as unknown as Stripe.Event;
+      mockStripe.webhooks.constructEvent.mockImplementation(
+        (_body, _signature, secret: string) => {
+          if (secret !== 'whsec_platform') {
+            throw new Error(
+              'No signatures found matching the expected signature',
+            );
+          }
+          return mockEvent;
+        },
+      );
+
+      await service.handleWebhook('sig_platform', {
+        rawBody: Buffer.from('{}'),
+      });
+
+      expect(mockStripe.webhooks.constructEvent).toHaveBeenCalledTimes(2);
+      expect(
+        platformSubscriptionService.handleWebhookEvent,
+      ).toHaveBeenCalledWith(mockEvent);
     });
 
     it('should successfully process valid webhook with Buffer rawBody', async () => {

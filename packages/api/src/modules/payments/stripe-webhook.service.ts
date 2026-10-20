@@ -57,8 +57,14 @@ export class StripeWebhookService {
     request: StripeRawBodyRequest,
   ): Promise<void> {
     const startTime = process.hrtime.bigint();
-    const webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET');
-    if (!webhookSecret) {
+    // One Stripe endpoint per event source, each signing with its own secret:
+    // connected accounts (creators' sales) and Sublynk's own account
+    // (creators' Sublynk plans)
+    const webhookSecrets = [
+      this.config.get<string>('STRIPE_WEBHOOK_SECRET'),
+      this.config.get<string>('STRIPE_PLATFORM_WEBHOOK_SECRET'),
+    ].filter((secret): secret is string => Boolean(secret));
+    if (webhookSecrets.length === 0) {
       this.metricsService.recordWebhookRequest('stripe', 'unknown', 'error');
       throw new BadRequestException('Stripe webhook secret is not configured');
     }
@@ -71,16 +77,26 @@ export class StripeWebhookService {
       );
     }
 
-    let event: Stripe.Event;
-    try {
-      const bodyToVerify = typeof rawBody === 'string' ? rawBody : rawBody;
-      event = this.stripe.webhooks.constructEvent(
-        bodyToVerify,
-        signature,
-        webhookSecret,
+    let event: Stripe.Event | undefined;
+    let verificationError: unknown;
+    const bodyToVerify = typeof rawBody === 'string' ? rawBody : rawBody;
+    for (const webhookSecret of webhookSecrets) {
+      try {
+        event = this.stripe.webhooks.constructEvent(
+          bodyToVerify,
+          signature,
+          webhookSecret,
+        );
+        break;
+      } catch (error) {
+        verificationError = error;
+      }
+    }
+    if (!event) {
+      this.logger.error(
+        'Stripe signature verification failed',
+        verificationError as Error,
       );
-    } catch (error) {
-      this.logger.error('Stripe signature verification failed', error as Error);
       this.metricsService.recordWebhookRequest('stripe', 'unknown', 'error');
       throw new BadRequestException('Invalid Stripe signature');
     }

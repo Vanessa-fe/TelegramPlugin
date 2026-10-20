@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PlatformSubscriptionStatus } from '@prisma/client';
+import { PlatformSubscriptionStatus, Prisma } from '@prisma/client';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { invoiceSubscription } from '../../common/stripe-invoice';
@@ -23,6 +23,16 @@ import type {
   PlatformPlanResponse,
   PlatformSubscriptionResponse,
 } from './platform-subscription.schema';
+
+/** Metadata the unpaid-plan flow keeps (see scheduler handlePlatformPaymentOverdue) */
+const PAYMENT_FAILURE_METADATA_KEYS = [
+  'failedPaymentAttempts',
+  'firstFailedAt',
+  'lastFailedAt',
+  'paymentWarningSentAt',
+  'suspendedAt',
+  'suspendedReason',
+];
 
 @Injectable()
 export class PlatformSubscriptionService {
@@ -630,6 +640,14 @@ export class PlatformSubscriptionService {
       },
     });
 
+    // A new plan bought after an unpaid one ends the unpaid flow
+    const platformSub = await this.prisma.platformSubscription.findUnique({
+      where: { organizationId },
+    });
+    if (platformSub) {
+      await this.clearPaymentFailures(platformSub);
+    }
+
     // Update saasActive on organization
     await this.updateSaasActive(organizationId);
 
@@ -689,8 +707,12 @@ export class PlatformSubscriptionService {
   }
 
   private async handleSubscriptionUpdated(
-    subscription: Stripe.Subscription,
+    payload: Stripe.Subscription,
   ): Promise<void> {
+    // The payload follows the webhook endpoint's API version (no
+    // current_period_* since 2025-03-31) and events can arrive out of order:
+    // read the subscription as it is now, in the SDK's API version
+    const subscription = await this.stripe.subscriptions.retrieve(payload.id);
     const organizationId = subscription.metadata?.organizationId;
 
     if (!organizationId) {
@@ -730,10 +752,19 @@ export class PlatformSubscriptionService {
       return;
     }
 
-    const gracePeriodDays =
-      this.config.get<number>('PLATFORM_GRACE_PERIOD_DAYS') ?? 7;
-    const graceUntil = new Date();
-    graceUntil.setDate(graceUntil.getDate() + gracePeriodDays);
+    // A plan Stripe ends because it went unpaid gets no grace period: the
+    // creator already lost access at the first failed payment
+    const endedUnpaid =
+      subscription.cancellation_details?.reason === 'payment_failed' ||
+      platformSub.status === PlatformSubscriptionStatus.PAST_DUE ||
+      platformSub.status === PlatformSubscriptionStatus.EXPIRED;
+    let graceUntil: Date | null = null;
+    if (!endedUnpaid) {
+      const gracePeriodDays =
+        this.config.get<number>('PLATFORM_GRACE_PERIOD_DAYS') ?? 7;
+      graceUntil = new Date();
+      graceUntil.setDate(graceUntil.getDate() + gracePeriodDays);
+    }
 
     await this.prisma.platformSubscription.update({
       where: { id: platformSub.id },
@@ -748,7 +779,9 @@ export class PlatformSubscriptionService {
     await this.updateSaasActive(platformSub.organizationId);
 
     this.logger.log(
-      `Platform subscription ${platformSub.id} canceled with grace until ${graceUntil.toISOString()}`,
+      graceUntil
+        ? `Platform subscription ${platformSub.id} canceled with grace until ${graceUntil.toISOString()}`
+        : `Platform subscription ${platformSub.id} canceled unpaid, no grace period`,
     );
   }
 
@@ -778,11 +811,67 @@ export class PlatformSubscriptionService {
           graceUntil: null,
         },
       });
+    }
 
+    // Paying an old invoice does not revive a plan Stripe already ended
+    if (
+      platformSub.status === PlatformSubscriptionStatus.PAST_DUE ||
+      platformSub.status === PlatformSubscriptionStatus.ACTIVE ||
+      platformSub.status === PlatformSubscriptionStatus.TRIALING
+    ) {
+      // customer.subscription.updated may have set ACTIVE first
+      await this.clearPaymentFailures(platformSub);
       await this.updateSaasActive(platformSub.organizationId);
     }
 
     await this.syncUnpaidBrevoList(platformSub.organizationId, false);
+  }
+
+  /**
+   * A paid plan ends the unpaid flow: the next failure starts a new count
+   * toward auto-suspension, and the suspension the overdue job applied for
+   * non-payment is lifted. A suspension for any other reason stays.
+   * Callers recompute saasActive afterwards.
+   */
+  private async clearPaymentFailures(platformSub: {
+    id: string;
+    organizationId: string;
+    metadata: Prisma.JsonValue;
+  }): Promise<void> {
+    const metadata =
+      (platformSub.metadata as Record<string, unknown> | null) ?? {};
+    if (!PAYMENT_FAILURE_METADATA_KEYS.some((key) => key in metadata)) {
+      return;
+    }
+
+    await this.prisma.platformSubscription.update({
+      where: { id: platformSub.id },
+      data: {
+        metadata: Object.fromEntries(
+          Object.entries(metadata).filter(
+            ([key]) => !PAYMENT_FAILURE_METADATA_KEYS.includes(key),
+          ),
+        ) as Prisma.InputJsonObject,
+      },
+    });
+
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: platformSub.organizationId },
+      select: { suspendedAt: true, suspendReason: true },
+    });
+    if (
+      organization?.suspendedAt &&
+      typeof metadata.suspendedReason === 'string' &&
+      organization.suspendReason === metadata.suspendedReason
+    ) {
+      await this.prisma.organization.update({
+        where: { id: platformSub.organizationId },
+        data: { suspendedAt: null, suspendReason: null },
+      });
+      this.logger.log(
+        `Lifted the unpaid-plan suspension of organization ${platformSub.organizationId}`,
+      );
+    }
   }
 
   /** Brevo "unpaid" list tracks creators behind on their Sublynk plan */
@@ -996,9 +1085,10 @@ export class PlatformSubscriptionService {
     }
 
     // saasActive = platform subscription active AND Stripe Connect ready
-    // OR grandfathered (for early adopters)
+    // OR grandfathered (for early adopters), never while suspended
     const newSaasActive = Boolean(
-      isGrandfathered || (isPlatformActive && isConnectReady),
+      !organization.suspendedAt &&
+        (isGrandfathered || (isPlatformActive && isConnectReady)),
     );
 
     if (organization.saasActive !== newSaasActive) {
