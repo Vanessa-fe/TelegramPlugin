@@ -5,6 +5,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PostHogService } from '../posthog/posthog.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
 import { PlatformSubscriptionService } from './platform-subscription.service';
+import { ChannelAccessService } from '../channel-access/channel-access.service';
+import type { ChannelAccessQueue } from '../channel-access/channel-access.queue';
 import {
   removeBrevoContactFromList,
   upsertBrevoContact,
@@ -60,7 +62,19 @@ describe('PlatformSubscriptionService', () => {
       update: jest.fn(),
       upsert: jest.fn(),
     },
+    subscription: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    channelAccess: {
+      findMany: jest.fn().mockResolvedValue([]),
+      updateMany: jest.fn(),
+    },
   } as PrismaService;
+
+  const mockChannelAccessQueue: any = {
+    enqueueGrantAccess: jest.fn(),
+    cancelRevokeAccess: jest.fn(),
+  } as ChannelAccessQueue;
 
   const mockNotifications: any = {
     sendAdminNewSubscriptionNotification: jest.fn(),
@@ -108,6 +122,14 @@ describe('PlatformSubscriptionService', () => {
       mockNotifications,
       mockPosthog,
       mockVipInvitations,
+      // Real service: the lift goes through its entitlement rules
+      new ChannelAccessService(
+        mockPrisma,
+        mockChannelAccessQueue,
+        {} as NotificationsService,
+        mockConfig,
+        {} as any,
+      ),
     );
     (service as any).stripe = mockStripe;
 
@@ -548,6 +570,99 @@ describe('PlatformSubscriptionService', () => {
       expect(service.updateSaasActive).toHaveBeenCalledWith('org_123');
     });
 
+    describe('buyers of a creator whose suspension is lifted', () => {
+      const daysAgo = (days: number) =>
+        new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      beforeEach(() => {
+        mockPrisma.platformSubscription.findUnique.mockResolvedValue({
+          id: 'ps_1',
+          organizationId: 'org_123',
+          status: 'PAST_DUE',
+          metadata: unpaidMetadata,
+        });
+        mockPrisma.organization.findUnique.mockResolvedValue({
+          billingEmail: 'billing@sublynk.test',
+          suspendedAt: new Date('2026-09-09T09:00:00.000Z'),
+          suspendReason: 'Échec de paiement répété (3 tentatives)',
+        });
+      });
+
+      it('get their channels back while still paid, not once their pass ended', async () => {
+        mockPrisma.subscription.findMany.mockResolvedValueOnce([
+          {
+            id: 'sub-monthly',
+            startedAt: daysAgo(90),
+            currentPeriodEnd: null,
+            plan: { interval: 'MONTH', accessDurationDays: null },
+            paymentEvents: [{ provider: 'STRIPE' }],
+          },
+          // 30-day pass that ran out during the suspension
+          {
+            id: 'sub-ended-pass',
+            startedAt: daysAgo(35),
+            currentPeriodEnd: null,
+            plan: { interval: 'ONE_TIME', accessDurationDays: 30 },
+            paymentEvents: [{ provider: 'STRIPE' }],
+          },
+        ]);
+        mockPrisma.channelAccess.findMany.mockResolvedValueOnce([
+          {
+            id: 'access-1',
+            subscriptionId: 'sub-monthly',
+            channelId: 'ch-1',
+            customerId: 'cust-1',
+          },
+        ]);
+
+        await service.handleWebhookEvent(
+          cloverInvoice('invoice.payment_succeeded'),
+        );
+
+        expect(mockPrisma.subscription.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: expect.objectContaining({ organizationId: 'org_123' }),
+          }),
+        );
+        expect(mockChannelAccessQueue.cancelRevokeAccess).toHaveBeenCalledWith(
+          'sub-monthly',
+          'manual',
+        );
+        expect(mockChannelAccessQueue.enqueueGrantAccess).toHaveBeenCalledTimes(
+          1,
+        );
+        expect(mockChannelAccessQueue.enqueueGrantAccess).toHaveBeenCalledWith({
+          subscriptionId: 'sub-monthly',
+          channelId: 'ch-1',
+          customerId: 'cust-1',
+          provider: 'stripe',
+        });
+      });
+
+      it('do not hold up the lift when restoring them fails', async () => {
+        mockPrisma.subscription.findMany.mockRejectedValueOnce(
+          new Error('connection lost'),
+        );
+        const logError = jest
+          .spyOn((service as any).logger, 'error')
+          .mockImplementation();
+
+        await service.handleWebhookEvent(
+          cloverInvoice('invoice.payment_succeeded'),
+        );
+
+        expect(mockPrisma.organization.update).toHaveBeenCalledWith({
+          where: { id: 'org_123' },
+          data: { suspendedAt: null, suspendReason: null },
+        });
+        expect(logError).toHaveBeenCalledWith(
+          "Failed to restore buyers' accesses of organization org_123",
+          expect.any(Error),
+        );
+        expect(service.updateSaasActive).toHaveBeenCalledWith('org_123');
+      });
+    });
+
     it('keeps a suspension an admin applied for another reason', async () => {
       mockPrisma.platformSubscription.findUnique.mockResolvedValue({
         id: 'ps_1',
@@ -566,6 +681,8 @@ describe('PlatformSubscriptionService', () => {
       );
 
       expect(mockPrisma.organization.update).not.toHaveBeenCalled();
+      expect(mockPrisma.subscription.findMany).not.toHaveBeenCalled();
+      expect(mockChannelAccessQueue.enqueueGrantAccess).not.toHaveBeenCalled();
     });
 
     it('does not revive a plan Stripe already ended', async () => {

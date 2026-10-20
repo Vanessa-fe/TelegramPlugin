@@ -507,6 +507,23 @@ async function processGrantAccess(job: Job<GrantAccessPayload>): Promise<void> {
   }
 }
 
+// A suspension of the creator (reason "manual") keeps why an access was
+// already revoked: lifting it gives back only what it took away
+function revocationFields(
+  access: { status: $Enums.AccessStatus; revokeReason: string | null },
+  reason: string,
+  now: Date
+): { revokedAt?: Date; revokeReason?: string } {
+  if (
+    reason === "manual" &&
+    access.status === $Enums.AccessStatus.REVOKED &&
+    access.revokeReason
+  ) {
+    return {};
+  }
+  return { revokedAt: now, revokeReason: reason };
+}
+
 function readJoinedTelegramUserIds(metadata: unknown): string[] {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
     return [];
@@ -936,8 +953,7 @@ async function processDiscordRevoke(
     where: { id: access.id },
     data: {
       status: $Enums.AccessStatus.REVOKED,
-      revokedAt: now,
-      revokeReason: reason,
+      ...revocationFields(access, reason, now),
     },
   });
 
@@ -1151,8 +1167,7 @@ async function processRevokeAccess(
         where: { id: access.id },
         data: {
           status: $Enums.AccessStatus.REVOKED,
-          revokedAt: now,
-          revokeReason: data.reason,
+          ...revocationFields(access, data.reason, now),
         },
       });
 

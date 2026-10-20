@@ -1,8 +1,12 @@
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrganizationsService } from './organizations.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { ChannelAccessQueue } from '../channel-access/channel-access.queue';
+import { ChannelAccessService } from '../channel-access/channel-access.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
 
@@ -32,16 +36,37 @@ describe('OrganizationsService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
+    subscription: {
+      findMany: jest.fn(),
+    },
+    channelAccess: {
+      findMany: jest.fn(),
+      updateMany: jest.fn(),
+    },
   };
+  const mockAuditLogService = { create: jest.fn() };
+  const mockChannelAccessQueue = {
+    enqueueGrantAccess: jest.fn(),
+    enqueueRevokeAccess: jest.fn(),
+    cancelRevokeAccess: jest.fn(),
+  };
+  const mockPlatformSubscriptionService = { updateSaasActive: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrganizationsService,
+        // Real service: unsuspend goes through its entitlement rules
+        ChannelAccessService,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: AuditLogService, useValue: {} },
-        { provide: ChannelAccessQueue, useValue: {} },
-        { provide: PlatformSubscriptionService, useValue: {} },
+        { provide: AuditLogService, useValue: mockAuditLogService },
+        { provide: ChannelAccessQueue, useValue: mockChannelAccessQueue },
+        { provide: NotificationsService, useValue: {} },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
+        {
+          provide: PlatformSubscriptionService,
+          useValue: mockPlatformSubscriptionService,
+        },
       ],
     }).compile();
 
@@ -353,6 +378,91 @@ describe('OrganizationsService', () => {
           billingEmail: expect.anything(),
         }),
       });
+    });
+  });
+
+  describe('unsuspend', () => {
+    const daysAgo = (days: number) =>
+      new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    beforeEach(() => {
+      jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    });
+
+    it('gives back their channels to buyers still paid, not to ended passes', async () => {
+      mockPrismaService.organization.findUnique
+        .mockResolvedValueOnce({ id: 'org-1', suspendedAt: daysAgo(12) })
+        .mockResolvedValueOnce({ id: 'org-1', suspendedAt: null });
+      mockPrismaService.subscription.findMany.mockResolvedValue([
+        {
+          id: 'sub-monthly',
+          startedAt: daysAgo(90),
+          currentPeriodEnd: null,
+          plan: { interval: 'MONTH', accessDurationDays: null },
+          paymentEvents: [{ provider: 'STRIPE' }],
+        },
+        // 30-day pass that ran out during the suspension
+        {
+          id: 'sub-ended-pass',
+          startedAt: daysAgo(35),
+          currentPeriodEnd: null,
+          plan: { interval: 'ONE_TIME', accessDurationDays: 30 },
+          paymentEvents: [{ provider: 'STRIPE' }],
+        },
+      ]);
+      mockPrismaService.channelAccess.findMany.mockResolvedValue([
+        {
+          id: 'access-1',
+          subscriptionId: 'sub-monthly',
+          channelId: 'ch-1',
+          customerId: 'cust-1',
+        },
+      ]);
+
+      await service.unsuspend('org-1', 'admin-1');
+
+      expect(mockPrismaService.organization.update).toHaveBeenCalledWith({
+        where: { id: 'org-1' },
+        data: { suspendedAt: null, suspendReason: null },
+      });
+      expect(mockChannelAccessQueue.cancelRevokeAccess).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(mockPrismaService.channelAccess.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            subscriptionId: { in: ['sub-monthly'] },
+            revokeReason: 'manual',
+          }),
+        }),
+      );
+      expect(mockChannelAccessQueue.enqueueGrantAccess).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(mockChannelAccessQueue.enqueueGrantAccess).toHaveBeenCalledWith({
+        subscriptionId: 'sub-monthly',
+        channelId: 'ch-1',
+        customerId: 'cust-1',
+        provider: 'stripe',
+      });
+      expect(mockAuditLogService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'organization.unsuspended',
+          metadata: { restoredAccesses: 1 },
+        }),
+      );
+    });
+
+    it('refuses an organization that is not suspended', async () => {
+      mockPrismaService.organization.findUnique.mockResolvedValueOnce({
+        id: 'org-1',
+        suspendedAt: null,
+      });
+
+      await expect(service.unsuspend('org-1')).rejects.toThrow(
+        'Organisation non suspendue',
+      );
+      expect(mockChannelAccessQueue.enqueueGrantAccess).not.toHaveBeenCalled();
     });
   });
 });

@@ -35,6 +35,7 @@ describe('ChannelAccessService', () => {
           useValue: {
             subscription: {
               findUnique: jest.fn(),
+              findMany: jest.fn(),
               update: jest.fn(),
             },
             customer: {
@@ -68,6 +69,7 @@ describe('ChannelAccessService', () => {
           useValue: {
             enqueueGrantAccess: jest.fn(),
             enqueueRevokeAccess: jest.fn(),
+            cancelRevokeAccess: jest.fn(),
           },
         },
         {
@@ -812,6 +814,188 @@ describe('ChannelAccessService', () => {
 
       expect(queue.enqueueGrantAccess).toHaveBeenCalledTimes(1);
       expect(enqueued).toBe(0);
+    });
+  });
+
+  describe('restoreSuspendedAccesses', () => {
+    const daysAgo = (days: number) =>
+      new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    // Stripe renews it as long as it is ACTIVE: no period end is stored
+    const monthlySubscription = {
+      id: 'sub-monthly',
+      startedAt: daysAgo(90),
+      currentPeriodEnd: null,
+      plan: { interval: 'MONTH', accessDurationDays: null },
+      paymentEvents: [{ provider: PaymentProvider.STRIPE }],
+    };
+    const runningPass = {
+      id: 'sub-pass',
+      startedAt: daysAgo(10),
+      currentPeriodEnd: null,
+      plan: { interval: 'ONE_TIME', accessDurationDays: 30 },
+      paymentEvents: [{ provider: PaymentProvider.TELEGRAM_STARS }],
+    };
+    const endedPass = {
+      id: 'sub-ended-pass',
+      startedAt: daysAgo(40),
+      currentPeriodEnd: null,
+      plan: { interval: 'ONE_TIME', accessDurationDays: 30 },
+      paymentEvents: [],
+    };
+    const endedStarsPeriod = {
+      id: 'sub-ended-stars',
+      startedAt: daysAgo(31),
+      currentPeriodEnd: daysAgo(1),
+      plan: { interval: 'MONTH', accessDurationDays: null },
+      paymentEvents: [{ provider: PaymentProvider.TELEGRAM_STARS }],
+    };
+
+    it('gives the channels back to buyers still paid and within their period', async () => {
+      prisma.subscription.findMany.mockResolvedValue([
+        monthlySubscription,
+        runningPass,
+        endedPass,
+        endedStarsPeriod,
+      ] as any);
+      prisma.channelAccess.findMany.mockResolvedValue([
+        {
+          id: 'access-1',
+          subscriptionId: 'sub-monthly',
+          channelId: 'ch-1',
+          customerId: 'cust-1',
+        },
+        {
+          id: 'access-2',
+          subscriptionId: 'sub-pass',
+          channelId: 'ch-2',
+          customerId: 'cust-2',
+        },
+      ] as any);
+
+      const restored = await service.restoreSuspendedAccesses('org-1');
+
+      expect(prisma.subscription.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            organizationId: 'org-1',
+            OR: [
+              { status: { in: ['ACTIVE', 'TRIALING'] } },
+              { status: 'PAST_DUE', graceUntil: { gt: expect.any(Date) } },
+            ],
+          },
+        }),
+      );
+      // Only what the suspension revoked, never WhatsApp (left to the creator)
+      expect(prisma.channelAccess.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            subscriptionId: { in: ['sub-monthly', 'sub-pass'] },
+            status: 'REVOKED',
+            revokeReason: 'manual',
+            channel: { isActive: true, provider: { not: 'WHATSAPP' } },
+          },
+        }),
+      );
+      expect(queue.cancelRevokeAccess).toHaveBeenCalledTimes(2);
+      expect(queue.cancelRevokeAccess).toHaveBeenCalledWith(
+        'sub-monthly',
+        'manual',
+      );
+      expect(queue.cancelRevokeAccess).toHaveBeenCalledWith(
+        'sub-pass',
+        'manual',
+      );
+      expect(prisma.channelAccess.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['access-1', 'access-2'] }, status: 'REVOKED' },
+        data: {
+          status: 'PENDING',
+          grantedAt: null,
+          revokedAt: null,
+          revokeReason: null,
+          inviteId: null,
+        },
+      });
+      expect(queue.enqueueGrantAccess).toHaveBeenCalledTimes(2);
+      expect(queue.enqueueGrantAccess).toHaveBeenCalledWith({
+        subscriptionId: 'sub-monthly',
+        channelId: 'ch-1',
+        customerId: 'cust-1',
+        provider: 'stripe',
+      });
+      expect(queue.enqueueGrantAccess).toHaveBeenCalledWith({
+        subscriptionId: 'sub-pass',
+        channelId: 'ch-2',
+        customerId: 'cust-2',
+        provider: 'telegram_stars',
+      });
+      expect(restored).toBe(2);
+    });
+
+    it('leaves a pass that ended during the suspension ended', async () => {
+      prisma.subscription.findMany.mockResolvedValue([
+        endedPass,
+        endedStarsPeriod,
+      ] as any);
+
+      const restored = await service.restoreSuspendedAccesses('org-1');
+
+      expect(queue.cancelRevokeAccess).not.toHaveBeenCalled();
+      expect(prisma.channelAccess.findMany).not.toHaveBeenCalled();
+      expect(prisma.channelAccess.updateMany).not.toHaveBeenCalled();
+      expect(queue.enqueueGrantAccess).not.toHaveBeenCalled();
+      expect(restored).toBe(0);
+    });
+
+    it('cancels the suspension revoke of a buyer it had not reached yet', async () => {
+      prisma.subscription.findMany.mockResolvedValue([
+        monthlySubscription,
+      ] as any);
+      // Still GRANTED: the revoke job was waiting in the queue
+      prisma.channelAccess.findMany.mockResolvedValue([]);
+      queue.cancelRevokeAccess.mockResolvedValue(true);
+
+      const restored = await service.restoreSuspendedAccesses('org-1');
+
+      expect(queue.cancelRevokeAccess).toHaveBeenCalledWith(
+        'sub-monthly',
+        'manual',
+      );
+      expect(prisma.channelAccess.updateMany).not.toHaveBeenCalled();
+      expect(queue.enqueueGrantAccess).not.toHaveBeenCalled();
+      expect(restored).toBe(0);
+    });
+
+    it('leaves the grants the queue missed to retryStalePendingGrants', async () => {
+      prisma.subscription.findMany.mockResolvedValue([
+        monthlySubscription,
+      ] as any);
+      prisma.channelAccess.findMany.mockResolvedValue([
+        {
+          id: 'access-1',
+          subscriptionId: 'sub-monthly',
+          channelId: 'ch-1',
+          customerId: 'cust-1',
+        },
+        {
+          id: 'access-2',
+          subscriptionId: 'sub-monthly',
+          channelId: 'ch-2',
+          customerId: 'cust-1',
+        },
+      ] as any);
+      queue.enqueueGrantAccess.mockRejectedValue(new Error('ENOTFOUND'));
+
+      const restored = await service.restoreSuspendedAccesses('org-1');
+
+      // Saved as PENDING first, so the scheduler enqueues them later
+      expect(prisma.channelAccess.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ status: 'PENDING' }),
+        }),
+      );
+      expect(queue.enqueueGrantAccess).toHaveBeenCalledTimes(1);
+      expect(restored).toBe(2);
     });
   });
 

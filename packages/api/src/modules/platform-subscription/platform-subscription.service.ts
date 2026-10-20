@@ -16,6 +16,7 @@ import {
   BREVO_LIST_IDS,
 } from '../../common/brevo-sync';
 import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
+import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PostHogService } from '../posthog/posthog.service';
 import { VipInvitationsService } from '../vip-invitations/vip-invitations.service';
@@ -45,6 +46,7 @@ export class PlatformSubscriptionService {
     private readonly notifications: NotificationsService,
     private readonly posthog: PostHogService,
     private readonly vipInvitationsService: VipInvitationsService,
+    private readonly channelAccessService: ChannelAccessService,
   ) {
     const apiKey = this.config.get<string>('STRIPE_SECRET_KEY');
     if (!apiKey) {
@@ -830,8 +832,8 @@ export class PlatformSubscriptionService {
   /**
    * A paid plan ends the unpaid flow: the next failure starts a new count
    * toward auto-suspension, and the suspension the overdue job applied for
-   * non-payment is lifted. A suspension for any other reason stays.
-   * Callers recompute saasActive afterwards.
+   * non-payment is lifted, giving buyers their channels back. A suspension
+   * for any other reason stays. Callers recompute saasActive afterwards.
    */
   private async clearPaymentFailures(platformSub: {
     id: string;
@@ -871,6 +873,19 @@ export class PlatformSubscriptionService {
       this.logger.log(
         `Lifted the unpaid-plan suspension of organization ${platformSub.organizationId}`,
       );
+
+      // The lift is saved and a retried webhook would not redo it: never fail
+      // the webhook from here
+      try {
+        await this.channelAccessService.restoreSuspendedAccesses(
+          platformSub.organizationId,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to restore buyers' accesses of organization ${platformSub.organizationId}`,
+          error as Error,
+        );
+      }
     }
   }
 

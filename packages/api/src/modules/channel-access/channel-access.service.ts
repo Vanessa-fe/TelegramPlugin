@@ -18,7 +18,10 @@ import {
 } from '@prisma/client';
 import type { ChannelAccess } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ChannelAccessQueue } from './channel-access.queue';
+import {
+  ChannelAccessQueue,
+  SUSPENSION_REVOKE_REASON,
+} from './channel-access.queue';
 import { NotificationsService } from '../notifications/notifications.service';
 import type { GrantAccessPayload } from '@telegram-plugin/shared';
 import { AuditLogService } from '../audit-log/audit-log.service';
@@ -30,6 +33,27 @@ function readTelegramIds(value: Prisma.JsonValue | undefined): string[] {
   return Array.isArray(value)
     ? value.filter((id): id is string => typeof id === 'string')
     : [];
+}
+
+/**
+ * When a subscription's access ends: a one-time pass lasts accessDurationDays
+ * from the purchase (as in the scheduler's handleExpiredChannelAccesses),
+ * otherwise the current period. Null when no end is known.
+ */
+function accessEndsAt(subscription: {
+  startedAt: Date;
+  currentPeriodEnd: Date | null;
+  plan: { interval: PlanInterval; accessDurationDays: number | null };
+}): Date | null {
+  if (
+    subscription.plan.interval === PlanInterval.ONE_TIME &&
+    subscription.plan.accessDurationDays
+  ) {
+    const endsAt = new Date(subscription.startedAt);
+    endsAt.setDate(endsAt.getDate() + subscription.plan.accessDurationDays);
+    return endsAt;
+  }
+  return subscription.currentPeriodEnd;
 }
 
 @Injectable()
@@ -628,6 +652,136 @@ export class ChannelAccessService {
     }
 
     return enqueued;
+  }
+
+  /**
+   * Give buyers back the channels a suspension of their creator took away,
+   * once it is lifted. Only subscriptions still paid and within their period
+   * get them back: a pass that ended during the suspension stays ended.
+   * Returns the number of accesses re-granted.
+   */
+  async restoreSuspendedAccesses(organizationId: string): Promise<number> {
+    const now = new Date();
+
+    const subscriptions = await this.prisma.subscription.findMany({
+      where: {
+        organizationId,
+        OR: [
+          {
+            status: {
+              in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING],
+            },
+          },
+          // A buyer behind on payment keeps access until their grace ends
+          { status: SubscriptionStatus.PAST_DUE, graceUntil: { gt: now } },
+        ],
+      },
+      select: {
+        id: true,
+        startedAt: true,
+        currentPeriodEnd: true,
+        plan: { select: { interval: true, accessDurationDays: true } },
+        paymentEvents: {
+          orderBy: { occurredAt: 'desc' },
+          take: 1,
+          select: { provider: true },
+        },
+      },
+    });
+
+    const entitled = subscriptions.filter((subscription) => {
+      const endsAt = accessEndsAt(subscription);
+      return !endsAt || endsAt > now;
+    });
+    if (entitled.length === 0) {
+      return 0;
+    }
+
+    // A revoke still waiting in the queue would kick the buyer after the
+    // grant below
+    for (const subscription of entitled) {
+      try {
+        await this.queue.cancelRevokeAccess(
+          subscription.id,
+          SUSPENSION_REVOKE_REASON,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to cancel the suspension revoke of subscription ${subscription.id}`,
+          error as Error,
+        );
+        break;
+      }
+    }
+
+    const accesses = await this.prisma.channelAccess.findMany({
+      where: {
+        subscriptionId: { in: entitled.map((subscription) => subscription.id) },
+        status: $Enums.AccessStatus.REVOKED,
+        revokeReason: SUSPENSION_REVOKE_REASON,
+        // The worker never revokes WhatsApp accesses (manual for the creator)
+        channel: {
+          isActive: true,
+          provider: { not: $Enums.ChannelProvider.WHATSAPP },
+        },
+      },
+      select: {
+        id: true,
+        subscriptionId: true,
+        channelId: true,
+        customerId: true,
+      },
+    });
+    if (accesses.length === 0) {
+      return 0;
+    }
+
+    // PENDING, so retryStalePendingGrants picks up a grant the queue missed
+    await this.prisma.channelAccess.updateMany({
+      where: {
+        id: { in: accesses.map((access) => access.id) },
+        status: $Enums.AccessStatus.REVOKED,
+      },
+      data: {
+        status: $Enums.AccessStatus.PENDING,
+        grantedAt: null,
+        revokedAt: null,
+        revokeReason: null,
+        inviteId: null,
+      },
+    });
+
+    const lastProvider = new Map(
+      entitled.map((subscription) => [
+        subscription.id,
+        subscription.paymentEvents[0]?.provider,
+      ]),
+    );
+    for (const access of accesses) {
+      const provider =
+        lastProvider.get(access.subscriptionId) ?? PaymentProvider.STRIPE;
+      try {
+        await this.queue.enqueueGrantAccess({
+          subscriptionId: access.subscriptionId,
+          channelId: access.channelId,
+          customerId: access.customerId,
+          provider: provider.toLowerCase() as GrantAccessPayload['provider'],
+        });
+      } catch (error) {
+        // Queue unavailable: retryStalePendingGrants enqueues the rest later
+        this.logger.error(
+          `Failed to enqueue the restored grant of subscription ${access.subscriptionId}`,
+          error as Error,
+        );
+        break;
+      }
+    }
+
+    this.logger.log(
+      `Restored ${accesses.length} channel access(es) of organization ${organizationId} after its suspension`,
+    );
+
+    return accesses.length;
   }
 
   private async backfillEmailFromCheckout(

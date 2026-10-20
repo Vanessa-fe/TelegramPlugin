@@ -18,6 +18,10 @@ import type {
 } from '@telegram-plugin/shared';
 import { MetricsService } from '../metrics/metrics.service';
 
+/** Reason of the revoke jobs a suspension of the creator enqueues */
+export const SUSPENSION_REVOKE_REASON =
+  'manual' satisfies RevokeAccessPayload['reason'];
+
 function readBooleanConfig(
   config: ConfigService,
   key: string,
@@ -252,6 +256,36 @@ export class ChannelAccessQueue implements OnModuleDestroy, OnModuleInit {
     this.logger.debug(
       `Revoke access job enqueued (subscription=${data.subscriptionId}, reason=${data.reason})`,
     );
+  }
+
+  /**
+   * Drop a revoke job that has not run yet. Returns false when there is none,
+   * or when the worker is already running it (BullMQ refuses to remove it).
+   */
+  async cancelRevokeAccess(
+    subscriptionId: string,
+    reason: RevokeAccessPayload['reason'],
+  ): Promise<boolean> {
+    if (!this.revokeQueue) {
+      return false;
+    }
+
+    const job = await this.revokeQueue.getJob(
+      `revoke:${subscriptionId}:${reason}`,
+    );
+    if (!job) {
+      return false;
+    }
+
+    try {
+      await job.remove();
+      return true;
+    } catch (error) {
+      this.logger.warn(
+        `Revoke job could not be canceled (subscription=${subscriptionId}, reason=${reason}): ${(error as Error).message}`,
+      );
+      return false;
+    }
   }
 
   async replayGrantAccess(jobId: string): Promise<void> {

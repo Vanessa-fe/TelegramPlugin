@@ -18,7 +18,11 @@ import {
   UpdateOrganizationDto,
 } from './organizations.schema';
 import { AuditLogService } from '../audit-log/audit-log.service';
-import { ChannelAccessQueue } from '../channel-access/channel-access.queue';
+import {
+  ChannelAccessQueue,
+  SUSPENSION_REVOKE_REASON,
+} from '../channel-access/channel-access.queue';
+import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { PlatformSubscriptionService } from '../platform-subscription/platform-subscription.service';
 
 export type OrganizationListItem = Organization & {
@@ -34,6 +38,7 @@ export class OrganizationsService {
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
     private readonly channelAccessQueue: ChannelAccessQueue,
+    private readonly channelAccessService: ChannelAccessService,
     private readonly platformSubscriptionService: PlatformSubscriptionService,
   ) {}
 
@@ -166,7 +171,7 @@ export class OrganizationsService {
     for (const sub of subscriptions) {
       await this.channelAccessQueue.enqueueRevokeAccess({
         subscriptionId: sub.id,
-        reason: 'manual',
+        reason: SUSPENSION_REVOKE_REASON,
       });
     }
 
@@ -188,6 +193,7 @@ export class OrganizationsService {
    * Unsuspend an organization (SUPERADMIN only)
    * - Clears suspendedAt and suspendReason
    * - Recalculates saasActive based on platform subscription and Stripe Connect status
+   * - Gives buyers still paid and within their period their channels back
    * - Creates an audit log entry
    */
   async unsuspend(id: string, actorId?: string): Promise<Organization> {
@@ -208,6 +214,9 @@ export class OrganizationsService {
     // Recalculate saasActive based on platform subscription + Stripe Connect
     await this.platformSubscriptionService.updateSaasActive(id);
 
+    const restoredAccesses =
+      await this.channelAccessService.restoreSuspendedAccesses(id);
+
     await this.auditLogService.create({
       organizationId: id,
       actorId,
@@ -215,6 +224,7 @@ export class OrganizationsService {
       action: 'organization.unsuspended',
       resourceType: 'organization',
       resourceId: id,
+      metadata: { restoredAccesses },
     });
 
     // Fetch the updated organization with the new saasActive value
