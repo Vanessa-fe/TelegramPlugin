@@ -69,6 +69,9 @@ describe('PlatformSubscriptionService', () => {
       findMany: jest.fn().mockResolvedValue([]),
       updateMany: jest.fn(),
     },
+    user: {
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
   } as PrismaService;
 
   const mockChannelAccessQueue: any = {
@@ -194,6 +197,62 @@ describe('PlatformSubscriptionService', () => {
       },
     });
     expect(mockStripe.checkout.sessions.create.mock.calls[0]).toHaveLength(1);
+  });
+
+  describe('plan analytics', () => {
+    beforeEach(() => {
+      mockPrisma.platformPlan.findUnique.mockResolvedValue({
+        id: 'platform_plan_starter',
+        name: 'starter',
+        displayName: 'Starter',
+        priceCents: 0,
+        currency: 'eur',
+        interval: PlanInterval.MONTH,
+        trialPeriodDays: 0,
+        isActive: true,
+        stripePriceId: null,
+      });
+    });
+
+    it('sends the plan funnel events to the creator who signed up, not the organization', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue({ id: 'user_creator' });
+
+      await service.createCheckoutSession('org_123', 'starter');
+
+      expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
+        where: { organizationId: 'org_123' },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true },
+      });
+      expect(mockPosthog.capture).toHaveBeenCalledWith(
+        'user_creator',
+        'plan_selected',
+        expect.objectContaining({
+          organization_id: 'org_123',
+          plan: 'starter',
+        }),
+      );
+      expect(mockPosthog.capture).toHaveBeenCalledWith(
+        'user_creator',
+        'subscription_created',
+        expect.objectContaining({
+          organization_id: 'org_123',
+          plan: 'starter',
+        }),
+      );
+    });
+
+    it('falls back to the organization when it has no user', async () => {
+      mockPrisma.user.findFirst.mockResolvedValue(null);
+
+      await service.createCheckoutSession('org_123', 'starter');
+
+      expect(mockPosthog.capture).toHaveBeenCalledWith(
+        'org_123',
+        'plan_selected',
+        expect.anything(),
+      );
+    });
   });
 
   it('recovers a paid subscription when the checkout webhook was missed', async () => {

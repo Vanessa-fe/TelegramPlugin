@@ -227,7 +227,7 @@ export class PlatformSubscriptionService {
       );
     }
 
-    this.capturePlanSelected({
+    await this.capturePlanSelected({
       organizationId: organization.id,
       planName: plan.name,
       planDisplayName: plan.displayName,
@@ -408,7 +408,7 @@ export class PlatformSubscriptionService {
     await this.updateSaasActive(organizationId);
 
     if (options?.captureSubscriptionCreated) {
-      this.captureSubscriptionCreated({
+      await this.captureSubscriptionCreated({
         organizationId,
         planName: plan.name,
         planDisplayName: plan.displayName,
@@ -664,7 +664,7 @@ export class PlatformSubscriptionService {
 
     if (organization?.platformSubscription?.platformPlan) {
       const plan = organization.platformSubscription.platformPlan;
-      this.captureSubscriptionCreated({
+      await this.captureSubscriptionCreated({
         organizationId,
         planName: plan.name,
         planDisplayName: plan.displayName,
@@ -1144,7 +1144,21 @@ export class PlatformSubscriptionService {
     }
   }
 
-  private captureSubscriptionCreated(params: {
+  // PostHog persons are keyed by user id (signup, login), so organization
+  // events go to the creator's person or funnels cannot join them up.
+  private async resolveAnalyticsDistinctId(
+    organizationId: string,
+  ): Promise<string> {
+    const creator = await this.prisma.user.findFirst({
+      where: { organizationId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    });
+
+    return creator?.id ?? organizationId;
+  }
+
+  private async captureSubscriptionCreated(params: {
     organizationId: string;
     planName: string;
     planDisplayName: string;
@@ -1154,10 +1168,10 @@ export class PlatformSubscriptionService {
     source: 'free_plan' | 'stripe_checkout' | 'email_verification';
     isFreePlan: boolean;
     stripeSubscriptionId?: string;
-  }): void {
+  }): Promise<void> {
     try {
       this.posthog.capture(
-        params.organizationId,
+        await this.resolveAnalyticsDistinctId(params.organizationId),
         this.posthog.events.SUBSCRIPTION_CREATED,
         {
           organization_id: params.organizationId,
@@ -1185,17 +1199,17 @@ export class PlatformSubscriptionService {
     }
   }
 
-  private capturePlanSelected(params: {
+  private async capturePlanSelected(params: {
     organizationId: string;
     planName: string;
     planDisplayName: string;
     priceCents: number;
     currency: string;
     source: 'free_plan' | 'stripe_checkout';
-  }): void {
+  }): Promise<void> {
     try {
       this.posthog.capture(
-        params.organizationId,
+        await this.resolveAnalyticsDistinctId(params.organizationId),
         this.posthog.events.PLAN_SELECTED,
         {
           organization_id: params.organizationId,

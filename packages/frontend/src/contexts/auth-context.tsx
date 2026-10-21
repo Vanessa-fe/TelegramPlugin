@@ -32,6 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pas de reset() ici : user vaut null à chaque chargement de page, et un
+  // reset détacherait le parcours anonyme (pricing, inscription) du compte.
   useEffect(() => {
     if (user) {
       posthog.identify(user.id, {
@@ -41,8 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user.role === "SUPERADMIN") {
         posthog.opt_out_capturing();
       }
-    } else {
-      posthog.reset(); // important : réinitialise quand l'user se déconnecte
     }
   }, [user, posthog]);
 
@@ -85,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     await authApi.logout();
+    posthog.reset();
     setUser(null);
   }
 

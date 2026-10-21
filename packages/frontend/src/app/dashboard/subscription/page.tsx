@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
-import { Analytics } from "@/lib/analytics/events";
 import { organizationsApi } from "@/lib/api/organizations";
 import { platformSubscriptionApi } from "@/lib/api/platform-subscription";
 import { cn } from "@/lib/utils";
@@ -141,11 +140,9 @@ export default function PlatformSubscriptionPage() {
 
     try {
       setIsProcessing(planName);
+      // plan_selected is captured by the API: a browser event here is lost
+      // to the redirect below.
       const { url } = await platformSubscriptionApi.createCheckout(planName);
-      Analytics.planSelected({
-        plan: planName,
-        price: plan.priceCents / 100,
-      });
       window.location.href = url;
     } catch (error) {
       const axiosError = error as {
