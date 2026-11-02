@@ -421,6 +421,7 @@ export class TicketsService {
    * Get ticket stats for admin dashboard
    */
   async getStats(): Promise<{
+    total: number;
     open: number;
     inProgress: number;
     resolved: number;
@@ -440,6 +441,13 @@ export class TicketsService {
       }),
     ]);
 
-    return { open, inProgress, resolved, closed, urgent };
+    return {
+      total: open + inProgress + resolved + closed,
+      open,
+      inProgress,
+      resolved,
+      closed,
+      urgent,
+    };
   }
 }

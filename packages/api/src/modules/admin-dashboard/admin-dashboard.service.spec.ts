@@ -649,3 +649,62 @@ describe('AdminDashboardService unpaid list', () => {
     );
   });
 });
+
+describe('AdminDashboardService tickets awaiting support', () => {
+  const waitingSince = new Date('2026-11-01T12:00:00.000Z');
+  const overdue = new Date('2026-10-29T12:57:00.000Z');
+  const recent = new Date('2026-11-02T09:00:00.000Z');
+
+  const ticket = (lastMessage?: { createdAt: Date; role: UserRole }) => ({
+    messages: lastMessage
+      ? [
+          {
+            createdAt: lastMessage.createdAt,
+            author: { role: lastMessage.role },
+          },
+        ]
+      : [],
+  });
+
+  const buildService = (tickets: unknown[]) => {
+    const prisma = {
+      ticket: { findMany: jest.fn().mockResolvedValue(tickets) },
+    } as unknown as PrismaService;
+    const config = {
+      get: jest.fn().mockReturnValue(undefined),
+    } as unknown as ConfigService;
+    return { service: new AdminDashboardService(prisma, config), prisma };
+  };
+
+  it('counts only tickets where the creator has waited past the threshold', async () => {
+    const { service } = buildService([
+      ticket({ createdAt: overdue, role: UserRole.ORG_ADMIN }),
+      ticket({ createdAt: recent, role: UserRole.ORG_ADMIN }),
+      ticket({ createdAt: overdue, role: UserRole.SUPERADMIN }),
+      ticket({ createdAt: overdue, role: UserRole.SUPPORT }),
+      ticket(),
+    ]);
+
+    await expect(
+      service.countTicketsAwaitingSupport(waitingSince),
+    ).resolves.toBe(1);
+  });
+
+  it('looks at the last visible message of unresolved tickets only', async () => {
+    const { service, prisma } = buildService([]);
+
+    await service.countTicketsAwaitingSupport(waitingSince);
+
+    expect(prisma.ticket.findMany).toHaveBeenCalledWith({
+      where: { status: { in: ['OPEN', 'IN_PROGRESS'] } },
+      select: {
+        messages: {
+          where: { isInternal: false },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { createdAt: true, author: { select: { role: true } } },
+        },
+      },
+    });
+  });
+});

@@ -7,6 +7,7 @@ import {
   PaymentProvider,
   PlanInterval,
   SubscriptionStatus,
+  TicketStatus,
   UserRole,
 } from '@prisma/client';
 import Stripe from 'stripe';
@@ -282,10 +283,10 @@ export class AdminDashboardService {
       },
     });
 
-    // Tickets unanswered (OPEN status)
-    const ticketsUnanswered = await this.prisma.ticket.count({
-      where: { status: 'OPEN' },
-    });
+    // Tickets where the creator has been waiting on support for 24h+
+    const ticketsUnanswered = await this.countTicketsAwaitingSupport(
+      new Date(now.getTime() - 24 * 60 * 60 * 1000),
+    );
 
     // Churn risk - count creators with health score orange or red
     const churnRisk = await this.getChurnRiskCount();
@@ -1083,6 +1084,35 @@ export class AdminDashboardService {
       recentSalesCount,
       recentRevenueChange,
     };
+  }
+
+  /**
+   * Count unresolved tickets whose last visible message is the creator's,
+   * posted before `waitingSince`. A ticket support already replied to is
+   * waiting on the creator, not on us. Internal notes don't count as replies.
+   */
+  async countTicketsAwaitingSupport(waitingSince: Date): Promise<number> {
+    const tickets = await this.prisma.ticket.findMany({
+      where: {
+        status: { in: [TicketStatus.OPEN, TicketStatus.IN_PROGRESS] },
+      },
+      select: {
+        messages: {
+          where: { isInternal: false },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { createdAt: true, author: { select: { role: true } } },
+        },
+      },
+    });
+
+    return tickets.filter(({ messages: [lastMessage] }) => {
+      if (!lastMessage) return false;
+      const fromSupport =
+        lastMessage.author.role === UserRole.SUPERADMIN ||
+        lastMessage.author.role === UserRole.SUPPORT;
+      return !fromSupport && lastMessage.createdAt <= waitingSince;
+    }).length;
   }
 
   /**
