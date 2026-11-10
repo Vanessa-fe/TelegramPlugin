@@ -2442,7 +2442,9 @@
         "messagePlaceholder": "Dis-nous en plus sur ta demande..."
       },
       "submit": "Envoyer le message",
-      "submitting": "Envoi..."
+      "submitting": "Envoi...",
+      "captchaPending": "Vérification anti-robot en cours, patiente une seconde puis réessaie.",
+      "captchaError": "La vérification anti-robot n'a pas pu se charger. Recharge la page ou écris-nous à contact@sublynk.fr."
     },
     "toast": {
       "success": "Message envoyé avec succès",

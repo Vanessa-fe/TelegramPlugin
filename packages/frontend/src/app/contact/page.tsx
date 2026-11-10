@@ -1,22 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Navbar, Footer } from '@/components/marketing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { contactApi } from '@/lib/api';
+import {
+  TURNSTILE_SITE_KEY,
+  TurnstileWidget,
+  type TurnstileWidgetHandle,
+} from '@/components/turnstile-widget';
+
+const EMPTY_FORM = { name: '', email: '', subject: '', message: '', website: '' };
 
 export default function ContactPage() {
   const t = useTranslations('contact');
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
-  });
+  const locale = useLocale();
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const awaitingTurnstile = Boolean(TURNSTILE_SITE_KEY) && !turnstileToken;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
@@ -33,17 +39,26 @@ export default function ContactPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (awaitingTurnstile) {
+      setError(t('form.captchaPending'));
+      return;
+    }
     setIsSubmitting(true);
     setError('');
 
     try {
-      await contactApi.sendMessage(formData);
+      await contactApi.sendMessage({
+        ...formData,
+        turnstileToken: turnstileToken ?? undefined,
+      });
       setIsSubmitted(true);
       toast.success(t('toast.success'));
     } catch {
       setError(t('toast.error'));
       toast.error(t('toast.error'));
     } finally {
+      // Turnstile tokens are single-use: get a fresh one for the next attempt.
+      turnstileRef.current?.reset();
       setIsSubmitting(false);
     }
   }
@@ -148,10 +163,38 @@ export default function ContactPage() {
                         />
                       </div>
 
+                      {/* Honeypot: invisible to visitors, bots fill it and get dropped. */}
+                      <div
+                        aria-hidden="true"
+                        className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
+                      >
+                        <label htmlFor="website">Website</label>
+                        <input
+                          id="website"
+                          name="website"
+                          type="text"
+                          tabIndex={-1}
+                          autoComplete="off"
+                          value={formData.website}
+                          onChange={handleChange}
+                        />
+                      </div>
+
+                      {TURNSTILE_SITE_KEY && (
+                        <TurnstileWidget
+                          ref={turnstileRef}
+                          siteKey={TURNSTILE_SITE_KEY}
+                          action="contact"
+                          language={locale}
+                          onToken={setTurnstileToken}
+                          onError={() => setError(t('form.captchaError'))}
+                        />
+                      )}
+
                       <Button
                         type="submit"
                         className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white font-semibold"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || awaitingTurnstile}
                       >
                         {isSubmitting && (
                           <span
@@ -191,7 +234,7 @@ export default function ContactPage() {
                       variant="outline"
                       onClick={() => {
                         setIsSubmitted(false);
-                        setFormData({ name: '', email: '', subject: '', message: '' });
+                        setFormData(EMPTY_FORM);
                       }}
                       className="border-border-custom hover:bg-purple-50 hover:text-purple-600"
                     >

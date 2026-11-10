@@ -323,6 +323,7 @@ Si `BREVO_API_KEY` non configure:
 | `JWT_ACCESS_TTL` | API | TTL access token en secondes (defaut: 900) |
 | `JWT_REFRESH_TTL` | API | TTL refresh token en secondes (defaut: 604800) |
 | `COOKIE_SECRET` | API | Secret cookies (64 bytes hex) |
+| `TURNSTILE_SECRET_KEY` | API | Secret Cloudflare Turnstile (anti-robot du formulaire de contact). Absent = pas de vérification |
 
 #### Frontend (Next.js)
 
@@ -330,6 +331,7 @@ Si `BREVO_API_KEY` non configure:
 |----------|---------|-------------|
 | `NEXT_PUBLIC_API_URL` | Frontend | URL de l'API |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Frontend | Cle publique Stripe |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Frontend | Cle de site Cloudflare Turnstile (affiche le widget anti-robot) |
 
 #### Stripe
 

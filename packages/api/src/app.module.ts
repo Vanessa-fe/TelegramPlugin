@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { AppController } from './app.controller';
+import { ClientIpThrottlerGuard } from './common/client-ip-throttler.guard';
 import {
   HTTP_LOG_REDACT_CENSOR,
   HTTP_LOG_REDACT_PATHS,
@@ -98,7 +99,7 @@ function resolveEnvFiles(): string[] {
       cache: true,
       envFilePath: resolveEnvFiles(),
     }),
-    // Global rate limiting: 100 requests per minute per IP
+    // Global rate limiting per visitor (see ClientIpThrottlerGuard)
     ThrottlerModule.forRoot([
       {
         name: 'short',
@@ -175,7 +176,7 @@ function resolveEnvFiles(): string[] {
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: ClientIpThrottlerGuard,
     },
     {
       provide: APP_GUARD,

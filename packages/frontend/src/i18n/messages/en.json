@@ -2436,7 +2436,9 @@
         "messagePlaceholder": "Tell us more about your question..."
       },
       "submit": "Send message",
-      "submitting": "Sending..."
+      "submitting": "Sending...",
+      "captchaPending": "Bot check in progress, wait a second and try again.",
+      "captchaError": "The bot check could not load. Reload the page or email us at contact@sublynk.fr."
     },
     "toast": {
       "success": "Message sent successfully",

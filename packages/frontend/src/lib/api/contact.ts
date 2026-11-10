@@ -5,6 +5,9 @@ export type ContactMessage = {
   email: string;
   subject: string;
   message: string;
+  /** Honeypot, must stay empty. */
+  website?: string;
+  turnstileToken?: string;
 };
 
 export const contactApi = {
