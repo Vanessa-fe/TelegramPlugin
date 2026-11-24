@@ -9,10 +9,11 @@ type OfferReadinessClient = Pick<PrismaClient, 'organization' | 'product'>;
  * Offers a buyer can pay for right now, i.e. what the storefront needs to
  * show a checkout: an active offer with at least one active formule (plan)
  * and one active linked channel, sold by an organization whose Sublynk
- * subscription is active and whose Stripe account is connected.
+ * subscription is active and whose Stripe account is connected. Pass a
+ * filter such as `{ in: ids }` to check several organizations at once.
  */
 export function readyOffersWhere(
-  organizationId: string,
+  organizationId: NonNullable<Prisma.ProductWhereInput['organizationId']>,
 ): Prisma.ProductWhereInput {
   return {
     organizationId,

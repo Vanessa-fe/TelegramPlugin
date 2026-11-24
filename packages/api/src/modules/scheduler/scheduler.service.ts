@@ -9,7 +9,15 @@ import {
   SubscriptionStatus,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
+import {
+  readyOffersWhere,
+  syncOfferReadyToBrevo,
+} from '../../common/offer-readiness';
+import {
+  parseEmailList,
+  parseListId,
+  syncCreatorEngagementToBrevo,
+} from './creator-engagement';
 import { ChannelAccessService } from '../channel-access/channel-access.service';
 import { DataExportsService } from '../data-exports/data-exports.service';
 import { OrganizationsService } from '../organizations/organizations.service';
@@ -897,6 +905,58 @@ export class SchedulerService {
     this.logger.log(
       `VIP monthly reports complete: ${sent} sent, ${errors} errors`,
     );
+  }
+
+  /**
+   * Send each creator's stage, last login and sales count to Brevo, and keep
+   * the inactive list (BREVO_INACTIVE_LIST_ID) to creators who stopped
+   * logging in without earning, for re-engagement workflows.
+   * See creator-engagement.ts. Runs every day at 7:00 AM.
+   */
+  @Cron('0 7 * * *')
+  async syncCreatorEngagement(): Promise<void> {
+    if (!this.config.get<string>('BREVO_API_KEY')) {
+      this.logger.debug(
+        'BREVO_API_KEY is not configured - creator engagement sync disabled',
+      );
+      return;
+    }
+
+    try {
+      const creators = await this.adminDashboardService.getCreatorsList();
+      const readyOffers = await this.prisma.product.findMany({
+        where: readyOffersWhere({ in: creators.map((creator) => creator.id) }),
+        select: { organizationId: true },
+        distinct: ['organizationId'],
+      });
+      const inactiveListId = parseListId(
+        this.config.get<string>('BREVO_INACTIVE_LIST_ID'),
+      );
+
+      const result = await syncCreatorEngagementToBrevo({
+        creators,
+        readyOrganizationIds: new Set(
+          readyOffers.map((offer) => offer.organizationId),
+        ),
+        inactiveListId,
+        excludedEmails: parseEmailList(
+          this.config.get<string>('BREVO_ENGAGEMENT_EXCLUDED_EMAILS'),
+        ),
+        logger: this.logger,
+      });
+
+      this.logger.log(
+        `Creator engagement synced to Brevo: ${result.synced} synced, ${result.failed} failed, ` +
+          (inactiveListId
+            ? `inactive list ${result.inactiveListSynced ? 'updated' : 'NOT updated'} ` +
+              `(+${result.addedToInactiveList} / -${result.removedFromInactiveList})`
+            : 'inactive list disabled (BREVO_INACTIVE_LIST_ID not set)'),
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to sync creator engagement to Brevo: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**

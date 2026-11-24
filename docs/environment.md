@@ -48,6 +48,8 @@ Ce projet est un monorepo PNPM contenant l'API NestJS, le bot Telegram, le worke
    - `DATA_EXPORT_DIR` : dossier de sortie pour les archives RGPD (defaut `./exports`).
    - `TELEGRAM_BOT_TOKEN`.
    - `BREVO_API_KEY`, `BREVO_FROM_EMAIL`, `BREVO_FROM_NAME` (voir `docs/email-configuration.md`).
+   - `BREVO_INACTIVE_LIST_ID` : liste Brevo des créateurs à relancer (30 jours sans connexion et aucune vente récente), mise à jour chaque jour à 7 h. Sans cette variable, seuls les attributs `ETAPE`, `DERNIERE_CONNEXION` et `NB_VENTES` sont envoyés.
+   - `BREVO_ENGAGEMENT_EXCLUDED_EMAILS` : emails de facturation jamais envoyés par cette synchro (comptes internes ou de test), séparés par des virgules. En production, le définir avec `fly secrets set` plutôt que dans le `fly.toml` versionné.
    - Adapter `CORS_ORIGIN`, `NEXT_PUBLIC_API_URL` si les ports changent.
 
 Pour la production, utilisez un fichier `.env.production` séparé (ou un gestionnaire de secrets).

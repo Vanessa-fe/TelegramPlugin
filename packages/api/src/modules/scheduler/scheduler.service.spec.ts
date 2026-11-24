@@ -9,9 +9,20 @@ import { OrganizationsService } from '../organizations/organizations.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AdminDashboardService } from '../admin-dashboard/admin-dashboard.service';
 import { syncOfferReadyToBrevo } from '../../common/offer-readiness';
+import { syncCreatorEngagementToBrevo } from './creator-engagement';
 
 jest.mock('../../common/offer-readiness', () => ({
+  ...jest.requireActual<typeof import('../../common/offer-readiness')>(
+    '../../common/offer-readiness',
+  ),
   syncOfferReadyToBrevo: jest.fn(),
+}));
+
+jest.mock('./creator-engagement', () => ({
+  ...jest.requireActual<typeof import('./creator-engagement')>(
+    './creator-engagement',
+  ),
+  syncCreatorEngagementToBrevo: jest.fn(),
 }));
 
 describe('SchedulerService', () => {
@@ -20,6 +31,7 @@ describe('SchedulerService', () => {
   let channelAccessService: jest.Mocked<ChannelAccessService>;
   let config: jest.Mocked<ConfigService>;
   let dataExportsService: jest.Mocked<DataExportsService>;
+  let adminDashboardService: jest.Mocked<AdminDashboardService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -41,6 +53,9 @@ describe('SchedulerService', () => {
             },
             paymentEvent: {
               deleteMany: jest.fn(),
+            },
+            product: {
+              findMany: jest.fn(),
             },
           },
         },
@@ -64,7 +79,10 @@ describe('SchedulerService', () => {
         },
         { provide: OrganizationsService, useValue: {} },
         { provide: NotificationsService, useValue: {} },
-        { provide: AdminDashboardService, useValue: {} },
+        {
+          provide: AdminDashboardService,
+          useValue: { getCreatorsList: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -73,6 +91,7 @@ describe('SchedulerService', () => {
     channelAccessService = module.get(ChannelAccessService);
     config = module.get(ConfigService);
     dataExportsService = module.get(DataExportsService);
+    adminDashboardService = module.get(AdminDashboardService);
 
     jest.spyOn(Logger.prototype, 'error').mockImplementation();
     jest.spyOn(Logger.prototype, 'log').mockImplementation();
@@ -216,6 +235,70 @@ describe('SchedulerService', () => {
       await service.handlePendingDataExports();
 
       expect(dataExportsService.processPendingExports).toHaveBeenCalled();
+    });
+  });
+
+  describe('syncCreatorEngagement', () => {
+    const settings: Record<string, string> = {
+      BREVO_API_KEY: 'key',
+      BREVO_INACTIVE_LIST_ID: '12',
+      BREVO_ENGAGEMENT_EXCLUDED_EMAILS: 'Me@example.com, test@example.com',
+    };
+
+    beforeEach(() => {
+      config.get.mockImplementation((key: string) => settings[key]);
+      jest.mocked(syncCreatorEngagementToBrevo).mockResolvedValue({
+        synced: 2,
+        failed: 0,
+        addedToInactiveList: 1,
+        removedFromInactiveList: 0,
+        inactiveListSynced: true,
+      });
+    });
+
+    it('syncs creators with their ready offers and the Brevo settings', async () => {
+      const creators = [{ id: 'org-1' }, { id: 'org-2' }];
+      adminDashboardService.getCreatorsList.mockResolvedValue(creators as any);
+      (prisma.product.findMany as jest.Mock).mockResolvedValue([
+        { organizationId: 'org-2' },
+      ] as any);
+
+      await service.syncCreatorEngagement();
+
+      expect(prisma.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            organizationId: { in: ['org-1', 'org-2'] },
+          }),
+          distinct: ['organizationId'],
+        }),
+      );
+      expect(syncCreatorEngagementToBrevo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          creators,
+          readyOrganizationIds: new Set(['org-2']),
+          inactiveListId: 12,
+          excludedEmails: new Set(['me@example.com', 'test@example.com']),
+        }),
+      );
+    });
+
+    it('does nothing without a Brevo API key', async () => {
+      config.get.mockReturnValue(undefined);
+
+      await service.syncCreatorEngagement();
+
+      expect(adminDashboardService.getCreatorsList).not.toHaveBeenCalled();
+      expect(syncCreatorEngagementToBrevo).not.toHaveBeenCalled();
+    });
+
+    it('logs instead of throwing when the creator list fails', async () => {
+      adminDashboardService.getCreatorsList.mockRejectedValue(
+        new Error('db down'),
+      );
+
+      await expect(service.syncCreatorEngagement()).resolves.toBeUndefined();
+      expect(Logger.prototype.error).toHaveBeenCalled();
     });
   });
 });
