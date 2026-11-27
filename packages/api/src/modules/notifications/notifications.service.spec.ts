@@ -38,8 +38,8 @@ describe('NotificationsService Brevo contact sync', () => {
         email: 'creator@example.com',
         extId: 'user-1',
         attributes: {
-          FIRSTNAME: 'New',
-          LASTNAME: 'Creator',
+          PRENOM: 'New',
+          NOM: 'Creator',
         },
         listIds: [2],
         updateEnabled: true,

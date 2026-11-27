@@ -301,9 +301,11 @@ export class NotificationsService implements OnModuleInit {
       const contact = new Brevo.CreateContact();
       contact.email = data.email.trim().toLowerCase();
       contact.extId = data.userId;
+      // The Sublynk Brevo account is French: its name attributes are PRENOM
+      // and NOM. Brevo silently ignores attributes that don't exist.
       contact.attributes = {
-        ...(data.firstName ? { FIRSTNAME: data.firstName } : {}),
-        ...(data.lastName ? { LASTNAME: data.lastName } : {}),
+        ...(data.firstName ? { PRENOM: data.firstName } : {}),
+        ...(data.lastName ? { NOM: data.lastName } : {}),
       };
       contact.listIds = [this.brevoMarketingListId];
       contact.updateEnabled = true;
